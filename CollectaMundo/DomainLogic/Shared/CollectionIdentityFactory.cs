@@ -2,11 +2,7 @@
 {
     public static class CollectionIdentityFactory
     {
-        public static CollectionIdentity Create(
-            string? uuid,
-            string? condition,
-            string? language,
-            string? finish)
+        public static CollectionIdentity Create(string? uuid, string? condition, string? language, string? finish)
         {
             return new CollectionIdentity(
                 uuid ?? throw new InvalidOperationException("Uuid required"),

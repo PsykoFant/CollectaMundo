@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLists;
+﻿using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.CardLists.Models;
 
 namespace CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers

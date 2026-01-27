@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 
-namespace CollectaMundo.DomainLogic.CardLists
+namespace CollectaMundo.DomainLogic.CardLists.Aggregation
 {
     public sealed class CardCoreAggregator : ICardCoreAggregator
     {

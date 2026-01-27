@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Shared;
 
-namespace CollectaMundo.ApplicationServices.Shared
+namespace CollectaMundo.DomainLogic.Shared
 {
     public sealed class CollectionSnapshot : ICollectionSnapshot
     {

@@ -7,11 +7,7 @@ namespace CollectaMundo.DomainLogic.CardLists.CardLookups
 {
     public sealed class CardLookupBuilder
     {
-        public static CardLookupPackage Build(
-            IReadOnlyDictionary<string, byte[]> manaIcons,
-            IReadOnlyDictionary<string, byte[]> setIcons,
-            IReadOnlyDictionary<string, SetDto> sets,
-            IReadOnlyDictionary<string, PriceDto> prices)
+        public static CardLookupPackage Build(IReadOnlyDictionary<string, byte[]> manaIcons, IReadOnlyDictionary<string, byte[]> setIcons, IReadOnlyDictionary<string, SetDto> sets, IReadOnlyDictionary<string, PriceDto> prices)
         {
             // CreateCollectionChangeSetFromEdits alias map: tokenSetCode → setCode
             var tokenToCodeMap = sets.Values.Where(s => !string.IsNullOrWhiteSpace(s.TokenCode)).ToDictionary(

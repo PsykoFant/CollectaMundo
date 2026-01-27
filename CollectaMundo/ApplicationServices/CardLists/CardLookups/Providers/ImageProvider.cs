@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLists;
+﻿using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Windows.Media;

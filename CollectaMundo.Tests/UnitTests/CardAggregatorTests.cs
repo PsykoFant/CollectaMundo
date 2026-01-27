@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLists;
+﻿using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.CardLists.Models;
 
 namespace CollectaMundo.Tests.UnitTests

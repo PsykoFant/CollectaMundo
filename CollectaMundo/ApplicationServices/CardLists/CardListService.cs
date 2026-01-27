@@ -1,8 +1,11 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups;
+using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists;
+using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
@@ -13,13 +16,14 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator) : ICardListService
+    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator, IMyCollectionChangeLogic myCollectionChangeLogic) : ICardListService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardLookupsService _lookupService = lookupService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
+        private readonly IMyCollectionChangeLogic _myCollectionChangeLogic = myCollectionChangeLogic;
         public async Task InitializeCardListsAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork(_dbFactory);
@@ -135,6 +139,16 @@ namespace CollectaMundo.ApplicationServices.CardLists
         {
             await _lookupService.ResetPricesMetaProviderAsync(retailerKey);
         }
+        public CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardViewModel myCollection, CardViewModel allCards)
+        {
+            return _myCollectionChangeLogic.BuildChangeSet(mutation, myCollection, allCards);
+        }
+        public void ApplyMyCollectionChanges(IList<CardSet> collection, CollectionChangeSet<CardSet> changes)
+        {
+            _myCollectionChangeLogic.ApplyMyCollectionChanges(collection, changes);
+        }
+
+        // helper to sort cards in the desired order
         private static List<CardSet> SortCards(IEnumerable<CardSet> cards)
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

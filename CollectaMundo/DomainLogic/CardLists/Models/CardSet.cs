@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CollectaMundo.DomainLogic.CardLists.CardLookups;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Media;
 
 namespace CollectaMundo.DomainLogic.CardLists.Models

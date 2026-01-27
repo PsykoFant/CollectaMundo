@@ -13,6 +13,7 @@ using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists;
+using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.DomainLogic.Import;
@@ -101,7 +102,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListRepo = new CardListRepo();
                 var filterDefaultsLogic = new FilterDefaultsLogic();
                 var coreAggregator = new CardCoreAggregator();
-                var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
+                var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator, new MyCollectionChangeLogic());
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
                 var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, cardImageService, cardDbManagementService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings));
