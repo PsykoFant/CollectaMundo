@@ -302,36 +302,47 @@ namespace CollectaMundo.ViewModels
         }
         private void OnImportCollectionMutationRequested(object? sender, CollectionMutation mutation)
         {
+            var stopwatch = Stopwatch.StartNew();
+
             var addedOrUpdated = new List<CardSet>();
-            Debug.WriteLine($"Import mutation: {mutation.RemovedIds.Count} removed, {mutation.UpsertedRows.Count} upserted.");
 
-            Debug.WriteLine("Processing upserted rows...");
+            // Build snapshot from in-memory collection
+            var snapshot = CollectionSnapshot.From(MyCollectionVM.Cards);
 
-            DebugLogCollectionMutation(mutation);
+            // Build fast lookup for CardId --> CardSet
+            var cardById = MyCollectionVM.Cards.Where(c => c.CardId.HasValue).ToDictionary(c => c.CardId!.Value);
 
+            // Build fast lookup for UUID --> Core
+            var coreByUuid = AllCardsVM.Cards.Select(c => c.Core!).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
 
             foreach (var row in mutation.UpsertedRows)
             {
                 var identity = row.Identity;
 
-                // CASE A: row already exists in-memory --> UPDATE ABSOLUTE VALUES
-                var existing = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == row.CardId);
-
-                if (existing != null)
+                // CASE A: Already exists in memory --> update quantities
+                if (snapshot.TryGetById(row.CardId, out var existingRow))
                 {
-                    existing.CardsOwned = row.CardsOwned + existing.CardsOwned;
-                    existing.CardsForTrade = row.CardsForTrade + existing.CardsForTrade;
+                    cardById.TryGetValue(row.CardId, out var existingCard);
+                    if (existingCard != null)
+                    {
+                        existingCard.CardsOwned = row.CardsOwned + existingCard.CardsOwned;
+                        existingCard.CardsForTrade = row.CardsForTrade + existingCard.CardsForTrade;
 
-                    existing.RecomputeCollectionPrice();
+                        //existingCard.RecomputeCollectionPrice();
 
-                    addedOrUpdated.Add(existing);
-                    continue;
+                        addedOrUpdated.Add(existingCard);
+                        continue;
+                    }
                 }
 
-                // CASE B: new card --> hydrate from AllCards using Core
+                // CASE B: New card --> hydrate from Core
                 var uuid = identity.Uuid ?? throw new InvalidOperationException("Import identity must have a UUID.");
 
-                var core = AllCardsVM.Cards.Select(c => c.Core!).Single(c => string.Equals(c.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
+                if (!coreByUuid.TryGetValue(uuid, out var core))
+                {
+                    Debug.WriteLine($"[ERROR] Core not found for UUID: {uuid}");
+                    throw new InvalidOperationException($"[ERROR] Core not found for UUID: {uuid}");
+                }
 
                 var card = CardSet.FromCoreWithCollection(core,
                     cardId: row.CardId,
@@ -342,7 +353,6 @@ namespace CollectaMundo.ViewModels
                     finish: identity.Finish);
 
                 addedOrUpdated.Add(card);
-
             }
 
             var changeSet = new CollectionChangeSet<CardSet>
@@ -351,10 +361,12 @@ namespace CollectaMundo.ViewModels
                 AddedOrUpdated = addedOrUpdated
             };
 
-            Debug.WriteLine("Raising CollectionChanged event from import...");
-
             OnCollectionChanged(sender, changeSet);
+
+            stopwatch.Stop();
+            Debug.WriteLine($"[Import] OnImportCollectionMutationRequested completed in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
         }
+
 
         private void DebugLogCollectionMutation(CollectionMutation mutation)
         {
