@@ -3,12 +3,12 @@ using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using FluentAssertions;
+using System.IO;
 
 namespace CollectaMundo.Tests.ScenarioTests
 {
 
-    public sealed class ImportScenarioTests(InMemoryDatabaseFixture fx)
-        : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
+    public sealed class ImportScenarioTests(InMemoryDatabaseFixture fx): IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         private readonly InMemoryDatabaseFixture _fx = fx;
 
@@ -30,14 +30,22 @@ namespace CollectaMundo.Tests.ScenarioTests
         [Fact]
         public async Task Seeded_card_database_can_start_import_wizard()
         {
+            var csvPath = Path.Combine("TestData", "sample.csv");
+            var prompt = new TestPromptService(csvPath);
+
+            (_mainVM, _) = await TestAppBuilder.BuildAsync(
+                _fx,
+                _dbFactory,
+                eventSink: null,
+                promptOverride: prompt);
+
+            var importVM = _mainVM.ImportVM;
+
             var allCards = _mainVM.AllCardsVM.Cards;
             var myCollection = _mainVM.MyCollectionVM.Cards;
 
             allCards.Should().NotBeNullOrEmpty("we expect AllCardsVM to be hydrated");
             myCollection.Should().NotBeNull("MyCollectionVM should be initialized");
-
-            // --- Start import ---
-            var importVM = _mainVM.ImportVM;
 
             await importVM.Begin();
 

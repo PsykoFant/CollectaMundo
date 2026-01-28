@@ -35,11 +35,17 @@ namespace CollectaMundo.Tests.TestUtils;
 
 public static class TestAppBuilder
 {
-    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(InMemoryDatabaseFixture fixture, IDbConnectionFactory dbFactory, List<CollectionChangeSet<CardSet>>? eventSink = null)
+    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(
+        InMemoryDatabaseFixture fixture,
+        IDbConnectionFactory dbFactory,
+        List<CollectionChangeSet<CardSet>>? eventSink = null,
+        IUserPromptService? promptOverride = null) 
     {
         await fixture.InitializeAsync();
 
-        var statusVM = new StatusViewModel(new UserPromptService());
+        var userPromptService = promptOverride ?? new UserPromptService();
+
+        var statusVM = new StatusViewModel(userPromptService);
         var settings = new ApplicationServices.Shared.AppSettings();
 
         string getRetailer() => settings.PriceInfo.Retailer;
@@ -81,6 +87,7 @@ public static class TestAppBuilder
             new CardImageRepo(), new CardImageDownloader(settings));
 
         var importService = new ImportService(dbFactory, new ImportRepo(), new FileSystemPicker(), new ImportLogic());
+
         var scheduler = new ImmediateScheduler();
 
         var mainVM = await MainWindowViewModel.CreateAsync(
@@ -89,7 +96,7 @@ public static class TestAppBuilder
             prepService,
             importService,
             statusVM,
-            new UserPromptService(),
+            userPromptService,
             new FileSystemPicker(),
             cardListService,
             settings,
@@ -137,6 +144,7 @@ public static class TestAppBuilder
 
         return (mainVM, statusVM);
     }
+
     private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
     {
         Headline = new Progress<string>(s => vm.StatusLabel1 = s),

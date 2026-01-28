@@ -1,6 +1,8 @@
-﻿namespace CollectaMundo.Tests.TestUtils
+﻿using CollectaMundo.ApplicationServices.Shared;
+
+namespace CollectaMundo.Tests.TestUtils
 {
-    internal class TestPromptService
+    internal sealed class TestPromptService : IUserPromptService
     {
         private readonly string _fakeCsvPath;
 
@@ -23,5 +25,8 @@
         public void CancelCurrentOperation() { }
         public void ClearCancellation() { }
         public void CancelPendingPrompt() { }
+        public void ConfirmPrompt() { }
+        public bool HasPendingPrompt => false;
+
     }
 }
