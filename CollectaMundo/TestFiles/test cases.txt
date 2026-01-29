@@ -38,8 +38,8 @@ Quantity,CardName,Simple Name,Set,Card Number,Set Code,Printing,Condition,Langua
 2,Predator Flagship,Predator Flagship,Aether Revolt,142,AER,Normal,Crappy,Dansk,Rare,126451,28927927-3974-48c3-81c2-518089a10003,$0.78,$0.39
 
 
--- Invalid name, valid set name, valid set code
-Quantity,CardName,Simple Name,Set,Card Number,Set Code,Printing,King Kong,Language,Rarity,Product ID,SKU,Price,Price Each
+-- InvalidName_ValidSetName_ValidSetCode_
+Quantity,CardName,Simple Name,Set,Card Number,Set Code,Printing,King Kong,Language,Rarity,Product ID,SKU,Price,Comment
 2,Fiskeriminister,Abandoned Sarcophagus,Hour of Devastation,158,HOU,Normal,Near Mint,English,Rare,136602,3413837,$0.36,$0.18
 3,Fis af makker,Abbot of Keral Keep,Magic Origins,127,ORI,Normal,Near Mint,English,Rare,100277,2898977,$1.98,$0.66
 1,Julemanden,Abhorrent Overlord,Theros,75,THS,Normal,Near Mint,Chinese (S),Rare,70992,1395178,$0.24,$0.24
