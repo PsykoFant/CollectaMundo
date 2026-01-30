@@ -245,6 +245,64 @@ namespace CollectaMundo.Tests.TestUtils
             ";
             command.ExecuteNonQuery();
 
+            // CREATE TABLE IF NOT EXISTS: cardIdentifiers
+            command.CommandText = @"
+                CREATE TABLE cardIdentifiers (
+	                cardKingdomEtchedId TEXT,
+	                cardKingdomFoilId TEXT,
+	                cardKingdomId TEXT,
+	                cardsphereFoilId TEXT,
+	                cardsphereId TEXT,
+	                deckboxId TEXT,
+	                mcmId TEXT,
+	                mcmMetaId TEXT,
+	                mtgArenaId TEXT,
+	                mtgjsonFoilVersionId TEXT,
+	                mtgjsonNonFoilVersionId TEXT,
+	                mtgjsonV4Id TEXT,
+	                mtgoFoilId TEXT,
+	                mtgoId TEXT,
+	                multiverseId TEXT,
+	                scryfallCardBackId TEXT,
+	                scryfallId TEXT,
+	                scryfallIllustrationId TEXT,
+	                scryfallOracleId TEXT,
+	                tcgplayerEtchedProductId TEXT,
+	                tcgplayerProductId TEXT,
+	                uuid TEXT
+                )
+            ";
+            command.ExecuteNonQuery();
+
+            // CREATE TABLE IF NOT EXISTS: tokenIdentifiers
+            command.CommandText = @"
+                CREATE TABLE tokenIdentifiers (
+	                cardKingdomEtchedId TEXT,
+	                cardKingdomFoilId TEXT,
+	                cardKingdomId TEXT,
+	                cardsphereFoilId TEXT,
+	                cardsphereId TEXT,
+	                deckboxId TEXT,
+	                mcmId TEXT,
+	                mcmMetaId TEXT,
+	                mtgArenaId TEXT,
+	                mtgjsonFoilVersionId TEXT,
+	                mtgjsonNonFoilVersionId TEXT,
+	                mtgjsonV4Id TEXT,
+	                mtgoFoilId TEXT,
+	                mtgoId TEXT,
+	                multiverseId TEXT,
+	                scryfallCardBackId TEXT,
+	                scryfallId TEXT,
+	                scryfallIllustrationId TEXT,
+	                scryfallOracleId TEXT,
+	                tcgplayerEtchedProductId TEXT,
+	                tcgplayerProductId TEXT,
+	                uuid TEXT
+                )
+            ";
+            command.ExecuteNonQuery();
+
             // CREATE TABLE IF NOT EXISTS: cardPrices
             command.CommandText = @"CREATE TABLE cardPrices (uuid TEXT UNIQUE PRIMARY KEY, cardkingdomNormal DECIMAL(10, 2), cardkingdomFoil DECIMAL(10, 2), cardkingdomEtched DECIMAL(10, 2), cardmarketNormal DECIMAL(10, 2), cardmarketFoil DECIMAL(10, 2), cardmarketEtched DECIMAL(10, 2), cardsphereNormal DECIMAL(10, 2), cardsphereFoil DECIMAL(10, 2), cardsphereEtched DECIMAL(10, 2), tcgplayerNormal DECIMAL(10, 2), tcgplayerFoil DECIMAL(10, 2), tcgplayerEtched DECIMAL(10, 2), cardhoarderNormal DECIMAL(10, 2), cardhoarderFoil DECIMAL(10, 2), cardhoarderEtched DECIMAL(10, 2))";
             command.ExecuteNonQuery();
@@ -325,6 +383,8 @@ namespace CollectaMundo.Tests.TestUtils
                 await SeedTableAsync("keyruneImages", Path.Combine(basePath, "keyruneImages.csv"));
                 await SeedTableAsync("uniqueManaCostImages", Path.Combine(basePath, "uniqueManaCostImages.csv"));
                 await SeedTableAsync("cardForeignData", Path.Combine(basePath, "cardForeignData.csv"));
+                await SeedTableAsync("cardIdentifiers", Path.Combine(basePath, "cardIdentifiers.csv"));
+                await SeedTableAsync("tokenIdentifiers", Path.Combine(basePath, "tokenIdentifiers.csv"));
                 await SeedTableAsync("cardPrices", Path.Combine(basePath, "cardPrices.csv"));
                 await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
             }
