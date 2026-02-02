@@ -475,8 +475,17 @@ namespace CollectaMundo.Tests
             };
 
             // Assert that the filter options contain all expected names.
-            Assert.True(expectedNames.All(expected => nameFilter.FilterOptions.Any(opt => opt.OptionName.Contains(expected))),
-                "Not all expected filter names were found.");
+            var actualOptionNames = nameFilter.FilterOptions.Select(o => o.OptionName).ToList();
+
+            var missingNames = expectedNames
+                .Where(expected =>
+                    !actualOptionNames.Any(actual => actual.Contains(expected)))
+                .ToList();
+
+            Assert.True(
+                missingNames.Count == 0,
+                $"Missing filter names: {string.Join(", ", missingNames)}");
+
 
             // Rarity:
             var rarityFilter = _mainVM.FilterVM.Filters["Rarity"];
