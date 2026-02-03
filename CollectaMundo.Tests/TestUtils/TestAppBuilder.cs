@@ -39,7 +39,8 @@ public static class TestAppBuilder
         InMemoryDatabaseFixture fixture,
         IDbConnectionFactory dbFactory,
         List<CollectionChangeSet<CardSet>>? eventSink = null,
-        IUserPromptService? promptOverride = null) 
+        IUserPromptService? promptOverride = null,
+        IFileSystemPicker? filePickerOverride = null)
     {
         await fixture.InitializeAsync();
 
