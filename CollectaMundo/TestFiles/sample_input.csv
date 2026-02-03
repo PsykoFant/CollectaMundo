@@ -1,8 +1,8 @@
-Quantity;CardName;Set;Card Number;Set Code;Printing;Condition;Language;Rarity;Product ID;SKU;Price;Price Each;
-2;Sokrates, Athenian Teacher;Assassin's Creed;158;ACR;Normal;Near Mint;Ancient Greek;Rare;136602;3413837;$0.36;$0.18;
-3.0;Abbot of Keral Keep;Bøf, med løg;127;ORI;Normal;good;Arabic;Rare;100277;2898977;$1.98;$0.66;
-1.1;Abhorrent Overlord;Nisseriminister;75;THS;Normal;Ok-ish;Chinese (S);Rare;70992;1395178;$0.24;$0.24;
-1;Brisela, Voice of Nightmares;Nisseriminister;75;THS;Normal;Ok-ish;Chinese (S);Rare;70992;1395178;$0.24;$0.24;
-;;;;;;;;;;;;;
-1;Jeg findes ikke;Sæt der ikke findes;Nisseriminister;THS;boing;Normal;Ok-ish;pissemand;Rare;70992;1395178;$0.24;$0.24
-15;"He said ""hello""";jule hesten;75;boing;Normal;Ok-ish;yoink, den går ikke;Rare;70992;1395178;$0.24;$0.24;
+Quantity;CardName;Set;Card Number;Set Code;Printing;Condition;Language;Rarity;Product ID;uuid
+2;Sokrates, Athenian Teacher;Assassin's Creed;158;ACR;Normal;Near Mint;Ancient Greek;Rare;776179;3c389f9c-e459-5b16-87b5-d51644f05b25
+3.0;Abbot of Keral Keep;Bøf, med løg;127;ORI;Normal;good;Arabic;Rare;;
+1.1;Abhorrent Overlord;Nisseriminister;75;THS;Normal;Ok-ish;Chinese (S);Rare;;
+1;Brisela, Voice of Nightmares;Nisseriminister;75;THS;Normal;Ok-ish;Chinese (S);Rare;;
+;;;;;;;;;;
+1;Jeg findes ikke;Sæt der ikke findes;Nisseriminister;THS;boing;Normal;Ok-ish;pissemand;;
+15;"He said ""hello""";jule hesten;75;boing;Normal;Ok-ish;yoink, den går ikke;Rare;;
