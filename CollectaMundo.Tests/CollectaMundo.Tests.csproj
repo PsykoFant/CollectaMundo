@@ -54,6 +54,36 @@
     <None Update="TestResources\cards.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestResources\CsvSeedTables\cardForeignData.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestResources\CsvSeedTables\cardIdentifiers.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestResources\CsvSeedTables\cardPrices.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestResources\CsvSeedTables\cards.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestResources\CsvSeedTables\keyruneImages.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestResources\CsvSeedTables\myCollection.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestResources\CsvSeedTables\sets.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestResources\CsvSeedTables\tokenIdentifiers.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestResources\CsvSeedTables\tokens.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestResources\CsvSeedTables\uniqueManaCostImages.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestResources\keyruneImages.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

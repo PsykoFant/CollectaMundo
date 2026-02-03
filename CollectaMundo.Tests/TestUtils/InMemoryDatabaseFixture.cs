@@ -374,7 +374,7 @@ namespace CollectaMundo.Tests.TestUtils
                 return;
             }
 
-            string basePath = Path.Combine(AppContext.BaseDirectory, "TestResources");
+            string basePath = Path.Combine(AppContext.BaseDirectory, "TestResources/CsvSeedTables");
 
             try
             {
