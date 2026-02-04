@@ -87,7 +87,8 @@ public static class TestAppBuilder
             dbFactory, remoteLookups, new CardImageLogic(),
             new CardImageRepo(), new CardImageDownloader(settings));
 
-        var importService = new ImportService(dbFactory, new ImportRepo(), new FileSystemPicker(), new ImportLogic());
+        var picker = filePickerOverride ?? new FileSystemPicker();
+        var importService = new ImportService(dbFactory, new ImportRepo(), picker, new ImportLogic());
 
         var scheduler = new ImmediateScheduler();
 

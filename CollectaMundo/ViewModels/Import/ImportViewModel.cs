@@ -264,8 +264,8 @@ namespace CollectaMundo.ViewModels.Import
             }
             else
             {
-                Progress.ProgressBarVisible.Report(true);
-                Progress.Detail.Report("Parsing CSV file...");
+                //Progress.ProgressBarVisible.Report(true);
+                //Progress.Detail.Report("Parsing CSV file...");
 
                 // Prepare cancel
                 CancelVisibility = Visibility.Visible;

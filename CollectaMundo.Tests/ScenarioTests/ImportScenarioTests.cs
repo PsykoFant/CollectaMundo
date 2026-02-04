@@ -1,4 +1,5 @@
-﻿using CollectaMundo.Infrastructure.Shared;
+﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Import.ImportSteps;
@@ -60,7 +61,7 @@ namespace CollectaMundo.Tests.ScenarioTests
         {
             var csvPath = Path.Combine(
                 AppContext.BaseDirectory,
-                "TestResources/ImportTestCsvFiles/",
+                "TestResources/ImportTestCsvFiles",
                 "ImportTest1.csv");
 
             File.Exists(csvPath).Should().BeTrue();
@@ -76,43 +77,52 @@ namespace CollectaMundo.Tests.ScenarioTests
                 filePickerOverride: picker);
 
             _mainVM = vm;
-
             var importVM = _mainVM.ImportVM;
 
             await importVM.Begin();
-            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>();
 
-            // ✅ THIS is the correct simulation of clicking "Let's go!"
-            await importVM.PrimaryActionCommand.ExecuteAsync(null);
+            var step1 = importVM.CurrentStepViewModel
+                .Should().BeOfType<ImportStep01_StartViewModel>()
+                .Subject;
 
-            // Assert we moved to step 2
-            importVM.CurrentStepViewModel
-                .Should().BeOfType<ImportStep02_IdMappingViewModel>();
+            // 🔑 THIS triggers AfterStep1Action
+            var result = await step1.OnPrimaryAction();
+
+            result.Code.Should().Be(OperationResultCode.Success);
+
+            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep02_IdMappingViewModel>();
 
             importVM.ImportCardList.Should().NotBeEmpty();
         }
 
+
+
     }
-
-    internal sealed class TestFileSystemPicker(string pathToReturn) : IFileSystemPicker
+    internal sealed class TestFileSystemPicker : IFileSystemPicker
     {
-        private readonly string _pathToReturn = pathToReturn;
+        private readonly string _pathToReturn;
 
-        public string? PickFile(string title) => _pathToReturn;
-
-        public string? PickFile(string title, string filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*")
+        public TestFileSystemPicker(string pathToReturn)
         {
-            throw new NotImplementedException();
+            _pathToReturn = pathToReturn;
+        }
+
+        public string? PickFile(
+            string title,
+            string filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*")
+        {
+            return _pathToReturn;
         }
 
         public string? PickFolder(string title, string? initialPath = null)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("PickFolder is not used in import tests.");
         }
 
         public string? PickSaveFile(string title, string defaultFileName, string filter)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("PickSaveFile is not used in import tests.");
         }
     }
+
 }
