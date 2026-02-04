@@ -1,8 +1,15 @@
 TO DO 
 - MVVM refactor
- - Import brug MVVM
-    - Bug: update summary når vi går til utils
-    - Import polish... 
+- Geneksporter cards og tokens
+- Geneksporter:
+    - keyRuneImages
+    - cardIdentifiers
+    - sets
+    - tokenIdenfiers
+    - cardPrices
+- Opdater Excel overblikket
+
+
 
     - CardCoreDto skal ud af infrastruktur laget
     
