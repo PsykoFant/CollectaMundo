@@ -264,8 +264,8 @@ namespace CollectaMundo.ViewModels.Import
             }
             else
             {
-                //Progress.ProgressBarVisible.Report(true);
-                //Progress.Detail.Report("Parsing CSV file...");
+                Progress.ProgressBarVisible.Report(true);
+                Progress.Detail.Report("Parsing CSV file...");
 
                 // Prepare cancel
                 CancelVisibility = Visibility.Visible;
@@ -287,6 +287,8 @@ namespace CollectaMundo.ViewModels.Import
                 }
 
                 IdMappings.Add(mapping);
+
+                DebugAllItems();
 
                 GoToStep(ImportStep.IdColumnMapping);
                 return new(OperationResultCode.Success, "CSV parsed successfully.");

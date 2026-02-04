@@ -28,75 +28,72 @@ namespace CollectaMundo.Tests.ScenarioTests
             return ValueTask.CompletedTask;
         }
 
-        [Fact]
-        public async Task Seeded_card_database_can_start_import_wizard()
-        {
-            var csvPath = Path.Combine("TestData", "sample.csv");
-            var prompt = new TestPromptService(csvPath);
-
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(
-                _fx,
-                _dbFactory,
-                eventSink: null,
-                promptOverride: prompt);
-
-            var importVM = _mainVM.ImportVM;
-
-            var allCards = _mainVM.AllCardsVM.Cards;
-            var myCollection = _mainVM.MyCollectionVM.Cards;
-
-            allCards.Should().NotBeNullOrEmpty("we expect AllCardsVM to be hydrated");
-            myCollection.Should().NotBeNull("MyCollectionVM should be initialized");
-
-            await importVM.Begin();
-
-            // Assert that we landed in step 1
-            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>();
-            importVM.CurrentStepViewModel.PrimaryActionButtonText.Should().Contain("Let's go");
-            importVM.ProgressHeadline.Should().Be("The Import Wizard");
-        }
 
         [Fact]
-        public async Task Import_step1_parses_csv_and_moves_to_id_mapping()
+        public async Task Import_full_flow_happy_path()
         {
-            var csvPath = Path.Combine(
-                AppContext.BaseDirectory,
-                "TestResources/ImportTestCsvFiles",
-                "ImportTest1.csv");
+            // =====================================================
+            // Arrange – infrastructure & initial state
+            // =====================================================
+
+            var csvPath = Path.Combine(AppContext.BaseDirectory, "TestResources/ImportTestCsvFiles", "ImportTest1.csv");
 
             File.Exists(csvPath).Should().BeTrue();
 
             var prompt = new TestPromptService(csvPath);
             var picker = new TestFileSystemPicker(csvPath);
 
-            var (vm, _) = await TestAppBuilder.BuildAsync(
-                _fx,
-                _dbFactory,
-                eventSink: null,
-                promptOverride: prompt,
-                filePickerOverride: picker);
+            var (vm, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: prompt, filePickerOverride: picker);
 
             _mainVM = vm;
             var importVM = _mainVM.ImportVM;
 
+            _mainVM.AllCardsVM.Cards.Should().NotBeNullOrEmpty();
+            _mainVM.MyCollectionVM.Cards.Should().NotBeNull();
+
+            // =====================================================
+            // Step 0 – Begin wizard
+            // =====================================================
+
             await importVM.Begin();
+            var step1 = importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>().Subject;
 
-            var step1 = importVM.CurrentStepViewModel
-                .Should().BeOfType<ImportStep01_StartViewModel>()
-                .Subject;
+            // =====================================================
+            // Step 1 – Parse CSV & move to ID mapping
+            // =====================================================
 
-            // 🔑 THIS triggers AfterStep1Action
-            var result = await step1.OnPrimaryAction();
+            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>();
+            importVM.ProgressHeadline.Should().Be("The Import Wizard");
+            step1.PrimaryActionButtonText.Should().Contain("Let's go");
 
-            result.Code.Should().Be(OperationResultCode.Success);
+            var step1Result = await step1.OnPrimaryAction(); // Parse CSV
 
-            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep02_IdMappingViewModel>();
-
+            // Assert step 1 completed successfully
+            step1Result.Code.Should().Be(OperationResultCode.Success);
             importVM.ImportCardList.Should().NotBeEmpty();
+
+
+
+            // =====================================================
+            // Step 2 – ID column mapping
+            // =====================================================
+
+            var step2 = (ImportStep02_IdMappingViewModel)importVM.CurrentStepViewModel;
+            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep02_IdMappingViewModel>();
+            importVM.ProgressStep.Should().Be("ID column mapping");
+            step2.PrimaryActionButtonText.Should().Contain("Proceed");
+
+
+            // =====================================================
+            // Step 3 – Name & set mapping
+            // =====================================================
+
+
+            // =====================================================
+            // ...
+            // Continue same pattern up to Step 9
+            // =====================================================
         }
-
-
-
     }
     internal sealed class TestFileSystemPicker : IFileSystemPicker
     {
