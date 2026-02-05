@@ -58,18 +58,12 @@ namespace CollectaMundo.DomainLogic.Import
                 string? line = await reader.ReadLineAsync(cancelToken);
                 currentLine++;
 
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue; // skip empty CSV rows
-                }
-
-                var values = ParseCsvLine(line, delimiter);
-
-                // Skip rows like ";;;;;;;;;;" (all fields empty)
-                if (values.All(v => string.IsNullOrWhiteSpace(v)))
+                if (IsEffectivelyEmptyCsvRow(line, delimiter))
                 {
                     continue;
                 }
+
+                var values = ParseCsvLine(line, delimiter);
 
                 var item = new TempCardItem();
 
@@ -99,6 +93,25 @@ namespace CollectaMundo.DomainLogic.Import
             }
 
             return cardItems;
+        }
+        private static bool IsEffectivelyEmptyCsvRow(string line, char delimiter)
+        {
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+
+                // Ignore delimiters, quotes, and whitespace
+                if (c == delimiter || c == '"' || char.IsWhiteSpace(c))
+                {
+                    continue;
+                }
+
+                // Found real content
+                return false;
+            }
+
+            // No meaningful characters found
+            return true;
         }
         private static List<string> ParseCsvLine(string line, char delimiter)
         {

@@ -146,6 +146,7 @@ namespace CollectaMundo.Tests.TestUtils
 	            artist TEXT, 
 	            artistIds TEXT, 
 	            asciiName TEXT, 
+	            attractionLights TEXT, 
 	            availability TEXT, 
 	            boosterTypes TEXT, 
 	            borderColor TEXT, 
@@ -228,7 +229,7 @@ namespace CollectaMundo.Tests.TestUtils
             command.ExecuteNonQuery();
 
             // CREATE TABLE IF NOT EXISTS: keyruneImages
-            command.CommandText = @"CREATE TABLE IF NOT EXISTS keyruneImages(setCode TEXT PRIMARY KEY, keyruneImage BLOB);";
+            command.CommandText = @"CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB, defaultSvgUsed BOOLEAN);";
             command.ExecuteNonQuery();
 
             // CREATE TABLE IF NOT EXISTS: cardForeignData

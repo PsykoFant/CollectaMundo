@@ -128,7 +128,8 @@ namespace CollectaMundo.Tests
                 "Thallid Devourer",
                 "Resurrection",
                 "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
-                "Sokrates, Athenian Teacher"
+                "Sokrates, Athenian Teacher",
+                "Never // Return"
             };
 
             var actualAllCardsNames = _mainVM.AllCardsVM.Cards.Select(card => card.Name ?? string.Empty).OrderBy(name => name).ToList();
@@ -136,6 +137,10 @@ namespace CollectaMundo.Tests
 
             for (int i = 0; i < sortedAllcardsExpected.Count; i++)
             {
+                Debug.WriteLine($"Comparing index {i}:");
+                Debug.WriteLine($"Expected: '{sortedAllcardsExpected[i]}'");
+                Debug.WriteLine($"Actual:   '{actualAllCardsNames[i]}'");
+
                 var expected = sortedAllcardsExpected[i];
                 var actual = actualAllCardsNames[i];
 
