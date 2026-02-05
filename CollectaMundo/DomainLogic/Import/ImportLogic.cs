@@ -50,7 +50,7 @@ namespace CollectaMundo.DomainLogic.Import
             int currentLine = 0;
             while (!reader.EndOfStream)
             {
-                if (totalLines % 100 == 0)
+                if (currentLine % 100 == 0)
                 {
                     cancelToken.ThrowIfCancellationRequested();
                 }
@@ -64,6 +64,13 @@ namespace CollectaMundo.DomainLogic.Import
                 }
 
                 var values = ParseCsvLine(line, delimiter);
+
+                // Skip rows like ";;;;;;;;;;" (all fields empty)
+                if (values.All(v => string.IsNullOrWhiteSpace(v)))
+                {
+                    continue;
+                }
+
                 var item = new TempCardItem();
 
                 for (int i = 0; i < headers.Count; i++)
