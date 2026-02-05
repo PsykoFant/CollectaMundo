@@ -7,3 +7,16 @@ select * from cards where uuid in
 
 select * from tokens where uuid in 
 ("011a9246-7f7c-50c7-ab99-3fc13469c13b","078d4e89-af80-58ae-9be8-7efd5eab2269","0b952d69-5db0-59c2-810b-d4b10d452872","0fc5756d-2258-5d14-b4c4-65aa4efa8f3e","16d88c3b-e766-50ba-8086-917159167368","4767463a-62d8-5706-89e5-6e1155cd4d3e","49481296-5e87-500b-9d95-8011f432466a","62118980-b180-5006-80c4-cdc91d1ca44a","6f222117-73e0-5b15-8f8d-529bfa2cdbc1","701dcbc1-659a-5b77-8eda-2157fec85d8d","75e2741e-f3e4-5f9d-bebd-c591e0c36430","978e07d3-d388-5379-8c20-f67c6af0936d","aaf9b28b-4552-5665-b719-b8711215002b","b3f7e41e-3606-56d0-88c5-82360063aecd","d4588e8f-e5a0-53e5-ac90-0a5183f0d118","db939e9b-b7c1-5084-9880-1856f29766c5","e4dcfe4f-8441-5eec-9f74-a7b3672e90e0","f0bb7e06-9698-5952-b890-442096073675","f565a88d-d448-5c12-90b3-23922d47b9f9","f7161b69-1d04-5f7b-92fe-ea2fd8bf8e88","fcfa94d1-04fc-5ef5-bee3-a1296627c4c1");
+
+-----
+UPDATE KEYRUNIMAGES:
+-----
+SELECT * from keyruneImages
+	WHERE setCode IN 
+	(
+		SELECT setCode FROM cards WHERE uuid IN
+			( ... uuids from tables ... )
+		UNION ALL
+		SELECT setCode FROM tokens WHERE uuid IN
+			( ... uuids from tokens ... )
+	);
