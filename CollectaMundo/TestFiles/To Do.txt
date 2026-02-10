@@ -1,10 +1,12 @@
 TO DO 
 - MVVM refactor
 	- Geneksporter cards og tokens
-
-
-
+    - Få tests grønne
+    - Færdiggør import tests
+    - xaml oprydning
     - CardCoreDto skal ud af infrastruktur laget
+
+Deck editor!
     
 
 
