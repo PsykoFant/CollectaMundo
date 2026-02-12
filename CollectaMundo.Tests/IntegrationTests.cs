@@ -2,10 +2,10 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
-using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
+using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows.Input;
 
@@ -1019,30 +1019,55 @@ namespace CollectaMundo.Tests
 
             Assert.Equal(ownedVm, survivor.CardsOwned);
 
-            await using (var uow = new UnitOfWork(_dbFactory))
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
+
+            const string sql = @"
+            SELECT SUM(cardsOwned) AS SumOwned, SUM(cardsForTrade) AS SumTrade
+            FROM myCollection
+            WHERE uuid = @uuid
+              AND condition = @cond
+              AND language = @lang
+              AND finish = @finish;
+            ";
+
+            using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
+
+            cmd.Parameters.AddWithValue("@uuid", uuidMerge);
+            cmd.Parameters.AddWithValue("@cond", cond);
+            cmd.Parameters.AddWithValue("@lang", lang);
+            cmd.Parameters.AddWithValue("@finish", finish);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            int sumOwnedDb = 0;
+            int sumTradeDb = 0;
+
+            if (await reader.ReadAsync())
             {
-                await uow.BeginReadOnlyAsync();
-                var repo = new EditCollectionRepo();
-                var (sumOwnedDb, _) = await repo.GetTotalsAsync(uuidMerge, cond, lang, finish, uow.CurrentConnection);
-                Assert.Equal(ownedVm, sumOwnedDb);
-                await uow.CommitAsync();
+                // SQLite SUM can return null if no rows match
+                sumOwnedDb = reader["SumOwned"] is DBNull ? 0 : Convert.ToInt32(reader["SumOwned"]);
+                sumTradeDb = reader["SumTrade"] is DBNull ? 0 : Convert.ToInt32(reader["SumTrade"]);
             }
 
-            //// ===== Section I: Check keyword aggregation from b-side of card =====
-            //// Reset
-            //_mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+            await uow.CommitAsync();
 
-            //AssertFiltersCleared();
+            Assert.Equal(ownedVm, sumOwnedDb);
 
-            //// Arrange
-            //_mainVM.FilterVM.Filters["Keywords"].FilterOptions.FirstOrDefault(o => o.OptionName == "Vigilance")!.IsSelected = true;
-            //expectedNames = [.. new List<string> { "Bruna, the Fading Light // Brisela, Voice of Nightmares", "Gisela, the Broken Blade // Brisela, Voice of Nightmares" }.OrderBy(n => n)];
-            //actualNames = [.. _mainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n)];
+            // ===== Section I: Check keyword aggregation from b-side of card =====
+            // Reset
+            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-            //// Assert
-            //Assert.Equal(expectedNames, actualNames);
-            //Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
-            //Assert.Equal(2, _mainVM.AllCardsVM.FilteredCards.Count);
+            AssertFiltersCleared();
+
+            // Arrange
+            _mainVM.FilterVM.Filters["Keywords"].FilterOptions.FirstOrDefault(o => o.OptionName == "Vigilance")!.IsSelected = true;
+            expectedNames = [.. new List<string> { "Bruna, the Fading Light // Brisela, Voice of Nightmares", "Gisela, the Broken Blade // Brisela, Voice of Nightmares" }.OrderBy(n => n)];
+            actualNames = [.. _mainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n)];
+
+            // Assert
+            Assert.Equal(expectedNames, actualNames);
+            Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
+            Assert.Equal(2, _mainVM.AllCardsVM.FilteredCards.Count);
 
         }
     }
