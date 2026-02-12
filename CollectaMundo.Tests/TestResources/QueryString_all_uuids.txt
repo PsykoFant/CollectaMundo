@@ -11,20 +11,23 @@ select * from tokens where uuid in
 -----
 UPDATE SETS:
 -----
-
-SELECT * from sets
-	WHERE code IN 
-	(
-		SELECT setCode FROM cards WHERE uuid IN
-		( ... uuids from cards ... )
-	)
-UNION ALL	
-SELECT * from sets
-	WHERE tokenSetCode IN 
-	(
-		SELECT setCode FROM tokens WHERE uuid IN
-		( ... uuids from tokens ... )
-	);
+select DISTINCT * FROM 
+(
+	SELECT * from sets
+		WHERE code IN 
+		(
+			SELECT setCode FROM cards WHERE uuid IN
+				( ... uuids from cards ... )
+		)
+	UNION ALL	
+	SELECT * from sets
+		WHERE tokenSetCode IN 
+		(
+			SELECT setCode FROM tokens WHERE uuid IN
+				( ... uuids from tokens ... )
+		)
+)
+ORDER by code;
 
 -----
 UPDATE KEYRUNIMAGES:
@@ -33,8 +36,21 @@ SELECT * from keyruneImages
 	WHERE setCode IN 
 	(
 		SELECT setCode FROM cards WHERE uuid IN
-			( ... uuids from tables ... )
+			( ... uuids from cards ... )
 		UNION ALL
 		SELECT setCode FROM tokens WHERE uuid IN
+			( ... uuids from tokens ... )
+	);
+
+-----
+UPDATE UNIQUEMANACOSTIMAGES:
+-----
+SELECT * from uniqueManaCostImages
+	WHERE uniqueManaCost IN 
+	(
+		SELECT manaCost FROM cards WHERE uuid IN
+			( ... uuids from cards ... )
+		UNION ALL
+		SELECT manaCost FROM tokens WHERE uuid IN
 			( ... uuids from tokens ... )
 	);
