@@ -1,6 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
+using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
@@ -37,7 +39,7 @@ namespace CollectaMundo.Tests
             var allCards = _mainVM.AllCardsVM.Cards;
             var myCollection = _mainVM.MyCollectionVM.Cards;
 
-            Assert.Equal(64, allCards.Count);
+            Assert.Equal(65, allCards.Count);
             Assert.Equal(22, myCollection.Count);
         }
     }
@@ -67,7 +69,7 @@ namespace CollectaMundo.Tests
             {
                 "Boundary Lands Ranger",
                 "Bruna, the Fading Light // Brisela, Voice of Nightmares",
-                "Island // Island",
+                "Bloom Tender // Bloom Tender",
                 "Ancient Greenwarden",
                 "Warriors",
                 "Devil",
@@ -460,7 +462,7 @@ namespace CollectaMundo.Tests
                 "Cat",
                 "Unblinking Observer // Unblinking Observer",
                 "Otter",
-                "Island // Island",
+                "Bloom Tender // Bloom Tender",
                 "Dog",
                 "Ranger-Captain of Eos // Ranger-Captain of Eos",
                 "Silent Clearing // Silent Clearing",
@@ -509,33 +511,7 @@ namespace CollectaMundo.Tests
             var keywordsFilter = _mainVM.FilterVM.Filters["Keywords"];
             var expectedKeywordsOptions = new List<string>
             {
-                "Enrage",
-                "Flash",
-                "First strike",
-                "Devoid",
-                "Flying",
-                "Evoke",
-                "Haste",
-                "Kicker",
-                "Enchant",
-                "Landfall",
-                "Lifelink",
-                "Meld",
-                "Radiance",
-                "Changeling",
-                "Reach",
-                "Paradox",
-                "Team TARDIS",
-                "Provoke",
-                "Menace",
-                "Converge",
-                "Fight",
-                "Defender",
-                "Scry",
-                "Sokratic Dialogue",
-                "Ingest",
-                "Prowess",
-                "Vigilance"
+                "Aftermath","Changeling","Converge","Defender","Devoid","Enchant","Enrage","Evoke","Fight","First strike","Flash","Flying","Haste","Ingest","Kicker","Landfall","Lifelink","Meld","Menace","Paradox","Provoke","Prowess","Radiance","Reach","Scry","Sokratic Dialogue","Team TARDIS","Vigilance"
             };
             var expectedKeyWordsOperators = new[]
             {
@@ -734,7 +710,7 @@ namespace CollectaMundo.Tests
 
             void AssertFiltersCleared()
             {
-                Assert.Equal(64, _mainVM.AllCardsVM.FilteredCards.Count);
+                Assert.Equal(65, _mainVM.AllCardsVM.FilteredCards.Count);
                 Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
                 Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
             }
@@ -856,7 +832,7 @@ namespace CollectaMundo.Tests
             rulesFilter.HandleKeyLogic(Key.Enter); // skip delay, apply immediately
 
             // Assert
-            Assert.Equal(45, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(46, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal("Text: \"a\"", _mainVM.FilterVM.FilterSummary);
             Assert.Equal(21, _mainVM.MyCollectionVM.FilteredCards.Count);
 
@@ -1043,14 +1019,14 @@ namespace CollectaMundo.Tests
 
             Assert.Equal(ownedVm, survivor.CardsOwned);
 
-            //await using (var uow = new UnitOfWork(_dbFactory))
-            //{
-            //    await uow.BeginReadOnlyAsync();
-            //    var repo = new EditCollectionRepo();
-            //    var (sumOwnedDb, _) = await repo.GetTotalsAsync(uuidMerge, cond, lang, finish, uow.CurrentConnection);
-            //    Assert.Equal(ownedVm, sumOwnedDb);
-            //    await uow.CommitAsync();
-            //}
+            await using (var uow = new UnitOfWork(_dbFactory))
+            {
+                await uow.BeginReadOnlyAsync();
+                var repo = new EditCollectionRepo();
+                var (sumOwnedDb, _) = await repo.GetTotalsAsync(uuidMerge, cond, lang, finish, uow.CurrentConnection);
+                Assert.Equal(ownedVm, sumOwnedDb);
+                await uow.CommitAsync();
+            }
 
             //// ===== Section I: Check keyword aggregation from b-side of card =====
             //// Reset
