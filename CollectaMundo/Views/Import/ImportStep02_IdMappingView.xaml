@@ -44,7 +44,7 @@
                 </List>
             </FlowDocument>
         </FlowDocumentScrollViewer>
-        <ListView Grid.Row="1" ItemsSource="{Binding Mappings}" HorizontalAlignment="Center" VerticalAlignment="Top">
+        <ListView Grid.Row="1" ItemsSource="{Binding IdMappings}" HorizontalAlignment="Center" VerticalAlignment="Top">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Import file card Id header">

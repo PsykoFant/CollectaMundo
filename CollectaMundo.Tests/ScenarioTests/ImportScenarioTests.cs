@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
@@ -70,9 +71,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Assert step 1 completed successfully
             step1Result.Code.Should().Be(OperationResultCode.Success);
-            importVM.ImportCardList.Should().NotBeEmpty();
-
-
+            importVM.ImportCardList.Should().HaveCount(8);
 
             // =====================================================
             // Step 2 – ID column mapping
@@ -83,16 +82,65 @@ namespace CollectaMundo.Tests.ScenarioTests
             importVM.ProgressStep.Should().Be("ID column mapping");
             step2.PrimaryActionButtonText.Should().Contain("Proceed");
 
+            // Assert CSV headers available
+            step2.IdMappings.Should().HaveCount(1);
+            var mapping = step2.IdMappings[0];
+
+            mapping.CsvHeaders.Should().HaveCount(19);
+            mapping.SelectedCsvHeader.Should().NotBeNull();
+            mapping.SelectedDatabaseField.Should().NotBeNull();
+            step2.CanExecutePrimaryAction.Should().BeTrue();
+
+            // Simulate clearing mapping
+            mapping.SelectedCsvHeader = null;
+            mapping.SelectedDatabaseField = null;
+
+            // Assert cleared state
+            mapping.SelectedCsvHeader.Should().BeNull();
+            mapping.SelectedDatabaseField.Should().BeNull();
+
+            // CanExecute should now be false
+            step2.CanExecutePrimaryAction.Should().BeFalse();
+
+            // Map to MCM Id
+            mapping.SelectedCsvHeader = "MCM ID";
+            mapping.SelectedDatabaseField = "mcmId";
+
+            // CanExecute should now be true
+            step2.CanExecutePrimaryAction.Should().BeTrue();
+
+            // Map using Id
+            var step2Result = await step2.OnPrimaryAction();
+
+            // Assert step 2 completed successfully
+            step2Result.Code.Should().Be(OperationResultCode.Success);
+
+            // After ID mapping, we should have 3 cards with UUIDs (the ones that had MCM IDs in the CSV)
+            importVM.ImportCardList.Count(HasUuid).Should().Be(3);
+
+            // Existing uuid values should be overwrítten if not mapping on 'uuid' field
+            var offendingItems = importVM.ImportCardList.Where(item => item.CsvFields.TryGetValue("uuid", out var value) && string.Equals(value, "shouldBeOverwrittenAfterStep2", StringComparison.OrdinalIgnoreCase)).ToList();
+            offendingItems.Should().BeEmpty("Step 2 should overwrite placeholder UUID values");
 
             // =====================================================
             // Step 3 – Name & set mapping
             // =====================================================
+            var step3 = (ImportStep03_NameSetMappingViewModel)importVM.CurrentStepViewModel;
+            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep03_NameSetMappingViewModel>();
+            importVM.ProgressStep.Should().Be("Name and set mapping");
+            step2.PrimaryActionButtonText.Should().Contain("Proceed");
 
 
             // =====================================================
             // ...
             // Continue same pattern up to Step 9
             // =====================================================
+        }
+
+        static bool HasUuid(TempCardItem item)
+        {
+            return item.CsvFields.TryGetValue("uuid", out var uuid)
+                   && !string.IsNullOrWhiteSpace(uuid);
         }
     }
     internal sealed class TestFileSystemPicker : IFileSystemPicker

@@ -288,8 +288,6 @@ namespace CollectaMundo.ViewModels.Import
 
                 IdMappings.Add(mapping);
 
-                DebugAllItems();
-
                 GoToStep(ImportStep.IdColumnMapping);
                 return new(OperationResultCode.Success, "CSV parsed successfully.");
             }
@@ -305,6 +303,8 @@ namespace CollectaMundo.ViewModels.Import
             var cancelToken = _userPromptService.GetNewCancellationToken();
 
             var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping, Progress, cancelToken));
+
+            DebugAllItems();
 
             Debug.WriteLine("ImportViewModel: ID Matching done");
 

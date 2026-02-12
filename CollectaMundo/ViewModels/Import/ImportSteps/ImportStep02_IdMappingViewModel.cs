@@ -30,13 +30,13 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         private void HookEvents()
         {
             // Subscribe to existing items
-            foreach (var m in Mappings)
+            foreach (var m in IdMappings)
             {
                 m.PropertyChanged += Mapping_PropertyChanged;
             }
 
             // And subscribe to collection change for future additions/removals
-            Mappings.CollectionChanged += Mappings_CollectionChanged;
+            IdMappings.CollectionChanged += Mappings_CollectionChanged;
         }
 
         // --------------------------------------------
@@ -53,7 +53,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         // Step-level button enablement
         // --------------------------------------------
-        public bool CanExecutePrimaryAction => Mappings.All(m => !string.IsNullOrEmpty(m.SelectedCsvHeader) && !string.IsNullOrEmpty(m.SelectedDatabaseField));
+        public bool CanExecutePrimaryAction => IdMappings.All(m => !string.IsNullOrEmpty(m.SelectedCsvHeader) && !string.IsNullOrEmpty(m.SelectedDatabaseField));
         public bool CanExecuteSecondaryAction => true;
 
         // --------------------------------------------
@@ -83,7 +83,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
-        public ObservableCollection<IdColumnMapping> Mappings => _parent.IdMappings;
+        public ObservableCollection<IdColumnMapping> IdMappings => _parent.IdMappings;
         private void Mappings_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)
