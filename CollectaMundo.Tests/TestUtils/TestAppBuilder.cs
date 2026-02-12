@@ -28,6 +28,7 @@ using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Tests.ScenarioTests;
 using CollectaMundo.ViewModels;
 using System.Windows;
 

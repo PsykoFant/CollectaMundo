@@ -9,7 +9,7 @@ using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows.Input;
 
-namespace CollectaMundo.Tests
+namespace CollectaMundo.Tests.ScenarioTests
 {
     public sealed class ImmediateScheduler : IFacetUpdateScheduler
     {
