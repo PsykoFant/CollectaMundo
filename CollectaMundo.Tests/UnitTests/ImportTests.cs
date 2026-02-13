@@ -145,9 +145,9 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.NotNull(result);
             Assert.Equal(0, result.ItemsWithMultipleUuids);
 
-            Assert.True(item.CsvFields.ContainsKey("uuid"), "uuid must be present for single match");
-            Assert.False(item.CsvFields.ContainsKey("uuids"), "uuids must NOT be present for single match");
-            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["uuid"]));
+            Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), "uuid must be present for single match");
+            Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), "uuids must NOT be present for single match");
+            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["collectaMundoUuidImportField"]));
         }
 
         [Fact]
@@ -165,9 +165,9 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.NotNull(result);
             Assert.Equal(0, result.ItemsWithMultipleUuids);
 
-            Assert.True(item.CsvFields.ContainsKey("uuid"), "uuid must be present for single match");
-            Assert.False(item.CsvFields.ContainsKey("uuids"), "uuids must NOT be present for single match");
-            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["uuid"]));
+            Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), "uuid must be present for single match");
+            Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), "uuids must NOT be present for single match");
+            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["collectaMundoUuidImportField"]));
         }
 
         [Fact]
@@ -185,9 +185,9 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.NotNull(result);
             Assert.Equal(0, result.ItemsWithMultipleUuids);
 
-            Assert.True(item.CsvFields.ContainsKey("uuid"), "uuid must be present for single match");
-            Assert.False(item.CsvFields.ContainsKey("uuids"), "uuids must NOT be present for single match");
-            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["uuid"]));
+            Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), "uuid must be present for single match");
+            Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), "uuids must NOT be present for single match");
+            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["collectaMundoUuidImportField"]));
         }
 
         [Fact]
@@ -205,9 +205,9 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.NotNull(result);
             Assert.Equal(0, result.ItemsWithMultipleUuids);
 
-            Assert.True(item.CsvFields.ContainsKey("uuid"), "uuid must be present for single match");
-            Assert.False(item.CsvFields.ContainsKey("uuids"), "uuids must NOT be present for single match");
-            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["uuid"]));
+            Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), "uuid must be present for single match");
+            Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), "uuids must NOT be present for single match");
+            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["collectaMundoUuidImportField"]));
         }
 
         [Fact]
@@ -225,9 +225,9 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.NotNull(result);
             Assert.Equal(0, result.ItemsWithMultipleUuids);
 
-            Assert.True(item.CsvFields.ContainsKey("uuid"), "uuid must be present for single match");
-            Assert.False(item.CsvFields.ContainsKey("uuids"), "uuids must NOT be present for single match");
-            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["uuid"]));
+            Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), "uuid must be present for single match");
+            Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), "uuids must NOT be present for single match");
+            Assert.False(string.IsNullOrWhiteSpace(item.CsvFields["collectaMundoUuidImportField"]));
         }
 
         [Fact]
@@ -245,10 +245,10 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.NotNull(result);
             Assert.Equal(1, result.ItemsWithMultipleUuids);
 
-            Assert.False(item.CsvFields.ContainsKey("uuid"), "uuid must NOT be present for multi-match");
-            Assert.True(item.CsvFields.ContainsKey("uuids"), "uuids must be present for multi-match");
+            Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), "uuid must NOT be present for multi-match");
+            Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), "uuids must be present for multi-match");
 
-            var raw = item.CsvFields["uuids"];
+            var raw = item.CsvFields["collectaMundoUuidsImportField"];
             Assert.False(string.IsNullOrWhiteSpace(raw), "uuids string must not be empty");
 
             var split = raw.Split(",", StringSplitOptions.RemoveEmptyEntries);
@@ -270,10 +270,10 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.NotNull(result);
             Assert.Equal(1, result.ItemsWithMultipleUuids);
 
-            Assert.False(item.CsvFields.ContainsKey("uuid"), "uuid must NOT be present for multi-match");
-            Assert.True(item.CsvFields.ContainsKey("uuids"), "uuids must be present for multi-match");
+            Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), "uuid must NOT be present for multi-match");
+            Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), "uuids must be present for multi-match");
 
-            var raw = item.CsvFields["uuids"];
+            var raw = item.CsvFields["collectaMundoUuidsImportField"];
             Assert.False(string.IsNullOrWhiteSpace(raw), "uuids string must not be empty");
 
             var split = raw.Split(",", StringSplitOptions.RemoveEmptyEntries);
@@ -338,17 +338,17 @@ namespace CollectaMundo.Tests.UnitTests
                     case "jan jansen, chaos crafter":
                     case "Zombie":
                         // Single-match items must have uuid only
-                        Assert.True(item.CsvFields.ContainsKey("uuid"), $"{name} should have uuid");
-                        Assert.False(item.CsvFields.ContainsKey("uuids"), $"{name} should NOT have uuids");
+                        Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), $"{name} should have uuid");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), $"{name} should NOT have uuids");
                         break;
 
                     case "Prismatic Ending":
                         // Multi-match must have uuids only
-                        Assert.True(item.CsvFields.ContainsKey("uuids"), $"{name} should have uuids");
-                        Assert.False(item.CsvFields.ContainsKey("uuid"), $"{name} should NOT have uuid");
+                        Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), $"{name} should have uuids");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), $"{name} should NOT have uuid");
 
                         // Validate format: comma-separated multi UUIDs
-                        var raw = item.CsvFields["uuids"];
+                        var raw = item.CsvFields["collectaMundoUuidsImportField"];
                         Assert.False(string.IsNullOrWhiteSpace(raw));
                         var split = raw.Split(",", StringSplitOptions.RemoveEmptyEntries);
                         Assert.True(split.Length > 1, $"{name} should map to multiple UUIDs");
@@ -357,8 +357,8 @@ namespace CollectaMundo.Tests.UnitTests
                     case "No Exist Card":
                     case "Brisela, Voice of Nightmares":
                         // No-match items should have NEITHER uuid nor uuids
-                        Assert.False(item.CsvFields.ContainsKey("uuid"), $"{name} should NOT have uuid");
-                        Assert.False(item.CsvFields.ContainsKey("uuids"), $"{name} should NOT have uuids");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), $"{name} should NOT have uuid");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), $"{name} should NOT have uuids");
                         break;
 
                     default:
@@ -402,17 +402,17 @@ namespace CollectaMundo.Tests.UnitTests
                     case "jan jansen, chaos crafter":
                     case "Zombie":
                         // Single-match items must have uuid only
-                        Assert.True(item.CsvFields.ContainsKey("uuid"), $"{name} should have uuid");
-                        Assert.False(item.CsvFields.ContainsKey("uuids"), $"{name} should NOT have uuids");
+                        Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), $"{name} should have uuid");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), $"{name} should NOT have uuids");
                         break;
 
                     case "Prismatic Ending":
                         // Multi-match must have uuids only
-                        Assert.True(item.CsvFields.ContainsKey("uuids"), $"{name} should have uuids");
-                        Assert.False(item.CsvFields.ContainsKey("uuid"), $"{name} should NOT have uuid");
+                        Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), $"{name} should have uuids");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), $"{name} should NOT have uuid");
 
                         // Validate format: comma-separated multi UUIDs
-                        var raw = item.CsvFields["uuids"];
+                        var raw = item.CsvFields["collectaMundoUuidsImportField"];
                         Assert.False(string.IsNullOrWhiteSpace(raw));
                         var split = raw.Split(",", StringSplitOptions.RemoveEmptyEntries);
                         Assert.True(split.Length > 1, $"{name} should map to multiple UUIDs");
@@ -421,8 +421,8 @@ namespace CollectaMundo.Tests.UnitTests
                     case "No Exist Card":
                     case "Brisela, Voice of Nightmares":
                         // No-match items should have NEITHER uuid nor uuids
-                        Assert.False(item.CsvFields.ContainsKey("uuid"), $"{name} should NOT have uuid");
-                        Assert.False(item.CsvFields.ContainsKey("uuids"), $"{name} should NOT have uuids");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), $"{name} should NOT have uuid");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), $"{name} should NOT have uuids");
                         break;
 
                     default:
@@ -466,17 +466,17 @@ namespace CollectaMundo.Tests.UnitTests
                     case "jan jansen, chaos crafter":
                     case "Unblinking Observer // Unblinking Observer":
                         // Single-match items must have uuid only
-                        Assert.True(item.CsvFields.ContainsKey("uuid"), $"{name} should have uuid");
-                        Assert.False(item.CsvFields.ContainsKey("uuids"), $"{name} should NOT have uuids");
+                        Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), $"{name} should have uuid");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), $"{name} should NOT have uuids");
                         break;
 
                     case "Prismatic Ending":
                         // Multi-match must have uuids only
-                        Assert.True(item.CsvFields.ContainsKey("uuids"), $"{name} should have uuids");
-                        Assert.False(item.CsvFields.ContainsKey("uuid"), $"{name} should NOT have uuid");
+                        Assert.True(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), $"{name} should have uuids");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), $"{name} should NOT have uuid");
 
                         // Validate format: comma-separated multi UUIDs
-                        var raw = item.CsvFields["uuids"];
+                        var raw = item.CsvFields["collectaMundoUuidsImportField"];
                         Assert.False(string.IsNullOrWhiteSpace(raw));
                         var split = raw.Split(",", StringSplitOptions.RemoveEmptyEntries);
                         Assert.True(split.Length > 1, $"{name} should map to multiple UUIDs");
@@ -485,8 +485,8 @@ namespace CollectaMundo.Tests.UnitTests
                     case "No Exist Card":
                     case "Brisela, Voice of Nightmares":
                         // No-match items should have NEITHER uuid nor uuids
-                        Assert.False(item.CsvFields.ContainsKey("uuid"), $"{name} should NOT have uuid");
-                        Assert.False(item.CsvFields.ContainsKey("uuids"), $"{name} should NOT have uuids");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidImportField"), $"{name} should NOT have uuid");
+                        Assert.False(item.CsvFields.ContainsKey("collectaMundoUuidsImportField"), $"{name} should NOT have uuids");
                         break;
 
                     default:
@@ -518,10 +518,10 @@ namespace CollectaMundo.Tests.UnitTests
 
             var card = processed[0];
 
-            Assert.False(card.CsvFields.ContainsKey("uuid"));
-            Assert.True(card.CsvFields.ContainsKey("uuids"));
+            Assert.False(card.CsvFields.ContainsKey("collectaMundoUuidImportField"));
+            Assert.True(card.CsvFields.ContainsKey("collectaMundoUuidsImportField"));
 
-            var raw = card.CsvFields["uuids"];
+            var raw = card.CsvFields["collectaMundoUuidsImportField"];
             Assert.False(string.IsNullOrWhiteSpace(raw));
             Assert.True(raw.Split(",", StringSplitOptions.RemoveEmptyEntries).Length > 1);
         }
@@ -552,19 +552,19 @@ namespace CollectaMundo.Tests.UnitTests
             // ----- Viashino Runner → multi-match -----
             var runner = processed.First(i => i.CsvFields["CardName"] == "Viashino Runner");
 
-            Assert.True(runner.CsvFields.ContainsKey("uuids"), "Runner must have multiple UUIDs.");
-            Assert.False(runner.CsvFields.ContainsKey("uuid"), "Runner must not have single uuid.");
+            Assert.True(runner.CsvFields.ContainsKey("collectaMundoUuidsImportField"), "Runner must have multiple UUIDs.");
+            Assert.False(runner.CsvFields.ContainsKey("collectaMundoUuidImportField"), "Runner must not have single uuid.");
 
-            var runnerRaw = runner.CsvFields["uuids"];
+            var runnerRaw = runner.CsvFields["collectaMundoUuidsImportField"];
             Assert.False(string.IsNullOrWhiteSpace(runnerRaw));
             Assert.True(runnerRaw.Split(",", StringSplitOptions.RemoveEmptyEntries).Length > 1);
 
             // ----- Jan Jansen → single match -----
             var jj = processed.First(i => i.CsvFields["CardName"] == "Jan Jansen, Chaos Crafter");
 
-            Assert.True(jj.CsvFields.ContainsKey("uuid"), "Jan Jansen must have single uuid.");
-            Assert.False(jj.CsvFields.ContainsKey("uuids"), "Jan Jansen must not have multi uuid list.");
-            Assert.False(string.IsNullOrWhiteSpace(jj.CsvFields["uuid"]));
+            Assert.True(jj.CsvFields.ContainsKey("collectaMundoUuidImportField"), "Jan Jansen must have single uuid.");
+            Assert.False(jj.CsvFields.ContainsKey("collectaMundoUuidsImportField"), "Jan Jansen must not have multi uuid list.");
+            Assert.False(string.IsNullOrWhiteSpace(jj.CsvFields["collectaMundoUuidImportField"]));
         }
 
     }

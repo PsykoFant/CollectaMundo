@@ -303,7 +303,7 @@ namespace CollectaMundo.DomainLogic.Import
             for (int i = 0; i < batch.Count; i++)
             {
                 // skip items already matched by SetCode / SetName
-                if (batch[i].CsvFields.ContainsKey("collectaMundoUuidImportField") || batch[i].CsvFields.ContainsKey("uuids"))
+                if (batch[i].CsvFields.ContainsKey("collectaMundoUuidImportField") || batch[i].CsvFields.ContainsKey("collectaMundoUuidsImportField"))
                 {
                     continue;
                 }
@@ -334,7 +334,7 @@ namespace CollectaMundo.DomainLogic.Import
             else if (list.Count > 1)
             {
                 item.CsvFields.Remove("collectaMundoUuidImportField");
-                item.CsvFields["collectaMundoUuidIsmportField"] = string.Join(",", list);
+                item.CsvFields["collectaMundoUuidsImportField"] = string.Join(",", list);
             }
             // list.Count == 0 → no assignment
         }
