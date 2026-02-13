@@ -86,7 +86,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             step2.IdMappings.Should().HaveCount(1);
             var mapping = step2.IdMappings[0];
 
-            mapping.CsvHeaders.Should().HaveCount(19);
+            mapping.CsvHeaders.Should().HaveCount(18);
             mapping.SelectedCsvHeader.Should().NotBeNull();
             mapping.SelectedDatabaseField.Should().NotBeNull();
             step2.CanExecutePrimaryAction.Should().BeTrue();
@@ -109,7 +109,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // CanExecute should now be true
             step2.CanExecutePrimaryAction.Should().BeTrue();
 
-            // Map using Id
+            // Proceed to map using Id
             var step2Result = await step2.OnPrimaryAction();
 
             // Assert step 2 completed successfully
@@ -118,9 +118,6 @@ namespace CollectaMundo.Tests.ScenarioTests
             // After ID mapping, we should have 3 cards with UUIDs (the ones that had MCM IDs in the CSV)
             importVM.ImportCardList.Count(HasUuid).Should().Be(3);
 
-            // Existing uuid values should be overwrítten if not mapping on 'uuid' field
-            var offendingItems = importVM.ImportCardList.Where(item => item.CsvFields.TryGetValue("uuid", out var value) && string.Equals(value, "shouldBeOverwrittenAfterStep2", StringComparison.OrdinalIgnoreCase)).ToList();
-            offendingItems.Should().BeEmpty("Step 2 should overwrite placeholder UUID values");
 
             // =====================================================
             // Step 3 – Name & set mapping
@@ -130,6 +127,28 @@ namespace CollectaMundo.Tests.ScenarioTests
             importVM.ProgressStep.Should().Be("Name and set mapping");
             step2.PrimaryActionButtonText.Should().Contain("Proceed");
 
+            step3.NameSetMappings.Should().HaveCount(3);
+            var nameSetmapping = step3.NameSetMappings;
+
+            // Check CsvFieldsMappings object is correctly initialized with expected fields to map
+            nameSetmapping[0].FieldToMap.Should().Be(ImportField.CardName);
+            nameSetmapping[1].FieldToMap.Should().Be(ImportField.SetName);
+            nameSetmapping[2].FieldToMap.Should().Be(ImportField.SetCode);
+            nameSetmapping[0].CsvHeaders.Should().HaveCount(18);
+
+            // Assert CSV headers pre-selected
+            nameSetmapping[0].SelectedCsvHeader.Should().Be("CardName");
+            nameSetmapping[1].SelectedCsvHeader.Should().Be("Set");
+            nameSetmapping[2].SelectedCsvHeader.Should().Be("Set Code");
+
+            // Proceed to map using Name & Set
+            var step3Result = await step3.OnPrimaryAction();
+
+            // Assert step 3 completed successfully
+            step3Result.Code.Should().Be(OperationResultCode.Success);
+
+            // After Name andSet mapping, we should have 3 cards with UUIDs (the ones that had MCM IDs in the CSV)
+            importVM.ImportCardList.Count(HasUuid).Should().Be(6);
 
             // =====================================================
             // ...
@@ -139,7 +158,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
         static bool HasUuid(TempCardItem item)
         {
-            return item.CsvFields.TryGetValue("uuid", out var uuid)
+            return item.CsvFields.TryGetValue("collectaMundoUuidImportField", out var uuid)
                    && !string.IsNullOrWhiteSpace(uuid);
         }
     }

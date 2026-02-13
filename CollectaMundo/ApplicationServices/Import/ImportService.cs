@@ -148,11 +148,9 @@ namespace CollectaMundo.ApplicationServices.Import
                 {
                     token.ThrowIfCancellationRequested();
 
-                    var batch = importCandidates
-                        .Skip(start)
-                        .Take(BatchSize)
-                        .Where(i => !_importLogic.IsItemResolved(i))
-                        .ToList();
+                    var batch = importCandidates.Skip(start).Take(BatchSize).Where(i => !_importLogic.IsItemResolved(i)).ToList();
+
+                    Debug.WriteLine($"[TryResolveUuidsFromNameAndSetAsync] Processing batch {start / BatchSize + 1} with {batch.Count} items ... ");
 
                     if (batch.Count == 0)
                     {

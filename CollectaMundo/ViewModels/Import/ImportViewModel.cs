@@ -44,7 +44,7 @@ namespace CollectaMundo.ViewModels.Import
         [ObservableProperty]
         private string? progressDetailMessage;
 
-        //  Button Enablement
+        // Button Enablement
         // When either of these two change, the computed button properties must refresh
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsPrimaryActionButtonEnabled))]
@@ -304,10 +304,6 @@ namespace CollectaMundo.ViewModels.Import
 
             var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping, Progress, cancelToken));
 
-            DebugAllItems();
-
-            Debug.WriteLine("ImportViewModel: ID Matching done");
-
             if (result.TotalItems == result.ItemsWithUuid)
             {
                 if (result.ItemsWithMultipleUuids > 0)
@@ -335,6 +331,8 @@ namespace CollectaMundo.ViewModels.Import
             var cancelToken = _userPromptService.GetNewCancellationToken();
 
             var result = await Task.Run(() => _importService.TryResolveUuidsFromNameAndSetAsync(ImportCardList, NameSetMappings, Progress, cancelToken));
+
+            DebugAllItems();
 
             if (result.ItemsWithMultipleUuids > 0)
             {

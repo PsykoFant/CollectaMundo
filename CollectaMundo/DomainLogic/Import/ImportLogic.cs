@@ -205,12 +205,12 @@ namespace CollectaMundo.DomainLogic.Import
 
                 if (uuids.Count == 1)
                 {
-                    item.CsvFields["uuid"] = uuids[0];
+                    item.CsvFields["collectaMundoUuidImportField"] = uuids[0];
                     matchedUuid++;
                 }
                 else
                 {
-                    item.CsvFields["uuids"] = string.Join(",", uuids);
+                    item.CsvFields["collectaMundoUuidsImportField"] = string.Join(",", uuids);
                     matchedUuid++;
                     matchedMultipleUuids++;
                 }
@@ -247,7 +247,7 @@ namespace CollectaMundo.DomainLogic.Import
         }
         public bool IsItemResolved(TempCardItem item)
         {
-            return item.CsvFields.ContainsKey("uuid") || item.CsvFields.ContainsKey("uuids");
+            return item.CsvFields.ContainsKey("collectaMundoUuidImportField") || item.CsvFields.ContainsKey("collectaMundoUuidsImportField");
         }
 
         //  Apply matches — per item fallback logic
@@ -277,7 +277,7 @@ namespace CollectaMundo.DomainLogic.Import
             for (int i = 0; i < batch.Count; i++)
             {
                 // skip items already matched by SetCode
-                if (batch[i].CsvFields.ContainsKey("uuid") || batch[i].CsvFields.ContainsKey("uuids"))
+                if (batch[i].CsvFields.ContainsKey("collectaMundoUuidImportField") || batch[i].CsvFields.ContainsKey("collectaMundoUuidsImportField"))
                 {
                     continue;
                 }
@@ -303,7 +303,7 @@ namespace CollectaMundo.DomainLogic.Import
             for (int i = 0; i < batch.Count; i++)
             {
                 // skip items already matched by SetCode / SetName
-                if (batch[i].CsvFields.ContainsKey("uuid") || batch[i].CsvFields.ContainsKey("uuids"))
+                if (batch[i].CsvFields.ContainsKey("collectaMundoUuidImportField") || batch[i].CsvFields.ContainsKey("uuids"))
                 {
                     continue;
                 }
@@ -328,13 +328,13 @@ namespace CollectaMundo.DomainLogic.Import
         {
             if (list.Count == 1)
             {
-                item.CsvFields.Remove("uuids");
-                item.CsvFields["uuid"] = list[0];
+                item.CsvFields.Remove("collectaMundoUuidsImportField");
+                item.CsvFields["collectaMundoUuidImportField"] = list[0];
             }
             else if (list.Count > 1)
             {
-                item.CsvFields.Remove("uuid");
-                item.CsvFields["uuids"] = string.Join(",", list);
+                item.CsvFields.Remove("collectaMundoUuidImportField");
+                item.CsvFields["collectaMundoUuidIsmportField"] = string.Join(",", list);
             }
             // list.Count == 0 → no assignment
         }
@@ -348,8 +348,8 @@ namespace CollectaMundo.DomainLogic.Import
 
             foreach (var item in items)
             {
-                bool hasUuid = item.CsvFields.ContainsKey("uuid");
-                bool hasUuids = item.CsvFields.ContainsKey("uuids");
+                bool hasUuid = item.CsvFields.ContainsKey("collectaMundoUuidImportField");
+                bool hasUuids = item.CsvFields.ContainsKey("collectaMundoUuidsImportField");
 
                 if (hasUuid && hasUuids)
                 {
@@ -377,7 +377,7 @@ namespace CollectaMundo.DomainLogic.Import
 
             return new ImportMatchSummaryDto
             {
-                ItemsWithMultipleUuids = items.Count(i => i.CsvFields.ContainsKey("uuids"))
+                ItemsWithMultipleUuids = items.Count(i => i.CsvFields.ContainsKey("collectaMundoUuidsImportField"))
             };
         }
         #endregion
@@ -398,13 +398,13 @@ namespace CollectaMundo.DomainLogic.Import
 
                 if (match != null)
                 {
-                    match.CsvFields["uuid"] = selection.SelectedUuid;
-                    match.CsvFields.Remove("uuids"); // remove ambiguity marker
+                    match.CsvFields["collectaMundoUuidImportField"] = selection.SelectedUuid;
+                    match.CsvFields.Remove("collectaMundoUuidsImportField"); // remove ambiguity marker
                 }
             }
 
             var stillUnresolved = importCandidates.Count(i =>
-                i.CsvFields.TryGetValue("uuids", out var uuids) &&
+                i.CsvFields.TryGetValue("collectaMundoUuidsImportField", out var uuids) &&
                 !string.IsNullOrWhiteSpace(uuids));
 
             return new ImportMatchSummaryDto
@@ -419,7 +419,7 @@ namespace CollectaMundo.DomainLogic.Import
         #region Step 9
         public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {
-            var uuidHeader = "uuid"; // already normalized earlier
+            var uuidHeader = "collectaMundoUuidImportField"; // already normalized earlier
             var ownedHeader = GetMappedHeader(fieldMappings, ImportField.CardsOwned);
             var tradeHeader = GetMappedHeader(fieldMappings, ImportField.CardsForTrade);
             var conditionHeader = GetMappedHeader(fieldMappings, ImportField.Condition);

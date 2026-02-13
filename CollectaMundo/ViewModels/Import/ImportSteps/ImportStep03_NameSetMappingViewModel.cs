@@ -39,6 +39,9 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
             var firstItem = _parent.ImportCardList.FirstOrDefault();
             var csvHeaders = firstItem?.CsvFields.Keys.ToList() ?? [];
 
+            // Remove the field we added in Step 2 for internal use - we don't want to show it as an option for mapping
+            csvHeaders.Remove("collectaMundoUuidImportField");
+
             foreach (var field in new[] { ImportField.CardName, ImportField.SetName, ImportField.SetCode })
             {
                 NameSetMappings.Add(new CsvFieldMapping
