@@ -366,7 +366,7 @@ namespace CollectaMundo.ViewModels.Import
             {
                 if (CurrentStepViewModel is ImportStep04_MultipleUuidsViewModel step4)
                 {
-                    return [.. step4.MultipleChoices];
+                    return [.. step4.MultipleUuidItems];
                 }
 
                 return [];

@@ -149,6 +149,37 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // After Name andSet mapping, we should have 3 cards with UUIDs (the ones that had MCM IDs in the CSV)
             importVM.ImportCardList.Count(HasUuid).Should().Be(6);
+            importVM.ImportCardList.Count(HasUuids).Should().Be(1); // One card should have multiple UUIDs due to multiple matches
+
+            // =====================================================
+            // Step 4 – Multiple UUID matches
+            // =====================================================
+            var step4 = (ImportStep04_MultipleUuidsViewModel)importVM.CurrentStepViewModel;
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep04_MultipleUuidsViewModel && importVM.ProgressStep == "Resolve multiple UUID matches",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 4 should be active and progress label updated");
+            step4.PrimaryActionButtonText.Should().Contain("Proceed");
+
+            // Check that MultipleUuidsItem object is correctly populated with the expected card that has multiple UUID matches
+            step4.MultipleUuidItems.Should().HaveCount(1);
+            var multipleUuidItem = step4.MultipleUuidItems[0];
+            multipleUuidItem.Name.Should().Contain("Prismatic Ending");
+            multipleUuidItem.VersionedUuids.Should().HaveCount(2);
+            multipleUuidItem.SelectedUuid.Should().BeNull();
+            multipleUuidItem.VersionedUuids[0].DisplayText.Should().Be("Version 1");
+            multipleUuidItem.VersionedUuids[1].DisplayText.Should().Be("Version 2");
+
+            // Choose version 2 and proceed
+            multipleUuidItem.SelectedUuid = "Version 2";
+            var step4Result = await step4.OnPrimaryAction();
+
+            // Assert step 4 completed successfully
+            step4Result.Code.Should().Be(OperationResultCode.Success);
+
+            // After choosing the correct UUID for the card with multiple matches, we should now have 7 cards with UUIDs in total (the 3 from ID mapping + the 3 from Name/Set mapping + one we just resolved)
+            importVM.ImportCardList.Count(HasUuid).Should().Be(7);
+            importVM.ImportCardList.Count(HasUuids).Should().Be(0); // We should have resolved the multiple UUIDs, so none should have multiple anymore
+
 
             // =====================================================
             // ...
@@ -160,6 +191,29 @@ namespace CollectaMundo.Tests.ScenarioTests
         {
             return item.CsvFields.TryGetValue("collectaMundoUuidImportField", out var uuid)
                    && !string.IsNullOrWhiteSpace(uuid);
+        }
+
+        static bool HasUuids(TempCardItem item)
+        {
+            return item.CsvFields.TryGetValue("collectaMundoUuidsImportField", out var uuid)
+                   && !string.IsNullOrWhiteSpace(uuid);
+        }
+        private static async Task EventuallyAsync(Func<bool> condition, TimeSpan timeout, string? because = null)
+        {
+            var start = DateTime.UtcNow;
+
+            while (DateTime.UtcNow - start < timeout)
+            {
+                if (condition())
+                {
+                    return;
+                }
+
+                await Task.Delay(10);
+            }
+
+            // One last check before failing (helps if it flips right at the end)
+            condition().Should().BeTrue(because ?? "condition was not met before timeout");
         }
     }
     internal sealed class TestFileSystemPicker : IFileSystemPicker

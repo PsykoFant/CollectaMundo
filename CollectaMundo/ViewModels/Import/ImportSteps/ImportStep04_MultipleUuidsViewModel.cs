@@ -9,7 +9,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
     public partial class ImportStep04_MultipleUuidsViewModel : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent;
-        public ObservableCollection<MultipleUuidsItem> MultipleChoices { get; } = [];
+        public ObservableCollection<MultipleUuidsItem> MultipleUuidItems { get; } = [];
 
         // --------------------------------------------
         // Constructor
@@ -28,7 +28,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         private void Initialize()
         {
             var items = _parent.ImportCardList
-                .Where(item => item.CsvFields.TryGetValue("uuids", out var uuids) && !string.IsNullOrWhiteSpace(uuids))
+                .Where(item => item.CsvFields.TryGetValue("collectaMundoUuidsImportField", out var uuids) && !string.IsNullOrWhiteSpace(uuids))
                 .Select(item =>
                 {
                     var selectedCardNameHeader = _parent.NameSetMappings.FirstOrDefault(m => m.FieldToMap == ImportField.CardName)?.SelectedCsvHeader;
@@ -37,7 +37,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                     ? n
                     : "Unknown";
 
-                    var uuidList = item.CsvFields["uuids"].Split(',');
+                    var uuidList = item.CsvFields["collectaMundoUuidsImportField"].Split(',');
                     var versions = uuidList.Select((uuid, i) => new UuidVersion
                     {
                         Uuid = uuid,
@@ -60,12 +60,12 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
 
             foreach (var m in items)
             {
-                MultipleChoices.Add(m);
+                MultipleUuidItems.Add(m);
             }
         }
         private void HookEvents()
         {
-            foreach (var item in MultipleChoices)
+            foreach (var item in MultipleUuidItems)
             {
                 item.PropertyChanged += (_, e) =>
                 {
@@ -76,7 +76,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                 };
             }
 
-            MultipleChoices.CollectionChanged += (_, e) =>
+            MultipleUuidItems.CollectionChanged += (_, e) =>
             {
                 if (e.NewItems != null)
                 {
@@ -97,7 +97,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         // UI Text & Visibility
         // --------------------------------------------
-        public string PrimaryActionButtonText => "  Continue  \u27A1";
+        public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => string.Empty;
         public Visibility PrimaryActionVisibility => Visibility.Visible;
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
@@ -108,7 +108,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         // Step-level button enablement
         // --------------------------------------------
-        public bool CanExecutePrimaryAction => MultipleChoices.All(c => !string.IsNullOrWhiteSpace(c.SelectedUuid));
+        public bool CanExecutePrimaryAction => MultipleUuidItems.All(c => !string.IsNullOrWhiteSpace(c.SelectedUuid));
         public bool CanExecuteSecondaryAction => false;
 
         // --------------------------------------------
