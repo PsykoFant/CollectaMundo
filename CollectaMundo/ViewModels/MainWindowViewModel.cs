@@ -102,6 +102,8 @@ namespace CollectaMundo.ViewModels
                 SideMenuFilterVisibility = Visibility.Collapsed;
                 SideMenuUtilsVisibility = Visibility.Visible;
                 CardViewSectionVisibility = Visibility.Collapsed;
+                CardImageVM.FrontImageSource = null;
+                CardImageVM.BackImageSource = null;
             }
 
             OnPropertyChanged(nameof(MiniLogoVisibility));

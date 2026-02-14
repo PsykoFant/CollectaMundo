@@ -49,7 +49,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             var importVM = _mainVM.ImportVM;
 
             _mainVM.AllCardsVM.Cards.Should().NotBeNullOrEmpty();
-            _mainVM.MyCollectionVM.Cards.Should().NotBeNull();
+            _mainVM.MyCollectionVM.Cards.Should().HaveCount(22);
 
             // =====================================================
             // Step 0 – Begin wizard
@@ -62,8 +62,9 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 1 – Parse CSV & move to ID mapping
             // =====================================================
 
-            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>();
-            importVM.ProgressHeadline.Should().Be("The Import Wizard");
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep01_StartViewModel && importVM.ProgressHeadline == "The Import Wizard",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 6 should be active and progress label updated");
             step1.PrimaryActionButtonText.Should().Contain("Let's go");
 
             var step1Result = await step1.OnPrimaryAction(); // Parse CSV
@@ -170,7 +171,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             multipleUuidItem.VersionedUuids[1].DisplayText.Should().Be("Version 2");
 
             // Choose version 2 and proceed
-            multipleUuidItem.SelectedUuid = "Version 2";
+            multipleUuidItem.SelectedUuid = "bafac74c-f4f8-5c71-8a6b-0bd02c536c47";
             step4.CanExecutePrimaryAction.Should().BeTrue();
             var step4Result = await step4.OnPrimaryAction();
 
@@ -199,9 +200,162 @@ namespace CollectaMundo.Tests.ScenarioTests
             addtionalMappings[0].CsvHeaders.Should().HaveCount(18);
 
             // Assert CSV headers pre-selected
-            addtionalMappings[0].SelectedCsvHeader.Should().Be("CardName");
-            addtionalMappings[1].SelectedCsvHeader.Should().Be("Set");
-            addtionalMappings[2].SelectedCsvHeader.Should().Be("Set Code");
+            addtionalMappings[0].SelectedCsvHeader.Should().Be("Condition");
+            addtionalMappings[1].SelectedCsvHeader.Should().Be("Printing");
+            addtionalMappings[2].SelectedCsvHeader.Should().Be("Language");
+            addtionalMappings[3].SelectedCsvHeader.Should().Be("Quantity");
+            addtionalMappings[4].SelectedCsvHeader.Should().Be("For sale");
+
+            // Proceed to next step
+            var step5Result = await step5.OnPrimaryAction();
+
+            // Assert step 5 completed successfully
+            step5Result.Code.Should().Be(OperationResultCode.Success);
+
+            // =====================================================
+            // Step 6 - Conditions mapping
+            // =====================================================
+            var step6 = (ImportStep06_ConditionsMappingViewModel)importVM.CurrentStepViewModel;
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep06_ConditionsMappingViewModel && importVM.ProgressStep == "Condition value mapping",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 6 should be active and progress label updated");
+            step6.PrimaryActionButtonText.Should().Contain("Proceed");
+
+            step6.ConditionMappings.Should().HaveCount(5);
+            var conditionMappings = step6.ConditionMappings;
+
+            // Check ConditionMappingItem object is correctly initialized with guesses
+            conditionMappings[0].CsvValue.Should().Be("Near Mint");
+            conditionMappings[0].SelectedCardSetValue.Should().Be("Near Mint");
+            conditionMappings[1].CsvValue.Should().Be("Nearly sublime");
+            conditionMappings[1].SelectedCardSetValue.Should().Be("Near Mint");
+            conditionMappings[2].CsvValue.Should().Be("Bad");
+            conditionMappings[2].SelectedCardSetValue.Should().Be("Near Mint");
+            conditionMappings[3].CsvValue.Should().Be("Good");
+            conditionMappings[3].SelectedCardSetValue.Should().Be("Good");
+            conditionMappings[4].CsvValue.Should().Be("Mint");
+            conditionMappings[4].SelectedCardSetValue.Should().Be("Mint");
+
+            // Simulate clearing a mapping (should use default value for that condition, which is "Near Mint")
+            conditionMappings[1].SelectedCardSetValue = null;
+
+            // Proceed to next step
+            var step6Result = await step6.OnPrimaryAction();
+
+            // Assert step 6 completed successfully
+            step6Result.Code.Should().Be(OperationResultCode.Success);
+
+            // =====================================================
+            // Step 7 - Finish mapping
+            // =====================================================
+            var step7 = (ImportStep07_FinishMappingViewModel)importVM.CurrentStepViewModel;
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep07_FinishMappingViewModel && importVM.ProgressStep == "Finish value mapping",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 7 should be active and progress label updated");
+            step7.PrimaryActionButtonText.Should().Contain("Proceed");
+
+            step7.FinishMappings.Should().HaveCount(4);
+            var finishMappings = step7.FinishMappings;
+
+            // Check FinishMappingItem object is correctly initialized with guesses
+            finishMappings[0].CsvValue.Should().Be("Normal");
+            finishMappings[0].SelectedCardSetValue.Should().Be("nonfoil");
+            finishMappings[1].CsvValue.Should().Be("nonfoil");
+            finishMappings[1].SelectedCardSetValue.Should().Be("nonfoil");
+            finishMappings[2].CsvValue.Should().Be("Shiny");
+            finishMappings[2].SelectedCardSetValue.Should().Be("foil");
+            finishMappings[3].CsvValue.Should().Be("nothing");
+            finishMappings[3].SelectedCardSetValue.Should().Be("nonfoil");
+
+            // Simulate clearing a mapping (should use default value for that finish, which is "nonfoil")
+            finishMappings[3].SelectedCardSetValue = null;
+
+            // Proceed to next step
+            var step7Result = await step7.OnPrimaryAction();
+
+            // Assert step 7 completed successfully
+            step7Result.Code.Should().Be(OperationResultCode.Success);
+
+            // =====================================================
+            // Step 8 - Language mapping
+            // =====================================================
+
+            var step8 = (ImportStep08_LanguageMappingViewModel)importVM.CurrentStepViewModel;
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep08_LanguageMappingViewModel && importVM.ProgressStep == "Language value mapping",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 8 should be active and progress label updated");
+            step8.PrimaryActionButtonText.Should().Contain("Proceed");
+
+            step8.LanguageMappings.Should().HaveCount(4);
+            var languageMappings = step8.LanguageMappings;
+
+            // Check FinishMappingItem object is correctly initialized with guesses
+            languageMappings[0].CsvValue.Should().Be("xxxx");
+            languageMappings[0].SelectedCardSetValue.Should().Be("English");
+            languageMappings[1].CsvValue.Should().Be("French");
+            languageMappings[1].SelectedCardSetValue.Should().Be("French");
+            languageMappings[2].CsvValue.Should().Be("English");
+            languageMappings[2].SelectedCardSetValue.Should().Be("English");
+            languageMappings[3].CsvValue.Should().Be("Dansk");
+            languageMappings[3].SelectedCardSetValue.Should().Be("English");
+
+            // Simulate clearing a mapping (should use default value for that language, which is "English")
+            languageMappings[0].SelectedCardSetValue = null;
+
+            // Proceed to next step
+            var step8Result = await step8.OnPrimaryAction();
+
+            // Assert step 7 completed successfully
+            step8Result.Code.Should().Be(OperationResultCode.Success);
+
+            // =====================================================
+            // Step 9 - Summary and confirmation
+            // =====================================================
+            var step9 = (ImportStep09_SummaryViewModel)importVM.CurrentStepViewModel;
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep09_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 9 should be active and progress label updated");
+            step9.PrimaryActionButtonText.Should().Contain("Start the import...");
+            step9.SecondaryActionButtonText.Should().Contain("Save unrecognized items");
+
+            var summary = step9.Summary;
+
+            // Check totals
+            summary.ReadyToImportCount.Should().Be(7); // 7 cards should be ready to import with UUIDs
+            summary.TotalCardsToAdd.Should().Be(14); // Sum of quantities of all cards to import
+            summary.UnableToImportCount.Should().Be(1); // 1 card should not be able to import
+
+            // Check field mappings are correctly displayed in summary
+            summary.FieldMappings[0].CsvHeader.Should().Be("Condition");
+            summary.FieldMappings[1].CsvHeader.Should().Be("Printing");
+            summary.FieldMappings[2].CsvHeader.Should().Be("Language");
+            summary.FieldMappings[3].CsvHeader.Should().Be("Quantity");
+            summary.FieldMappings[4].CsvHeader.Should().Be("For sale");
+
+            // Spot check value mappings 
+            summary.ValueMappings[0].Field.Should().Be(ImportField.Condition);
+            summary.ValueMappings[0].CsvValue.Should().Be("Near Mint");
+            summary.ValueMappings[0].MappedValue.Should().Be("Near Mint");
+            summary.ValueMappings[1].Field.Should().Be(ImportField.Condition);
+            summary.ValueMappings[1].CsvValue.Should().Be("Nearly sublime");
+            summary.ValueMappings[1].MappedValue.Should().Be("(blank -> Near Mint)");
+            summary.ValueMappings[7].Field.Should().Be(ImportField.CardFinish);
+            summary.ValueMappings[7].CsvValue.Should().Be("Shiny");
+            summary.ValueMappings[7].MappedValue.Should().Be("foil");
+            summary.ValueMappings[8].Field.Should().Be(ImportField.CardFinish);
+            summary.ValueMappings[8].CsvValue.Should().Be("nothing");
+            summary.ValueMappings[8].MappedValue.Should().Be("(blank -> nonfoil)");
+
+            summary.UnimportableItems.Should().HaveCount(1);
+            summary.UnimportableItems[0].CardName.Should().Contain("Does not exist");
+
+            // Proceed with the import
+            var step9Result = await step9.OnPrimaryAction();
+
+            // Assert that the final import completed successfully
+            step9Result.Code.Should().Be(OperationResultCode.Success);
+
+            _mainVM.MyCollectionVM.Cards.Should().HaveCount(26);
 
             // =====================================================
             // ...
@@ -209,12 +363,12 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
         }
 
+        #region Helpers
         static bool HasUuid(TempCardItem item)
         {
             return item.CsvFields.TryGetValue("collectaMundoUuidImportField", out var uuid)
                    && !string.IsNullOrWhiteSpace(uuid);
         }
-
         static bool HasUuids(TempCardItem item)
         {
             return item.CsvFields.TryGetValue("collectaMundoUuidsImportField", out var uuid)
@@ -237,6 +391,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // One last check before failing (helps if it flips right at the end)
             condition().Should().BeTrue(because ?? "condition was not met before timeout");
         }
+        #endregion
     }
     internal sealed class TestFileSystemPicker : IFileSystemPicker
     {

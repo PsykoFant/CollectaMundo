@@ -1,9 +1,9 @@
 Quantity;For sale;CardName;Set;Set Code;Printing;Condition;Language;MCM ID;Note;originalUuid;Name;SetCode;SetName;Id;Result;New?;How many existing?
 2;2;Sokrates, Athenian Teacher;Assassin's Creed;ACR;Normal;Near Mint;xxxx;776179;Should be imported with Ancient Greek language, overriding default English;3c389f9c-e459-5b16-87b5-d51644f05b25;Valid;Valid;Valid;Valid;Gets uuid after step 2;New;
-3.0;;Viashino Runner;Urza's Saga;USG;nonfoil;Near Mint;English;xxxxxxx;;aa480225-6f03-5f0f-85af-41af75e515aa;Valid;Valid;Valid;Invalid;Gets uuid after step 3;Existing;2 owned, 0 trade;
+3.0;;Viashino Runner;Urza's Saga;USG;nonfoil;Nearly sublime;French;xxxxxxx;;aa480225-6f03-5f0f-85af-41af75e515aa;Valid;Valid;Valid;Invalid;Gets uuid after step 3;Existing;2 owned, 0 trade;
 1.1;;xxx;xxxx;xxx;Shiny;Bad;English;6531;Card is Vexing Arcanix;66dae17d-a742-51b4-ba09-0b37d7c64265;Invalid;Invalid;Invalid;Valid;Gets uuid after step 2;New;
 1;;Staying Power;xxxx;UND;nothing;Good;Dansk;xyz123;;b23e355d-5190-5db8-ad5a-5ff9d0fe9bea;Valid;Valid;Invalid;Invalid;Gets uuid after step 3;New;
-;;Syphon Soul;Onslaught;xxx;nonfoil;Mint;English;xxxxxxx;;9c015664-e6e8-53a4-ad48-276138b18098;Valid;Invalid;Valid;Invalid;Gets uuid after step 3;Existing, but different CollectionIdentity.;
+;;Syphon Soul;Onslaught;xxx;nonfoil;Mint;English;xxxxxxx;;9c015664-e6e8-53a4-ad48-276138b18098;Valid;Invalid;Valid;Invalid;Gets uuid after step 3;Mew;
 3;1;xxx;Modern Horizons 2;xxx;nonfoil;Near Mint;French;565924;Collapses with below and with existing card in collection. ;bafac74c-f4f8-5c71-8a6b-0bd02c536c47;Invalid;Invalid;Valid;Valid;Gets uuid after step 2;Existing;1 owned, 1 trade;
 3;1;Prismatic Ending;xxxx;xxx;nonfoil;Near Mint;French;;Collapses with above and with existing card in collection. ;bafac74c-f4f8-5c71-8a6b-0bd02c536c47;Valid;Invalid;Invalid;Invalid;Gets uuid after step 4;Existing;1 owned, 1 trade;
 77;88;Does not exist;Lorwyn Eclipsed;ECL;nonfoil;Near Mint;English;xxxxxxx;;;Invalid;Valid;Valid;Invalid;Never gets uuid;;;

@@ -287,6 +287,7 @@ namespace CollectaMundo.ViewModels.Import
                     ImportCardList.Add(item);
                 }
 
+                CsvHeaders = ImportCardList.FirstOrDefault()?.CsvFields.Keys.ToList() ?? []; // Add csv headers to VM property for mapping steps
                 IdMappings.Add(mapping);
 
                 GoToStep(ImportStep.IdColumnMapping);
@@ -332,8 +333,6 @@ namespace CollectaMundo.ViewModels.Import
             var cancelToken = _userPromptService.GetNewCancellationToken();
 
             var result = await Task.Run(() => _importService.TryResolveUuidsFromNameAndSetAsync(ImportCardList, NameSetMappings, Progress, cancelToken));
-
-            DebugAllItems();
 
             if (result.ItemsWithMultipleUuids > 0)
             {

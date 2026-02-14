@@ -177,7 +177,7 @@ namespace CollectaMundo.DomainLogic.Import
             [ImportField.CardFinish] = new()
             {
                 ["etched"] = ["etch", "etched foil", "efoil", "et"],
-                ["foil"] = ["foiled", "holo", "holofoil", "holfoil", "f"],
+                ["foil"] = ["foiled", "holo", "holofoil", "holfoil", "f", "shiny"],
                 ["nonfoil"] = ["non-foil", "non foil", "regular", "normal", "standard", "nf"],
                 ["signed"] = ["autograph", "autographed", "sig"]
             },

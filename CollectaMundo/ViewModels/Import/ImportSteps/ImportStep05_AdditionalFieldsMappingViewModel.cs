@@ -31,16 +31,13 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                 return;
             }
 
-            var firstItem = _parent.ImportCardList.FirstOrDefault();
-            var csvHeaders = firstItem?.CsvFields.Keys.ToList() ?? [];
-
             foreach (var field in new[] { ImportField.Condition, ImportField.CardFinish, ImportField.Language, ImportField.CardsOwned, ImportField.CardsForTrade })
             {
                 AdditionalMappings.Add(new CsvFieldMapping
                 {
                     FieldToMap = field,
-                    CsvHeaders = [.. csvHeaders],
-                    SelectedCsvHeader = ImportValueMatcher.GuessCsvHeader(field, csvHeaders)
+                    CsvHeaders = [.. _parent.CsvHeaders],
+                    SelectedCsvHeader = ImportValueMatcher.GuessCsvHeader(field, _parent.CsvHeaders)
                 });
             }
 

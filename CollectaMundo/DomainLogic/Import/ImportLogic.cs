@@ -419,7 +419,7 @@ namespace CollectaMundo.DomainLogic.Import
         #region Step 9
         public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {
-            var uuidHeader = "collectaMundoUuidImportField"; // already normalized earlier
+            var uuidHeader = "collectaMundoUuidImportField";
             var ownedHeader = GetMappedHeader(fieldMappings, ImportField.CardsOwned);
             var tradeHeader = GetMappedHeader(fieldMappings, ImportField.CardsForTrade);
             var conditionHeader = GetMappedHeader(fieldMappings, ImportField.Condition);
@@ -462,7 +462,6 @@ namespace CollectaMundo.DomainLogic.Import
             return resolved;
         }
         public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
-
         {
             var summary = new ImportSummary();
 
