@@ -28,7 +28,7 @@
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>
-        <DataGrid Grid.Row="1" ItemsSource="{Binding MultipleChoices}"
+        <DataGrid Grid.Row="1" ItemsSource="{Binding MultipleUuidItems}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   HeadersVisibility="Column"

@@ -119,6 +119,7 @@ namespace CollectaMundo.ViewModels.Import
         public ObservableCollection<TempCardItem> ImportCardList { get; } = []; // The master list of items being imported, generated from CSV
 
         // Objects to hold mappings for csv-headers-to-database fields
+        public List<string> CsvHeaders { get; set; } = []; // The list of CSV headers from the imported file, used for mapping
         public ObservableCollection<IdColumnMapping> IdMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> NameSetMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> AdditionalMappings { get; } = [];
@@ -227,7 +228,7 @@ namespace CollectaMundo.ViewModels.Import
                 ImportStep.Start => CreateStep(new ImportStep01_StartViewModel(this), string.Empty),
                 ImportStep.IdColumnMapping => CreateStep(new ImportStep02_IdMappingViewModel(this), "ID column mapping"),
                 ImportStep.NameAndSetMapping => CreateStep(new ImportStep03_NameSetMappingViewModel(this), "Name and set mapping"),
-                ImportStep.MultipleUuidsSelection => CreateStep(new ImportStep04_MultipleUuidsViewModel(this), "Resolve multiple UUID matches"),
+                ImportStep.MultipleUuidsSelection => CreateStep(new ImportStep04_MultipleUuidsViewModel(this), "Multiple versions found"),
                 ImportStep.AdditionalFieldsMapping => CreateStep(new ImportStep05_AdditionalFieldsMappingViewModel(this), "Additional fields mapping"),
                 ImportStep.ConditionMapping => CreateStep(new ImportStep06_ConditionsMappingViewModel(this), "Condition value mapping"),
                 ImportStep.FinishMapping => CreateStep(new ImportStep07_FinishMappingViewModel(this), "Finish value mapping"),
@@ -271,7 +272,7 @@ namespace CollectaMundo.ViewModels.Import
                 CancelVisibility = Visibility.Visible;
                 var cancelToken = _userPromptService.GetNewCancellationToken();
 
-                // Perform parsing (ParseCsvFileAsync now reports progress internally)
+                // Perform parsing 
                 var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, Progress, cancelToken);
 
                 // Handle results

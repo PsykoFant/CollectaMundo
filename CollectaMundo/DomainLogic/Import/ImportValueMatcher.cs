@@ -142,7 +142,7 @@ namespace CollectaMundo.DomainLogic.Import
             [ImportField.CardFinish] = ["finish", "foiling", "card finish", "foil", "printing"],
             [ImportField.Language] = ["lang", "language"],
             [ImportField.CardsOwned] = ["quantity", "count", "owned", "qty"],
-            [ImportField.CardsForTrade] = ["trade", "for trade", "sell", "forsale", "selling"]
+            [ImportField.CardsForTrade] = ["trade", "for trade", "sell", "forsale", "For sale", "selling"]
         };
 
         // Value guesses / aliases for ImportField

@@ -12,23 +12,22 @@ namespace CollectaMundo.Tests.ScenarioTests
 
     public sealed class ImportScenarioTests(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
+        #region Test class setup
         private readonly InMemoryDatabaseFixture _fx = fx;
 
         private IDbConnectionFactory _dbFactory = null!;
         private MainWindowViewModel _mainVM = null!;
-
         public async ValueTask InitializeAsync()
         {
             _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
             (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory);
         }
-
         public ValueTask DisposeAsync()
         {
             _mainVM.Dispose();
             return ValueTask.CompletedTask;
         }
-
+        #endregion
 
         [Fact]
         public async Task Import_full_flow_happy_path()
@@ -155,13 +154,14 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 4 – Multiple UUID matches
             // =====================================================
             var step4 = (ImportStep04_MultipleUuidsViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep04_MultipleUuidsViewModel && importVM.ProgressStep == "Resolve multiple UUID matches",
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep04_MultipleUuidsViewModel && importVM.ProgressStep == "Multiple versions found",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 4 should be active and progress label updated");
             step4.PrimaryActionButtonText.Should().Contain("Proceed");
 
             // Check that MultipleUuidsItem object is correctly populated with the expected card that has multiple UUID matches
             step4.MultipleUuidItems.Should().HaveCount(1);
+            step4.CanExecutePrimaryAction.Should().BeFalse();
             var multipleUuidItem = step4.MultipleUuidItems[0];
             multipleUuidItem.Name.Should().Contain("Prismatic Ending");
             multipleUuidItem.VersionedUuids.Should().HaveCount(2);
@@ -171,6 +171,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Choose version 2 and proceed
             multipleUuidItem.SelectedUuid = "Version 2";
+            step4.CanExecutePrimaryAction.Should().BeTrue();
             var step4Result = await step4.OnPrimaryAction();
 
             // Assert step 4 completed successfully
@@ -180,6 +181,27 @@ namespace CollectaMundo.Tests.ScenarioTests
             importVM.ImportCardList.Count(HasUuid).Should().Be(7);
             importVM.ImportCardList.Count(HasUuids).Should().Be(0); // We should have resolved the multiple UUIDs, so none should have multiple anymore
 
+            // =====================================================
+            // Step 5 - Additional fields mapping
+            // =====================================================
+            var step5 = (ImportStep05_AdditionalFieldsMappingViewModel)importVM.CurrentStepViewModel;
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep05_AdditionalFieldsMappingViewModel && importVM.ProgressStep == "Additional fields mapping",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 5 should be active and progress label updated");
+            step5.PrimaryActionButtonText.Should().Contain("Proceed");
+
+            step5.AdditionalMappings.Should().HaveCount(5);
+            var addtionalMappings = step5.AdditionalMappings;
+
+            // Check CsvFieldsMappings object is correctly initialized with expected fields to map
+            addtionalMappings[0].FieldToMap.Should().Be(ImportField.Condition);
+            addtionalMappings[4].FieldToMap.Should().Be(ImportField.CardsForTrade);
+            addtionalMappings[0].CsvHeaders.Should().HaveCount(18);
+
+            // Assert CSV headers pre-selected
+            addtionalMappings[0].SelectedCsvHeader.Should().Be("CardName");
+            addtionalMappings[1].SelectedCsvHeader.Should().Be("Set");
+            addtionalMappings[2].SelectedCsvHeader.Should().Be("Set Code");
 
             // =====================================================
             // ...
