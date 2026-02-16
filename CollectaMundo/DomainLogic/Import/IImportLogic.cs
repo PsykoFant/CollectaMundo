@@ -24,6 +24,7 @@ namespace CollectaMundo.DomainLogic.Import
 
         // Step 9
         IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings);
+        void ApplyStrictVariantValidation(IReadOnlyList<ResolvedImportItem> resolved, AvailabilityIndex availability);
         ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings);
         string BuildUnimportableItemsCsv(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems);
         public IReadOnlyList<CollectionUpsertItem> CollapseResolvedItemsForCollection(IReadOnlyList<ResolvedImportItem> resolvedItems);

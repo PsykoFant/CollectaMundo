@@ -365,6 +365,48 @@ namespace CollectaMundo.Infrastructure.Import
         }
 
         // Step 9
+        public async Task<IReadOnlyDictionary<string, BaseAvailability>> FetchBaseAvailabilityAsync(IReadOnlyCollection<string> uuids, IDbConnection connection, IDbTransaction? tx, CancellationToken token)
+        {
+            // 1) Create + populate TEMP table temp_import_uuids
+            await PrepareTempUuidsAsync(connection, tx, uuids, token);
+
+            // 2) Query cards join temp
+            var cards = await QueryBaseFromCardsAsync(connection, tx, token);
+
+            // 3) Query tokens join temp
+            var tokens = await QueryBaseFromTokensAsync(connection, tx, token);
+
+            // 4) Merge (uuid unique across cards/tokens per your assumption F)
+            return MergeBase(cards, tokens);
+        }
+        public async Task<IReadOnlyDictionary<string, HashSet<string>>> FetchForeignLanguagesAsync(IReadOnlyCollection<string> uuids, IDbConnection connection, IDbTransaction? tx, CancellationToken token)
+        {
+            // Create/populate temp_import_uuids with ONLY these uuids (or reuse and overwrite)
+            await PrepareTempUuidsAsync(connection, tx, uuids, token);
+
+            // Query foreign languages
+            return await QueryForeignLanguagesAsync(connection, tx, token);
+        }
+
+        // ----- dummy helpers -----
+
+        private static Task PrepareTempUuidsAsync(IDbConnection c, IDbTransaction? tx, IReadOnlyCollection<string> uuids, CancellationToken token)
+            => Task.CompletedTask;
+
+        private static Task<List<BaseAvailability>> QueryBaseFromCardsAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
+            => Task.FromResult(new List<BaseAvailability>());
+
+        private static Task<List<BaseAvailability>> QueryBaseFromTokensAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
+            => Task.FromResult(new List<BaseAvailability>());
+
+        private static IReadOnlyDictionary<string, BaseAvailability> MergeBase(List<BaseAvailability> cards, List<BaseAvailability> tokens)
+            => new Dictionary<string, BaseAvailability>(StringComparer.OrdinalIgnoreCase);
+
+        private static Task<IReadOnlyDictionary<string, HashSet<string>>> QueryForeignLanguagesAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
+            => Task.FromResult<IReadOnlyDictionary<string, HashSet<string>>>(new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase));
+
+
+
         public async Task<IReadOnlyList<MyCollectionRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token)
         {
             const string sql = @"

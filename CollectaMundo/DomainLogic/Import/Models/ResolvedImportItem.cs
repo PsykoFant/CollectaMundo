@@ -7,7 +7,7 @@
         public string TempItemImportKey { get; init; } = null!;
 
         // Explicit flag indicating whether this item can be imported.
-        public bool IsImportable { get; init; }
+        public bool IsImportable { get; set; }
 
         // Resolved UUID. May be null for unimportable items.
         public string? Uuid { get; init; }
@@ -24,6 +24,19 @@
         public string? Language { get; init; }
 
         // Warnings generated while resolving this item
-        public IReadOnlyList<string> Warnings { get; init; } = [];
+        private readonly List<string> _warnings = [];
+        public IReadOnlyList<string> Warnings => _warnings;
+
+        public void AddWarning(string warning)
+        {
+            _warnings.Add(warning);
+        }
+        public void AddWarnings(IEnumerable<string> warnings)
+        {
+            foreach (var w in warnings)
+            {
+                AddWarning(w);
+            }
+        }
     }
 }

@@ -267,11 +267,96 @@ namespace CollectaMundo.ApplicationServices.Import
             }
         }
 
-        // Step 9
-        public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
+        // Step 9: resolve + strict validate via DB
+        public async Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, CancellationToken token)
         {
-            return _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings);
+            // 1) Resolve (mapping/defaults) - same as today
+            var resolved = _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings);
+
+            // 2) Collect UUIDs we need to validate (only importable candidates)
+            var uuidsToValidate = CollectUuidsToValidate(resolved);
+
+            if (uuidsToValidate.Count == 0)
+            {
+                return resolved;
+            }
+
+            // 3) Determine whether we need foreign languages (Tier 2)
+            var needsForeign = CollectUuidsNeedingForeignLanguageLookup(resolved);
+
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginAsync();
+
+            try
+            {
+                // 4) Tier 1: base availability for ALL uuids (cards/tokens)
+                var baseByUuid = await _importRepo.FetchBaseAvailabilityAsync(uuidsToValidate, uow.CurrentConnection, uow.CurrentTransaction, token);
+
+                // 5) Tier 2: foreign languages only for non-English requested uuids
+                IReadOnlyDictionary<string, HashSet<string>> foreignByUuid = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+                if (needsForeign.Count > 0)
+                {
+                    foreignByUuid = await _importRepo.FetchForeignLanguagesAsync(
+                        needsForeign, uow.CurrentConnection, uow.CurrentTransaction, token);
+                }
+
+                var index = new AvailabilityIndex
+                {
+                    BaseByUuid = baseByUuid,
+                    ForeignLanguagesByUuid = foreignByUuid
+                };
+
+                // 6) Strict validation in DomainLogic (marks unimportable + warnings)
+                _importLogic.ApplyStrictVariantValidation(resolved, index);
+
+                await uow.CommitAsync();
+                return resolved;
+            }
+            catch
+            {
+                await uow.RollbackAsync();
+                throw;
+            }
         }
+
+        // ----- dummy helpers -----
+
+        private static HashSet<string> CollectUuidsToValidate(IReadOnlyList<ResolvedImportItem> resolved)
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var r in resolved)
+            {
+                if (r.IsImportable && !string.IsNullOrWhiteSpace(r.Uuid))
+                {
+                    set.Add(r.Uuid);
+                }
+            }
+            return set;
+        }
+        private static HashSet<string> CollectUuidsNeedingForeignLanguageLookup(IReadOnlyList<ResolvedImportItem> resolved)
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var r in resolved)
+            {
+                if (!r.IsImportable || string.IsNullOrWhiteSpace(r.Uuid))
+                {
+                    continue;
+                }
+
+                // Only need foreignData when requested language != English
+                if (!string.Equals(r.Language, "English", StringComparison.OrdinalIgnoreCase))
+                {
+                    set.Add(r.Uuid);
+                }
+            }
+            return set;
+        }
+
+
+
+
+
         public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {
             return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings, additionalFieldMappings, conditionMappings, finishMappings, languageMappings);

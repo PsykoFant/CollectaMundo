@@ -445,7 +445,7 @@ namespace CollectaMundo.DomainLogic.Import
                 var finish = ResolveMappedValue(item, finishHeader, finishMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish);
                 var language = ResolveMappedValue(item, languageHeader, languageMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
 
-                resolved.Add(new ResolvedImportItem
+                var resolvedItem = new ResolvedImportItem
                 {
                     TempItemImportKey = item.TempItemImportKey,
                     IsImportable = isImportable,
@@ -454,13 +454,95 @@ namespace CollectaMundo.DomainLogic.Import
                     CardsForTrade = trade,
                     Condition = condition,
                     Finish = finish,
-                    Language = language,
-                    Warnings = warnings
-                });
+                    Language = language
+                };
+
+                resolvedItem.AddWarnings(warnings);
+
+                resolved.Add(resolvedItem);
             }
 
             return resolved;
         }
+        public void ApplyStrictVariantValidation(IReadOnlyList<ResolvedImportItem> resolved, AvailabilityIndex availability)
+        {
+            foreach (var r in resolved)
+            {
+                if (!r.IsImportable || string.IsNullOrWhiteSpace(r.Uuid))
+                {
+                    continue;
+                }
+
+                if (!availability.BaseByUuid.TryGetValue(r.Uuid, out var baseAvail))
+                {
+                    MarkUnimportable(r, $"UUID not found in database: {r.Uuid}");
+                    continue;
+                }
+
+                // ---- Finish validation (always from base finishes) ----
+                if (!IsFinishAvailable(baseAvail.FinishesCsv, r.Finish))
+                {
+                    MarkUnimportable(r, $"Finish '{r.Finish}' is not available for UUID {r.Uuid}.");
+                }
+
+                // ---- Language validation (English special rule + union) ----
+                if (!IsLanguageAvailable(r.Uuid, r.Language, baseAvail.BaseLanguage, availability.ForeignLanguagesByUuid))
+                {
+                    MarkUnimportable(r, $"Language '{r.Language}' is not available for UUID {r.Uuid}.");
+                }
+            }
+        }
+
+        // ----- helpers (dummy-but-illustrative) -----
+
+        private static bool IsFinishAvailable(string? finishesCsv, string finish)
+        {
+            if (string.IsNullOrWhiteSpace(finish) || string.IsNullOrWhiteSpace(finishesCsv))
+            {
+                return false;
+            }
+
+            // finishesCsv example: "nonfoil, foil"
+            var parts = finishesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return parts.Any(p => string.Equals(p, finish, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsLanguageAvailable(
+            string uuid,
+            string language,
+            string? baseLanguage,
+            IReadOnlyDictionary<string, HashSet<string>> foreignByUuid)
+        {
+            if (string.IsNullOrWhiteSpace(language))
+            {
+                return false;
+            }
+
+            // English is never in foreignData, so it is valid iff baseLanguage is English
+            if (string.Equals(language, "English", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Equals(baseLanguage, "English", StringComparison.OrdinalIgnoreCase);
+            }
+
+            // Non-English valid if baseLanguage matches OR foreign contains it
+            if (string.Equals(baseLanguage, language, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (foreignByUuid.TryGetValue(uuid, out var langs) && langs.Contains(language))
+            {
+                return true;
+            }
+
+            return false;
+        }
+        private static void MarkUnimportable(ResolvedImportItem item, string warning)
+        {
+            item.AddWarning("Language not available for this card.");
+            item.IsImportable = false;
+        }
+
         public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {
             var summary = new ImportSummary();
