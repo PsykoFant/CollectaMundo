@@ -208,7 +208,6 @@ namespace CollectaMundo.ViewModels.Import
         }
 
         private ImportStep _currentStep = ImportStep.Start;
-        public Task? PendingStepWork { get; private set; }
         public void GoToStep(ImportStep step)
         {
             _currentStep = step;
@@ -228,14 +227,8 @@ namespace CollectaMundo.ViewModels.Import
                 ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), string.Empty),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };
-
-            if (step == ImportStep.Summary)
-            {
-                // kick off async summary preparation without blocking UI thread
-                PendingStepWork = PrepareSummaryAsync();
-            }
         }
-        private async Task PrepareSummaryAsync()
+        public async Task PrepareSummaryAsync()
         {
             try
             {
@@ -246,11 +239,13 @@ namespace CollectaMundo.ViewModels.Import
                 Progress.Percent.Report(0);
 
                 var token = _userPromptService.GetNewCancellationToken();
-                ResolvedImportItems = await _importService.ResolveImportItemsStrictAsync(ImportCardList,AdditionalMappings,ConditionMappings,FinishMappings,LanguageMappings,token);
+                ResolvedImportItems = await _importService.ResolveImportItemsStrictAsync(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings, token);
 
                 Progress.Detail.Report("Building summary...");
-                Summary = _importService.BuildImportSummary(ResolvedImportItems,ImportCardList,NameSetMappings,AdditionalMappings,ConditionMappings,FinishMappings,LanguageMappings);
+                Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
                 Progress.ProgressBarVisible.Report(false);
+
+                DebugImportSummary();
             }
             catch (OperationCanceledException)
             {
@@ -668,7 +663,7 @@ namespace CollectaMundo.ViewModels.Import
             foreach (var item in Summary.UnimportableItems)
             {
                 Debug.WriteLine(
-                    $"Row {item.RowNumber}: {item.CardName} | {item.SetName} | {item.SetCode} " +
+                    $"Row {item.RowNumber}: {item.CardName} | {item.SetName} | {item.SetCode} | {item.WarningText}" +
                     $"(Key={item.TempItemImportKey})");
             }
         }

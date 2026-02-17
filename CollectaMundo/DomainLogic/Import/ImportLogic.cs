@@ -420,7 +420,7 @@ namespace CollectaMundo.DomainLogic.Import
         // ----------------------
         // Strict validation of mapped values against availability
         // ----------------------
-        public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items,IReadOnlyList<CsvFieldMapping> fieldMappings,IReadOnlyList<CsvValueMapping> conditionMappings,IReadOnlyList<CsvValueMapping> finishMappings,IReadOnlyList<CsvValueMapping> languageMappings)
+        public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {
             var uuidHeader = "collectaMundoUuidImportField";
             var ownedHeader = GetMappedHeader(fieldMappings, ImportField.CardsOwned);
@@ -440,9 +440,9 @@ namespace CollectaMundo.DomainLogic.Import
                 var isImportable = !string.IsNullOrWhiteSpace(uuid);
 
                 // Quantities
-                var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader,defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsOwned),warnings, "CardsOwned");
+                var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader, defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsOwned), warnings, "CardsOwned");
 
-                var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader,defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsForTrade),warnings, "CardsForTrade");
+                var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader, defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsForTrade), warnings, "CardsForTrade");
 
                 // Additional fields mapped values (defaulting happens here, but will be validated strictly later)
                 var condition = ResolveMappedValue(item, conditionHeader, conditionMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition);
@@ -474,7 +474,9 @@ namespace CollectaMundo.DomainLogic.Import
             foreach (var r in resolved)
             {
                 if (!r.IsImportable || string.IsNullOrWhiteSpace(r.Uuid))
+                {
                     continue;
+                }
 
                 if (!availability.BaseByUuid.TryGetValue(r.Uuid, out var baseAvail))
                 {
@@ -482,21 +484,86 @@ namespace CollectaMundo.DomainLogic.Import
                     continue;
                 }
 
-                // ---- Finish validation (always from cards/tokens finishes) ----
+                // -------------------------
+                // Finish validation + auto-fix
+                // -------------------------
                 if (!IsFinishAvailable(baseAvail.FinishesCsv, r.Finish))
                 {
-                    MarkUnimportable(r, $"Finish '{r.Finish ?? "<null>"}' is not available for UUID {r.Uuid}.");
+                    var availableFinishes = GetAvailableFinishes(baseAvail.FinishesCsv);
+
+                    if (availableFinishes.Count == 1)
+                    {
+                        var only = availableFinishes.First();
+                        r.OverwriteFinish(only);
+                        r.AddWarning($"Finish '{r.Finish ?? ""}' is not available; auto-selected '{only}' because it is the only available finish for this card.");
+                    }
+                    else
+                    {
+                        MarkUnimportable(r, $"Finish '{r.Finish ?? ""}' is not available for UUID {r.Uuid}.");
+                        continue; // optional: once unimportable, no need to keep validating
+                    }
                 }
 
-                // ---- Language validation (English special rule + union) ----
+                // -------------------------
+                // Language validation + auto-fix
+                // -------------------------
                 if (!IsLanguageAvailable(r.Uuid, r.Language, baseAvail.BaseLanguage, availability.ForeignLanguagesByUuid))
                 {
-                    MarkUnimportable(r, $"Language '{r.Language ?? "<null>"}' is not available for UUID {r.Uuid}.");
+                    var availableLangs = GetAvailableLanguages(baseAvail.BaseLanguage, r.Uuid, availability.ForeignLanguagesByUuid);
+
+                    if (availableLangs.Count == 1)
+                    {
+                        var only = availableLangs.First();
+                        r.OverwriteLanguage(only);
+                        r.AddWarning($"Language '{r.Language ?? ""}' is not available; auto-selected '{only}' because it is the only available language for this card.");
+                    }
+                    else
+                    {
+                        MarkUnimportable(r, $"Language '{r.Language ?? ""}' is not available for UUID {r.Uuid}.");
+                    }
                 }
             }
         }
 
         // Helpers
+        private static HashSet<string> GetAvailableFinishes(string? finishesCsv)
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (string.IsNullOrWhiteSpace(finishesCsv))
+            {
+                return set;
+            }
+
+            foreach (var part in finishesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (!string.IsNullOrWhiteSpace(part))
+                {
+                    set.Add(part);
+                }
+            }
+
+            return set;
+        }
+        private static HashSet<string> GetAvailableLanguages(string? baseLanguage, string uuid, IReadOnlyDictionary<string, HashSet<string>> foreignByUuid)
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrWhiteSpace(baseLanguage))
+            {
+                set.Add(baseLanguage);
+            }
+
+            if (foreignByUuid.TryGetValue(uuid, out var foreign) && foreign is { Count: > 0 })
+            {
+                foreach (var lang in foreign)
+                {
+                    set.Add(lang);
+                }
+            }
+
+            return set;
+        }
         private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
         {
             if (string.IsNullOrWhiteSpace(csvHeader))
@@ -563,22 +630,25 @@ namespace CollectaMundo.DomainLogic.Import
         private static bool IsFinishAvailable(string? finishesCsv, string? finish)
         {
             if (string.IsNullOrWhiteSpace(finish) || string.IsNullOrWhiteSpace(finishesCsv))
+            {
                 return false;
+            }
 
-            // finishesCsv example: "nonfoil, foil"
             var parts = finishesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-            // Use OrdinalIgnoreCase; DB is canonical and mapping step should produce canonical values.
             return parts.Any(p => string.Equals(p, finish, StringComparison.OrdinalIgnoreCase));
         }
-        private static bool IsLanguageAvailable(string uuid,string? language,string? baseLanguage,IReadOnlyDictionary<string, HashSet<string>> foreignByUuid)
+        private static bool IsLanguageAvailable(string uuid, string? language, string? baseLanguage, IReadOnlyDictionary<string, HashSet<string>> foreignByUuid)
         {
             if (string.IsNullOrWhiteSpace(language))
+            {
                 return false;
+            }
 
             // English is never in cardForeignData, so English is valid iff baseLanguage is English
             if (string.Equals(language, "English", StringComparison.OrdinalIgnoreCase))
+            {
                 return string.Equals(baseLanguage, "English", StringComparison.OrdinalIgnoreCase);
+            }
 
             // Non-English valid if baseLanguage matches OR foreign contains it
             if (!string.IsNullOrWhiteSpace(baseLanguage) &&
@@ -591,10 +661,9 @@ namespace CollectaMundo.DomainLogic.Import
         }
         private static void MarkUnimportable(ResolvedImportItem item, string warning)
         {
-            item.IsImportable = false;
             item.AddWarning(warning);
+            item.IsImportable = false;
         }
-
 
         // ----------------------
         // Summary construction
@@ -641,7 +710,8 @@ namespace CollectaMundo.DomainLogic.Import
                     SetCode = GetCsvValue(temp, setCodeHeader),
                     RowNumber = rowNumbersByKey.TryGetValue(item.TempItemImportKey, out var row)
                         ? row
-                        : (int?)null
+                        : (int?)null,
+                    Warnings = item.Warnings?.ToArray() ?? []
                 });
             }
 
@@ -737,25 +807,42 @@ namespace CollectaMundo.DomainLogic.Import
                 : fallback;
         }
 
-        // ----------------------
-        // Build CSV of unimportable items for export
-        // ----------------------
         public string BuildUnimportableItemsCsv(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems)
         {
             var sb = new StringBuilder();
 
-            // Identify unimportable rows using FINAL import decision
-            var unimportableKeys = resolvedItems.Where(r => !r.IsImportable).Select(r => r.TempItemImportKey).ToHashSet();
+            // Build lookup: key -> joined warnings (only for unimportable)
+            var warningsByKey = resolvedItems
+                .Where(r => !r.IsImportable)
+                .ToDictionary(
+                    r => r.TempItemImportKey,
+                    r => r.Warnings is { Count: > 0 }
+                        ? string.Join(" | ", r.Warnings)
+                        : string.Empty);
 
-            var rows = importItems.Where(i => unimportableKeys.Contains(i.TempItemImportKey)).ToList();
+            // Rows to export (original temp rows that are unimportable)
+            var rows = importItems
+                .Where(i => warningsByKey.ContainsKey(i.TempItemImportKey))
+                .ToList();
 
             if (rows.Count == 0)
             {
                 return string.Empty;
             }
 
-            // Preserve original column order as best as possible
+            // Preserve original column order
             var headers = rows.First().CsvFields.Keys.ToList();
+
+            // Add warnings column (avoid collision if CSV already had that header)
+            const string warningsHeaderBase = "CollectaMundoWarnings";
+            var warningsHeader = warningsHeaderBase;
+            var suffix = 2;
+            while (headers.Contains(warningsHeader, StringComparer.OrdinalIgnoreCase))
+            {
+                warningsHeader = $"{warningsHeaderBase}_{suffix++}";
+            }
+
+            headers.Add(warningsHeader);
 
             // Header row
             sb.AppendLine(string.Join(";", headers.Select(ToCsvCell)));
@@ -764,9 +851,20 @@ namespace CollectaMundo.DomainLogic.Import
             foreach (var row in rows)
             {
                 var values = headers.Select(h =>
-                    row.CsvFields.TryGetValue(h, out var v)
+                {
+                    // Our appended warnings column
+                    if (string.Equals(h, warningsHeader, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return warningsByKey.TryGetValue(row.TempItemImportKey, out var w)
+                            ? ToCsvCell(w)
+                            : string.Empty;
+                    }
+
+                    // Original CSV columns
+                    return row.CsvFields.TryGetValue(h, out var v)
                         ? ToCsvCell(v)
-                        : string.Empty);
+                        : string.Empty;
+                });
 
                 sb.AppendLine(string.Join(";", values));
             }
@@ -828,7 +926,7 @@ namespace CollectaMundo.DomainLogic.Import
 
 
 
-        
+
 
 
         #endregion

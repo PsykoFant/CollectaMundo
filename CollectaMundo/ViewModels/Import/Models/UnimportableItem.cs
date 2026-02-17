@@ -20,6 +20,11 @@ namespace CollectaMundo.DomainLogic.Import.Models
         public string? TempItemImportKey { get; init; }
 
         // Raw line/row metadata 
-        public int? RowNumber { get; init; } // if you track CSV line number
+        public int? RowNumber { get; init; }
+
+        public IReadOnlyList<string> Warnings { get; init; } = [];
+        public string WarningText => Warnings.Count == 0
+        ? string.Empty
+        : string.Join(" | ", Warnings);
     }
 }

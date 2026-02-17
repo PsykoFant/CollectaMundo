@@ -5,9 +5,30 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
-    public partial class ImportStep09_SummaryViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
+    public partial class ImportStep09_SummaryViewModel : ObservableObject, IImportStepViewModel
     {
-        private readonly ImportViewModel _parent = parent;
+        private readonly ImportViewModel _parent;
+
+        // --------------------------------------------
+        // Constructor
+        // --------------------------------------------
+        public ImportStep09_SummaryViewModel(ImportViewModel parent)
+        {
+            _parent = parent;
+            Initialize();
+        }
+
+        // --------------------------------------------
+        // Initialization
+        // --------------------------------------------
+        private void Initialize()
+        {
+            _ = InitializeAsync();
+        }
+        private async Task InitializeAsync()
+        {
+            await _parent.PrepareSummaryAsync();
+        }
 
         // --------------------------------------------
         // UI Text & Visibility

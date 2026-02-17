@@ -1,5 +1,7 @@
 TO DO 
 - MVVM refactor
+    - Navn validering step 2
+
     - Færdiggør import tests
     - xaml oprydning
     - CardCoreDto skal ud af infrastruktur laget

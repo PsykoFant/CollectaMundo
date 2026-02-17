@@ -111,7 +111,8 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Card Name" Binding="{Binding CardName}" Width="*"/>
                 <DataGridTextColumn Header="Set Name" Binding="{Binding SetName}" Width="*"/>
-                <DataGridTextColumn Header="Set Code" Binding="{Binding SetCode}" Width="100"/>
+                <DataGridTextColumn Header="Set Code" Binding="{Binding SetCode}" Width="*"/>
+                <DataGridTextColumn Header="Warning" Binding="{Binding WarningText}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

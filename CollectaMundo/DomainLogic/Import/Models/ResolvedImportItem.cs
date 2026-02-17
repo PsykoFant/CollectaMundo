@@ -20,13 +20,24 @@
 
         // Resolved domain values (canonical strings)
         public string? Condition { get; init; }
-        public string? Finish { get; init; }
-        public string? Language { get; init; }
+
+        private string? _finish;
+        public string? Finish
+        {
+            get => _finish;
+            init => _finish = value;
+        }
+
+        private string? _language;
+        public string? Language
+        {
+            get => _language;
+            init => _language = value;
+        }
 
         // Warnings generated while resolving this item
         private readonly List<string> _warnings = [];
         public IReadOnlyList<string> Warnings => _warnings;
-
         public void AddWarning(string warning)
         {
             _warnings.Add(warning);
@@ -37,6 +48,14 @@
             {
                 AddWarning(w);
             }
+        }
+        public void OverwriteFinish(string finish)
+        {
+            _finish = finish;
+        }
+        public void OverwriteLanguage(string language)
+        {
+            _language = language;
         }
     }
 }
