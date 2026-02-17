@@ -208,18 +208,9 @@ namespace CollectaMundo.ViewModels.Import
         }
 
         private ImportStep _currentStep = ImportStep.Start;
+        public Task? PendingStepWork { get; private set; }
         public void GoToStep(ImportStep step)
         {
-            if (step == ImportStep.Summary)
-            {
-                // 1. Resolve import items via service
-                ResolvedImportItems = _importService.ResolveImportItems(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
-
-                // 2. CreateCollectionChangeSetFromEdits UI summary (projection)
-                Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
-                DebugImportSummary();
-            }
-
             _currentStep = step;
             Debug.WriteLine($"ImportViewModel: Navigating to {_currentStep}.");
 
@@ -237,6 +228,48 @@ namespace CollectaMundo.ViewModels.Import
                 ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), string.Empty),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };
+
+            if (step == ImportStep.Summary)
+            {
+                // kick off async summary preparation without blocking UI thread
+                PendingStepWork = PrepareSummaryAsync();
+            }
+        }
+        private async Task PrepareSummaryAsync()
+        {
+            try
+            {
+                IsProcessing = true;
+
+                Progress.ProgressBarVisible.Report(true);
+                Progress.Detail.Report("Resolving import items...");
+                Progress.Percent.Report(0);
+
+                var token = _userPromptService.GetNewCancellationToken();
+                ResolvedImportItems = await _importService.ResolveImportItemsStrictAsync(ImportCardList,AdditionalMappings,ConditionMappings,FinishMappings,LanguageMappings,token);
+
+                Progress.Detail.Report("Building summary...");
+                Summary = _importService.BuildImportSummary(ResolvedImportItems,ImportCardList,NameSetMappings,AdditionalMappings,ConditionMappings,FinishMappings,LanguageMappings);
+                Progress.ProgressBarVisible.Report(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Decide your policy: stay on Summary but show cancelled,
+                // or navigate to Finish.
+                Progress.Detail.Report("Cancelled.");
+                ImportFailVisibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                Progress.Detail.Report($"Failed: {ex.Message}");
+                ImportFailVisibility = Visibility.Visible;
+                Debug.WriteLine($"[PrepareSummaryAsync] {ex}");
+            }
+            finally
+            {
+                IsProcessing = false;
+                _userPromptService.ClearCancellation();
+            }
         }
 
         // GoToStep helper that also sets progress step text

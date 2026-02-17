@@ -417,7 +417,10 @@ namespace CollectaMundo.DomainLogic.Import
         #endregion
 
         #region Step 9
-        public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
+        // ----------------------
+        // Strict validation of mapped values against availability
+        // ----------------------
+        public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items,IReadOnlyList<CsvFieldMapping> fieldMappings,IReadOnlyList<CsvValueMapping> conditionMappings,IReadOnlyList<CsvValueMapping> finishMappings,IReadOnlyList<CsvValueMapping> languageMappings)
         {
             var uuidHeader = "collectaMundoUuidImportField";
             var ownedHeader = GetMappedHeader(fieldMappings, ImportField.CardsOwned);
@@ -437,12 +440,15 @@ namespace CollectaMundo.DomainLogic.Import
                 var isImportable = !string.IsNullOrWhiteSpace(uuid);
 
                 // Quantities
-                var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader, defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsOwned), warnings, "CardsOwned");
-                var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader, defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsForTrade), warnings, "CardsForTrade");
+                var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader,defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsOwned),warnings, "CardsOwned");
 
-                // Additional fields mapped values
+                var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader,defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsForTrade),warnings, "CardsForTrade");
+
+                // Additional fields mapped values (defaulting happens here, but will be validated strictly later)
                 var condition = ResolveMappedValue(item, conditionHeader, conditionMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition);
+
                 var finish = ResolveMappedValue(item, finishHeader, finishMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish);
+
                 var language = ResolveMappedValue(item, languageHeader, languageMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
 
                 var resolvedItem = new ResolvedImportItem
@@ -458,7 +464,6 @@ namespace CollectaMundo.DomainLogic.Import
                 };
 
                 resolvedItem.AddWarnings(warnings);
-
                 resolved.Add(resolvedItem);
             }
 
@@ -469,9 +474,7 @@ namespace CollectaMundo.DomainLogic.Import
             foreach (var r in resolved)
             {
                 if (!r.IsImportable || string.IsNullOrWhiteSpace(r.Uuid))
-                {
                     continue;
-                }
 
                 if (!availability.BaseByUuid.TryGetValue(r.Uuid, out var baseAvail))
                 {
@@ -479,70 +482,123 @@ namespace CollectaMundo.DomainLogic.Import
                     continue;
                 }
 
-                // ---- Finish validation (always from base finishes) ----
+                // ---- Finish validation (always from cards/tokens finishes) ----
                 if (!IsFinishAvailable(baseAvail.FinishesCsv, r.Finish))
                 {
-                    MarkUnimportable(r, $"Finish '{r.Finish}' is not available for UUID {r.Uuid}.");
+                    MarkUnimportable(r, $"Finish '{r.Finish ?? "<null>"}' is not available for UUID {r.Uuid}.");
                 }
 
                 // ---- Language validation (English special rule + union) ----
                 if (!IsLanguageAvailable(r.Uuid, r.Language, baseAvail.BaseLanguage, availability.ForeignLanguagesByUuid))
                 {
-                    MarkUnimportable(r, $"Language '{r.Language}' is not available for UUID {r.Uuid}.");
+                    MarkUnimportable(r, $"Language '{r.Language ?? "<null>"}' is not available for UUID {r.Uuid}.");
                 }
             }
         }
 
-        // ----- helpers (dummy-but-illustrative) -----
+        // Helpers
+        private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
+        {
+            if (string.IsNullOrWhiteSpace(csvHeader))
+            {
+                return null;
+            }
 
-        private static bool IsFinishAvailable(string? finishesCsv, string finish)
+            if (!item.CsvFields.TryGetValue(csvHeader, out var raw))
+            {
+                return null;
+            }
+
+            var mapping = mappings.FirstOrDefault(m =>
+                string.Equals(m.CsvValue, raw, StringComparison.OrdinalIgnoreCase));
+
+            return mapping?.SelectedCardSetValue;
+        }
+        private static string? GetMappedHeader(IReadOnlyList<CsvFieldMapping> mappings, ImportField field)
+        {
+            return mappings.FirstOrDefault(m => m.FieldToMap == field)?.SelectedCsvHeader;
+        }
+        private static int ParseNonNegativeWholeNumberOrDefault(TempCardItem item, string? header, int defaultValue, List<string> warnings, string warningContext)
+        {
+            if (string.IsNullOrWhiteSpace(header))
+            {
+                return defaultValue;
+            }
+
+            if (!item.CsvFields.TryGetValue(header, out var raw) ||
+                string.IsNullOrWhiteSpace(raw))
+            {
+                return defaultValue;
+            }
+
+            var trimmed = raw.Trim();
+
+            // Reject multiple separators
+            if (trimmed.Count(c => c == '.' || c == ',') > 1)
+            {
+                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
+                return defaultValue;
+            }
+
+            var normalized = trimmed.Replace(',', '.');
+
+            if (!decimal.TryParse(
+                    normalized,
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out var value))
+            {
+                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
+                return defaultValue;
+            }
+
+            if (value < 0 || value != decimal.Truncate(value))
+            {
+                warnings.Add($"{warningContext}: non-whole number '{raw}', defaulted to {defaultValue}");
+                return defaultValue;
+            }
+
+            return (int)value;
+        }
+        private static bool IsFinishAvailable(string? finishesCsv, string? finish)
         {
             if (string.IsNullOrWhiteSpace(finish) || string.IsNullOrWhiteSpace(finishesCsv))
-            {
                 return false;
-            }
 
             // finishesCsv example: "nonfoil, foil"
             var parts = finishesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            // Use OrdinalIgnoreCase; DB is canonical and mapping step should produce canonical values.
             return parts.Any(p => string.Equals(p, finish, StringComparison.OrdinalIgnoreCase));
         }
-
-        private static bool IsLanguageAvailable(
-            string uuid,
-            string language,
-            string? baseLanguage,
-            IReadOnlyDictionary<string, HashSet<string>> foreignByUuid)
+        private static bool IsLanguageAvailable(string uuid,string? language,string? baseLanguage,IReadOnlyDictionary<string, HashSet<string>> foreignByUuid)
         {
             if (string.IsNullOrWhiteSpace(language))
-            {
                 return false;
-            }
 
-            // English is never in foreignData, so it is valid iff baseLanguage is English
+            // English is never in cardForeignData, so English is valid iff baseLanguage is English
             if (string.Equals(language, "English", StringComparison.OrdinalIgnoreCase))
-            {
                 return string.Equals(baseLanguage, "English", StringComparison.OrdinalIgnoreCase);
-            }
 
             // Non-English valid if baseLanguage matches OR foreign contains it
-            if (string.Equals(baseLanguage, language, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(baseLanguage) &&
+                string.Equals(baseLanguage, language, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
-            if (foreignByUuid.TryGetValue(uuid, out var langs) && langs.Contains(language))
-            {
-                return true;
-            }
-
-            return false;
+            return foreignByUuid.TryGetValue(uuid, out var langs) && langs.Contains(language);
         }
         private static void MarkUnimportable(ResolvedImportItem item, string warning)
         {
-            item.AddWarning("Language not available for this card.");
             item.IsImportable = false;
+            item.AddWarning(warning);
         }
 
+
+        // ----------------------
+        // Summary construction
+        // ----------------------
         public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {
             var summary = new ImportSummary();
@@ -667,6 +723,23 @@ namespace CollectaMundo.DomainLogic.Import
 
             return summary;
         }
+
+        // Helpers
+        private static string GetCsvValue(TempCardItem? item, string? header, string fallback = "Unknown")
+        {
+            if (item == null || string.IsNullOrWhiteSpace(header))
+            {
+                return fallback;
+            }
+
+            return item.CsvFields.TryGetValue(header, out var value) && !string.IsNullOrWhiteSpace(value)
+                ? value
+                : fallback;
+        }
+
+        // ----------------------
+        // Build CSV of unimportable items for export
+        // ----------------------
         public string BuildUnimportableItemsCsv(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems)
         {
             var sb = new StringBuilder();
@@ -700,6 +773,34 @@ namespace CollectaMundo.DomainLogic.Import
 
             return sb.ToString();
         }
+
+        // Helpers
+        private static string ToCsvCell(string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            var needsQuotes =
+                value.Contains(' ') ||
+                value.Contains(';') ||
+                value.Contains('"') ||
+                value.Contains('\n') ||
+                value.Contains('\r');
+
+            if (!needsQuotes)
+            {
+                return value;
+            }
+
+            var escaped = value.Replace("\"", "\"\"");
+            return $"\"{escaped}\"";
+        }
+
+        // ----------------------
+        // Collapse resolved items into upsert items, summing quantities of identical UUID+variant entries
+        // ----------------------
         public IReadOnlyList<CollectionUpsertItem> CollapseResolvedItemsForCollection(IReadOnlyList<ResolvedImportItem> resolvedItems)
         {
             return
@@ -724,103 +825,11 @@ namespace CollectaMundo.DomainLogic.Import
             ))];
         }
 
-        // Helpers
-        private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
-        {
-            if (string.IsNullOrWhiteSpace(csvHeader))
-            {
-                return null;
-            }
 
-            if (!item.CsvFields.TryGetValue(csvHeader, out var raw))
-            {
-                return null;
-            }
 
-            var mapping = mappings.FirstOrDefault(m =>
-                string.Equals(m.CsvValue, raw, StringComparison.OrdinalIgnoreCase));
 
-            return mapping?.SelectedCardSetValue;
-        }
-        private static string? GetMappedHeader(IReadOnlyList<CsvFieldMapping> mappings, ImportField field)
-        {
-            return mappings.FirstOrDefault(m => m.FieldToMap == field)?.SelectedCsvHeader;
-        }
-        private static int ParseNonNegativeWholeNumberOrDefault(TempCardItem item, string? header, int defaultValue, List<string> warnings, string warningContext)
-        {
-            if (string.IsNullOrWhiteSpace(header))
-            {
-                return defaultValue;
-            }
+        
 
-            if (!item.CsvFields.TryGetValue(header, out var raw) ||
-                string.IsNullOrWhiteSpace(raw))
-            {
-                return defaultValue;
-            }
-
-            var trimmed = raw.Trim();
-
-            // Reject multiple separators
-            if (trimmed.Count(c => c == '.' || c == ',') > 1)
-            {
-                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
-                return defaultValue;
-            }
-
-            var normalized = trimmed.Replace(',', '.');
-
-            if (!decimal.TryParse(
-                    normalized,
-                    NumberStyles.Number,
-                    CultureInfo.InvariantCulture,
-                    out var value))
-            {
-                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
-                return defaultValue;
-            }
-
-            if (value < 0 || value != decimal.Truncate(value))
-            {
-                warnings.Add($"{warningContext}: non-whole number '{raw}', defaulted to {defaultValue}");
-                return defaultValue;
-            }
-
-            return (int)value;
-        }
-        private static string GetCsvValue(TempCardItem? item, string? header, string fallback = "Unknown")
-        {
-            if (item == null || string.IsNullOrWhiteSpace(header))
-            {
-                return fallback;
-            }
-
-            return item.CsvFields.TryGetValue(header, out var value) && !string.IsNullOrWhiteSpace(value)
-                ? value
-                : fallback;
-        }
-        private static string ToCsvCell(string? value)
-        {
-            if (string.IsNullOrEmpty(value))
-            {
-                return string.Empty;
-            }
-
-            var needsQuotes =
-                value.Contains(' ') ||
-                value.Contains(';') ||
-                value.Contains('"') ||
-                value.Contains('\n') ||
-                value.Contains('\r');
-
-            if (!needsQuotes)
-            {
-                return value;
-            }
-
-            var escaped = value.Replace("\"", "\"\"");
-            return $"\"{escaped}\"";
-        }
 
         #endregion
 

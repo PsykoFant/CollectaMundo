@@ -268,37 +268,54 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 9: resolve + strict validate via DB
-        public async Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, CancellationToken token)
+        public async Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items,IReadOnlyList<CsvFieldMapping> additionalMappings,IReadOnlyList<CsvValueMapping> conditionMappings,IReadOnlyList<CsvValueMapping> finishMappings,IReadOnlyList<CsvValueMapping> languageMappings,CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             // 1) Resolve (mapping/defaults) - same as today
-            var resolved = _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings);
+            var resolved = _importLogic.ResolveImportItems(items,additionalMappings,conditionMappings,finishMappings,languageMappings);
+
+            token.ThrowIfCancellationRequested();
 
             // 2) Collect UUIDs we need to validate (only importable candidates)
             var uuidsToValidate = CollectUuidsToValidate(resolved);
 
+            // No UUIDs => nothing to validate; return as-is
             if (uuidsToValidate.Count == 0)
-            {
                 return resolved;
-            }
 
             // 3) Determine whether we need foreign languages (Tier 2)
+            // Only needed when any importable item requests non-English language.
             var needsForeign = CollectUuidsNeedingForeignLanguageLookup(resolved);
+
+            // 3a) If we have only English requests, we still need Tier 1 (base language + finishes)
+            // to validate "English" and finish availability.
+            // So we proceed with Tier 1 regardless.
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             try
             {
+                token.ThrowIfCancellationRequested();
+
                 // 4) Tier 1: base availability for ALL uuids (cards/tokens)
-                var baseByUuid = await _importRepo.FetchBaseAvailabilityAsync(uuidsToValidate, uow.CurrentConnection, uow.CurrentTransaction, token);
+                var baseByUuid = await _importRepo.FetchBaseAvailabilityAsync(uuidsToValidate,uow.CurrentConnection,uow.CurrentTransaction,token);
+
+                token.ThrowIfCancellationRequested();
 
                 // 5) Tier 2: foreign languages only for non-English requested uuids
-                IReadOnlyDictionary<string, HashSet<string>> foreignByUuid = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+                IReadOnlyDictionary<string, HashSet<string>> foreignByUuid =new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
                 if (needsForeign.Count > 0)
                 {
                     foreignByUuid = await _importRepo.FetchForeignLanguagesAsync(
-                        needsForeign, uow.CurrentConnection, uow.CurrentTransaction, token);
+                        needsForeign,
+                        uow.CurrentConnection,
+                        uow.CurrentTransaction,
+                        token);
+
+                    token.ThrowIfCancellationRequested();
                 }
 
                 var index = new AvailabilityIndex
@@ -320,42 +337,54 @@ namespace CollectaMundo.ApplicationServices.Import
             }
         }
 
-        // ----- dummy helpers -----
+        // ----------------------------------------------------
+        // Helpers
+        // ----------------------------------------------------
 
         private static HashSet<string> CollectUuidsToValidate(IReadOnlyList<ResolvedImportItem> resolved)
         {
-            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // Capacity hint: worst-case all are importable with UUID
+            var set = new HashSet<string>(capacity: resolved.Count, comparer: StringComparer.OrdinalIgnoreCase);
+
             foreach (var r in resolved)
             {
-                if (r.IsImportable && !string.IsNullOrWhiteSpace(r.Uuid))
+                if (!r.IsImportable)
+                    continue;
+
+                var uuid = r.Uuid;
+                if (!string.IsNullOrWhiteSpace(uuid))
                 {
-                    set.Add(r.Uuid);
+                    set.Add(uuid);
                 }
             }
+
             return set;
         }
         private static HashSet<string> CollectUuidsNeedingForeignLanguageLookup(IReadOnlyList<ResolvedImportItem> resolved)
         {
+            // Only uuids for importable rows requesting non-English.
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var r in resolved)
             {
-                if (!r.IsImportable || string.IsNullOrWhiteSpace(r.Uuid))
-                {
+                if (!r.IsImportable)
                     continue;
-                }
 
-                // Only need foreignData when requested language != English
-                if (!string.Equals(r.Language, "English", StringComparison.OrdinalIgnoreCase))
+                var uuid = r.Uuid;
+                if (string.IsNullOrWhiteSpace(uuid))
+                    continue;
+
+                var lang = r.Language;
+
+                // Tier 2 only when requested language != English
+                if (!string.Equals(lang, "English", StringComparison.OrdinalIgnoreCase))
                 {
-                    set.Add(r.Uuid);
+                    set.Add(uuid);
                 }
             }
+
             return set;
         }
-
-
-
-
 
         public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {

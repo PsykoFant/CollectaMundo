@@ -388,25 +388,173 @@ namespace CollectaMundo.Infrastructure.Import
             return await QueryForeignLanguagesAsync(connection, tx, token);
         }
 
-        // ----- dummy helpers -----
+        // --- TEMP TABLE SETUP ---
+        private static async Task PrepareTempUuidsAsync(IDbConnection c,IDbTransaction? tx,IReadOnlyCollection<string> uuids,CancellationToken token)
+        {
+            var conn = (SQLiteConnection)c;
+            var sqliteTx = (SQLiteTransaction?)tx;
 
-        private static Task PrepareTempUuidsAsync(IDbConnection c, IDbTransaction? tx, IReadOnlyCollection<string> uuids, CancellationToken token)
-            => Task.CompletedTask;
+            // 1) Create temp table (connection-scoped)
+            const string createSql = """
+                CREATE TEMP TABLE IF NOT EXISTS temp_import_uuids (
+                    uuid TEXT PRIMARY KEY
+                );
+                """;
 
-        private static Task<List<BaseAvailability>> QueryBaseFromCardsAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
-            => Task.FromResult(new List<BaseAvailability>());
+            using (var cmd = new SQLiteCommand(createSql, conn, sqliteTx))
+            {
+                await cmd.ExecuteNonQueryAsync(token);
+            }
 
-        private static Task<List<BaseAvailability>> QueryBaseFromTokensAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
-            => Task.FromResult(new List<BaseAvailability>());
+            // 2) Clear it (we rebuild per call for simplicity + correctness)
+            using (var cmd = new SQLiteCommand("DELETE FROM temp_import_uuids;", conn, sqliteTx))
+            {
+                await cmd.ExecuteNonQueryAsync(token);
+            }
 
-        private static IReadOnlyDictionary<string, BaseAvailability> MergeBase(List<BaseAvailability> cards, List<BaseAvailability> tokens)
-            => new Dictionary<string, BaseAvailability>(StringComparer.OrdinalIgnoreCase);
+            // 3) Insert UUIDs (OR IGNORE collapses duplicates)
+            const string insertSql = "INSERT OR IGNORE INTO temp_import_uuids(uuid) VALUES (@uuid);";
+            using (var cmd = new SQLiteCommand(insertSql, conn, sqliteTx))
+            {
+                var pUuid = cmd.Parameters.Add("@uuid", DbType.String);
 
-        private static Task<IReadOnlyDictionary<string, HashSet<string>>> QueryForeignLanguagesAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
-            => Task.FromResult<IReadOnlyDictionary<string, HashSet<string>>>(new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase));
+                foreach (var uuid in uuids)
+                {
+                    token.ThrowIfCancellationRequested();
 
+                    if (string.IsNullOrWhiteSpace(uuid))
+                        continue;
 
+                    pUuid.Value = uuid;
+                    await cmd.ExecuteNonQueryAsync(token);
+                }
+            }
+        }
 
+        // --- BASE LOOKUPS (cards/tokens) ---
+        private static async Task<List<BaseAvailability>> QueryBaseFromCardsAsync(IDbConnection c,IDbTransaction? tx,CancellationToken token)
+        {
+            var conn = (SQLiteConnection)c;
+            var sqliteTx = (SQLiteTransaction?)tx;
+
+            const string sql = """
+                SELECT c.uuid, c.language, c.finishes
+                FROM cards c
+                JOIN temp_import_uuids t ON t.uuid = c.uuid;
+                """;
+
+            var results = new List<BaseAvailability>();
+
+            using var cmd = new SQLiteCommand(sql, conn, sqliteTx);
+            using var reader = await cmd.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                var uuid = reader["uuid"]?.ToString();
+                if (string.IsNullOrWhiteSpace(uuid))
+                    continue;
+
+                var lang = reader["language"]?.ToString();
+                var finishes = reader["finishes"]?.ToString();
+
+                results.Add(new BaseAvailability(uuid, lang, finishes));
+            }
+
+            return results;
+        }
+        private static async Task<List<BaseAvailability>> QueryBaseFromTokensAsync(IDbConnection c,IDbTransaction? tx,CancellationToken token)
+        {
+            var conn = (SQLiteConnection)c;
+            var sqliteTx = (SQLiteTransaction?)tx;
+
+            const string sql = """
+                SELECT t.uuid, t.language, t.finishes
+                FROM tokens t
+                JOIN temp_import_uuids u ON u.uuid = t.uuid;
+                """;
+
+            var results = new List<BaseAvailability>();
+
+            using var cmd = new SQLiteCommand(sql, conn, sqliteTx);
+            using var reader = await cmd.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                var uuid = reader["uuid"]?.ToString();
+                if (string.IsNullOrWhiteSpace(uuid))
+                    continue;
+
+                var lang = reader["language"]?.ToString();
+                var finishes = reader["finishes"]?.ToString();
+
+                results.Add(new BaseAvailability(uuid, lang, finishes));
+            }
+
+            return results;
+        }
+        private static IReadOnlyDictionary<string, BaseAvailability> MergeBase(List<BaseAvailability> cards,List<BaseAvailability> tokens)
+        {
+            // Defensive merge: prefer cards if collision.
+            var dict = new Dictionary<string, BaseAvailability>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var row in tokens)
+            {
+                if (!string.IsNullOrWhiteSpace(row.Uuid))
+                    dict[row.Uuid] = row;
+            }
+
+            foreach (var row in cards)
+            {
+                if (!string.IsNullOrWhiteSpace(row.Uuid))
+                    dict[row.Uuid] = row;
+            }
+
+            return dict;
+        }
+
+        // --- FOREIGN LANGUAGES LOOKUP (cardForeignData) ---
+        private static async Task<IReadOnlyDictionary<string, HashSet<string>>> QueryForeignLanguagesAsync(IDbConnection c,IDbTransaction? tx,CancellationToken token)
+        {
+            var conn = (SQLiteConnection)c;
+            var sqliteTx = (SQLiteTransaction?)tx;
+
+            const string sql = """
+                SELECT f.uuid, f.language
+                FROM cardForeignData f
+                JOIN temp_import_uuids t ON t.uuid = f.uuid;
+                """;
+
+            var dict = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+            using var cmd = new SQLiteCommand(sql, conn, sqliteTx);
+            using var reader = await cmd.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                token.ThrowIfCancellationRequested();
+
+                var uuid = reader["uuid"]?.ToString();
+                if (string.IsNullOrWhiteSpace(uuid))
+                    continue;
+
+                var lang = reader["language"]?.ToString()?.Trim();
+                if (string.IsNullOrWhiteSpace(lang))
+                    continue;
+
+                if (!dict.TryGetValue(uuid, out var set))
+                {
+                    set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    dict[uuid] = set;
+                }
+
+                set.Add(lang);
+            }
+
+            return dict;
+        }
+
+        
+        // Final upsert step that inserts/updates myCollection based on the imported data, returning the resulting rows with their assigned CardIds. This is where we apply the "additive" logic for owned/trade counts.
         public async Task<IReadOnlyList<MyCollectionRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token)
         {
             const string sql = @"
