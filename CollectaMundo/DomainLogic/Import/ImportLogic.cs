@@ -439,6 +439,11 @@ namespace CollectaMundo.DomainLogic.Import
                 item.CsvFields.TryGetValue(uuidHeader, out var uuid);
                 var isImportable = !string.IsNullOrWhiteSpace(uuid);
 
+                if (!isImportable)
+                {
+                    warnings.Add("No UUID resolved for this row (cannot import). Check ID / Name+Set mapping steps.");
+                }
+
                 // Quantities
                 var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader, defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsOwned), warnings, "CardsOwned");
 
@@ -490,12 +495,13 @@ namespace CollectaMundo.DomainLogic.Import
                 if (!IsFinishAvailable(baseAvail.FinishesCsv, r.Finish))
                 {
                     var availableFinishes = GetAvailableFinishes(baseAvail.FinishesCsv);
+                    var requestedFinish = r.Finish;
 
                     if (availableFinishes.Count == 1)
                     {
                         var only = availableFinishes.First();
                         r.OverwriteFinish(only);
-                        r.AddWarning($"Finish '{r.Finish ?? ""}' is not available; auto-selected '{only}' because it is the only available finish for this card.");
+                        r.AddWarning($"Finish '{requestedFinish ?? ""}' is not available; auto-selected '{only}' because it is the only available finish for this card.");
                     }
                     else
                     {
