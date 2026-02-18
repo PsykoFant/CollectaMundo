@@ -79,14 +79,9 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
             get
             {
                 var name = NameSetMappings.FirstOrDefault(m => m.FieldToMap == ImportField.CardName);
-                var setNm = NameSetMappings.FirstOrDefault(m => m.FieldToMap == ImportField.SetName);
-                var setCd = NameSetMappings.FirstOrDefault(m => m.FieldToMap == ImportField.SetCode);
-
                 bool hasName = !string.IsNullOrWhiteSpace(name?.SelectedCsvHeader);
-                bool hasSetName = !string.IsNullOrWhiteSpace(setNm?.SelectedCsvHeader);
-                bool hasSetCode = !string.IsNullOrWhiteSpace(setCd?.SelectedCsvHeader);
 
-                return hasName && (hasSetName || hasSetCode);
+                return hasName;
             }
         }
         public bool CanExecuteSecondaryAction => false;

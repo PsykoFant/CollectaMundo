@@ -506,7 +506,7 @@ namespace CollectaMundo.DomainLogic.Import
                     else
                     {
                         MarkUnimportable(r, $"Finish '{r.Finish ?? ""}' is not available for UUID {r.Uuid}.");
-                        continue; // optional: once unimportable, no need to keep validating
+                        continue; // Once unimportable, no need to keep validating
                     }
                 }
 
@@ -516,12 +516,13 @@ namespace CollectaMundo.DomainLogic.Import
                 if (!IsLanguageAvailable(r.Uuid, r.Language, baseAvail.BaseLanguage, availability.ForeignLanguagesByUuid))
                 {
                     var availableLangs = GetAvailableLanguages(baseAvail.BaseLanguage, r.Uuid, availability.ForeignLanguagesByUuid);
+                    var requestedLanguage = r.Language;
 
                     if (availableLangs.Count == 1)
                     {
                         var only = availableLangs.First();
                         r.OverwriteLanguage(only);
-                        r.AddWarning($"Language '{r.Language ?? ""}' is not available; auto-selected '{only}' because it is the only available language for this card.");
+                        r.AddWarning($"Language '{requestedLanguage ?? ""}' is not available; auto-selected '{only}' because it is the only available language for this card.");
                     }
                     else
                     {
@@ -812,7 +813,6 @@ namespace CollectaMundo.DomainLogic.Import
                 ? value
                 : fallback;
         }
-
         public string BuildUnimportableItemsCsv(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems)
         {
             var sb = new StringBuilder();
@@ -836,8 +836,8 @@ namespace CollectaMundo.DomainLogic.Import
                 return string.Empty;
             }
 
-            // Preserve original column order
-            var headers = rows.First().CsvFields.Keys.ToList();
+            // Determine headers (original CSV headers + our warnings column)           
+            var headers = rows.SelectMany(r => r.CsvFields.Keys).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
             // Add warnings column (avoid collision if CSV already had that header)
             const string warningsHeaderBase = "CollectaMundoWarnings";

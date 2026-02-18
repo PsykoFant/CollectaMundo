@@ -71,7 +71,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Assert step 1 completed successfully
             step1Result.Code.Should().Be(OperationResultCode.Success);
-            importVM.ImportCardList.Should().HaveCount(8);
+            importVM.ImportCardList.Should().HaveCount(10);
 
             // =====================================================
             // Step 2 – ID column mapping
@@ -116,7 +116,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             step2Result.Code.Should().Be(OperationResultCode.Success);
 
             // After ID mapping, we should have 3 cards with UUIDs (the ones that had MCM IDs in the CSV)
-            importVM.ImportCardList.Count(HasUuid).Should().Be(3);
+            importVM.ImportCardList.Count(HasUuid).Should().Be(4);
 
 
             // =====================================================
@@ -148,7 +148,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             step3Result.Code.Should().Be(OperationResultCode.Success);
 
             // After Name andSet mapping, we should have 3 cards with UUIDs (the ones that had MCM IDs in the CSV)
-            importVM.ImportCardList.Count(HasUuid).Should().Be(6);
+            importVM.ImportCardList.Count(HasUuid).Should().Be(8);
             importVM.ImportCardList.Count(HasUuids).Should().Be(1); // One card should have multiple UUIDs due to multiple matches
 
             // =====================================================
@@ -179,7 +179,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             step4Result.Code.Should().Be(OperationResultCode.Success);
 
             // After choosing the correct UUID for the card with multiple matches, we should now have 7 cards with UUIDs in total (the 3 from ID mapping + the 3 from Name/Set mapping + one we just resolved)
-            importVM.ImportCardList.Count(HasUuid).Should().Be(7);
+            importVM.ImportCardList.Count(HasUuid).Should().Be(9);
             importVM.ImportCardList.Count(HasUuids).Should().Be(0); // We should have resolved the multiple UUIDs, so none should have multiple anymore
 
             // =====================================================
@@ -286,7 +286,7 @@ namespace CollectaMundo.Tests.ScenarioTests
                 because: "step 8 should be active and progress label updated");
             step8.PrimaryActionButtonText.Should().Contain("Proceed");
 
-            step8.LanguageMappings.Should().HaveCount(4);
+            step8.LanguageMappings.Should().HaveCount(5);
             var languageMappings = step8.LanguageMappings;
 
             // Check FinishMappingItem object is correctly initialized with guesses
@@ -298,6 +298,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             languageMappings[2].SelectedCardSetValue.Should().Be("English");
             languageMappings[3].CsvValue.Should().Be("Dansk");
             languageMappings[3].SelectedCardSetValue.Should().Be("English");
+            languageMappings[4].CsvValue.Should().Be("Spanish");
+            languageMappings[4].SelectedCardSetValue.Should().Be("Spanish");
 
             // Simulate clearing a mapping (should use default value for that language, which is "English")
             languageMappings[0].SelectedCardSetValue = null;
