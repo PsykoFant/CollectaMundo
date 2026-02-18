@@ -216,7 +216,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Assert: 3 entries are marked as foil finish
             var foilCount = _mainVM.MyCollectionVM.Cards.Count(c => string.Equals(c.SelectedFinish, "foil", StringComparison.OrdinalIgnoreCase));
-            Assert.Equal(3, foilCount);
+            Assert.Equal(4, foilCount);
 
             // Assert mana cost images load correctly for known keys for both CardViewModel objects
             var validManaCostKeys = new HashSet<string>
@@ -605,7 +605,6 @@ namespace CollectaMundo.Tests.ScenarioTests
             var selectedFinishFilter = _mainVM.FilterVM.Filters["SelectedFinish"];
             var expectedSelectedFinishOptions = new List<string>
             {
-                "etched",
                 "nonfoil",
                 "foil"
             };

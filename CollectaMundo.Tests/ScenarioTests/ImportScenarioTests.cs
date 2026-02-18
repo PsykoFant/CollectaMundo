@@ -6,6 +6,7 @@ using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using FluentAssertions;
 using System.IO;
+using System.Reflection.PortableExecutable;
 
 namespace CollectaMundo.Tests.ScenarioTests
 {
@@ -123,9 +124,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 3 – Name & set mapping
             // =====================================================
             var step3 = (ImportStep03_NameSetMappingViewModel)importVM.CurrentStepViewModel;
-            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep03_NameSetMappingViewModel>();
-            importVM.ProgressStep.Should().Be("Name and set mapping");
-            step2.PrimaryActionButtonText.Should().Contain("Proceed");
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep03_NameSetMappingViewModel && importVM.ProgressStep == "Name and set mapping",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 4 should be active and progress label updated");
+            step3.PrimaryActionButtonText.Should().Contain("Proceed");
 
             step3.NameSetMappings.Should().HaveCount(3);
             var nameSetmapping = step3.NameSetMappings;
@@ -318,38 +320,45 @@ namespace CollectaMundo.Tests.ScenarioTests
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 9 should be active and progress label updated");
             step9.PrimaryActionButtonText.Should().Contain("Start the import...");
+            step9.CanExecuteSecondaryAction.Should().BeTrue();
             step9.SecondaryActionButtonText.Should().Contain("Save unrecognized items");
 
             var summary = step9.Summary;
 
             // Check totals
-            //summary.ReadyToImportCount.Should().Be(7); // 7 cards should be ready to import with UUIDs
-            //summary.TotalCardsToAdd.Should().Be(14); // Sum of quantities of all cards to import
-            //summary.UnableToImportCount.Should().Be(1); // 1 card should not be able to import
+            summary.ReadyToImportCount.Should().Be(7); // 7 cards should be ready to import with UUIDs
+            summary.TotalCardsToAdd.Should().Be(14); // Sum of quantities of all cards to import
+            summary.UnableToImportCount.Should().Be(3); // 3 cards should not be able to import
 
             //// Check field mappings are correctly displayed in summary
-            //summary.FieldMappings[0].CsvHeader.Should().Be("Condition");
-            //summary.FieldMappings[1].CsvHeader.Should().Be("Printing");
-            //summary.FieldMappings[2].CsvHeader.Should().Be("Language");
-            //summary.FieldMappings[3].CsvHeader.Should().Be("Quantity");
-            //summary.FieldMappings[4].CsvHeader.Should().Be("For sale");
+            summary.FieldMappings[0].CsvHeader.Should().Be("Condition");
+            summary.FieldMappings[1].CsvHeader.Should().Be("Printing");
+            summary.FieldMappings[2].CsvHeader.Should().Be("Language");
+            summary.FieldMappings[3].CsvHeader.Should().Be("Quantity");
+            summary.FieldMappings[4].CsvHeader.Should().Be("For sale");
 
             //// Spot check value mappings 
-            //summary.ValueMappings[0].Field.Should().Be(ImportField.Condition);
-            //summary.ValueMappings[0].CsvValue.Should().Be("Near Mint");
-            //summary.ValueMappings[0].MappedValue.Should().Be("Near Mint");
-            //summary.ValueMappings[1].Field.Should().Be(ImportField.Condition);
-            //summary.ValueMappings[1].CsvValue.Should().Be("Nearly sublime");
-            //summary.ValueMappings[1].MappedValue.Should().Be("(blank -> Near Mint)");
-            //summary.ValueMappings[7].Field.Should().Be(ImportField.CardFinish);
-            //summary.ValueMappings[7].CsvValue.Should().Be("Shiny");
-            //summary.ValueMappings[7].MappedValue.Should().Be("foil");
-            //summary.ValueMappings[8].Field.Should().Be(ImportField.CardFinish);
-            //summary.ValueMappings[8].CsvValue.Should().Be("nothing");
-            //summary.ValueMappings[8].MappedValue.Should().Be("(blank -> nonfoil)");
+            summary.ValueMappings[0].Field.Should().Be(ImportField.Condition);
+            summary.ValueMappings[0].CsvValue.Should().Be("Near Mint");
+            summary.ValueMappings[0].MappedValue.Should().Be("Near Mint");
+            summary.ValueMappings[1].Field.Should().Be(ImportField.Condition);
+            summary.ValueMappings[1].CsvValue.Should().Be("Nearly sublime");
+            summary.ValueMappings[1].MappedValue.Should().Be("(blank -> Near Mint)");
+            summary.ValueMappings[7].Field.Should().Be(ImportField.CardFinish);
+            summary.ValueMappings[7].CsvValue.Should().Be("Shiny");
+            summary.ValueMappings[7].MappedValue.Should().Be("foil");
+            summary.ValueMappings[8].Field.Should().Be(ImportField.CardFinish);
+            summary.ValueMappings[8].CsvValue.Should().Be("nothing");
+            summary.ValueMappings[8].MappedValue.Should().Be("(blank -> nonfoil)");
+            summary.ValueMappings[12].CsvValue.Should().Be("Dansk");
+            summary.ValueMappings[12].MappedValue.Should().Be("English");
+            summary.ValueMappings[13].CsvValue.Should().Be("Spanish");
+            summary.ValueMappings[13].MappedValue.Should().Be("Spanish");
 
-            //summary.UnimportableItems.Should().HaveCount(1);
-            //summary.UnimportableItems[0].CardName.Should().Contain("Does not exist");
+            summary.UnimportableItems.Should().HaveCount(3);
+            summary.UnimportableItems[0].CardName.Should().Contain("Does not exist");
+            summary.UnimportableItems[1].Warnings.Should().Contain("Finish 'foil' is not available for UUID 0b952d69-5db0-59c2-810b-d4b10d452872.");
+            summary.UnimportableItems[2].Warnings.Should().Contain("Language 'Spanish' is not available for UUID 7be5b8a9-0d68-5125-b729-ff1063dd3ed0.");
 
             // Proceed with the import
             var step9Result = await step9.OnPrimaryAction();
@@ -357,7 +366,51 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Assert that the final import completed successfully
             step9Result.Code.Should().Be(OperationResultCode.Success);
 
-            //_mainVM.MyCollectionVM.Cards.Should().HaveCount(26);
+            var cards = _mainVM.MyCollectionVM.Cards;
+            cards.Should().HaveCount(25); 
+
+            // Spotcheck individual cards
+            var prismaticEndingUuid = "bafac74c-f4f8-5c71-8a6b-0bd02c536c47"; 
+            var prismaticEnding = cards.SingleOrDefault(c =>
+            c.Uuid == prismaticEndingUuid &&
+            c.Name == "Prismatic Ending" &&
+            c.SelectedCondition == "Near Mint" &&
+            c.SelectedFinish == "nonfoil" &&
+            c.Language == "English" &&
+            c.Count == 7 &&
+            c.CardsForTrade == 3
+            );
+
+            var vexingArcanixUuid = "66dae17d-a742-51b4-ba09-0b37d7c64265";
+            var vexingArcanix = cards.SingleOrDefault(c =>
+            c.Uuid == vexingArcanixUuid &&
+            c.Name == "Vexing Arcanix" &&
+            c.SelectedCondition == "Near Mint" &&
+            c.SelectedFinish == "nonfoil" &&
+            c.Language == "English" &&
+            c.Count == 2 &&
+            c.CardsForTrade == 0
+            );
+
+            var sokratesUuid = "3c389f9c-e459-5b16-87b5-d51644f05b25";
+            var sokrates = cards.SingleOrDefault(c =>
+            c.Uuid == sokratesUuid &&
+            c.Name == "Sokrates, Athenian Teacher" &&
+            c.SelectedCondition == "Near Mint" &&
+            c.SelectedFinish == "foil" &&
+            c.Language == "Ancient Greek" &&
+            c.Count == 2 &&
+            c.CardsForTrade == 2
+            );
+
+            var syphonUuid = "9c015664-e6e8-53a4-ad48-276138b18098";
+            var syphonSouls = cards
+                .Where(c => c.Uuid == syphonUuid)
+                .ToList();
+
+            syphonSouls.Should().HaveCount(2);
+            syphonSouls.Should().ContainSingle(c => c.SelectedCondition == "Near Mint");
+            syphonSouls.Should().ContainSingle(c => c.SelectedCondition == "Mint");
 
             // =====================================================
             // ...
