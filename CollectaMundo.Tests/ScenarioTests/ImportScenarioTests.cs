@@ -518,10 +518,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 10 - Final
             // =====================================================
             var step10 = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "Summary and confirmation",
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "" && importVM.ProgressHeadline == "The Import Wizard",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 10 should be active and progress label updated");
-            step10.PrimaryActionButtonText.Should().Contain("Start the import...");
+            step10.PrimaryActionButtonText.Should().Contain("OK");
         }
 
         #region Helpers
