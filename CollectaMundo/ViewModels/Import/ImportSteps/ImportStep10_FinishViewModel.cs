@@ -4,17 +4,9 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
-    public partial class ImportStep10_FinishViewModel : ObservableObject, IImportStepViewModel
+    public partial class ImportStep10_FinishViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
     {
-        private readonly ImportViewModel _parent;
-
-        // --------------------------------------------
-        // Constructor
-        // --------------------------------------------
-        public ImportStep10_FinishViewModel(ImportViewModel parent)
-        {
-            _parent = parent;
-        }
+        private readonly ImportViewModel _parent = parent;
 
         // --------------------------------------------
         // Initialization (empty for this step)

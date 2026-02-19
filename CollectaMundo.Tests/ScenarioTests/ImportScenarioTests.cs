@@ -8,8 +8,8 @@ using CollectaMundo.ViewModels.Import.ImportSteps;
 using FluentAssertions;
 using ServiceStack;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
-using System.Reflection.PortableExecutable;
 
 namespace CollectaMundo.Tests.ScenarioTests
 {
@@ -370,12 +370,12 @@ namespace CollectaMundo.Tests.ScenarioTests
             step9Result.Code.Should().Be(OperationResultCode.Success);
 
             var myCollectionInMemory = _mainVM.MyCollectionVM.Cards;
-            myCollectionInMemory.Should().HaveCount(25); 
+            myCollectionInMemory.Should().HaveCount(25);
 
             // Spotcheck individual cards
             var prismaticEndingUuid = "bafac74c-f4f8-5c71-8a6b-0bd02c536c47";
             var prismaticEnding = myCollectionInMemory.Single(c => c.Uuid == prismaticEndingUuid);
-            
+
             prismaticEnding.Name.Should().Be("Prismatic Ending");
             prismaticEnding.SelectedCondition.Should().Be("Near Mint");
             prismaticEnding.SelectedFinish.Should().Be("nonfoil");
@@ -517,8 +517,11 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
             // Step 10 - Final
             // =====================================================
+            Debug.WriteLine($"ProgressStep: {importVM.ProgressStep}");
+            Debug.WriteLine($"ProgressHeadline: {importVM.ProgressHeadline}");
+
             var step10 = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "" && importVM.ProgressHeadline == "The Import Wizard",
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "Success!",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 10 should be active and progress label updated");
             step10.PrimaryActionButtonText.Should().Contain("OK");

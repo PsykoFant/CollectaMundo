@@ -224,7 +224,7 @@ namespace CollectaMundo.ViewModels.Import
                 ImportStep.FinishMapping => CreateStep(new ImportStep07_FinishMappingViewModel(this), "Finish value mapping"),
                 ImportStep.LanguageMapping => CreateStep(new ImportStep08_LanguageMappingViewModel(this), "Language value mapping"),
                 ImportStep.Summary => CreateStep(new ImportStep09_SummaryViewModel(this), "Summary and confirmation"),
-                ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), string.Empty),
+                ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), "Success!"),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };
         }
@@ -429,6 +429,7 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report("Importing cards…");
 
             var token = _userPromptService.GetNewCancellationToken();
+
             var importResult = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, Progress, token));
 
             if (importResult.Mutation != null)
@@ -534,7 +535,6 @@ namespace CollectaMundo.ViewModels.Import
                         if (_currentStep == ImportStep.Finish)
                         {
                             ImportSuccessVisibility = Visibility.Visible;
-                            Progress.Step.Report("Success!");
                             Progress.Headline.Report("Import complete!");
                             Progress.Detail.Report($"Added {Summary.TotalImportItems} individual cards and {Summary.TotalCardsToAdd} total cards to your collection.");
 
