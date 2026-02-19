@@ -1,10 +1,13 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using FluentAssertions;
+using ServiceStack;
+using System.Data.SQLite;
 using System.IO;
 using System.Reflection.PortableExecutable;
 
@@ -366,56 +369,159 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Assert that the final import completed successfully
             step9Result.Code.Should().Be(OperationResultCode.Success);
 
-            var cards = _mainVM.MyCollectionVM.Cards;
-            cards.Should().HaveCount(25); 
+            var myCollectionInMemory = _mainVM.MyCollectionVM.Cards;
+            myCollectionInMemory.Should().HaveCount(25); 
 
             // Spotcheck individual cards
-            var prismaticEndingUuid = "bafac74c-f4f8-5c71-8a6b-0bd02c536c47"; 
-            var prismaticEnding = cards.SingleOrDefault(c =>
-            c.Uuid == prismaticEndingUuid &&
-            c.Name == "Prismatic Ending" &&
-            c.SelectedCondition == "Near Mint" &&
-            c.SelectedFinish == "nonfoil" &&
-            c.Language == "English" &&
-            c.Count == 7 &&
-            c.CardsForTrade == 3
-            );
+            var prismaticEndingUuid = "bafac74c-f4f8-5c71-8a6b-0bd02c536c47";
+            var prismaticEnding = myCollectionInMemory.Single(c => c.Uuid == prismaticEndingUuid);
+            
+            prismaticEnding.Name.Should().Be("Prismatic Ending");
+            prismaticEnding.SelectedCondition.Should().Be("Near Mint");
+            prismaticEnding.SelectedFinish.Should().Be("nonfoil");
+            prismaticEnding.Language.Should().Be("French");
+            prismaticEnding.CardsOwned.Should().Be(7);
+            prismaticEnding.CardsForTrade.Should().Be(3);
 
             var vexingArcanixUuid = "66dae17d-a742-51b4-ba09-0b37d7c64265";
-            var vexingArcanix = cards.SingleOrDefault(c =>
-            c.Uuid == vexingArcanixUuid &&
-            c.Name == "Vexing Arcanix" &&
-            c.SelectedCondition == "Near Mint" &&
-            c.SelectedFinish == "nonfoil" &&
-            c.Language == "English" &&
-            c.Count == 2 &&
-            c.CardsForTrade == 0
-            );
+            var vexingArcanix = myCollectionInMemory.Single(c => c.Uuid == vexingArcanixUuid);
+            vexingArcanix.Name.Should().Be("Vexing Arcanix");
+            vexingArcanix.SelectedCondition.Should().Be("Near Mint");
+            vexingArcanix.SelectedFinish.Should().Be("nonfoil");
+            vexingArcanix.Language.Should().Be("English");
+            vexingArcanix.CardsOwned.Should().Be(2);
+            vexingArcanix.CardsForTrade.Should().Be(0);
 
             var sokratesUuid = "3c389f9c-e459-5b16-87b5-d51644f05b25";
-            var sokrates = cards.SingleOrDefault(c =>
-            c.Uuid == sokratesUuid &&
-            c.Name == "Sokrates, Athenian Teacher" &&
-            c.SelectedCondition == "Near Mint" &&
-            c.SelectedFinish == "foil" &&
-            c.Language == "Ancient Greek" &&
-            c.Count == 2 &&
-            c.CardsForTrade == 2
-            );
+            var sokrates = myCollectionInMemory.Single(c => c.Uuid == sokratesUuid);
+            sokrates.Name.Should().Be("Sokrates, Athenian Teacher");
+            sokrates.SelectedCondition.Should().Be("Near Mint");
+            sokrates.SelectedFinish.Should().Be("foil");
+            sokrates.Language.Should().Be("Ancient Greek");
+            sokrates.CardsOwned.Should().Be(2);
+            sokrates.CardsForTrade.Should().Be(2);
 
             var syphonUuid = "9c015664-e6e8-53a4-ad48-276138b18098";
-            var syphonSouls = cards
-                .Where(c => c.Uuid == syphonUuid)
-                .ToList();
-
+            var syphonSouls = myCollectionInMemory.Where(c => c.Uuid == syphonUuid).ToList();
             syphonSouls.Should().HaveCount(2);
-            syphonSouls.Should().ContainSingle(c => c.SelectedCondition == "Near Mint");
-            syphonSouls.Should().ContainSingle(c => c.SelectedCondition == "Mint");
+
+            var nearMint = syphonSouls.Single(c => c.SelectedCondition == "Near Mint");
+            nearMint.Name.Should().Be("Syphon Soul");
+            nearMint.SelectedFinish.Should().Be("nonfoil");
+            nearMint.Language.Should().Be("English");
+
+            var mint = syphonSouls.Single(c => c.SelectedCondition == "Mint");
+            mint.Name.Should().Be("Syphon Soul");
+            mint.SelectedFinish.Should().Be("nonfoil");
+            mint.Language.Should().Be("English");
+
+            // Compare with database state to ensure it was correctly saved (spot check the same cards we checked in memory, and that the total count matches)
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
+
+            const string sql = @"
+            SELECT uuid AS Uuids,
+                   condition AS Conditions,
+                   finish AS Finishes,
+                   language AS Languages,
+                   cardsOwned AS CardsOwned,
+                   cardsForTrade AS CardsForTrade
+            FROM myCollection;
+            ";
+
+            using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            var myCollectionDB = new List<CardSet>();
+
+            var dbUuids = new List<string>();
+            var dbConditions = new List<string>();
+            var dbFinishes = new List<string>();
+            var dbLanguages = new List<string>();
+            var cardsOwnedDb = new List<int>();
+            var sumTradeDb = new List<int>();
+
+            while (await reader.ReadAsync())
+            {
+                myCollectionDB.Add(new CardSet
+                {
+                    Uuid = reader.GetString(0),
+                    SelectedCondition = reader.GetString(1),
+                    SelectedFinish = reader.GetString(2),
+                    Language = reader.GetString(3),
+                    CardsOwned = reader.GetInt32(4),
+                    CardsForTrade = reader.GetInt32(5)
+                });
+            }
+
+            await uow.CommitAsync();
+
+            myCollectionInMemory.Should().HaveCount(myCollectionDB.Count);
+
+            var prismaticEndingDb = myCollectionDB.Single(c =>
+                c.Uuid == prismaticEndingUuid &&
+                c.SelectedCondition == prismaticEnding.SelectedCondition &&
+                c.SelectedFinish == prismaticEnding.SelectedFinish &&
+                c.Language == prismaticEnding.Language);
+            prismaticEnding.SelectedCondition.Should().Be(prismaticEndingDb.SelectedCondition);
+            prismaticEnding.SelectedFinish.Should().Be(prismaticEndingDb.SelectedFinish);
+            prismaticEnding.Language.Should().Be(prismaticEndingDb.Language);
+            prismaticEnding.CardsOwned.Should().Be(prismaticEndingDb.CardsOwned);
+            prismaticEnding.CardsForTrade.Should().Be(prismaticEndingDb.CardsForTrade);
+
+            var vexingArcanixDb = myCollectionDB.Single(c =>
+                c.Uuid == vexingArcanixUuid &&
+                c.SelectedCondition == vexingArcanix.SelectedCondition &&
+                c.SelectedFinish == vexingArcanix.SelectedFinish &&
+                c.Language == vexingArcanix.Language);
+            vexingArcanix.SelectedCondition.Should().Be(vexingArcanixDb.SelectedCondition);
+            vexingArcanix.SelectedFinish.Should().Be(vexingArcanixDb.SelectedFinish);
+            vexingArcanix.Language.Should().Be(vexingArcanixDb.Language);
+            vexingArcanix.CardsOwned.Should().Be(vexingArcanixDb.CardsOwned);
+            vexingArcanix.CardsForTrade.Should().Be(vexingArcanixDb.CardsForTrade);
+
+            var sokratesDb = myCollectionDB.Single(c =>
+                c.Uuid == sokratesUuid &&
+                c.SelectedCondition == sokrates.SelectedCondition &&
+                c.SelectedFinish == sokrates.SelectedFinish &&
+                c.Language == sokrates.Language);
+            sokrates.SelectedCondition.Should().Be(sokratesDb.SelectedCondition);
+            sokrates.SelectedFinish.Should().Be(sokratesDb.SelectedFinish);
+            sokrates.Language.Should().Be(sokratesDb.Language);
+            sokrates.CardsOwned.Should().Be(sokratesDb.CardsOwned);
+            sokrates.CardsForTrade.Should().Be(sokratesDb.CardsForTrade);
+
+            var syphonNearMintDb = myCollectionDB.Single(c =>
+                c.Uuid == syphonUuid &&
+                c.SelectedCondition == nearMint.SelectedCondition &&
+                c.SelectedFinish == nearMint.SelectedFinish &&
+                c.Language == nearMint.Language);
+            nearMint.SelectedCondition.Should().Be(syphonNearMintDb.SelectedCondition);
+            nearMint.SelectedFinish.Should().Be(syphonNearMintDb.SelectedFinish);
+            nearMint.Language.Should().Be(syphonNearMintDb.Language);
+            nearMint.CardsOwned.Should().Be(syphonNearMintDb.CardsOwned);
+            nearMint.CardsForTrade.Should().Be(syphonNearMintDb.CardsForTrade);
+
+            var syphonMintDb = myCollectionDB.Single(c =>
+                c.Uuid == syphonUuid &&
+                c.SelectedCondition == mint.SelectedCondition &&
+                c.SelectedFinish == mint.SelectedFinish &&
+                c.Language == mint.Language);
+            mint.SelectedCondition.Should().Be(syphonMintDb.SelectedCondition);
+            mint.SelectedFinish.Should().Be(syphonMintDb.SelectedFinish);
+            mint.Language.Should().Be(syphonMintDb.Language);
+            mint.CardsOwned.Should().Be(syphonMintDb.CardsOwned);
+            mint.CardsForTrade.Should().Be(syphonMintDb.CardsForTrade);
 
             // =====================================================
-            // ...
-            // Continue same pattern up to Step 9
+            // Step 10 - Final
             // =====================================================
+            var step10 = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
+            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "Summary and confirmation",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 10 should be active and progress label updated");
+            step10.PrimaryActionButtonText.Should().Contain("Start the import...");
         }
 
         #region Helpers
