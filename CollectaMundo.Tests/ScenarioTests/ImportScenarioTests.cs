@@ -570,8 +570,46 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
             // Step 2 – ID column mapping
             // =====================================================
+            var step2 = (ImportStep02_IdMappingViewModel)importVM.CurrentStepViewModel;
+            importVM.CurrentStepViewModel.Should().BeOfType<ImportStep02_IdMappingViewModel>();
+            importVM.ProgressStep.Should().Be("ID column mapping");
+            step2.PrimaryActionButtonText.Should().Contain("Proceed");
 
+            // Assert CSV headers available
+            step2.IdMappings.Should().HaveCount(1);
+            var mapping = step2.IdMappings[0];
 
+            mapping.CsvHeaders.Should().HaveCount(11);
+            mapping.SelectedCsvHeader.Should().NotBeNull();
+            mapping.SelectedDatabaseField.Should().NotBeNull();
+            step2.CanExecutePrimaryAction.Should().BeTrue();
+
+            // Simulate clearing mapping
+            mapping.SelectedCsvHeader = null;
+            mapping.SelectedDatabaseField = null;
+
+            // Assert cleared state
+            mapping.SelectedCsvHeader.Should().BeNull();
+            mapping.SelectedDatabaseField.Should().BeNull();
+
+            // CanExecute should now be false
+            step2.CanExecutePrimaryAction.Should().BeFalse();
+
+            // Map to MCM Id
+            mapping.SelectedCsvHeader = "ScryFallId";
+            mapping.SelectedDatabaseField = "scryfallId";
+
+            // CanExecute should now be true
+            step2.CanExecutePrimaryAction.Should().BeTrue();
+
+            // Proceed to map using Id
+            var step2Result = await step2.OnPrimaryAction();
+
+            // Assert step 2 completed successfully
+            step2Result.Code.Should().Be(OperationResultCode.Success);
+
+            // After ID mapping, we should have 4 cards with UUIDs 
+            importVM.ImportCardList.Count(ImportScenarioTestsHelpers.HasUuid).Should().Be(4);
 
             // =====================================================
             // Step 3 – Name & set mapping

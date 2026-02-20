@@ -349,6 +349,8 @@ namespace CollectaMundo.ViewModels.Import
             {
                 GoToStep(ImportStep.NameAndSetMapping);
             }
+
+            DebugAllItems();
             return new OperationResult(OperationResultCode.Success, "ID mapping ended successfully.");
 
         }
