@@ -16,40 +16,24 @@ namespace CollectaMundo.Tests.ScenarioTests
 
     public sealed class ImportScenarioTests(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
-        #region Test class setup
-        private readonly InMemoryDatabaseFixture _fx = fx;
+        readonly static string csvPath = Path.Combine(AppContext.BaseDirectory, "TestResources/ImportTestCsvFiles", "ImportTest1.csv");
 
+        private readonly InMemoryDatabaseFixture _fx = fx;
         private IDbConnectionFactory _dbFactory = null!;
+        private readonly TestPromptService _prompt = new();
+        private readonly TestFileSystemPicker _picker = new(csvPath);
         private MainWindowViewModel _mainVM = null!;
         public async ValueTask InitializeAsync()
         {
             _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory);
+            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
         }
-        public ValueTask DisposeAsync()
-        {
-            _mainVM.Dispose();
-            return ValueTask.CompletedTask;
-        }
-        #endregion
 
         [Fact]
         public async Task Import_full_flow_happy_path()
         {
-            // =====================================================
-            // Arrange – infrastructure & initial state
-            // =====================================================
-
-            var csvPath = Path.Combine(AppContext.BaseDirectory, "TestResources/ImportTestCsvFiles", "ImportTest1.csv");
-
             File.Exists(csvPath).Should().BeTrue();
 
-            var prompt = new TestPromptService(csvPath);
-            var picker = new TestFileSystemPicker(csvPath);
-
-            var (vm, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: prompt, filePickerOverride: picker);
-
-            _mainVM = vm;
             var importVM = _mainVM.ImportVM;
 
             _mainVM.AllCardsVM.Cards.Should().NotBeNullOrEmpty();
@@ -66,7 +50,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 1 – Parse CSV & move to ID mapping
             // =====================================================
 
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep01_StartViewModel && importVM.ProgressHeadline == "The Import Wizard",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep01_StartViewModel && importVM.ProgressHeadline == "The Import Wizard",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 6 should be active and progress label updated");
             step1.PrimaryActionButtonText.Should().Contain("Let's go");
@@ -120,14 +104,14 @@ namespace CollectaMundo.Tests.ScenarioTests
             step2Result.Code.Should().Be(OperationResultCode.Success);
 
             // After ID mapping, we should have 3 cards with UUIDs (the ones that had MCM IDs in the CSV)
-            importVM.ImportCardList.Count(HasUuid).Should().Be(4);
+            importVM.ImportCardList.Count(ImportScenarioTestsHelpers.HasUuid).Should().Be(4);
 
 
             // =====================================================
             // Step 3 – Name & set mapping
             // =====================================================
             var step3 = (ImportStep03_NameSetMappingViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep03_NameSetMappingViewModel && importVM.ProgressStep == "Name and set mapping",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep03_NameSetMappingViewModel && importVM.ProgressStep == "Name and set mapping",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 4 should be active and progress label updated");
             step3.PrimaryActionButtonText.Should().Contain("Proceed");
@@ -153,14 +137,14 @@ namespace CollectaMundo.Tests.ScenarioTests
             step3Result.Code.Should().Be(OperationResultCode.Success);
 
             // After Name andSet mapping, we should have 3 cards with UUIDs (the ones that had MCM IDs in the CSV)
-            importVM.ImportCardList.Count(HasUuid).Should().Be(8);
-            importVM.ImportCardList.Count(HasUuids).Should().Be(1); // One card should have multiple UUIDs due to multiple matches
+            importVM.ImportCardList.Count(ImportScenarioTestsHelpers.HasUuid).Should().Be(8);
+            importVM.ImportCardList.Count(ImportScenarioTestsHelpers.HasUuids).Should().Be(1); // One card should have multiple UUIDs due to multiple matches
 
             // =====================================================
             // Step 4 – Multiple UUID matches
             // =====================================================
             var step4 = (ImportStep04_MultipleUuidsViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep04_MultipleUuidsViewModel && importVM.ProgressStep == "Multiple versions found",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep04_MultipleUuidsViewModel && importVM.ProgressStep == "Multiple versions found",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 4 should be active and progress label updated");
             step4.PrimaryActionButtonText.Should().Contain("Proceed");
@@ -184,14 +168,14 @@ namespace CollectaMundo.Tests.ScenarioTests
             step4Result.Code.Should().Be(OperationResultCode.Success);
 
             // After choosing the correct UUID for the card with multiple matches, we should now have 7 cards with UUIDs in total (the 3 from ID mapping + the 3 from Name/Set mapping + one we just resolved)
-            importVM.ImportCardList.Count(HasUuid).Should().Be(9);
-            importVM.ImportCardList.Count(HasUuids).Should().Be(0); // We should have resolved the multiple UUIDs, so none should have multiple anymore
+            importVM.ImportCardList.Count(ImportScenarioTestsHelpers.HasUuid).Should().Be(9);
+            importVM.ImportCardList.Count(ImportScenarioTestsHelpers.HasUuids).Should().Be(0); // We should have resolved the multiple UUIDs, so none should have multiple anymore
 
             // =====================================================
             // Step 5 - Additional fields mapping
             // =====================================================
             var step5 = (ImportStep05_AdditionalFieldsMappingViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep05_AdditionalFieldsMappingViewModel && importVM.ProgressStep == "Additional fields mapping",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep05_AdditionalFieldsMappingViewModel && importVM.ProgressStep == "Additional fields mapping",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 5 should be active and progress label updated");
             step5.PrimaryActionButtonText.Should().Contain("Proceed");
@@ -221,7 +205,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 6 - Conditions mapping
             // =====================================================
             var step6 = (ImportStep06_ConditionsMappingViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep06_ConditionsMappingViewModel && importVM.ProgressStep == "Condition value mapping",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep06_ConditionsMappingViewModel && importVM.ProgressStep == "Condition value mapping",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 6 should be active and progress label updated");
             step6.PrimaryActionButtonText.Should().Contain("Proceed");
@@ -254,7 +238,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 7 - Finish mapping
             // =====================================================
             var step7 = (ImportStep07_FinishMappingViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep07_FinishMappingViewModel && importVM.ProgressStep == "Finish value mapping",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep07_FinishMappingViewModel && importVM.ProgressStep == "Finish value mapping",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 7 should be active and progress label updated");
             step7.PrimaryActionButtonText.Should().Contain("Proceed");
@@ -286,7 +270,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
 
             var step8 = (ImportStep08_LanguageMappingViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep08_LanguageMappingViewModel && importVM.ProgressStep == "Language value mapping",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep08_LanguageMappingViewModel && importVM.ProgressStep == "Language value mapping",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 8 should be active and progress label updated");
             step8.PrimaryActionButtonText.Should().Contain("Proceed");
@@ -319,7 +303,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 9 - Summary and confirmation
             // =====================================================
             var step9 = (ImportStep09_SummaryViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep09_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep09_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 9 should be active and progress label updated");
             step9.PrimaryActionButtonText.Should().Contain("Start the import...");
@@ -521,24 +505,35 @@ namespace CollectaMundo.Tests.ScenarioTests
             Debug.WriteLine($"ProgressHeadline: {importVM.ProgressHeadline}");
 
             var step10 = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
-            await EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "Success!",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "Success!",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 10 should be active and progress label updated");
             step10.PrimaryActionButtonText.Should().Contain("OK");
         }
 
         #region Helpers
-        static bool HasUuid(TempCardItem item)
+
+        public ValueTask DisposeAsync()
+        {
+            _mainVM.Dispose();
+            return ValueTask.CompletedTask;
+        }
+        #endregion
+    }
+
+    public static class ImportScenarioTestsHelpers
+    {
+        public static bool HasUuid(TempCardItem item)
         {
             return item.CsvFields.TryGetValue("collectaMundoUuidImportField", out var uuid)
                    && !string.IsNullOrWhiteSpace(uuid);
         }
-        static bool HasUuids(TempCardItem item)
+        public static bool HasUuids(TempCardItem item)
         {
             return item.CsvFields.TryGetValue("collectaMundoUuidsImportField", out var uuid)
                    && !string.IsNullOrWhiteSpace(uuid);
         }
-        private static async Task EventuallyAsync(Func<bool> condition, TimeSpan timeout, string? because = null)
+        public static async Task EventuallyAsync(Func<bool> condition, TimeSpan timeout, string? because = null)
         {
             var start = DateTime.UtcNow;
 
@@ -555,33 +550,5 @@ namespace CollectaMundo.Tests.ScenarioTests
             // One last check before failing (helps if it flips right at the end)
             condition().Should().BeTrue(because ?? "condition was not met before timeout");
         }
-        #endregion
     }
-    internal sealed class TestFileSystemPicker : IFileSystemPicker
-    {
-        private readonly string _pathToReturn;
-
-        public TestFileSystemPicker(string pathToReturn)
-        {
-            _pathToReturn = pathToReturn;
-        }
-
-        public string? PickFile(
-            string title,
-            string filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*")
-        {
-            return _pathToReturn;
-        }
-
-        public string? PickFolder(string title, string? initialPath = null)
-        {
-            throw new NotSupportedException("PickFolder is not used in import tests.");
-        }
-
-        public string? PickSaveFile(string title, string defaultFileName, string filter)
-        {
-            throw new NotSupportedException("PickSaveFile is not used in import tests.");
-        }
-    }
-
 }

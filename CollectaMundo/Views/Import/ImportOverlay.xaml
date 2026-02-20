@@ -16,7 +16,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/> <!-- Headers -->
                 <RowDefinition Height="Auto"/> <!-- Fail image -->
-                <RowDefinition Height="*"/> <!-- Step content -->
+                <RowDefinition Height="Auto"/> <!-- Step content -->
                 <RowDefinition Height="Auto"/> <!-- Progress -->
                 <RowDefinition Height="Auto"/> <!-- Buttons -->
             </Grid.RowDefinitions>
