@@ -14,7 +14,7 @@ using System.IO;
 namespace CollectaMundo.Tests.ScenarioTests
 {
 
-    public sealed class ImportScenarioTests(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
+    public sealed class ImportScenarioTests1(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         readonly static string csvPath = Path.Combine(AppContext.BaseDirectory, "TestResources/ImportTestCsvFiles", "ImportTest1.csv");
 
@@ -520,7 +520,90 @@ namespace CollectaMundo.Tests.ScenarioTests
         }
         #endregion
     }
+    public sealed class ImportScenarioTests2(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
+    {
+        readonly static string csvPath = Path.Combine(AppContext.BaseDirectory, "TestResources/ImportTestCsvFiles", "ImportTest2.csv");
 
+        private readonly InMemoryDatabaseFixture _fx = fx;
+        private IDbConnectionFactory _dbFactory = null!;
+        private readonly TestPromptService _prompt = new();
+        private readonly TestFileSystemPicker _picker = new(csvPath);
+        private MainWindowViewModel _mainVM = null!;
+        public async ValueTask InitializeAsync()
+        {
+            _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
+            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
+        }
+
+        [Fact]
+        public async Task Import_full_flow_happy_path()
+        {
+            File.Exists(csvPath).Should().BeTrue();
+
+            var importVM = _mainVM.ImportVM;
+
+            _mainVM.AllCardsVM.Cards.Should().NotBeNullOrEmpty();
+            _mainVM.MyCollectionVM.Cards.Should().HaveCount(22);
+
+            // =====================================================
+            // Step 0 – Begin wizard
+            // =====================================================
+
+            await importVM.Begin();
+            var step1 = importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>().Subject;
+
+            // =====================================================
+            // Step 1 – Parse CSV & move to ID mapping
+            // =====================================================
+
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep01_StartViewModel && importVM.ProgressHeadline == "The Import Wizard",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 6 should be active and progress label updated");
+            step1.PrimaryActionButtonText.Should().Contain("Let's go");
+
+            var step1Result = await step1.OnPrimaryAction(); // Parse CSV
+
+            // Assert step 1 completed successfully
+            step1Result.Code.Should().Be(OperationResultCode.Success);
+            importVM.ImportCardList.Should().HaveCount(6);
+
+            // =====================================================
+            // Step 2 – ID column mapping
+            // =====================================================
+
+
+
+            // =====================================================
+            // Step 3 – Name & set mapping
+            // =====================================================
+
+            // =====================================================
+            // Step 4 – Multiple UUID matches
+            // =====================================================
+
+            // =====================================================
+            // Step 5 - Additional fields mapping
+            // =====================================================
+
+
+            // =====================================================
+            // Step 9 - Summary and confirmation
+            // =====================================================
+
+            // =====================================================
+            // Step 10 - Final
+            // =====================================================
+        }
+
+        #region Helpers
+
+        public ValueTask DisposeAsync()
+        {
+            _mainVM.Dispose();
+            return ValueTask.CompletedTask;
+        }
+        #endregion
+    }
     public static class ImportScenarioTestsHelpers
     {
         public static bool HasUuid(TempCardItem item)
