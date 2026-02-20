@@ -8,7 +8,6 @@ using CollectaMundo.ViewModels.Import.ImportSteps;
 using FluentAssertions;
 using ServiceStack;
 using System.Data.SQLite;
-using System.Diagnostics;
 using System.IO;
 
 namespace CollectaMundo.Tests.ScenarioTests
@@ -113,7 +112,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             var step3 = (ImportStep03_NameSetMappingViewModel)importVM.CurrentStepViewModel;
             await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep03_NameSetMappingViewModel && importVM.ProgressStep == "Name and set mapping",
                 timeout: TimeSpan.FromSeconds(3),
-                because: "step 4 should be active and progress label updated");
+                because: "step 3 should be active and progress label updated");
             step3.PrimaryActionButtonText.Should().Contain("Proceed");
 
             step3.NameSetMappings.Should().HaveCount(3);
@@ -501,11 +500,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
             // Step 10 - Final
             // =====================================================
-            Debug.WriteLine($"ProgressStep: {importVM.ProgressStep}");
-            Debug.WriteLine($"ProgressHeadline: {importVM.ProgressHeadline}");
-
             var step10 = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
-            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "Success!",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 10 should be active and progress label updated");
             step10.PrimaryActionButtonText.Should().Contain("OK");
@@ -595,7 +591,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // CanExecute should now be false
             step2.CanExecutePrimaryAction.Should().BeFalse();
 
-            // Map to MCM Id
+            // Map to Scryfall Id
             mapping.SelectedCsvHeader = "ScryFallId";
             mapping.SelectedDatabaseField = "scryfallId";
 
@@ -614,19 +610,148 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
             // Step 3 – Name & set mapping
             // =====================================================
+            var step3 = (ImportStep03_NameSetMappingViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep03_NameSetMappingViewModel && importVM.ProgressStep == "Name and set mapping",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 3 should be active and progress label updated");
+            step3.PrimaryActionButtonText.Should().Contain("Proceed");
 
-            // =====================================================
-            // Step 4 – Multiple UUID matches
-            // =====================================================
+            // Cancel the import to test that cancel works at this step (and doesn't cause any issues if we restart the import afterwards)
+            importVM.CancelCommand.Execute(null);
+
+            var step10AfterCancel = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 10 should be active and progress label updated");
+
+            importVM.ProgressHeadline.Should().Be("Import cancelled");
+            importVM.ProgressDetailMessage.Should().Contain("User cancellation - no cards imported to collection.");
+
+            step10AfterCancel.PrimaryActionButtonText.Should().Contain("OK");
+
+            var step10AfterCancelResult = await step10AfterCancel.OnPrimaryAction();
+            step10AfterCancelResult.Code.Should().Be(OperationResultCode.Success);
+
+            // Restart the import after cancellation and continue up to step 3 again
+
+            // Step 1
+            await importVM.Begin();
+            var step1AfterRestart = importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>().Subject;
+            var step1AfterRestartResult = await step1.OnPrimaryAction();
+            step1AfterRestartResult.Code.Should().Be(OperationResultCode.Success);
+
+            // Step 2
+            var step2AfterRestart = (ImportStep02_IdMappingViewModel)importVM.CurrentStepViewModel;
+            var mappingAfterRestart = step2AfterRestart.IdMappings[0];
+            mappingAfterRestart.SelectedCsvHeader = "ScryFallId";
+            mappingAfterRestart.SelectedDatabaseField = "scryfallId";
+            var step2AfterRestartResult = await step2.OnPrimaryAction();
+            step2AfterRestartResult.Code.Should().Be(OperationResultCode.Success);
+
+            importVM.ImportCardList.Count(ImportScenarioTestsHelpers.HasUuid).Should().Be(4);
+
+            // Step 3
+            var step3AfterRestart = (ImportStep03_NameSetMappingViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep03_NameSetMappingViewModel && importVM.ProgressStep == "Name and set mapping",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 3 should be active and progress label updated");
+
+            step3AfterRestart.NameSetMappings.Should().HaveCount(3);
+            var nameSetmapping = step3AfterRestart.NameSetMappings;
+
+            // Assert that no CSV headers are pre-selected
+            nameSetmapping[0].SelectedCsvHeader.Should().Be(null);
+            nameSetmapping[1].SelectedCsvHeader.Should().Be(null);
+            nameSetmapping[2].SelectedCsvHeader.Should().Be(null);
+
+            // Choose a value for card name mapping
+            step3AfterRestart.CanExecutePrimaryAction.Should().BeFalse();
+            nameSetmapping[0].SelectedCsvHeader = "Kortnavn";
+            step3AfterRestart.CanExecutePrimaryAction.Should().BeTrue();
+
+            var step3AfterRestartResult = await step3AfterRestart.OnPrimaryAction();
+
+            // Assert step 3 completed successfully
+            step3AfterRestartResult.Code.Should().Be(OperationResultCode.Success);
+
+            // No change after name and set mapping
+            importVM.ImportCardList.Count(ImportScenarioTestsHelpers.HasUuid).Should().Be(5);
+
+            // There are no items with multiple UUIDs so we skip step 4
+            importVM.ImportCardList.Count(ImportScenarioTestsHelpers.HasUuids).Should().Be(0);
 
             // =====================================================
             // Step 5 - Additional fields mapping
             // =====================================================
+            var step5 = (ImportStep05_AdditionalFieldsMappingViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep05_AdditionalFieldsMappingViewModel && importVM.ProgressStep == "Additional fields mapping",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 5 should be active and progress label updated");
+            step5.PrimaryActionButtonText.Should().Contain("Proceed");
 
+            step5.AdditionalMappings.Should().HaveCount(5);
+            var addtionalMappings = step5.AdditionalMappings;
+
+            // Check CsvFieldsMappings object is correctly initialized with expected fields to map
+            addtionalMappings[0].FieldToMap.Should().Be(ImportField.Condition);
+            addtionalMappings[4].FieldToMap.Should().Be(ImportField.CardsForTrade);
+            addtionalMappings[0].CsvHeaders.Should().HaveCount(11);
+
+            // Assert CSV headers pre-selected
+            addtionalMappings[0].SelectedCsvHeader.Should().Be(null);
+            addtionalMappings[1].SelectedCsvHeader.Should().Be("Finish");
+            addtionalMappings[2].SelectedCsvHeader.Should().Be(null);
+            addtionalMappings[3].SelectedCsvHeader.Should().Be(null);
+            addtionalMappings[4].SelectedCsvHeader.Should().Be(null);
+
+            // Clear CardFinish mapping so we use defaults for everything
+            addtionalMappings[1].SelectedCsvHeader = null;
+
+            // Proceed to summary step
+            var step5Result = await step5.OnPrimaryAction();
+
+            // Assert step 5 completed successfully
+            step5Result.Code.Should().Be(OperationResultCode.Success);
 
             // =====================================================
             // Step 9 - Summary and confirmation
             // =====================================================
+            var step9 = (ImportStep09_SummaryViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep09_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 9 should be active and progress label updated");
+            step9.PrimaryActionButtonText.Should().Contain("Start the import...");
+            step9.CanExecuteSecondaryAction.Should().BeTrue();
+            step9.SecondaryActionButtonText.Should().Contain("Save unrecognized items");
+
+            var summary = step9.Summary;
+
+            // Check totals
+            summary.ReadyToImportCount.Should().Be(5); // 7 cards should be ready to import with UUIDs
+            summary.TotalCardsToAdd.Should().Be(5); // Sum of quantities of all cards to import
+            summary.UnableToImportCount.Should().Be(1); // 3 cards should not be able to import
+
+            // Check field mappings are correctly displayed in summary
+            summary.FieldMappings[0].CsvHeader.Should().Be("Near Mint (default value)");
+            summary.FieldMappings[1].CsvHeader.Should().Be("nonfoil (default value)");
+            summary.FieldMappings[2].CsvHeader.Should().Be("English (default value)");
+            summary.FieldMappings[3].CsvHeader.Should().Be("1 (default value)");
+            summary.FieldMappings[4].CsvHeader.Should().Be("0 (default value)");
+
+            // Check value mappings 
+            summary.ValueMappings[0].Field.Should().Be(ImportField.None);
+            summary.ValueMappings[0].CsvValue.Should().Be("—");
+            summary.ValueMappings[0].MappedValue.Should().Be("All values use defaults");
+
+            summary.UnimportableItems.Should().HaveCount(1);
+            summary.UnimportableItems[0].CardName.Should().Contain("Brisela, Voice of Nightmares");
+            summary.UnimportableItems[0].Warnings.Should().Contain("No UUID resolved for this row (cannot import). Check ID / Name+Set mapping steps.");
+
+            // Proceed with the import
+            var step9Result = await step9.OnPrimaryAction();
+
+            // Assert that the final import completed successfully
+            step9Result.Code.Should().Be(OperationResultCode.Success);
 
             // =====================================================
             // Step 10 - Final
