@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CollectaMundo.Views.TopMenu
+namespace CollectaMundo.Views
 {
     /// <summary>
-    /// Interaction logic for TopMenuView.xaml
+    /// Interaction logic for CardImageView.xaml
     /// </summary>
-    public partial class TopMenuView : UserControl
+    public partial class CardImageView : UserControl
     {
-        public TopMenuView()
+        public CardImageView()
         {
             InitializeComponent();
         }

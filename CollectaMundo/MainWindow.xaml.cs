@@ -162,7 +162,7 @@ namespace CollectaMundo
                 }
                 HeadlineDecks.Content = "Deck Editor";
                 //GridTopMenu.IsEnabled = false;
-                GridFiltering.Visibility = Visibility.Visible;
+                //GridFiltering.Visibility = Visibility.Visible;
 
                 _ = MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
                 {
