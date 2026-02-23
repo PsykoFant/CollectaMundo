@@ -58,6 +58,11 @@ namespace CollectaMundo.DomainLogic.Import
                 string? line = await reader.ReadLineAsync(cancelToken);
                 currentLine++;
 
+                if (line is null)
+                {
+                    break; // or continue; but break is correct at EOF
+                }
+
                 if (IsEffectivelyEmptyCsvRow(line, delimiter))
                 {
                     continue;
@@ -908,25 +913,39 @@ namespace CollectaMundo.DomainLogic.Import
         public IReadOnlyList<CollectionUpsertItem> CollapseResolvedItemsForCollection(IReadOnlyList<ResolvedImportItem> resolvedItems)
         {
             return
-            [.. resolvedItems.Where(r => r.IsImportable).Select(r => new
+            [.. resolvedItems
+        .Where(r => r.IsImportable)
+        .Select(r => new
+        {
+            Identity = CollectionIdentityFactory.Create(
+                r.Uuid,
+                r.Condition ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition),
+                r.Language ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language),
+                r.Finish ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish)),
+            r.CardsOwned,
+            r.CardsForTrade
+        })
+        .GroupBy(x => x.Identity)
+        .Select(g =>
+        {
+            var ownedTotal = g.Sum(x => x.CardsOwned);
+            var tradeTotal = g.Sum(x => x.CardsForTrade);
+
+            // Clamp: trade can never exceed owned
+            if (tradeTotal > ownedTotal)
             {
-                Identity = CollectionIdentityFactory.Create(
-                    r.Uuid,
-                    r.Condition ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition),
-                    r.Language ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language),
-                    r.Finish ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish)),
-                r.CardsOwned,
-                r.CardsForTrade
-            })
-            .GroupBy(x => x.Identity)
-            .Select(g => new CollectionUpsertItem(
+                tradeTotal = ownedTotal;
+            }
+
+            return new CollectionUpsertItem(
                 Uuid: g.Key.Uuid,
                 Language: g.Key.Language,
                 Finish: g.Key.Finish,
                 Condition: g.Key.Condition,
-                CardsOwned: g.Sum(x => x.CardsOwned),
-                CardsForTrade: g.Sum(x => x.CardsForTrade)
-            ))];
+                CardsOwned: ownedTotal,
+                CardsForTrade: tradeTotal
+            );
+        })];
         }
 
         #endregion

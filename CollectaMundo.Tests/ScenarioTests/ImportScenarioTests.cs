@@ -507,14 +507,12 @@ namespace CollectaMundo.Tests.ScenarioTests
             step10.PrimaryActionButtonText.Should().Contain("OK");
         }
 
-        #region Helpers
-
         public ValueTask DisposeAsync()
         {
             _mainVM.Dispose();
             return ValueTask.CompletedTask;
         }
-        #endregion
+
     }
     public sealed class ImportScenarioTests2(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
@@ -776,44 +774,128 @@ namespace CollectaMundo.Tests.ScenarioTests
             realmwalker.SelectedFinish.Should().Be("foil");
             realmwalker.Language.Should().Be("English");
             realmwalker.CardsOwned.Should().Be(1);
-            realmwalker.CardsForTrade.Should().Be(0);
+            realmwalker.CardsForTrade.Should().Be(1);
 
-            //var sokratesUuid = "3c389f9c-e459-5b16-87b5-d51644f05b25";
-            //var sokrates = myCollectionInMemory.Single(c => c.Uuid == sokratesUuid);
-            //sokrates.Name.Should().Be("Sokrates, Athenian Teacher");
-            //sokrates.SelectedCondition.Should().Be("Near Mint");
-            //sokrates.SelectedFinish.Should().Be("foil");
-            //sokrates.Language.Should().Be("Ancient Greek");
-            //sokrates.CardsOwned.Should().Be(2);
-            //sokrates.CardsForTrade.Should().Be(2);
+            var zombieUuid = "011a9246-7f7c-50c7-ab99-3fc13469c13b";
+            var zombie = myCollectionInMemory.Single(c => c.Uuid == zombieUuid);
+            zombie.Name.Should().Be("Zombie");
+            zombie.SelectedCondition.Should().Be("Near Mint");
+            zombie.SelectedFinish.Should().Be("nonfoil");
+            zombie.Language.Should().Be("English");
+            zombie.CardsOwned.Should().Be(1); // defaults to 1 because CardsOwned mapping was not set
+            zombie.CardsForTrade.Should().Be(0);
 
-            //var syphonUuid = "9c015664-e6e8-53a4-ad48-276138b18098";
-            //var syphonSouls = myCollectionInMemory.Where(c => c.Uuid == syphonUuid).ToList();
-            //syphonSouls.Should().HaveCount(2);
+            var neverReturnUuid = "875ba98c-721c-537b-b326-22d803fab7c0"; // uuid of the 'a' side
+            var neverReturn = myCollectionInMemory.Single(c => c.Uuid == neverReturnUuid);
+            neverReturn.Name.Should().Be("Never // Return");
+            neverReturn.SelectedCondition.Should().Be("Near Mint");
+            neverReturn.SelectedFinish.Should().Be("nonfoil");
+            neverReturn.Language.Should().Be("English");
+            neverReturn.CardsOwned.Should().Be(1);
+            neverReturn.CardsForTrade.Should().Be(0);
 
-            //var nearMint = syphonSouls.Single(c => c.SelectedCondition == "Near Mint");
-            //nearMint.Name.Should().Be("Syphon Soul");
-            //nearMint.SelectedFinish.Should().Be("nonfoil");
-            //nearMint.Language.Should().Be("English");
+            // Compare with database state to ensure it was correctly saved (spot check the same cards we checked in memory, and that the total count matches)
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
 
-            //var mint = syphonSouls.Single(c => c.SelectedCondition == "Mint");
-            //mint.Name.Should().Be("Syphon Soul");
-            //mint.SelectedFinish.Should().Be("nonfoil");
-            //mint.Language.Should().Be("English");
+            const string sql = @"
+            SELECT uuid AS Uuids,
+                   condition AS Conditions,
+                   finish AS Finishes,
+                   language AS Languages,
+                   cardsOwned AS CardsOwned,
+                   cardsForTrade AS CardsForTrade
+            FROM myCollection;
+            ";
+
+            using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            var myCollectionDB = new List<CardSet>();
+
+            var dbUuids = new List<string>();
+            var dbConditions = new List<string>();
+            var dbFinishes = new List<string>();
+            var dbLanguages = new List<string>();
+            var cardsOwnedDb = new List<int>();
+            var sumTradeDb = new List<int>();
+
+            while (await reader.ReadAsync())
+            {
+                myCollectionDB.Add(new CardSet
+                {
+                    Uuid = reader.GetString(0),
+                    SelectedCondition = reader.GetString(1),
+                    SelectedFinish = reader.GetString(2),
+                    Language = reader.GetString(3),
+                    CardsOwned = reader.GetInt32(4),
+                    CardsForTrade = reader.GetInt32(5)
+                });
+            }
+
+            await uow.CommitAsync();
+
+            myCollectionInMemory.Should().HaveCount(myCollectionDB.Count);
+
+            var chillarpillarDb = myCollectionDB.Single(c =>
+                c.Uuid == chillarpillarUuid &&
+                c.SelectedCondition == chillarpillar.SelectedCondition &&
+                c.SelectedFinish == chillarpillar.SelectedFinish &&
+                c.Language == chillarpillar.Language);
+            chillarpillar.SelectedCondition.Should().Be(chillarpillarDb.SelectedCondition);
+            chillarpillar.SelectedFinish.Should().Be(chillarpillarDb.SelectedFinish);
+            chillarpillar.Language.Should().Be(chillarpillarDb.Language);
+            chillarpillar.CardsOwned.Should().Be(chillarpillarDb.CardsOwned);
+            chillarpillar.CardsForTrade.Should().Be(chillarpillarDb.CardsForTrade);
+
+            var realmWalkerDb = myCollectionDB.Single(c =>
+                c.Uuid == realmwalkerUuid &&
+                c.SelectedCondition == realmwalker.SelectedCondition &&
+                c.SelectedFinish == realmwalker.SelectedFinish &&
+                c.Language == realmwalker.Language);
+            realmwalker.SelectedCondition.Should().Be(realmWalkerDb.SelectedCondition);
+            realmwalker.SelectedFinish.Should().Be(realmWalkerDb.SelectedFinish);
+            realmwalker.Language.Should().Be(realmWalkerDb.Language);
+            realmwalker.CardsOwned.Should().Be(realmWalkerDb.CardsOwned);
+            realmwalker.CardsForTrade.Should().Be(realmWalkerDb.CardsForTrade);
+
+            var zombieDb = myCollectionDB.Single(c =>
+                c.Uuid == zombieUuid &&
+                c.SelectedCondition == zombie.SelectedCondition &&
+                c.SelectedFinish == zombie.SelectedFinish &&
+                c.Language == zombie.Language);
+            zombie.SelectedCondition.Should().Be(zombieDb.SelectedCondition);
+            zombie.SelectedFinish.Should().Be(zombieDb.SelectedFinish);
+            zombie.Language.Should().Be(zombieDb.Language);
+            zombie.CardsOwned.Should().Be(zombieDb.CardsOwned);
+            zombie.CardsForTrade.Should().Be(zombieDb.CardsForTrade);
+
+            var neverReturnDb = myCollectionDB.Single(c =>
+                c.Uuid == neverReturnUuid &&
+                c.SelectedCondition == neverReturn.SelectedCondition &&
+                c.SelectedFinish == neverReturn.SelectedFinish &&
+                c.Language == neverReturn.Language);
+            neverReturn.SelectedCondition.Should().Be(neverReturnDb.SelectedCondition);
+            neverReturn.SelectedFinish.Should().Be(neverReturnDb.SelectedFinish);
+            neverReturn.Language.Should().Be(neverReturnDb.Language);
+            neverReturn.CardsOwned.Should().Be(neverReturnDb.CardsOwned);
+            neverReturn.CardsForTrade.Should().Be(neverReturnDb.CardsForTrade);
 
             // =====================================================
             // Step 10 - Final
             // =====================================================
+            var step10 = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 10 should be active and progress label updated");
+            step10.PrimaryActionButtonText.Should().Contain("OK");
         }
-
-        #region Helpers
-
         public ValueTask DisposeAsync()
         {
             _mainVM.Dispose();
             return ValueTask.CompletedTask;
         }
-        #endregion
     }
     public static class ImportScenarioTestsHelpers
     {

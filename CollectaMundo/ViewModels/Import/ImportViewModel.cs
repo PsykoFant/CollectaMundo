@@ -244,8 +244,6 @@ namespace CollectaMundo.ViewModels.Import
                 Progress.Detail.Report("Building summary...");
                 Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
                 Progress.ProgressBarVisible.Report(false);
-
-                DebugImportSummary();
             }
             catch (OperationCanceledException)
             {
@@ -372,7 +370,6 @@ namespace CollectaMundo.ViewModels.Import
             {
                 GoToStep(ImportStep.AdditionalFieldsMapping);
             }
-            DebugAllItems();
             return new OperationResult(OperationResultCode.Success, "Name and set mapping ended successfully.");
         }
         public async Task<OperationResult> AfterStep4Action()
