@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:CollectaMundo"
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:core="clr-namespace:Microsoft.Xaml.Behaviors.Core;assembly=Microsoft.Xaml.Behaviors"
+    xmlns:topMenu="clr-namespace:CollectaMundo.Views.TopMenu"
     xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
     xmlns:presentation="clr-namespace:CollectaMundo.Presentation"
     xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
@@ -13,7 +14,8 @@
     xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
     xmlns:System="clr-namespace:System;assembly=System.Runtime" 
     x:Class="CollectaMundo.MainWindow"
-    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib" 
+    d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}"
     mc:Ignorable="d"    
     Title="CollectaMundo"
     Icon="/Resources/Images/Icon.ico" 
@@ -33,40 +35,12 @@
                 <RowDefinition Height="40"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Grid x:Name="GridTopMenu" Grid.Row="0" Grid.ColumnSpan="3" VerticalAlignment="Top" HorizontalAlignment="Center" Height="40" IsEnabled="{Binding IsTopMenuEnabled}">
-                <Button Command="{Binding ShowSearchAndFilterCommand}"
-                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.SearchAndFilter}}"
-                        Content="All Cards" 
-                         HorizontalAlignment="Center" Margin="0,5,510,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
-                    <Button.Effect>
-                        <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-                    </Button.Effect>
-                </Button>
-                <Button Command="{Binding ShowMyCollectionCommand}"
-                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"
-                        Content="My Collection" 
-                         HorizontalAlignment="Center" Margin="0,5,170,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
-                    <Button.Effect>
-                        <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-                    </Button.Effect>
-                </Button>
-                <Button Command="{Binding ShowDecksCommand}"
-                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.Decks}}"
-                        Content="Decks" 
-                         HorizontalAlignment="Center" Margin="170,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
-                    <Button.Effect>
-                        <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-                    </Button.Effect>
-                </Button>
-                <Button Command="{Binding ShowUtilitiesCommand}"
-                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.Utilities}}"
-                        Content="Utilities" 
-                         HorizontalAlignment="Center" Margin="510,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
-                    <Button.Effect>
-                        <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-                    </Button.Effect>
-                </Button>
-            </Grid>
+            <!-- Top menu -->
+            <topMenu:TopMenuView Grid.Row="0"
+                     Grid.ColumnSpan="3"
+                     VerticalAlignment="Top"
+                     HorizontalAlignment="Center"
+                     Height="40" />
             <!-- Side menu -->
             <Grid  x:Name="SideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="{Binding SideMenuVisibility}">
                 <Grid x:Name="GridFiltering" Visibility="{Binding SideMenuFilterVisibility}" d:IsHidden="True">

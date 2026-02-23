@@ -161,7 +161,7 @@ namespace CollectaMundo
                     await DeckManager.LoadDeck(selectedDeck.DeckId);
                 }
                 HeadlineDecks.Content = "Deck Editor";
-                GridTopMenu.IsEnabled = false;
+                //GridTopMenu.IsEnabled = false;
                 GridFiltering.Visibility = Visibility.Visible;
 
                 _ = MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
@@ -192,7 +192,7 @@ namespace CollectaMundo
 
             // Reset UI elements
             HeadlineDecks.Content = "Deck Management";
-            GridTopMenu.IsEnabled = true;
+            //GridTopMenu.IsEnabled = true;
             GridDecks.Visibility = Visibility.Visible;
             GridDeckEditor.Visibility = Visibility.Collapsed;
             GridDecksOverview.Visibility = Visibility.Visible;
