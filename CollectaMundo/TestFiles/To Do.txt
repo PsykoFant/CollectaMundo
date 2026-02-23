@@ -3,6 +3,8 @@ TO DO
     - Navn validering step 2
 
     - Færdiggør import tests
+        - BUG: til salg må ikke være større end til samling
+
     - xaml oprydning
     - CardCoreDto skal ud af infrastruktur laget
 

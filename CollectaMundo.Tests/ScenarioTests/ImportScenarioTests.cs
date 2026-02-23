@@ -704,7 +704,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             addtionalMappings[3].SelectedCsvHeader.Should().Be(null);
             addtionalMappings[4].SelectedCsvHeader.Should().Be(null);
 
-            // Clear CardFinish mapping so we use defaults for everything
+            // Select a value for cards for trade
+            addtionalMappings[4].SelectedCsvHeader = "TilSalg";
+
+            // Clear CardFinish mapping so we use defaults for everything except cards for trade
             addtionalMappings[1].SelectedCsvHeader = null;
 
             // Proceed to summary step
@@ -736,7 +739,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.FieldMappings[1].CsvHeader.Should().Be("nonfoil (default value)");
             summary.FieldMappings[2].CsvHeader.Should().Be("English (default value)");
             summary.FieldMappings[3].CsvHeader.Should().Be("1 (default value)");
-            summary.FieldMappings[4].CsvHeader.Should().Be("0 (default value)");
+            summary.FieldMappings[4].CsvHeader.Should().Be("TilSalg");
 
             // Check value mappings 
             summary.ValueMappings[0].Field.Should().Be(ImportField.None);
@@ -752,6 +755,51 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Assert that the final import completed successfully
             step9Result.Code.Should().Be(OperationResultCode.Success);
+
+            var myCollectionInMemory = _mainVM.MyCollectionVM.Cards;
+            myCollectionInMemory.Should().HaveCount(26);
+
+            //// Spotcheck individual cards
+            var chillarpillarUuid = "d4588e8f-e5a0-53e5-ac90-0a5183f0d118";
+            var chillarpillar = myCollectionInMemory.Single(c => c.Uuid == chillarpillarUuid && c.SelectedCondition == "Near Mint");
+
+            chillarpillar.Name.Should().Be("Chillerpillar // Chillerpillar");
+            chillarpillar.SelectedFinish.Should().Be("nonfoil");
+            chillarpillar.Language.Should().Be("English");
+            chillarpillar.CardsOwned.Should().Be(2);
+            chillarpillar.CardsForTrade.Should().Be(2);
+
+            var realmwalkerUuid = "66124810-2a79-5c4f-a43f-181400aa8c4f";
+            var realmwalker = myCollectionInMemory.Single(c => c.Uuid == realmwalkerUuid);
+            realmwalker.Name.Should().Be("Realmwalker");
+            realmwalker.SelectedCondition.Should().Be("Near Mint");
+            realmwalker.SelectedFinish.Should().Be("foil");
+            realmwalker.Language.Should().Be("English");
+            realmwalker.CardsOwned.Should().Be(1);
+            realmwalker.CardsForTrade.Should().Be(0);
+
+            //var sokratesUuid = "3c389f9c-e459-5b16-87b5-d51644f05b25";
+            //var sokrates = myCollectionInMemory.Single(c => c.Uuid == sokratesUuid);
+            //sokrates.Name.Should().Be("Sokrates, Athenian Teacher");
+            //sokrates.SelectedCondition.Should().Be("Near Mint");
+            //sokrates.SelectedFinish.Should().Be("foil");
+            //sokrates.Language.Should().Be("Ancient Greek");
+            //sokrates.CardsOwned.Should().Be(2);
+            //sokrates.CardsForTrade.Should().Be(2);
+
+            //var syphonUuid = "9c015664-e6e8-53a4-ad48-276138b18098";
+            //var syphonSouls = myCollectionInMemory.Where(c => c.Uuid == syphonUuid).ToList();
+            //syphonSouls.Should().HaveCount(2);
+
+            //var nearMint = syphonSouls.Single(c => c.SelectedCondition == "Near Mint");
+            //nearMint.Name.Should().Be("Syphon Soul");
+            //nearMint.SelectedFinish.Should().Be("nonfoil");
+            //nearMint.Language.Should().Be("English");
+
+            //var mint = syphonSouls.Single(c => c.SelectedCondition == "Mint");
+            //mint.Name.Should().Be("Syphon Soul");
+            //mint.SelectedFinish.Should().Be("nonfoil");
+            //mint.Language.Should().Be("English");
 
             // =====================================================
             // Step 10 - Final
