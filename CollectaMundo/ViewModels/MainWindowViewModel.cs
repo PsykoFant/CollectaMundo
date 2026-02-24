@@ -135,9 +135,6 @@ namespace CollectaMundo.ViewModels
 
         // Main sections visibility
         [ObservableProperty]
-        private Visibility mainGridVisibility = Visibility.Visible;
-
-        [ObservableProperty]
         private Visibility contentSectionVisibility = Visibility.Visible;
 
         // Side menu visibility

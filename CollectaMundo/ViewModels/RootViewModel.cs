@@ -7,6 +7,5 @@ namespace CollectaMundo.ViewModels
         public MainWindowViewModel Main { get; } = main;
         public StatusViewModel StatusOverlay { get; } = status;
         public ImportViewModel ImportOverlay => Main.ImportVM;
-
     }
 }

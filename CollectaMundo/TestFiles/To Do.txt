@@ -1,11 +1,8 @@
 TO DO 
 - MVVM refactor
-    - Navn validering step 2
-
-    - Færdiggør import tests
-        - BUG: til salg må ikke være større end til samling
-
     - xaml oprydning
+     - BUG: Resume når man sletter kort ved at sætte dem til nul
+     - BUG: Adding with default values doesn't clear/hide cards to add list view
     - CardCoreDto skal ud af infrastruktur laget
 
 Deck editor!
