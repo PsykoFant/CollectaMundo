@@ -49,6 +49,7 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region child viewmodels (visible to XAML)
+        public StatusViewModel StatusVM { get; }
         public CardViewModel AllCardsVM { get; }
         public CardViewModel AllCardsForDecksVM { get; }
         public CardViewModel AllCardsInDecksVM { get; }
@@ -77,7 +78,7 @@ namespace CollectaMundo.ViewModels
             _userPromptService.CancelPendingPrompt();
             _userPromptService.CancelCurrentOperation();
             _userPromptService.ClearCancellation();
-            _statusVM.HideStatusOverlay();
+            StatusVM.HideStatusOverlay();
             ImportVM.ImportOverlayVisibility = Visibility.Collapsed;
 
             if (newValue == Page.MyCollection)
@@ -171,7 +172,7 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         // Status overlay vm (owned by main window)
-        private readonly StatusViewModel _statusVM;
+        //private readonly StatusViewModel _statusVM;
 
         #endregion
 
@@ -190,7 +191,8 @@ namespace CollectaMundo.ViewModels
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null)
         {
-            _statusVM = statusVM;
+            StatusVM = statusVM;
+
             _settings = settings;
             _filteringService = new FilteringService();
             _cardListService = cardListService;

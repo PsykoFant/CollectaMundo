@@ -12,7 +12,7 @@ namespace CollectaMundo
     /// </summary>
     public partial class App : Application
     {
-        private StatusWindow? _statusWindow;
+        private StartupWindow? _statusWindow;
         protected override async void OnStartup(StartupEventArgs e)
         {
 
@@ -20,7 +20,7 @@ namespace CollectaMundo
 
             var userPromptService = new UserPromptService();
             var statusVM = new StatusViewModel(userPromptService);
-            _statusWindow = new StatusWindow { DataContext = statusVM };
+            _statusWindow = new StartupWindow { DataContext = statusVM };
             _statusWindow.Show();
 
             try

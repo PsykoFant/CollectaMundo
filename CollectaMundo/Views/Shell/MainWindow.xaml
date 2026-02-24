@@ -1,10 +1,12 @@
-<Window x:Class="CollectaMundo.MainWindow"
+<Window x:Class="CollectaMundo.Views.Shell.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
-        xmlns:views="clr-namespace:CollectaMundo.Views"
+        xmlns:shell="clr-namespace:CollectaMundo.Views.Shell"
+        xmlns:shared="clr-namespace:CollectaMundo.Views.Shared"
+        xmlns:import="clr-namespace:CollectaMundo.Views.Import"        
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodels:RootViewModel, IsDesignTimeCreatable=False}"
         Title="CollectaMundo"
@@ -24,16 +26,20 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <!-- Top menu -->
-            <views:TopMenuView Grid.Row="0" Grid.ColumnSpan="3" />
+            <shell:TopMenuView Grid.Row="0" Grid.ColumnSpan="3" />
             <!-- Side menu -->
-            <views:ContentSectionView Grid.Row="1" Grid.Column="1"/>
+            <shell:SideMenuView Grid.Row="1" Grid.Column="0"/>
 
             <!-- Content section -->
-            <views:SideMenuView Grid.Row="1" Grid.Column="0"/>
+            <shell:ContentSectionView Grid.Row="1" Grid.Column="1"/>
             
+            <!-- Wizards and windows -->            
+            <import:ImportOverlay  Grid.Row="1" Grid.Column="1" DataContext="{Binding ImportVM}" />
+            <shared:StatusOverlay  Grid.Row="1" Grid.Column="1" DataContext="{Binding StatusVM}" />
+
             <!-- Card Images -->
-            <views:CardImageView Grid.Row="1" Grid.Column="2"/>
+            <shell:CardImageView Grid.Row="1" Grid.Column="2"/>
             
         </Grid>
-    </Grid>
+    </Grid>    
 </Window>

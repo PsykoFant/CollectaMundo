@@ -5,9 +5,9 @@ namespace CollectaMundo.Views.Shell
     /// <summary>
     /// Interaction logic for StatusWindow.xaml
     /// </summary>
-    public partial class StatusWindow : Window
+    public partial class StartupWindow : Window
     {
-        public StatusWindow()
+        public StartupWindow()
         {
             InitializeComponent();
         }

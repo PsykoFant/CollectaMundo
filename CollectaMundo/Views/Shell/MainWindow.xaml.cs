@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-namespace CollectaMundo
+namespace CollectaMundo.Views.Shell
 {
     public partial class MainWindow : Window
     {

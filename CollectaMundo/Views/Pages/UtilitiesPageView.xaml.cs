@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CollectaMundo.Views
+namespace CollectaMundo.Views.Pages
 {
     /// <summary>
-    /// Interaction logic for CardImageView.xaml
+    /// Interaction logic for UtilitiesPageView.xaml
     /// </summary>
-    public partial class CardImageView : UserControl
+    public partial class UtilitiesPageView : UserControl
     {
-        public CardImageView()
+        public UtilitiesPageView()
         {
             InitializeComponent();
         }

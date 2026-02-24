@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace CollectaMundo.Views.Shell
 {
     /// <summary>
-    /// Interaction logic for ContentSectionView.xaml
+    /// Interaction logic for CardImageView.xaml
     /// </summary>
-    public partial class ContentSectionView : UserControl
+    public partial class CardImageView : UserControl
     {
-        public ContentSectionView()
+        public CardImageView()
         {
             InitializeComponent();
         }

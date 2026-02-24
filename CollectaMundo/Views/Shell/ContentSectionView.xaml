@@ -1,11 +1,9 @@
-﻿<UserControl x:Class="CollectaMundo.Views.ContentSectionView"
+﻿<UserControl x:Class="CollectaMundo.Views.Shell.ContentSectionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"             
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:shared="clr-namespace:CollectaMundo.Views.Shared"
-             xmlns:import="clr-namespace:CollectaMundo.Views.Import"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
              xmlns:presentation="clr-namespace:CollectaMundo.Presentation"
@@ -49,16 +47,13 @@
             ConverterParameter={x:Static presentation:Page.Decks}}" 
                                        HorizontalAlignment="Stretch"
                                        VerticalAlignment="Stretch"/>
-        
-        <Grid x:Name="GridUtilitiesSection" d:IsHidden="True"
-                      Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},
-                    Converter={StaticResource PageToVisibilityConverter},
-                    ConverterParameter={x:Static presentation:Page.Utilities}}">
-            <Label Content="Utilities" Style="{StaticResource MediumHeaderLabelStyle}" />
-            <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>
-        </Grid>
-        <!-- Status window -->
-        <shared:StatusOverlay DataContext="{Binding DataContext.StatusOverlay, RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True"/>
-        <import:ImportOverlay DataContext="{Binding DataContext.ImportOverlay, RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True"/>
+
+        <!-- Utilities -->
+        <pages:UtilitiesPageView Visibility="{Binding CurrentPage,
+            Converter={StaticResource PageToVisibilityConverter},
+            ConverterParameter={x:Static presentation:Page.Utilities}}" 
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch"/>
+
     </Grid>
 </UserControl>
