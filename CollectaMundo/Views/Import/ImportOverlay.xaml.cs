@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace CollectaMundo
+namespace CollectaMundo.Views.Import
 {
     /// <summary>
     /// Interaction logic for StatusOverlay.xaml

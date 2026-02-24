@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace CollectaMundo
+namespace CollectaMundo.Views.Shell
 {
     /// <summary>
     /// Interaction logic for StatusWindow.xaml

@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace CollectaMundo
+namespace CollectaMundo.Views.Shared
 {
     /// <summary>
     /// Interaction logic for StatusOverlay.xaml
