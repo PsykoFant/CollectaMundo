@@ -12,6 +12,7 @@ using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.Pages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -48,7 +49,10 @@ namespace CollectaMundo.ViewModels
 
         #endregion
 
-        #region child viewmodels (visible to XAML)
+        #region child viewmodels
+        // Pages
+        public SearchAndFilterPageViewModel SearchAndFilterPageVM { get; }
+
         public StatusViewModel StatusVM { get; }
         public CardViewModel AllCardsVM { get; }
         public CardViewModel AllCardsForDecksVM { get; }
@@ -66,49 +70,6 @@ namespace CollectaMundo.ViewModels
 
         #region ui state
         public Action? OnStartupComplete { get; set; }
-
-        // What page are we on?
-        [ObservableProperty]
-        private Page currentPage;
-        partial void OnCurrentPageChanged(Page oldValue, Page newValue)
-        {
-            if (oldValue == newValue)
-                return;
-
-            _userPromptService.CancelPendingPrompt();
-            _userPromptService.CancelCurrentOperation();
-            _userPromptService.ClearCancellation();
-            StatusVM.HideStatusOverlay();
-            ImportVM.ImportOverlayVisibility = Visibility.Collapsed;
-
-            if (newValue == Page.MyCollection)
-            {
-                AddCardsVM.StatusMessage = string.Empty;
-                SideMenuFilterVisibility = Visibility.Visible;
-                SideMenuUtilsVisibility = Visibility.Collapsed;
-                CardViewSectionVisibility = Visibility.Visible;
-                MyCollectionResizeToken++;
-            }
-            else if (newValue == Page.SearchAndFilter)
-            {
-                EditCardsVM.StatusMessage = string.Empty;
-                SideMenuFilterVisibility = Visibility.Visible;
-                SideMenuUtilsVisibility = Visibility.Collapsed;
-                CardViewSectionVisibility = Visibility.Visible;
-            }
-            else if (newValue == Page.Utilities)
-            {
-                AddCardsVM.StatusMessage = string.Empty;
-                EditCardsVM.StatusMessage = string.Empty;
-                SideMenuFilterVisibility = Visibility.Collapsed;
-                SideMenuUtilsVisibility = Visibility.Visible;
-                CardViewSectionVisibility = Visibility.Collapsed;
-                CardImageVM.FrontImageSource = null;
-                CardImageVM.BackImageSource = null;
-            }
-
-            OnPropertyChanged(nameof(MiniLogoVisibility));
-        }
 
         // Column resize
         [ObservableProperty]
@@ -157,7 +118,8 @@ namespace CollectaMundo.ViewModels
                 // if *either* status box is Visible, hide our logo
                 bool addBusy = AddCardsVM.StatusVisibility == Visibility.Visible;
                 bool editBusy = EditCardsVM.StatusVisibility == Visibility.Visible;
-                bool isLogoPage = CurrentPage == Page.MyCollection || CurrentPage == Page.SearchAndFilter;
+                //bool isLogoPage = CurrentPage == Page.MyCollection || CurrentPage == Page.SearchAndFilter;
+                bool isLogoPage = true;
 
                 return (addBusy || editBusy || !isLogoPage)
                   ? Visibility.Collapsed
@@ -197,8 +159,6 @@ namespace CollectaMundo.ViewModels
             _userPromptService = userPromptService;
             _filesystemPicker = fileSystemPicker;
 
-            CurrentPage = Page.SearchAndFilter;
-
             // cardlist viewmodels
             AllCardsVM = new CardViewModel();
             MyCollectionVM = new CardViewModel();
@@ -226,6 +186,10 @@ namespace CollectaMundo.ViewModels
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, parentContext);
+
+            // Pages viewmodels
+            SearchAndFilterPageVM = new SearchAndFilterPageViewModel(allCardsVM: AllCardsVM, addCardsVM: AddCardsVM, filterVM: FilterVM, pricesVM: PricesVM, cardImageVM: CardImageVM, columnWidths: ColumnWidths);
+
 
             // event wiring
             SubscribeChildVmEvents();
@@ -261,17 +225,7 @@ namespace CollectaMundo.ViewModels
 
         #region commands
         // Commands to switch pages
-        [RelayCommand]
-        private void ShowSearchAndFilter() => CurrentPage = Page.SearchAndFilter;
 
-        [RelayCommand]
-        private void ShowMyCollection() => CurrentPage = Page.MyCollection;
-
-        [RelayCommand]
-        private void ShowDecks() => CurrentPage = Page.Decks;
-
-        [RelayCommand]
-        private void ShowUtilities() => CurrentPage = Page.Utilities;
 
         #endregion
 
