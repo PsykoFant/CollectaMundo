@@ -71,6 +71,9 @@ namespace CollectaMundo.ViewModels
         #region ui state
         public Action? OnStartupComplete { get; set; }
 
+        [ObservableProperty]
+        private object? currentPageViewModel;
+
         // Column resize
         [ObservableProperty]
         private int myCollectionResizeToken;
@@ -190,6 +193,7 @@ namespace CollectaMundo.ViewModels
             // Pages viewmodels
             SearchAndFilterPageVM = new SearchAndFilterPageViewModel(allCardsVM: AllCardsVM, addCardsVM: AddCardsVM, filterVM: FilterVM, pricesVM: PricesVM, cardImageVM: CardImageVM, columnWidths: ColumnWidths);
 
+            CurrentPageViewModel = SearchAndFilterPageVM; // default page
 
             // event wiring
             SubscribeChildVmEvents();

@@ -4,15 +4,17 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"             
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
-             xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
-             xmlns:presentation="clr-namespace:CollectaMundo.Presentation"
-             xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
-             xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
+             xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"             
+             xmlns:viewmodelsPages="clr-namespace:CollectaMundo.ViewModels.Pages"             
              xmlns:pages="clr-namespace:CollectaMundo.Views.Pages"
              d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <DataTemplate DataType="{x:Type viewmodelsPages:SearchAndFilterPageViewModel}">
+            <pages:SearchAndFilterPageView />
+        </DataTemplate>
+    </UserControl.Resources>
     <Grid>
         <Image Source="/Resources/Images/Logo.png"
                        Stretch="Fill"
@@ -27,33 +29,10 @@
         <ScrollViewer HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Visibility="{Binding MiniLogoVisibility}">
             <TextBlock HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
         </ScrollViewer>
-        <!-- Search and Filter -->
-        <pages:SearchAndFilterPageView Visibility="{Binding CurrentPage,
-            Converter={StaticResource PageToVisibilityConverter},
-            ConverterParameter={x:Static presentation:Page.SearchAndFilter}}" 
-                                       HorizontalAlignment="Stretch"
-                                       VerticalAlignment="Stretch"/>
-        
-        <!-- My Collection -->
-        <pages:MyCollectionPageView Visibility="{Binding CurrentPage,
-            Converter={StaticResource PageToVisibilityConverter},
-            ConverterParameter={x:Static presentation:Page.MyCollection}}" 
-                                       HorizontalAlignment="Stretch"
-                                       VerticalAlignment="Stretch"/>
-
-        <!-- Decks -->
-        <pages:DecksPageView Visibility="{Binding CurrentPage,
-            Converter={StaticResource PageToVisibilityConverter},
-            ConverterParameter={x:Static presentation:Page.Decks}}" 
-                                       HorizontalAlignment="Stretch"
-                                       VerticalAlignment="Stretch"/>
-
-        <!-- Utilities -->
-        <pages:UtilitiesPageView Visibility="{Binding CurrentPage,
-            Converter={StaticResource PageToVisibilityConverter},
-            ConverterParameter={x:Static presentation:Page.Utilities}}" 
-                                       HorizontalAlignment="Stretch"
-                                       VerticalAlignment="Stretch"/>
+        <!-- Page host -->
+        <ContentControl Content="{Binding CurrentPageViewModel}"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch" />
 
     </Grid>
 </UserControl>
