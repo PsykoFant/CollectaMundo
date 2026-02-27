@@ -137,8 +137,6 @@ public static class TestAppBuilder
 
         mainVM.FilterVM.NotifyFilterChanged();
         mainVM.SideMenuVisibility = Visibility.Visible;
-        mainVM.ContentSectionVisibility = Visibility.Visible;
-        mainVM.MainGridVisibility = Visibility.Visible;
 
         SpinWait.SpinUntil(() =>
             mainVM.AllCardsVM.Cards.Count >= 61 &&

@@ -174,7 +174,8 @@
             </ListView.View>
         </ListView>
         <!--The main card view datagrid-->
-        <DataGrid ItemsSource="{Binding AllCardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
+        <DataGrid x:Name="AllCardsDataGrid"
+                  ItemsSource="{Binding AllCardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
                   Style="{StaticResource CardGridBaseStyle}" 
                   SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"                  
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
