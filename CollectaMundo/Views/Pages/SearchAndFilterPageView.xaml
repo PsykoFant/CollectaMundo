@@ -174,17 +174,15 @@
             </ListView.View>
         </ListView>
         <!--The main card view datagrid-->
-        <DataGrid x:Name="AllCardsDataGrid" Style="{StaticResource CardGridBaseStyle}" ItemsSource="{Binding AllCardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
+        <DataGrid ItemsSource="{Binding AllCardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
+                  Style="{StaticResource CardGridBaseStyle}" 
                   SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"                  
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <shared:FilterHeaderView HeaderText="Name"
-                                                     FilterKey="Name"
-                                                     PageVM="{Binding DataContext, ElementName=AllCardsDataGrid}"
-                                                     ComboWidth="{Binding DataContext.ColumnWidths[0][0], ElementName=AllCardsDataGrid}" />
+                            <shared:FilterHeaderView DataContext="{Binding DataContext.NameHeader, ElementName=AllCardsDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -196,10 +194,7 @@
                 <DataGridTemplateColumn Header="Set Name" Width="*" SortMemberPath="SetName">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <shared:FilterHeaderView HeaderText="Set Name"
-                                                     FilterKey="SetName"
-                                                     PageVM="{Binding DataContext, ElementName=AllCardsDataGrid}"
-                                                     ComboWidth="{Binding DataContext.ColumnWidths[0][1], ElementName=AllCardsDataGrid}" />
+                            <shared:FilterHeaderView DataContext="{Binding DataContext.SetNameHeader, ElementName=AllCardsDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
