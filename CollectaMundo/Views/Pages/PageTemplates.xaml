@@ -1,0 +1,10 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:pages="clr-namespace:CollectaMundo.Views.Pages"
+                    xmlns:pageVms="clr-namespace:CollectaMundo.ViewModels.Pages">
+
+    <DataTemplate DataType="{x:Type pageVms:SearchAndFilterPageViewModel}">
+        <pages:SearchAndFilterPageView />
+    </DataTemplate>
+
+</ResourceDictionary>

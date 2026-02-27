@@ -2,7 +2,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-
 namespace CollectaMundo.ViewModels
 {
     public partial class FilterViewModel(IFilteringService filteringService) : ObservableObject
@@ -35,6 +34,5 @@ namespace CollectaMundo.ViewModels
             FilterChanged?.Invoke(this, EventArgs.Empty);
         }
     }
-
 }
 

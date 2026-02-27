@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages"
+             xmlns:shared="clr-namespace:CollectaMundo.Views.Pages.SharedElements"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
@@ -173,66 +174,17 @@
             </ListView.View>
         </ListView>
         <!--The main card view datagrid-->
-        <DataGrid x:Name="AllCardsDataGrid"
-                  ItemsSource="{Binding AllCardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
-                  Margin="0,280,0,0"
-                  AutoGenerateColumns="False"
-                  SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"
-                  ScrollViewer.CanContentScroll="True"
-                  EnableColumnVirtualization="True"
-                  VirtualizingPanel.IsVirtualizing="True"
-                  CanUserAddRows="False"
-                  CanUserSortColumns="True"
-                  HorizontalAlignment="Stretch"
-                  IsReadOnly="True"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                  behaviors:DataGridPersistSortBehavior.Enable="True"
-                  behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
-                  behaviors:DataGridColumnResizerBehavior.DataGridIndex="0"
+        <DataGrid x:Name="AllCardsDataGrid" Style="{StaticResource CardGridBaseStyle}" ItemsSource="{Binding AllCardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
+                  SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"                  
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="MouseDoubleClick">
-                    <i:InvokeCommandAction 
-                                    Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
-                                    CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <Grid DataContext="{Binding FilterVM.Filters[Name]}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
-                                <ComboBox IsTextSearchEnabled="False"
-                                              Grid.Column="1"
-                                              HorizontalAlignment="Stretch"
-                                              Height="20"
-                                              IsEditable="True"
-                                              Width="{Binding ColumnWidths[0][0]}"
-                                              ItemsSource="{Binding FilteredOptions}"
-                                              DisplayMemberPath="OptionName"
-                                              Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                    <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction
-                                                            Command="{Binding ComboBoxSelectionChangedCommand}"
-                                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
-                                        </i:EventTrigger>
-                                    </i:Interaction.Triggers>
-                                    <i:Interaction.Behaviors>
-                                        <behaviors:ComboBoxUnselector ClearTrigger="{Binding ClearComboBoxSelectionTrigger}" />
-                                    </i:Interaction.Behaviors>
-                                    <ComboBox.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <VirtualizingStackPanel />
-                                        </ItemsPanelTemplate>
-                                    </ComboBox.ItemsPanel>
-                                </ComboBox>
-                            </Grid>
+                            <shared:FilterHeaderView HeaderText="Name"
+                                                     FilterKey="Name"
+                                                     PageVM="{Binding DataContext, ElementName=AllCardsDataGrid}"
+                                                     ComboWidth="{Binding DataContext.ColumnWidths[0][0], ElementName=AllCardsDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -241,41 +193,13 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Set" Width="*" SortMemberPath="SetName">
+                <DataGridTemplateColumn Header="Set Name" Width="*" SortMemberPath="SetName">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <Grid DataContext="{Binding FilterVM.Filters[SetName]}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Label Content="Set" VerticalAlignment="Center" Grid.Column="0"/>
-                                <ComboBox IsTextSearchEnabled="False"
-                                              Grid.Column="1"
-                                              HorizontalAlignment="Stretch"
-                                              Height="20"
-                                              IsEditable="True"
-                                              Width="{Binding ColumnWidths[0][1]}"
-                                              ItemsSource="{Binding FilteredOptions}"
-                                              DisplayMemberPath="OptionName"
-                                              Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                    <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction
-                                                            Command="{Binding ComboBoxSelectionChangedCommand}"
-                                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
-                                        </i:EventTrigger>
-                                    </i:Interaction.Triggers>
-                                    <i:Interaction.Behaviors>
-                                        <behaviors:ComboBoxUnselector ClearTrigger="{Binding ClearComboBoxSelectionTrigger}" />
-                                    </i:Interaction.Behaviors>
-                                    <ComboBox.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <VirtualizingStackPanel />
-                                        </ItemsPanelTemplate>
-                                    </ComboBox.ItemsPanel>
-                                </ComboBox>
-                            </Grid>
+                            <shared:FilterHeaderView HeaderText="Set Name"
+                                                     FilterKey="SetName"
+                                                     PageVM="{Binding DataContext, ElementName=AllCardsDataGrid}"
+                                                     ComboWidth="{Binding DataContext.ColumnWidths[0][1], ElementName=AllCardsDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -283,7 +207,7 @@
                             <TextBlock Text="{Binding SetName}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                </DataGridTemplateColumn>                
                 <DataGridTemplateColumn Header="Icon" IsReadOnly="True" Width="Auto" SortMemberPath="ReleaseDate">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -315,7 +239,7 @@
                 <DataGridTemplateColumn SortMemberPath="NormalPrice" Width="*">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding PricesVM.PriceHeader}"/>
+                            <TextBlock Text="{Binding DataContext.PricesVM.PriceHeader, ElementName=AllCardsDataGrid}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -327,7 +251,7 @@
                 <DataGridTemplateColumn SortMemberPath="FoilPrice" Width="*">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding PricesVM.FoilPriceHeader}"/>
+                            <TextBlock Text="{Binding DataContext.PricesVM.FoilPriceHeader, ElementName=AllCardsDataGrid}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -339,7 +263,7 @@
                 <DataGridTemplateColumn SortMemberPath="EtchedPrice" Width="*">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding PricesVM.EtchedPriceHeader}"/>
+                            <TextBlock Text="{Binding DataContext.PricesVM.EtchedPriceHeader, ElementName=AllCardsDataGrid}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -349,6 +273,13 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDoubleClick">
+                    <i:InvokeCommandAction 
+                                    Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
+                                    CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
             <DataGrid.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                     <MenuItem Header="Add selected card(s) to Collection"
