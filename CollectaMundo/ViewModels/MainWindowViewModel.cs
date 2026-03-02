@@ -51,7 +51,7 @@ namespace CollectaMundo.ViewModels
 
         #region child viewmodels
         // Pages
-        public SearchAndFilterPageViewModel SearchAndFilterPageVM { get; }
+        public CardListPageViewModelBase SearchAndFilterPageVM { get; }
 
         public StatusViewModel StatusVM { get; }
         public CardViewModel AllCardsVM { get; }
@@ -191,7 +191,7 @@ namespace CollectaMundo.ViewModels
             PricesVM = new PricesViewModel(_settings, parentContext);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new SearchAndFilterPageViewModel(allCardsVM: AllCardsVM, addCardsVM: AddCardsVM, filterVM: FilterVM, pricesVM: PricesVM, cardImageVM: CardImageVM, columnWidths: ColumnWidths);
+            SearchAndFilterPageVM = new CardListPageViewModelBase(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, columnWidths: ColumnWidths, addOrEditCardsVM: AddCardsVM);
 
             CurrentPageViewModel = SearchAndFilterPageVM; // default page
 

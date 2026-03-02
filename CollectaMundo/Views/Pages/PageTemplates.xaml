@@ -3,7 +3,7 @@
                     xmlns:pages="clr-namespace:CollectaMundo.Views.Pages"
                     xmlns:pageVms="clr-namespace:CollectaMundo.ViewModels.Pages">
 
-    <DataTemplate DataType="{x:Type pageVms:SearchAndFilterPageViewModel}">
+    <DataTemplate DataType="{x:Type pageVms:CardListPageViewModelBase}">
         <pages:SearchAndFilterPageView />
     </DataTemplate>
 

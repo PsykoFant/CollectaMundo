@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Pages;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -231,7 +232,7 @@ namespace CollectaMundo.Presentation.Behaviors
                     return;
                 }
 
-                if (dataGrid.DataContext is not MainWindowViewModel vm)
+                if (dataGrid.DataContext is not CardListPageViewModelBase vm)
                 {
                     return;
                 }

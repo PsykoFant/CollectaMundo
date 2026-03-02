@@ -9,7 +9,7 @@
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance Type=pagesVm:SearchAndFilterPageViewModel, IsDesignTimeCreatable=False}"
+             d:DataContext="{d:DesignInstance Type=pagesVm:CardListPageViewModelBase, IsDesignTimeCreatable=False}"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <Label Content="Search and Filter Cards" Style="{StaticResource MediumHeaderLabelStyle}"/>
@@ -17,8 +17,8 @@
                        HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" >
             <Label.Content>
                 <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                    <Binding Path="AllCardsVM.FilteredCount"/>
-                    <Binding Path="AllCardsVM.TotalCount"/>
+                    <Binding Path="CardsVM.FilteredCount"/>
+                    <Binding Path="CardsVM.TotalCount"/>
                 </MultiBinding>
             </Label.Content>
         </Label>
@@ -175,7 +175,7 @@
         </ListView>
         <!--The main card view datagrid-->
         <DataGrid x:Name="AllCardsDataGrid"
-                  ItemsSource="{Binding AllCardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
+                  ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
                   Style="{StaticResource CardGridBaseStyle}" 
                   SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"                  
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
