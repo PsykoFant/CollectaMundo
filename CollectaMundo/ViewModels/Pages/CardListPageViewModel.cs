@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 namespace CollectaMundo.ViewModels.Pages
 {
     // Base wrapper VM for pages that display a primary card list/grid and share common sub-viewmodels.
-    public class CardListPageViewModelBase(CardViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, ObservableCollection<ObservableCollection<double>> columnWidths, PricesViewModel? pricesVM = null, EditCollectionViewModel? addOrEditCardsVM = null)
+    public class CardListPageViewModel(CardViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, ObservableCollection<ObservableCollection<double>> columnWidths, PricesViewModel? pricesVM = null, EditCollectionViewModel? addOrEditCardsVM = null)
     {
         // Non-nullable VMs for features that are present on all pages.
         public CardViewModel CardsVM { get; } = cardsVM;

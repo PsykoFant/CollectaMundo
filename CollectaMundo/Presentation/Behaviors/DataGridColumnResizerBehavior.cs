@@ -232,7 +232,7 @@ namespace CollectaMundo.Presentation.Behaviors
                     return;
                 }
 
-                if (dataGrid.DataContext is not CardListPageViewModelBase vm)
+                if (dataGrid.DataContext is not CardListPageViewModel vm)
                 {
                     return;
                 }

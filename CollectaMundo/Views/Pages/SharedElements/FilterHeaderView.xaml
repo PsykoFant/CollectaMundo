@@ -31,13 +31,13 @@
 
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="SelectionChanged">
-                    <i:InvokeCommandAction Command="{Binding ComboBoxSelectionChangedCommand}"
+                    <i:InvokeCommandAction Command="{Binding FilterItem.ComboBoxSelectionChangedCommand}"
                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
                 </i:EventTrigger>
             </i:Interaction.Triggers>
 
             <i:Interaction.Behaviors>
-                <behaviors:ComboBoxUnselector ClearTrigger="{Binding ClearComboBoxSelectionTrigger}" />
+                <behaviors:ComboBoxUnselector ClearTrigger="{Binding FilterItem.ClearComboBoxSelectionTrigger}" />
             </i:Interaction.Behaviors>
 
             <ComboBox.ItemsPanel>
