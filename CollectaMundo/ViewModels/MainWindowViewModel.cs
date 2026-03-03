@@ -13,7 +13,6 @@ using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
-using CollectaMundo.Views.Pages.SharedElements;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Diagnostics;
 using System.Windows;

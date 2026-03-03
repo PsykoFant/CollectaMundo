@@ -3,11 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:pagesVmShared="clr-namespace:CollectaMundo.ViewModels.Pages.SharedElements"
+             xmlns:vm="clr-namespace:CollectaMundo.ViewModels"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance Type=pagesVmShared:FilterHeaderModel}"
+             d:DataContext="{d:DesignInstance Type=vm:FilterItemViewModel}"
              d:DesignHeight="40"
              d:DesignWidth="300">
 
@@ -17,16 +17,13 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Label Content="{Binding HeaderText}" 
-               Margin="0,0,6,0"
-               VerticalAlignment="Center" Grid.Column="0"/>
+        <Label Content="{Binding ReadableLabel}" Margin="0,0,6,0" VerticalAlignment="Center" Grid.Column="0"/>
 
         <ComboBox Grid.Column="1"
                   Margin="4,0,4,0"
                   MinWidth="60"
-                  IsEnabled="{Binding FilterItem, Converter={StaticResource NotNullToBoolConverter}}"
-                  ItemsSource="{Binding FilterItem.FilteredOptions}"
-                  Text="{Binding FilterItem.FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                  ItemsSource="{Binding FilteredOptions}"
+                  Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                   DisplayMemberPath="OptionName"
                   IsTextSearchEnabled="False"
                   IsEditable="True"
@@ -34,12 +31,12 @@
                   HorizontalAlignment="Stretch">
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="SelectionChanged">
-                    <i:InvokeCommandAction Command="{Binding FilterItem.ComboBoxSelectionChangedCommand}"
+                    <i:InvokeCommandAction Command="{Binding ComboBoxSelectionChangedCommand}"
                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
                 </i:EventTrigger>
             </i:Interaction.Triggers>
             <i:Interaction.Behaviors>
-                <behaviors:ComboBoxUnselector ClearTrigger="{Binding FilterItem.ClearComboBoxSelectionTrigger}" />
+                <behaviors:ComboBoxUnselector ClearTrigger="{Binding ClearComboBoxSelectionTrigger}" />
             </i:Interaction.Behaviors>
 
             <ComboBox.ItemsPanel>

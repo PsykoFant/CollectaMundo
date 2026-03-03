@@ -40,11 +40,10 @@
             <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding AddCardsVM.StatusMessage}"/>
         </ScrollViewer>
         <!--Cards to add listview-->
-        <ListView DataContext="{Binding AddCardsVM}"
-                                  ItemsSource="{Binding CardsToAdd}"
-                                  Visibility="{Binding CollectionEditVisibility}"                          
-                                  behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding RefreshColumnsTrigger, Mode=OneWay}"                          
-                                  Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
+        <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd}"
+                  Visibility="{Binding AddCardsVM.CollectionEditVisibility}"
+                  behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, Mode=OneWay}"
+                  Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -61,7 +60,7 @@
                                                           SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction Command="{Binding DataContext.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
+                                            <i:InvokeCommandAction Command="{Binding DataContext.AddCardsVM.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </ComboBox>
@@ -75,7 +74,7 @@
                                                           SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction Command="{Binding DataContext.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
+                                            <i:InvokeCommandAction Command="{Binding DataContext.AddCardsVM.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </ComboBox>
@@ -89,7 +88,7 @@
                                                           SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction Command="{Binding DataContext.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
+                                            <i:InvokeCommandAction Command="{Binding DataContext.AddCardsVM.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </ComboBox>
@@ -100,8 +99,8 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                                    Command="{Binding DataContext.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                    CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                                    Command="{Binding DataContext.AddCardsVM.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                    CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -128,8 +127,8 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                                    Command="{Binding DataContext.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                    CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                                    Command="{Binding DataContext.AddCardsVM.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                    CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -137,8 +136,8 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                                    Command="{Binding DataContext.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                    CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                                    Command="{Binding DataContext.AddCardsVM.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                    CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -165,8 +164,8 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                                    Command="{Binding DataContext.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                    CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                                    Command="{Binding DataContext.AddCardsVM.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                    CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -183,7 +182,7 @@
                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">                    
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <shared:FilterHeaderView DataContext="{Binding DataContext.NameHeader, ElementName=AllCardsDataGrid}" />
+                            <shared:FilterHeaderView DataContext="{Binding DataContext.NameFilter, ElementName=AllCardsDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -195,7 +194,7 @@
                 <DataGridTemplateColumn Header="Set Name" Width="*" SortMemberPath="SetName">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <shared:FilterHeaderView DataContext="{Binding DataContext.SetNameHeader, ElementName=AllCardsDataGrid}" />
+                            <shared:FilterHeaderView DataContext="{Binding DataContext.SetNameFilter, ElementName=AllCardsDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>

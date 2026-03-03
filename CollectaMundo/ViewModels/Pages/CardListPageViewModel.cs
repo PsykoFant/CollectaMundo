@@ -1,21 +1,18 @@
-﻿using CollectaMundo.ViewModels.Pages.SharedElements;
-using CollectaMundo.Views.Pages.SharedElements;
-using CommunityToolkit.Mvvm.ComponentModel;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CollectaMundo.ViewModels.Pages
 {
-    public class CardListPageViewModel : ObservableObject
+    public sealed class CardListPageViewModel : ObservableObject
     {
         public CardViewModel CardsVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public FilterViewModel FilterVM { get; }
         public EditCollectionViewModel? AddCardsVM { get; }
         public PricesViewModel? PricesVM { get; }
-        public FilterHeaderModel? NameHeader { get; private set; }
-        public FilterHeaderModel? SetNameHeader { get; private set; }
-        public CardListPageViewModel(CardViewModel cardsVM,CardImageViewModel cardImageVM,FilterViewModel filterVM,PricesViewModel? pricesVM = null,EditCollectionViewModel? addOrEditCardsVM = null)
+
+        public FilterItemViewModel? NameFilter => FilterVM.Filters.TryGetValue("Name", out var f) ? f : null;
+        public FilterItemViewModel? SetNameFilter => FilterVM.Filters.TryGetValue("SetName", out var f) ? f : null;
+        public CardListPageViewModel(CardViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, PricesViewModel? pricesVM = null, EditCollectionViewModel? addOrEditCardsVM = null)
         {
             CardsVM = cardsVM;
             CardImageVM = cardImageVM;
@@ -23,24 +20,11 @@ namespace CollectaMundo.ViewModels.Pages
             PricesVM = pricesVM;
             AddCardsVM = addOrEditCardsVM;
 
-            NameHeader = new FilterHeaderModel("Name");
-            SetNameHeader = new FilterHeaderModel("Set Name");
-
-            FilterVM.PropertyChanged += FilterVM_PropertyChanged;
-        }
-        private void FilterVM_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(FilterViewModel.Filters))
-                RebindHeaders();
-        }
-
-        private void RebindHeaders()
-        {
-            FilterVM.Filters.TryGetValue("Name", out var nameItem);
-            FilterVM.Filters.TryGetValue("SetName", out var setItem);
-
-            NameHeader.FilterItem = nameItem;
-            SetNameHeader.FilterItem = setItem;
+            FilterVM.FiltersRebuilt += (_, _) =>
+            {
+                OnPropertyChanged(nameof(NameFilter));
+                OnPropertyChanged(nameof(SetNameFilter));
+            };
         }
     }
 }

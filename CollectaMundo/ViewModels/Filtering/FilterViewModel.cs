@@ -6,20 +6,15 @@ namespace CollectaMundo.ViewModels
 {
     public partial class FilterViewModel(IFilteringService filteringService) : ObservableObject
     {
-        // Injected dependencies
         private readonly IFilteringService _filteringService = filteringService;
 
-        // Exposed filters and summary
+        public event EventHandler? FilterChanged;
+        public event EventHandler? FiltersRebuilt;
+
         public Dictionary<string, FilterItemViewModel> Filters { get; } = [];
 
         [ObservableProperty]
         private string? filterSummary;
-        public void NotifyFiltersRebuilt()
-        {
-            OnPropertyChanged(nameof(Filters));
-        }
-
-        public event EventHandler? FilterChanged;
 
         [RelayCommand]
         private void ClearFilters()
@@ -27,7 +22,10 @@ namespace CollectaMundo.ViewModels
             _filteringService.ResetAllFilters(Filters.Values);
             NotifyFilterChanged();
         }
-
+        public void NotifyFiltersRebuilt()
+        {
+            FiltersRebuilt?.Invoke(this, EventArgs.Empty);
+        }
         public void NotifyFilterChanged()
         {
             FilterSummary = _filteringService.BuildSummary(Filters.Values);
