@@ -17,25 +17,27 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Label Content="{Binding HeaderText}" VerticalAlignment="Center" Grid.Column="0"/>
+        <Label Content="{Binding HeaderText}" 
+               Margin="0,0,6,0"
+               VerticalAlignment="Center" Grid.Column="0"/>
 
         <ComboBox Grid.Column="1"
-                  Width="{Binding ComboWidth}"
+                  Margin="4,0,4,0"
+                  MinWidth="60"
+                  IsEnabled="{Binding FilterItem, Converter={StaticResource NotNullToBoolConverter}}"
                   ItemsSource="{Binding FilterItem.FilteredOptions}"
-                  DisplayMemberPath="OptionName"
                   Text="{Binding FilterItem.FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                  DisplayMemberPath="OptionName"
                   IsTextSearchEnabled="False"
                   IsEditable="True"
                   Height="20"
                   HorizontalAlignment="Stretch">
-
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="SelectionChanged">
                     <i:InvokeCommandAction Command="{Binding FilterItem.ComboBoxSelectionChangedCommand}"
                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
                 </i:EventTrigger>
             </i:Interaction.Triggers>
-
             <i:Interaction.Behaviors>
                 <behaviors:ComboBoxUnselector ClearTrigger="{Binding FilterItem.ClearComboBoxSelectionTrigger}" />
             </i:Interaction.Behaviors>

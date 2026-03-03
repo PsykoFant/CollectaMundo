@@ -173,6 +173,11 @@
             </ListView.View>
         </ListView>
         <!--The my collection datagrid-->
+        <!--behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"-->
+        <!--behaviors:DataGridColumnResizerBehavior.DataGridIndex="1"-->
+        <!--behaviors:DataGridColumnResizerBehavior.UpdateOnToken="{Binding DataContext.Main.MyCollectionResizeToken, RelativeSource={RelativeSource AncestorType=Window}}"-->
+
+
         <DataGrid x:Name="MyCollectionDataGrid"
                               ItemsSource="{Binding MyCollectionVM.FilteredCards, NotifyOnTargetUpdated=True}"
                               Margin="0,280,0,0"
@@ -186,9 +191,6 @@
                               HorizontalAlignment="Stretch"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                               behaviors:DataGridPersistSortBehavior.Enable="True"
-                              behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
-                              behaviors:DataGridColumnResizerBehavior.DataGridIndex="1"                              
-                              behaviors:DataGridColumnResizerBehavior.UpdateOnToken="{Binding DataContext.Main.MyCollectionResizeToken, RelativeSource={RelativeSource AncestorType=Window}}"
                               behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding EditCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="MouseDoubleClick">

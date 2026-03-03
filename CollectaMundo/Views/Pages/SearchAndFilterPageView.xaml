@@ -180,7 +180,7 @@
                   SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"                  
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
+                <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">                    
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
                             <shared:FilterHeaderView DataContext="{Binding DataContext.NameHeader, ElementName=AllCardsDataGrid}" />

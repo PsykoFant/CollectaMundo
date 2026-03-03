@@ -21,6 +21,7 @@
             <converters:PageToBrushConverter x:Key="PageToBrushConverter" SelectedBrush="#5cb9ca" DefaultBrush="#FFDDDDDD"/>
             <converters:PageToVisibilityConverter x:Key="PageToVisibilityConverter" VisibleVisibility="Visible" HiddenVisibility="Collapsed" />
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+            <converters:NotNullToBoolConverter x:Key="NotNullToBoolConverter" />
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
             <!-- Shared base style for font and background -->
@@ -53,10 +54,18 @@
                 <Setter Property="Margin" Value="0,280,0,0"/>
                 <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
 
+                <Setter Property="ColumnHeaderStyle">
+                    <Setter.Value>
+                        <Style TargetType="{x:Type DataGridColumnHeader}">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <!-- (optional) also: -->
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                        </Style>
+                    </Setter.Value>
+                </Setter>
+                
                 <!-- your attached behaviors (static values only) -->
                 <Setter Property="behaviors:DataGridPersistSortBehavior.Enable" Value="True"/>
-                <Setter Property="behaviors:DataGridColumnResizerBehavior.EnableAutoResize" Value="True"/>
-                <Setter Property="behaviors:DataGridColumnResizerBehavior.DataGridIndex" Value="0"/>
             </Style>
 
             <!-- Font for MenuItem (datagrid context menu) -->
