@@ -19,9 +19,7 @@
           Height="40"
           IsEnabled="{Binding IsTopMenuEnabled}">
 
-        <Button Command="{Binding ShowSearchAndFilterCommand}"
-                Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.SearchAndFilter}}"
-                Content="All Cards"
+        <Button Content="All Cards"
                 HorizontalAlignment="Center"
                 Margin="0,5,510,0"
                 VerticalAlignment="Top"
@@ -33,9 +31,7 @@
             </Button.Effect>
         </Button>
 
-        <Button Command="{Binding ShowMyCollectionCommand}"
-                Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"
-                Content="My Collection"
+        <Button Content="My Collection"
                 HorizontalAlignment="Center"
                 Margin="0,5,170,0"
                 VerticalAlignment="Top"
@@ -47,9 +43,7 @@
             </Button.Effect>
         </Button>
 
-        <Button Command="{Binding ShowDecksCommand}"
-                Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.Decks}}"
-                Content="Decks"
+        <Button Content="Decks"
                 HorizontalAlignment="Center"
                 Margin="170,5,0,0"
                 VerticalAlignment="Top"
@@ -61,8 +55,7 @@
             </Button.Effect>
         </Button>
 
-        <Button Command="{Binding ShowUtilitiesCommand}"
-                Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.Utilities}}"
+        <Button 
                 Content="Utilities"
                 HorizontalAlignment="Center"
                 Margin="510,5,0,0"
@@ -74,6 +67,8 @@
                 <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
             </Button.Effect>
         </Button>
+        <!--Command="{Binding ShowUtilitiesCommand}"-->
+        <!--Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.Utilities}}"-->
 
     </Grid>
 </UserControl>

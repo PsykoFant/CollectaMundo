@@ -585,12 +585,13 @@
 
 
             <!--Language-->
+            <!--Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"-->
+            <!--Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"-->
             <ComboBox DataContext="{Binding FilterVM.Filters[Language]}"
                               IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                               HorizontalAlignment="Left" VerticalAlignment="Top" 
                               Margin="10,515,0,0" 
-                              Width="180" Height="20"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
+                              Width="180" Height="20">
                 <ComboBox.Template>
                     <ControlTemplate TargetType="{x:Type ComboBox}">
                         <Grid>
@@ -661,17 +662,17 @@
                               VerticalAlignment="Top"
                               HorizontalAlignment="Right"
                               ItemsSource="{Binding AvailableOperators}"
-                              SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
+                              SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
             </ComboBox>
 
             <!--SelectedCondition-->
+            <!--Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"-->
+            <!--Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"-->
             <ComboBox DataContext="{Binding FilterVM.Filters[SelectedCondition]}"
                               IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                               HorizontalAlignment="Left" VerticalAlignment="Top" 
                               Margin="10,545,0,0" 
-                              Width="180" Height="20"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
+                              Width="180" Height="20">
                 <ComboBox.Template>
                     <ControlTemplate TargetType="{x:Type ComboBox}">
                         <Grid>
@@ -742,17 +743,17 @@
                               VerticalAlignment="Top"
                               HorizontalAlignment="Right"
                               ItemsSource="{Binding AvailableOperators}"
-                              SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
+                              SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
             </ComboBox>
 
             <!--SelectedFinish-->
+            <!--Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"-->
+            <!--Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"-->
             <ComboBox DataContext="{Binding FilterVM.Filters[SelectedFinish]}"
                               IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                               HorizontalAlignment="Left" VerticalAlignment="Top" 
                               Margin="10,485,0,0" 
-                              Width="180" Height="20"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
+                              Width="180" Height="20">
                 <ComboBox.Template>
                     <ControlTemplate TargetType="{x:Type ComboBox}">
                         <Grid>
@@ -823,18 +824,17 @@
                               VerticalAlignment="Top"
                               HorizontalAlignment="Right"
                               ItemsSource="{Binding AvailableOperators}"
-                              SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
+                              SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
             </ComboBox>
 
+            <!--Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"-->
             <CheckBox  Content="Filter on cards for trade"
                                IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"
-                               HorizontalAlignment="Left" Margin="10,570,0,0" VerticalAlignment="Top"
-                               Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}" />
+                               HorizontalAlignment="Left" Margin="10,570,0,0" VerticalAlignment="Top"/>
+            <!--Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"-->
             <CheckBox Content="Filter on cards NOT for trade"
                               IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"
-                              HorizontalAlignment="Left" Margin="10,590,0,0" VerticalAlignment="Top"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"/>
+                              HorizontalAlignment="Left" Margin="10,590,0,0" VerticalAlignment="Top"/>
 
         </Grid>
         <Grid x:Name="GridUtilsMenu" Visibility="{Binding SideMenuUtilsVisibility}">

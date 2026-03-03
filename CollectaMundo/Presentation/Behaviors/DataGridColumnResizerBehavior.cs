@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ViewModels;
-using CollectaMundo.ViewModels.Pages;
+﻿using CollectaMundo.ViewModels.Pages;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -209,25 +208,12 @@ namespace CollectaMundo.Presentation.Behaviors
                     return;
                 }
 
-                try
-                {
-                    if (PresentationSource.FromVisual(dataGrid) == null)
-                    {
-                        return;
-                    }
-                }
-                catch (ArgumentException ex)
-                {
-                    Debug.WriteLine($"UpdateColumnWidths error: {ex.Message}");
-                    return;
-                }
-                if (dataGrid.Columns.Count == 0)
+                if (PresentationSource.FromVisual(dataGrid) == null)
                 {
                     return;
                 }
 
-                int index = GetDataGridIndex(dataGrid);
-                if (index < 0)
+                if (dataGrid.Columns.Count == 0)
                 {
                     return;
                 }
@@ -237,39 +223,16 @@ namespace CollectaMundo.Presentation.Behaviors
                     return;
                 }
 
-                var list = vm.ColumnWidths;
-                if (index >= list.Count)
-                {
-                    return;
-                }
+                var paddings = vm.HeaderPaddings;
 
-                // Per-grid padding model (index-aligned)
-                var paddingsList = new[]
-                {
-                    new[] { 65, 50 }, // grid 0 (AllCards)
-                    new[] { 65, 50 }, // grid 1 (MyCollection)
-                    new[] { 65 }      // grid 2 (Decks)
-                };
-                if (index >= paddingsList.Length)
-                {
-                    return;
-                }
-
-                var paddings = paddingsList[index];
-
-                // Defensive bound checks against columns & VM-tracked column-count
-                int cols = Math.Min(Math.Min(paddings.Length, dataGrid.Columns.Count), list[index].Count);
+                int cols = Math.Min(Math.Min(paddings.Count, dataGrid.Columns.Count), vm.ColumnWidths.Count);
 
                 for (int col = 0; col < cols; col++)
                 {
                     double actual = dataGrid.Columns[col].ActualWidth;
                     double desired = Math.Max(0, actual - paddings[col]);
 
-                    // Update only if changed meaningfully (avoid chatter)
-                    if (Math.Abs(list[index][col] - desired) > 0.5)
-                    {
-                        list[index][col] = desired;
-                    }
+                    vm.SetComboWidth(col, desired);
                 }
             }
             catch (Exception ex)

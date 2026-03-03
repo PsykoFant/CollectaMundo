@@ -13,9 +13,8 @@ using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
+using CollectaMundo.Views.Pages.SharedElements;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
 
@@ -77,8 +76,6 @@ namespace CollectaMundo.ViewModels
         // Column resize
         [ObservableProperty]
         private int myCollectionResizeToken;
-        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; } = new([[50, 50], [50, 50], [50]]);
-
         public void SetUiBusy(bool isBusy)
         {
             IsTopMenuEnabled = !isBusy;
@@ -191,7 +188,7 @@ namespace CollectaMundo.ViewModels
             PricesVM = new PricesViewModel(_settings, parentContext);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new CardListPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, columnWidths: ColumnWidths, addOrEditCardsVM: AddCardsVM);
+            SearchAndFilterPageVM = new CardListPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, resizeSpec: ColumnResizeSpec.ForSearchAndFilter(), pricesVM: PricesVM, filterVM: FilterVM, addOrEditCardsVM: AddCardsVM);
 
             CurrentPageViewModel = SearchAndFilterPageVM; // default page
 
