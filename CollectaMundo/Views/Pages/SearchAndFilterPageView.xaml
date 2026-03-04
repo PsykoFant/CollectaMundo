@@ -13,7 +13,7 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <Label Content="Search and Filter Cards" Style="{StaticResource MediumHeaderLabelStyle}"/>
-        <Label Visibility="{Binding AddCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}"
+        <Label Visibility="{Binding AddCardsVM.HasStatus, Converter={StaticResource BoolToVisibilityConverter}}"
                        HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" >
             <Label.Content>
                 <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
@@ -63,28 +63,14 @@
                     <GridViewColumn Header="Finish">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding AvailableFinishes}" 
-                                                          SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
-                                    <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction Command="{Binding DataContext.AddCardsVM.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
-                                        </i:EventTrigger>
-                                    </i:Interaction.Triggers>
-                                </ComboBox>
+                                <shared:RefreshColumnsComboBoxView DataContext="{Binding FinishCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Language">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding OtherLanguages}" 
-                                                          SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
-                                    <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction Command="{Binding DataContext.AddCardsVM.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
-                                        </i:EventTrigger>
-                                    </i:Interaction.Triggers>
-                                </ComboBox>
+                                <shared:RefreshColumnsComboBoxView DataContext="{Binding LanguageCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

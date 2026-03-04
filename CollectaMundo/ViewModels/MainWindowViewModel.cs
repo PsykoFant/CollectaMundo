@@ -86,12 +86,6 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private bool isTopMenuEnabled = true;
 
-        private void MiniLogoVisibilityFlipper()
-        {
-            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
-            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
-        }
-
         #region Visibility properties
 
         // Side menu visibility
@@ -108,24 +102,6 @@ namespace CollectaMundo.ViewModels
         // Card view visibility
         [ObservableProperty]
         private Visibility cardViewSectionVisibility = Visibility.Visible;
-
-        // Miscellaneous visibility properties
-        public Visibility MiniLogoVisibility
-        {
-            get
-            {
-                // if *either* status box is Visible, hide our logo
-                //bool addBusy = AddCardsVM.StatusVisibility == Visibility.Visible;
-                //bool editBusy = EditCardsVM.StatusVisibility == Visibility.Visible;
-                //bool isLogoPage = CurrentPage == Page.MyCollection || CurrentPage == Page.SearchAndFilter;
-                bool isLogoPage = true;
-
-                //return (addBusy || editBusy || !isLogoPage)
-                return !isLogoPage
-                  ? Visibility.Collapsed
-                  : Visibility.Visible;
-            }
-        }
 
         #endregion
 
@@ -194,7 +170,6 @@ namespace CollectaMundo.ViewModels
 
             // event wiring
             SubscribeChildVmEvents();
-            MiniLogoVisibilityFlipper();
         }
         public static async Task<MainWindowViewModel> CreateAsync(
             IEditCollectionService editService,

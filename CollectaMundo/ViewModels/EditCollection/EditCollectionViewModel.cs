@@ -7,11 +7,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
     public partial class EditCollectionViewModel : ObservableObject
     {
+        public bool StatusVisibility => !string.IsNullOrEmpty(StatusMessage);
+
         public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
         public ObservableCollection<CardSetEditRowViewModel> CardsToAdd { get; } = [];
 
@@ -33,6 +36,7 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private int refreshColumnsTrigger;
+		
         public bool IsCollectionEditVisible => CardsToAdd.Count != 0;
 
         // Commands - add to listviews
