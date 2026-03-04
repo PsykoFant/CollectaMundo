@@ -1,43 +1,91 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.ViewModels.Pages.SharedElements;
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.EditCollection;
 
-public sealed partial class CardSetEditRowViewModel(CardSet model) : ObservableObject
+public sealed partial class CardSetEditRowViewModel : ObservableObject
 {
-    public CardSet Model { get; } = model;
+    public CardSet Model { get; }
 
-    // Display (read-only)
-    public string Name => Model.Name;
-    public string SetName => Model.SetName;
+    public ComboBindingViewModel ConditionCombo { get; }
+    public ComboBindingViewModel FinishCombo { get; }
+    public ComboBindingViewModel LanguageCombo { get; }
 
-    // Editable pass-through properties (raise VM notifications)
+    public CardSetEditRowViewModel(CardSet model,ICommand refreshColumnsCommand)
+    {
+        Model = model;
+
+        ConditionCombo = new ComboBindingViewModel(
+            items: model.Conditions,
+            getter: () => SelectedCondition,
+            setter: v => SelectedCondition = (string?)v,
+            refreshCommand: refreshColumnsCommand);
+
+        FinishCombo = new ComboBindingViewModel(
+            items: model.AvailableFinishes,
+            getter: () => SelectedFinish,
+            setter: v => SelectedFinish = (string?)v,
+            refreshCommand: refreshColumnsCommand);
+
+        LanguageCombo = new ComboBindingViewModel(
+            items: model.OtherLanguages,
+            getter: () => Language,
+            setter: v => Language = (string?)v,
+            refreshCommand: refreshColumnsCommand);
+    }
+
+    // pass-through properties
     public string? SelectedCondition
     {
         get => Model.SelectedCondition;
-        set => SetProperty(Model.SelectedCondition, value, Model, static (m, v) => m.SelectedCondition = v);
+        set
+        {
+            if (Model.SelectedCondition == value) return;
+            Model.SelectedCondition = value;
+            OnPropertyChanged();
+        }
     }
     public string? SelectedFinish
     {
         get => Model.SelectedFinish;
-        set => SetProperty(Model.SelectedFinish, value, Model, static (m, v) => m.SelectedFinish = v);
+        set
+        {
+            if (Model.SelectedFinish == value) return;
+            Model.SelectedFinish = value;
+            OnPropertyChanged();
+        }
     }
     public string? Language
     {
         get => Model.Language;
-        set => SetProperty(Model.Language, value, Model, static (m, v) => m.Language = v);
+        set
+        {
+            if (Model.Language == value) return;
+            Model.Language = value;
+            OnPropertyChanged();
+        }
     }
     public int CardsOwned
     {
         get => Model.CardsOwned;
-        set => SetProperty(Model.CardsOwned, value, Model, static (m, v) => m.CardsOwned = v);
+        set
+        {
+            if (Model.CardsOwned == value) return;
+            Model.CardsOwned = value;
+            OnPropertyChanged();
+        }
     }
     public int CardsForTrade
     {
         get => Model.CardsForTrade;
-        set => SetProperty(Model.CardsForTrade, value, Model, static (m, v) => m.CardsForTrade = v);
+        set
+        {
+            if (Model.CardsForTrade == value) return;
+            Model.CardsForTrade = value;
+            OnPropertyChanged();
+        }
     }
-
-    // Optional helper if you still need “remove when zero” checks in the parent VM
-    public bool IsOwnedZeroOrLess => CardsOwned <= 0;
 }
+

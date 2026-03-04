@@ -55,7 +55,7 @@ namespace CollectaMundo.ViewModels
                     continue;
                 }
 
-                CardsToAdd.Add(new CardSetEditRowViewModel(editable));
+                CardsToAdd.Add(new CardSetEditRowViewModel(editable, RefreshColumnsCommand));
             }
 
             ClearSelectionTrigger++;
@@ -80,7 +80,7 @@ namespace CollectaMundo.ViewModels
                     continue;
                 }
 
-                CardsToAdd.Add(new CardSetEditRowViewModel(editable));
+                CardsToAdd.Add(new CardSetEditRowViewModel(editable, RefreshColumnsCommand));
             }
 
             ClearSelectionTrigger++;
@@ -252,7 +252,7 @@ namespace CollectaMundo.ViewModels
             await SubmitBatchAsync(CardsToAdd.Select(r => r.Model), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
         }
 
-        // Shared helper stays mostly the same
+        // Shared helper 
         private async Task SubmitBatchAsync(IEnumerable<CardSet> cards, Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit, bool clearAfter, string summaryTitle)
         {
             var snapshot = _parentContext.CreateMyCollectionSnapshot();

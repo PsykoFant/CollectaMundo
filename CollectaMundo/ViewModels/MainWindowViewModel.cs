@@ -115,12 +115,13 @@ namespace CollectaMundo.ViewModels
             get
             {
                 // if *either* status box is Visible, hide our logo
-                bool addBusy = AddCardsVM.StatusVisibility == Visibility.Visible;
-                bool editBusy = EditCardsVM.StatusVisibility == Visibility.Visible;
+                //bool addBusy = AddCardsVM.StatusVisibility == Visibility.Visible;
+                //bool editBusy = EditCardsVM.StatusVisibility == Visibility.Visible;
                 //bool isLogoPage = CurrentPage == Page.MyCollection || CurrentPage == Page.SearchAndFilter;
                 bool isLogoPage = true;
 
-                return (addBusy || editBusy || !isLogoPage)
+                //return (addBusy || editBusy || !isLogoPage)
+                return !isLogoPage
                   ? Visibility.Collapsed
                   : Visibility.Visible;
             }
