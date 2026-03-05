@@ -7,85 +7,75 @@ namespace CollectaMundo.ViewModels.EditCollection;
 
 public sealed partial class CardSetEditRowViewModel : ObservableObject
 {
-    public CardSet Model { get; }
+    public CardSet CardToAddOrEdit { get; }
 
+    // Bindable properties for the combo boxes
     public ComboBindingViewModel ConditionCombo { get; }
     public ComboBindingViewModel FinishCombo { get; }
     public ComboBindingViewModel LanguageCombo { get; }
 
-    public CardSetEditRowViewModel(CardSet model,ICommand refreshColumnsCommand)
+    // Constructor
+    public CardSetEditRowViewModel(CardSet cardToAdd,ICommand refreshColumnsCommand)
     {
-        Model = model;
+        CardToAddOrEdit = cardToAdd;
 
         ConditionCombo = new ComboBindingViewModel(
-            items: model.Conditions,
+            items: cardToAdd.Conditions,
             getter: () => SelectedCondition,
             setter: v => SelectedCondition = (string?)v,
             refreshCommand: refreshColumnsCommand);
 
         FinishCombo = new ComboBindingViewModel(
-            items: model.AvailableFinishes,
+            items: cardToAdd.AvailableFinishes,
             getter: () => SelectedFinish,
             setter: v => SelectedFinish = (string?)v,
             refreshCommand: refreshColumnsCommand);
 
         LanguageCombo = new ComboBindingViewModel(
-            items: model.OtherLanguages,
+            items: cardToAdd.OtherLanguages,
             getter: () => Language,
             setter: v => Language = (string?)v,
             refreshCommand: refreshColumnsCommand);
     }
 
-    // pass-through properties
+    // Dumb pass-through properties
+    public string? Name => CardToAddOrEdit.Name;
+    public string? SetName => CardToAddOrEdit.SetName;
+
+    // Passthrough properties that raise PropertyChanged when set
     public string? SelectedCondition
     {
-        get => Model.SelectedCondition;
-        set
-        {
-            if (Model.SelectedCondition == value) return;
-            Model.SelectedCondition = value;
-            OnPropertyChanged();
-        }
+        get => CardToAddOrEdit.SelectedCondition;
+        set => SetModelValue(CardToAddOrEdit.SelectedCondition, value, v => CardToAddOrEdit.SelectedCondition = v);
     }
     public string? SelectedFinish
     {
-        get => Model.SelectedFinish;
-        set
-        {
-            if (Model.SelectedFinish == value) return;
-            Model.SelectedFinish = value;
-            OnPropertyChanged();
-        }
+        get => CardToAddOrEdit.SelectedFinish;
+        set => SetModelValue(CardToAddOrEdit.SelectedFinish, value, v => CardToAddOrEdit.SelectedFinish = v);
     }
     public string? Language
     {
-        get => Model.Language;
-        set
-        {
-            if (Model.Language == value) return;
-            Model.Language = value;
-            OnPropertyChanged();
-        }
+        get => CardToAddOrEdit.Language;
+        set => SetModelValue(CardToAddOrEdit.Language, value, v => CardToAddOrEdit.Language = v);
     }
     public int CardsOwned
     {
-        get => Model.CardsOwned;
-        set
-        {
-            if (Model.CardsOwned == value) return;
-            Model.CardsOwned = value;
-            OnPropertyChanged();
-        }
+        get => CardToAddOrEdit.CardsOwned;
+        set => SetModelValue(CardToAddOrEdit.CardsOwned, value, v => CardToAddOrEdit.CardsOwned = v);
     }
     public int CardsForTrade
     {
-        get => Model.CardsForTrade;
-        set
-        {
-            if (Model.CardsForTrade == value) return;
-            Model.CardsForTrade = value;
-            OnPropertyChanged();
-        }
+        get => CardToAddOrEdit.CardsForTrade;
+        set => SetModelValue(CardToAddOrEdit.CardsForTrade, value, v => CardToAddOrEdit.CardsForTrade = v);
+    }
+    private bool SetModelValue<T>(T currentValue, T newValue, Action<T> assign, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(currentValue, newValue))
+            return false;
+
+        assign(newValue);
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }
 

@@ -159,13 +159,13 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task SubmitNewCardsAsync()
         {
-            await SubmitBatchAsync(CardsToAdd.Select(r => r.Model), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Added the following cards to your collection:");
+            await SubmitBatchAsync(CardsToAdd.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Added the following cards to your collection:");
         }
 
         [RelayCommand]
         private async Task SubmitCardEditsAsync()
         {
-            await SubmitBatchAsync(CardsToAdd.Select(r => r.Model), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Updated the following cards with these values:");
+            await SubmitBatchAsync(CardsToAdd.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Updated the following cards with these values:");
         }
 
         [RelayCommand]
@@ -176,7 +176,7 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var originals = sel.OfType<CardSetEditRowViewModel>().Select(r => r.Model).ToList();
+            var originals = sel.OfType<CardSetEditRowViewModel>().Select(r => r.CardToAddOrEdit).ToList();
             if (originals.Count == 0)
             {
                 return;
@@ -193,7 +193,7 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var originals = sel.OfType<CardSetEditRowViewModel>().Select(r => r.Model).ToList();
+            var originals = sel.OfType<CardSetEditRowViewModel>().Select(r => r.CardToAddOrEdit).ToList();
             if (originals.Count == 0)
             {
                 return;
@@ -231,7 +231,7 @@ namespace CollectaMundo.ViewModels
                 r.CardsForTrade = r.CardsOwned;
             }
 
-            await SubmitBatchAsync(CardsToAdd.Select(r => r.Model), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
+            await SubmitBatchAsync(CardsToAdd.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
         }
 
         [RelayCommand]
@@ -253,7 +253,7 @@ namespace CollectaMundo.ViewModels
                 r.CardsForTrade = 0;
             }
 
-            await SubmitBatchAsync(CardsToAdd.Select(r => r.Model), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
+            await SubmitBatchAsync(CardsToAdd.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
         }
 
         // Shared helper 

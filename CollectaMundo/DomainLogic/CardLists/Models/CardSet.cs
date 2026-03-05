@@ -38,7 +38,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public string? Rarity { get; init; }
         public string? Finishes { get; init; }
         public string? Language { get; set; }
-        public List<string>? OtherLanguages { get; set; }
+        public List<string> OtherLanguages { get; set; } = [];
         public double ManaValue { get; init; }
 
         // -------------------------------
