@@ -7,7 +7,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Text;
-using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
@@ -32,12 +31,21 @@ namespace CollectaMundo.ViewModels
         }
 
         [ObservableProperty]
+        private string statusMessage = string.Empty;
+
+        partial void OnStatusMessageChanged(string? oldValue, string newValue)
+        {
+            OnPropertyChanged(nameof(HasStatus));
+        }
+        public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
+        public bool IsCollectionEditVisible => CardsToAdd.Count != 0;
+
+
+        [ObservableProperty]
         private int clearSelectionTrigger;
 
         [ObservableProperty]
         private int refreshColumnsTrigger;
-		
-        public bool IsCollectionEditVisible => CardsToAdd.Count != 0;
 
         // Commands - add to listviews
         [RelayCommand]
@@ -316,13 +324,6 @@ namespace CollectaMundo.ViewModels
             StatusMessage = sb.ToString().TrimEnd();
         }
 
-        [ObservableProperty]
-        private string statusMessage = string.Empty;
 
-        partial void OnStatusMessageChanged(string? oldValue, string newValue)
-        {
-            OnPropertyChanged(nameof(HasStatus));
-        }
-        public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
     }
 }
