@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xaml.Behaviors;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 
@@ -6,8 +7,21 @@ namespace CollectaMundo.Presentation.Behaviors
 {
     public class DelayedUpdateBehavior : Behavior<TextBox>
     {
-        // Delay in milliseconds – configurable via XAML.
-        public int Delay { get; set; } = 500;
+        public static readonly DependencyProperty DelayProperty = DependencyProperty.Register(nameof(Delay), typeof(int), typeof(DelayedUpdateBehavior), new PropertyMetadata(500, OnDelayChanged));
+
+        public int Delay
+        {
+            get => (int)GetValue(DelayProperty);
+            set => SetValue(DelayProperty, value);
+        }
+
+        private static void OnDelayChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DelayedUpdateBehavior b && b._timer != null)
+            {
+                b._timer.Interval = TimeSpan.FromMilliseconds((int)e.NewValue);
+            }
+        }
 
         private DispatcherTimer? _timer;
 
@@ -15,15 +29,22 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             base.OnAttached();
             AssociatedObject.TextChanged += AssociatedObject_TextChanged;
-            _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Delay) };
-            _timer!.Tick += Timer_Tick;
+
+            _timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(Delay)
+            };
+            _timer.Tick += Timer_Tick;
         }
 
         protected override void OnDetaching()
         {
             AssociatedObject.TextChanged -= AssociatedObject_TextChanged;
-            _timer?.Stop();
-            _timer!.Tick -= Timer_Tick;
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= Timer_Tick;
+            }
             base.OnDetaching();
         }
 

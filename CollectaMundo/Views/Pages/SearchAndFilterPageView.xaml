@@ -77,74 +77,48 @@
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                                    Command="{Binding DataContext.AddCardsVM.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                    CommandParameter="{Binding}" />
+                                <Button Content="+" 
+                                        Style="{StaticResource StepperButtonStyle}"
+                                        Command="{Binding DataContext.AddCardsVM.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Count">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBox HorizontalAlignment="Center" Background="White">
-                                    <TextBox.Text>
-                                        <Binding Path="CardsOwned" Mode="TwoWay" UpdateSourceTrigger="Explicit" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
-                                            <Binding.ValidationRules>
-                                                <validation:IntegerValidationRule />
-                                            </Binding.ValidationRules>
-                                        </Binding>
-                                    </TextBox.Text>
-                                    <i:Interaction.Behaviors>
-                                        <behaviors:DelayedUpdateBehavior Delay="500"/>
-                                        <behaviors:NumericValidationBehavior />
-                                    </i:Interaction.Behaviors>
-                                </TextBox>
+                                <shared:NumericEditorView DataContext="{Binding Owned}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="-">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                                    Command="{Binding DataContext.AddCardsVM.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                    CommandParameter="{Binding}" />
+                                <Button Content="-"
+                                        Style="{StaticResource StepperButtonStyle}"
+                                        Command="{Binding DataContext.AddCardsVM.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                                    Command="{Binding DataContext.AddCardsVM.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                    CommandParameter="{Binding}" />
+                                <Button Content="+" Style="{StaticResource StepperButtonStyle}"
+                                        Command="{Binding DataContext.AddCardsVM.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Trade">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBox HorizontalAlignment="Center" Background="White">
-                                    <TextBox.Text>
-                                        <Binding Path="CardsForTrade" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"
-                                                                 ValidatesOnDataErrors="True" NotifyOnValidationError="True">
-                                            <Binding.ValidationRules>
-                                                <validation:IntegerValidationRule />
-                                            </Binding.ValidationRules>
-                                        </Binding>
-                                    </TextBox.Text>
-                                    <i:Interaction.Behaviors>
-                                        <behaviors:NumericValidationBehavior />
-                                    </i:Interaction.Behaviors>
-                                </TextBox>
+                                <shared:NumericEditorView DataContext="{Binding Trade}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="-">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                                    Command="{Binding DataContext.AddCardsVM.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                    CommandParameter="{Binding}" />
+                                <Button Content="-" Style="{StaticResource StepperButtonStyle}"
+                                        Command="{Binding DataContext.AddCardsVM.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

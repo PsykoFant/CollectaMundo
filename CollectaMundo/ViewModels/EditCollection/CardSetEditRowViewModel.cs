@@ -13,9 +13,11 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     public ComboBindingViewModel ConditionCombo { get; }
     public ComboBindingViewModel FinishCombo { get; }
     public ComboBindingViewModel LanguageCombo { get; }
+    public NumericBindingViewModel Owned { get; }
+    public NumericBindingViewModel Trade { get; }
 
     // Constructor
-    public CardSetEditRowViewModel(CardSet cardToAdd,ICommand refreshColumnsCommand)
+    public CardSetEditRowViewModel(CardSet cardToAdd, ICommand refreshColumnsCommand)
     {
         CardToAddOrEdit = cardToAdd;
 
@@ -36,6 +38,21 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
             getter: () => Language,
             setter: v => Language = (string?)v,
             refreshCommand: refreshColumnsCommand);
+
+        Owned = new NumericBindingViewModel(
+            getter: () => CardsOwned,
+            setter: v => CardsOwned = v,
+            changedCommand: refreshColumnsCommand,
+            min: 0,
+            delayMs: 500);
+
+        Trade = new NumericBindingViewModel(
+            getter: () => CardsForTrade,
+            setter: v => CardsForTrade = v,
+            changedCommand: refreshColumnsCommand,
+            min: 0,
+            maxGetter: () => CardsOwned,
+            delayMs: 0);
     }
 
     // Dumb pass-through properties
@@ -58,24 +75,50 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
         get => CardToAddOrEdit.Language;
         set => SetModelValue(CardToAddOrEdit.Language, value, v => CardToAddOrEdit.Language = v);
     }
-    public int CardsOwned
-    {
-        get => CardToAddOrEdit.CardsOwned;
-        set => SetModelValue(CardToAddOrEdit.CardsOwned, value, v => CardToAddOrEdit.CardsOwned = v);
-    }
-    public int CardsForTrade
-    {
-        get => CardToAddOrEdit.CardsForTrade;
-        set => SetModelValue(CardToAddOrEdit.CardsForTrade, value, v => CardToAddOrEdit.CardsForTrade = v);
-    }
     private bool SetModelValue<T>(T currentValue, T newValue, Action<T> assign, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(currentValue, newValue))
+        {
             return false;
+        }
 
         assign(newValue);
         OnPropertyChanged(propertyName);
         return true;
     }
+    public int CardsOwned
+    {
+        get => CardToAddOrEdit.CardsOwned;
+        set
+        {
+            if (!SetModelValue(CardToAddOrEdit.CardsOwned, value, v => CardToAddOrEdit.CardsOwned = v))
+            {
+                return;
+            }
+
+            // keep adapter in sync so UI updates when +/- changes the value
+            Owned.NotifyValueChanged();
+
+            // optional: keep trade valid if owned decreases
+            if (CardsForTrade > CardsOwned)
+            {
+                CardsForTrade = CardsOwned;
+            }
+        }
+    }
+    public int CardsForTrade
+    {
+        get => CardToAddOrEdit.CardsForTrade;
+        set
+        {
+            if (!SetModelValue(CardToAddOrEdit.CardsForTrade, value, v => CardToAddOrEdit.CardsForTrade = v))
+            {
+                return;
+            }
+
+            Trade.NotifyValueChanged();
+        }
+    }
+
 }
 
