@@ -12,7 +12,6 @@ namespace CollectaMundo.ViewModels
 {
     public partial class EditCollectionViewModel : ObservableObject
     {
-        public bool StatusVisibility => !string.IsNullOrEmpty(StatusMessage);
 
         public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
         public ObservableCollection<CardSetEditRowViewModel> CardsToAdd { get; } = [];
@@ -36,8 +35,11 @@ namespace CollectaMundo.ViewModels
         partial void OnStatusMessageChanged(string? oldValue, string newValue)
         {
             OnPropertyChanged(nameof(HasStatus));
+            OnPropertyChanged(nameof(ShowCounts));
         }
         public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
+
+        public bool ShowCounts => !HasStatus;
         public bool IsCollectionEditVisible => CardsToAdd.Count != 0;
 
 
