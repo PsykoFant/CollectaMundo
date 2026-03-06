@@ -50,7 +50,8 @@ namespace CollectaMundo.ViewModels
         #region child viewmodels
         // Pages
         public CardListPageViewModel SearchAndFilterPageVM { get; }
-
+        public CardListPageViewModel MyCollectionPageVM { get; }
+        
         public StatusViewModel StatusVM { get; }
         public CardViewModel AllCardsVM { get; }
         public CardViewModel AllCardsForDecksVM { get; }
@@ -88,25 +89,22 @@ namespace CollectaMundo.ViewModels
 
         #region Visibility properties
 
-        // Side menu visibility
+        // Side menu visibility - we will eventually refactor this as well
         [ObservableProperty]
         private Visibility sideMenuVisibility = Visibility.Visible;
 
-        // Side menu subsections visibility properties
+        // Side menu subsections visibility properties - we will eventually refactor this as well
         [ObservableProperty]
         private Visibility sideMenuFilterVisibility = Visibility.Visible;
 
-        [ObservableProperty]
+        [ObservableProperty] //  - we will eventually refactor this as well
         private Visibility sideMenuUtilsVisibility = Visibility.Hidden;
 
-        // Card view visibility
+        // Card view visibility  - we will eventually refactor this as well
         [ObservableProperty]
         private Visibility cardViewSectionVisibility = Visibility.Visible;
 
         #endregion
-
-        // Status overlay vm (owned by main window)
-        //private readonly StatusViewModel _statusVM;
 
         #endregion
 
@@ -164,7 +162,8 @@ namespace CollectaMundo.ViewModels
             PricesVM = new PricesViewModel(_settings, parentContext);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new CardListPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, pricesVM: PricesVM, filterVM: FilterVM, modifyCollectionVM: AddCardsVM);
+            SearchAndFilterPageVM = new CardListPageViewModel(cardsVM: AllCardsVM,cardImageVM: CardImageVM,filterVM: FilterVM,pageTitle: "Search and Filter Cards",primarySubmitButtonText: "Submit these cards to my collection",primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand,pricesVM: PricesVM,modifyCollectionVM: AddCardsVM);
+            MyCollectionPageVM = new CardListPageViewModel(cardsVM: MyCollectionVM,cardImageVM: CardImageVM,filterVM: FilterVM,pageTitle: "My Collection",primarySubmitButtonText: "Update selected cards",primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand,pricesVM: PricesVM,modifyCollectionVM: EditCardsVM);
 
             CurrentPageViewModel = SearchAndFilterPageVM; // default page
 

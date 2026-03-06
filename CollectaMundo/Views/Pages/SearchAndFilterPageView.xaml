@@ -7,38 +7,14 @@
              xmlns:shared="clr-namespace:CollectaMundo.Views.Pages.SharedElements"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
-             xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=pagesVm:CardListPageViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <Label Content="Search and Filter Cards" Style="{StaticResource MediumHeaderLabelStyle}"/>
-        <Label Visibility="{Binding ModifyCollectionViewModel.ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
-                       HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" >
-            <Label.Content>
-                <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                    <Binding Path="CardsVM.FilteredCount"/>
-                    <Binding Path="CardsVM.TotalCount"/>
-                </MultiBinding>
-            </Label.Content>
-        </Label>
-        <Button Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" 
-                            Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                            Command="{Binding ModifyCollectionViewModel.SubmitNewCardsCommand}" />
-        <Button Content="Clear cards without submitting"
-                        HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
-                        Width="200" Height="20"
-                        Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                        Command="{Binding ModifyCollectionViewModel.ClearCardsToAddCommand}" />
-        <Button Content="Add selected cards to my collection"
-                        HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
-                        Width="200" Height="20"
-                        Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
-                        Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
-                        CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
-        <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding ModifyCollectionViewModel.StatusMessage}"/>
-        </ScrollViewer>
+        <Label Content="{Binding PageTitle}" Style="{StaticResource MediumHeaderLabelStyle}"/>
+        <!-- Add status summary, listview buttons -->
+        <shared:CardListPageChromeView />
+
         <!--Cards to add listview-->
         <ListView ItemsSource="{Binding ModifyCollectionViewModel.CardsToAddOrEdit}"
                   Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
@@ -125,6 +101,14 @@
                 </GridView>
             </ListView.View>
         </ListView>
+
+        <Button Content="Add selected cards to my collection"
+                        HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
+                        Width="200" Height="20"
+                        Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
+                        Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
+                        CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
+        
         <!--The main card view datagrid-->
         <DataGrid x:Name="AllCardsDataGrid"
                   ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"

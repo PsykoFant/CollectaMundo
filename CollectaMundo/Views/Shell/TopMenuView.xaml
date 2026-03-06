@@ -8,11 +8,6 @@
              d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}"
              mc:Ignorable="d">
 
-    <!-- NOTE:
-         - DataContext is inherited from MainWindow (Binding Main is on AppWindow grid).
-         - StaticResource lookups (TopMenuButtonStyle, PageToBrushConverter) will still work
-           as long as they live in App.xaml / merged dictionaries / window resources. -->
-
     <Grid x:Name="GridTopMenu"
           VerticalAlignment="Top"
           HorizontalAlignment="Center"

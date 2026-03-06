@@ -3,47 +3,24 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
+             xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages"
+             xmlns:shared="clr-namespace:CollectaMundo.Views.Pages.SharedElements"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
-             xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
-             xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
-             mc:Ignorable="d" 
-             d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}"
+             xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=pagesVm:CardListPageViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="450" d:DesignWidth="800">
+
     <Grid>
-        <Label Content="My Collection" Style="{StaticResource MediumHeaderLabelStyle}" />
-        <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding EditCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}">
-            <Label.Content>
-                <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                    <Binding Path="MyCollectionVM.FilteredCount"/>
-                    <Binding Path="MyCollectionVM.TotalCount"/>
-                </MultiBinding>
-            </Label.Content>
-        </Label>
-        <Button Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20"
-                            Visibility="{Binding EditCardsVM.CollectionEditVisibility}"
-                            Command="{Binding EditCardsVM.SubmitCardEditsCommand}" />
-        <Button Content="Clear cards without submitting"
-                            HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
-                            Width="200" Height="20"
-                            Visibility="{Binding EditCardsVM.CollectionEditVisibility}"
-                            Command="{Binding EditCardsVM.ClearCardsToAddCommand}" />
-        <Button Content="Edit selected cards"
-                        HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
-                        Width="120" Height="20"
-                        Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
-                        Command="{Binding EditCardsVM.EditSelectedCardsCommand}"
-                        CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
-        <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <TextBlock Text="{Binding EditCardsVM.StatusMessage}" TextWrapping="Wrap" VerticalAlignment="Top" />
-        </ScrollViewer>
+        <Label Content="{Binding PageTitle}" Style="{StaticResource MediumHeaderLabelStyle}"/>
+        <!-- Add status summary, listview buttons -->
+        <shared:CardListPageChromeView />
 
         <!--Cards to edit-->
-        <ListView DataContext="{Binding EditCardsVM}"
-                              ItemsSource="{Binding CardsToAdd}"
-                              Visibility="{Binding CollectionEditVisibility}"                          
-                              behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding RefreshColumnsTrigger, Mode=OneWay}"    
-                              Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
+        <ListView ItemsSource="{Binding ModifyCollectionViewModel.CardsToAddOrEdit}"
+                  Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                  behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding ModifyCollectionViewModel.RefreshColumnsTrigger, Mode=OneWay}"
+                  Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -56,189 +33,93 @@
                     <GridViewColumn Header="Condition">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding Conditions}"
-                                                      SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}">
-                                    <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction Command="{Binding DataContext.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
-                                        </i:EventTrigger>
-                                    </i:Interaction.Triggers>
-                                </ComboBox>
+                                <shared:RefreshColumnsComboBoxView DataContext="{Binding ConditionCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Finish">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding AvailableFinishes}" 
-                                                      SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
-                                    <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction Command="{Binding DataContext.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
-                                        </i:EventTrigger>
-                                    </i:Interaction.Triggers>
-                                </ComboBox>
+                                <shared:RefreshColumnsComboBoxView DataContext="{Binding FinishCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Language">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding OtherLanguages}" 
-                                                      SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
-                                    <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction Command="{Binding DataContext.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
-                                        </i:EventTrigger>
-                                    </i:Interaction.Triggers>
-                                </ComboBox>
+                                <shared:RefreshColumnsComboBoxView DataContext="{Binding LanguageCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                                Command="{Binding DataContext.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                <Button Content="+" 
+                                        Style="{StaticResource StepperButtonStyle}"
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Count">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBox HorizontalAlignment="Center" Background="White">
-                                    <TextBox.Text>
-                                        <Binding Path="CardsOwned" Mode="TwoWay" UpdateSourceTrigger="Explicit" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
-                                            <Binding.ValidationRules>
-                                                <validation:IntegerValidationRule />
-                                            </Binding.ValidationRules>
-                                        </Binding>
-                                    </TextBox.Text>
-                                    <i:Interaction.Behaviors>
-                                        <behaviors:DelayedUpdateBehavior Delay="500"/>
-                                        <behaviors:NumericValidationBehavior />
-                                    </i:Interaction.Behaviors>
-                                </TextBox>
+                                <shared:NumericEditorView DataContext="{Binding Owned}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="-">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                                Command="{Binding DataContext.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                <Button Content="-"
+                                        Style="{StaticResource StepperButtonStyle}"
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                                Command="{Binding DataContext.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                <Button Content="+" Style="{StaticResource StepperButtonStyle}"
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Trade">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBox HorizontalAlignment="Center" Background="White">
-                                    <TextBox.Text>
-                                        <Binding Path="CardsForTrade" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"
-                                                             ValidatesOnDataErrors="True" NotifyOnValidationError="True">
-                                            <Binding.ValidationRules>
-                                                <validation:IntegerValidationRule />
-                                            </Binding.ValidationRules>
-                                        </Binding>
-                                    </TextBox.Text>
-                                    <i:Interaction.Behaviors>
-                                        <behaviors:NumericValidationBehavior />
-                                    </i:Interaction.Behaviors>
-                                </TextBox>
+                                <shared:NumericEditorView DataContext="{Binding Trade}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="-">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                                Command="{Binding DataContext.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                <Button Content="-" Style="{StaticResource StepperButtonStyle}"
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>
-        <!--The my collection datagrid-->
-        <!--behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"-->
-        <!--behaviors:DataGridColumnResizerBehavior.DataGridIndex="1"-->
-        <!--behaviors:DataGridColumnResizerBehavior.UpdateOnToken="{Binding DataContext.Main.MyCollectionResizeToken, RelativeSource={RelativeSource AncestorType=Window}}"-->
 
+        <Button Content="Edit selected cards"
+                        HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
+                        Width="120" Height="20"
+                        Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
+                        Command="{Binding ModifyCollectionViewModel.EditSelectedCardsCommand}"
+                        CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
 
         <DataGrid x:Name="MyCollectionDataGrid"
-                              ItemsSource="{Binding MyCollectionVM.FilteredCards, NotifyOnTargetUpdated=True}"
-                              Margin="0,280,0,0"
-                              AutoGenerateColumns="False"
-                              SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"
-                              ScrollViewer.CanContentScroll="True"
-                              EnableColumnVirtualization="True"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              CanUserAddRows="False"
-                              CanUserSortColumns="True"
-                              HorizontalAlignment="Stretch"
-                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                              behaviors:DataGridPersistSortBehavior.Enable="True"
-                              behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding EditCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="MouseDoubleClick">
-                    <i:InvokeCommandAction Command="{Binding EditCardsVM.EditSelectedCardsCommand}"
-                                                  CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-            <DataGrid.InputBindings>
-                <KeyBinding Key="Delete"
-                                        Command="{Binding EditCardsVM.DeleteSelectedCardsCommand}"
-                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-            </DataGrid.InputBindings>
+                  ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
+                  Style="{StaticResource CardGridBaseStyle}" 
+                  SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"                  
+                  behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ModifyCollectionViewModel.ClearSelectionTrigger, Mode=TwoWay}">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <Grid DataContext="{Binding DataContext.Main.FilterVM.Filters[Name],RelativeSource={RelativeSource AncestorType=Window}}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
-                                <ComboBox IsTextSearchEnabled="False"
-                                              Grid.Column="1"
-                                              HorizontalAlignment="Stretch"
-                                              Height="20"
-                                              IsEditable="True"
-                                              Width="{Binding DataContext.Main.ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}"
-                                              ItemsSource="{Binding FilteredOptions}"
-                                              DisplayMemberPath="OptionName"
-                                              Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                    <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction
-                                                            Command="{Binding ComboBoxSelectionChangedCommand}"
-                                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
-                                        </i:EventTrigger>
-                                    </i:Interaction.Triggers>
-                                    <i:Interaction.Behaviors>
-                                        <behaviors:ComboBoxUnselector ClearTrigger="{Binding ClearComboBoxSelectionTrigger}" />
-                                    </i:Interaction.Behaviors>
-                                    <ComboBox.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <VirtualizingStackPanel />
-                                        </ItemsPanelTemplate>
-                                    </ComboBox.ItemsPanel>
-                                </ComboBox>
-                            </Grid>
+                            <shared:FilterHeaderView DataContext="{Binding DataContext.NameFilter, ElementName=MyCollectionDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -247,41 +128,10 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Set" Width="*" SortMemberPath="SetName">
+                <DataGridTemplateColumn Header="Set Name" Width="*" SortMemberPath="SetName">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <Grid DataContext="{Binding DataContext.Main.FilterVM.Filters[SetName],RelativeSource={RelativeSource AncestorType=Window}}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Label Content="Set" VerticalAlignment="Center" Grid.Column="0"/>
-                                <ComboBox IsTextSearchEnabled="False"
-                                              Grid.Column="1"
-                                              HorizontalAlignment="Stretch"
-                                              Height="20"
-                                              IsEditable="True"
-                                              Width="{Binding DataContext.Main.ColumnWidths[1][1], RelativeSource={RelativeSource AncestorType=Window}}"
-                                              ItemsSource="{Binding FilteredOptions}"
-                                              DisplayMemberPath="OptionName"
-                                              Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                    <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="SelectionChanged">
-                                            <i:InvokeCommandAction
-                                                            Command="{Binding ComboBoxSelectionChangedCommand}"
-                                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
-                                        </i:EventTrigger>
-                                    </i:Interaction.Triggers>
-                                    <i:Interaction.Behaviors>
-                                        <behaviors:ComboBoxUnselector ClearTrigger="{Binding ClearComboBoxSelectionTrigger}" />
-                                    </i:Interaction.Behaviors>
-                                    <ComboBox.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <VirtualizingStackPanel />
-                                        </ItemsPanelTemplate>
-                                    </ComboBox.ItemsPanel>
-                                </ComboBox>
-                            </Grid>
+                            <shared:FilterHeaderView DataContext="{Binding DataContext.SetNameFilter, ElementName=MyCollectionDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -354,19 +204,30 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDoubleClick">
+                    <i:InvokeCommandAction Command="{Binding ModifyCollectionViewModel.EditSelectedCardsCommand}"
+                                                  CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+            <DataGrid.InputBindings>
+                <KeyBinding Key="Delete"
+                                        Command="{Binding ModifyCollectionViewModel.DeleteSelectedCardsCommand}"
+                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+            </DataGrid.InputBindings>
             <DataGrid.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                     <MenuItem Header="Edit selected card(s)" Style="{StaticResource BelerenBold}"
-                                          Command="{Binding EditCardsVM.AddSelectedCardsCommand}"
+                                          Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                     <MenuItem Header="UPDATE selected card(s) - put ALL for TRADE" Style="{StaticResource BelerenBold}"
-                                          Command="{Binding EditCardsVM.PutAllForTradeCommand}"
+                                          Command="{Binding ModifyCollectionViewModel.PutAllForTradeCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                     <MenuItem Header="UPDATE selected card(s) - put NONE for TRADE" Style="{StaticResource BelerenBold}"
-                                          Command="{Binding EditCardsVM.SetNoneForTradeCommand}"
+                                          Command="{Binding ModifyCollectionViewModel.SetNoneForTradeCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                     <MenuItem Header="DELETE card(s) from collection" Style="{StaticResource BelerenBold}"
-                                          Command="{Binding EditCardsVM.DeleteSelectedCardsCommand}"
+                                          Command="{Binding ModifyCollectionViewModel.DeleteSelectedCardsCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                 </ContextMenu>
             </DataGrid.ContextMenu>

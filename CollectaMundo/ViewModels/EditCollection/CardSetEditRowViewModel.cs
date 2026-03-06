@@ -13,6 +13,8 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     public ComboBindingViewModel ConditionCombo { get; }
     public ComboBindingViewModel FinishCombo { get; }
     public ComboBindingViewModel LanguageCombo { get; }
+
+    // Bindable properties for the numeric inputs
     public NumericBindingViewModel Owned { get; }
     public NumericBindingViewModel Trade { get; }
 
