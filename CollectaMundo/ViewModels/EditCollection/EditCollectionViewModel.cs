@@ -26,21 +26,29 @@ namespace CollectaMundo.ViewModels
             _service = service;
             _removeCardWhenZero = removeCardWhenZero;
 
-            CardsToAdd.CollectionChanged += (_, _) => OnPropertyChanged(nameof(IsCollectionEditVisible));
+            CardsToAdd.CollectionChanged += (_, _) =>
+            {
+                OnPropertyChanged(nameof(IsCollectionEditVisible));
+                OnPropertyChanged(nameof(ShowCounts));
+            };
         }
 
-        [ObservableProperty]
-        private string statusMessage = string.Empty;
+
 
         partial void OnStatusMessageChanged(string? oldValue, string newValue)
         {
             OnPropertyChanged(nameof(HasStatus));
             OnPropertyChanged(nameof(ShowCounts));
+            OnPropertyChanged(nameof(IsCollectionEditVisible));
         }
-        public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
 
+        [ObservableProperty]
+        private string statusMessage = string.Empty;
+
+
+        public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
         public bool ShowCounts => !HasStatus;
-        public bool IsCollectionEditVisible => CardsToAdd.Count != 0;
+        public bool IsCollectionEditVisible => CardsToAdd.Count != 0 && !HasStatus;
 
 
         [ObservableProperty]
@@ -325,7 +333,5 @@ namespace CollectaMundo.ViewModels
 
             StatusMessage = sb.ToString().TrimEnd();
         }
-
-
     }
 }
