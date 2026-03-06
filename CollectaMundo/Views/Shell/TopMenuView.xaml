@@ -15,27 +15,45 @@
           IsEnabled="{Binding IsTopMenuEnabled}">
 
         <Button Content="All Cards"
+                Command="{Binding ShowAllCardsPageCommand}"
                 HorizontalAlignment="Center"
                 Margin="0,5,510,0"
                 VerticalAlignment="Top"
                 Width="160"
-                Height="30"
-                Style="{StaticResource TopMenuButtonStyle}">
+                Height="30">
             <Button.Effect>
                 <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
             </Button.Effect>
+            <Button.Style>
+                <Style TargetType="Button" BasedOn="{StaticResource TopMenuButtonStyle}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsAllCardsPageActive}" Value="True">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
         </Button>
 
         <Button Content="My Collection"
+                Command="{Binding ShowMyCollectionPageCommand}"
                 HorizontalAlignment="Center"
                 Margin="0,5,170,0"
                 VerticalAlignment="Top"
                 Width="160"
-                Height="30"
-                Style="{StaticResource TopMenuButtonStyle}">
+                Height="30">
             <Button.Effect>
                 <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
             </Button.Effect>
+            <Button.Style>
+                <Style TargetType="Button" BasedOn="{StaticResource TopMenuButtonStyle}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsMyCollectionPageActive}" Value="True">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
         </Button>
 
         <Button Content="Decks"

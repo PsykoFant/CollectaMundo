@@ -14,6 +14,7 @@ using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using System.Windows;
 
@@ -51,7 +52,7 @@ namespace CollectaMundo.ViewModels
         // Pages
         public CardListPageViewModel SearchAndFilterPageVM { get; }
         public CardListPageViewModel MyCollectionPageVM { get; }
-        
+
         public StatusViewModel StatusVM { get; }
         public CardViewModel AllCardsVM { get; }
         public CardViewModel AllCardsForDecksVM { get; }
@@ -72,6 +73,10 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private object? currentPageViewModel;
+
+        public bool IsAllCardsPageActive => ReferenceEquals(CurrentPageViewModel, SearchAndFilterPageVM);
+        public bool IsMyCollectionPageActive => ReferenceEquals(CurrentPageViewModel, MyCollectionPageVM);
+
 
         // Column resize
         [ObservableProperty]
@@ -162,8 +167,8 @@ namespace CollectaMundo.ViewModels
             PricesVM = new PricesViewModel(_settings, parentContext);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new CardListPageViewModel(cardsVM: AllCardsVM,cardImageVM: CardImageVM,filterVM: FilterVM,pageTitle: "Search and Filter Cards",primarySubmitButtonText: "Submit these cards to my collection",primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand,pricesVM: PricesVM,modifyCollectionVM: AddCardsVM);
-            MyCollectionPageVM = new CardListPageViewModel(cardsVM: MyCollectionVM,cardImageVM: CardImageVM,filterVM: FilterVM,pageTitle: "My Collection",primarySubmitButtonText: "Update selected cards",primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand,pricesVM: PricesVM,modifyCollectionVM: EditCardsVM);
+            SearchAndFilterPageVM = new CardListPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
+            MyCollectionPageVM = new CardListPageViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
 
             CurrentPageViewModel = SearchAndFilterPageVM; // default page
 
@@ -200,7 +205,25 @@ namespace CollectaMundo.ViewModels
 
         #region commands
         // Commands to switch pages
+        [RelayCommand]
+        private void ShowAllCardsPage()
+        {
+            CurrentPageViewModel = SearchAndFilterPageVM;
+            OnPropertyChanged(nameof(IsAllCardsPageActive));
+            OnPropertyChanged(nameof(IsMyCollectionPageActive));
+            //OnPropertyChanged(nameof(IsDecksPageActive));
+            //OnPropertyChanged(nameof(IsUtilitiesPageActive));
+        }
 
+        [RelayCommand]
+        private void ShowMyCollectionPage()
+        {
+            CurrentPageViewModel = MyCollectionPageVM;
+            OnPropertyChanged(nameof(IsAllCardsPageActive));
+            OnPropertyChanged(nameof(IsMyCollectionPageActive));
+            //OnPropertyChanged(nameof(IsDecksPageActive));
+            //OnPropertyChanged(nameof(IsUtilitiesPageActive));
+        }
 
         #endregion
 
