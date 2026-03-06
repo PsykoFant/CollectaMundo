@@ -13,7 +13,7 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <Label Content="Search and Filter Cards" Style="{StaticResource MediumHeaderLabelStyle}"/>
-        <Label Visibility="{Binding AddCardsVM.ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
+        <Label Visibility="{Binding ModifyCollectionViewModel.ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
                        HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" >
             <Label.Content>
                 <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
@@ -23,26 +23,26 @@
             </Label.Content>
         </Label>
         <Button Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" 
-                            Visibility="{Binding AddCardsVM.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                            Command="{Binding AddCardsVM.SubmitNewCardsCommand}" />
+                            Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Command="{Binding ModifyCollectionViewModel.SubmitNewCardsCommand}" />
         <Button Content="Clear cards without submitting"
                         HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
                         Width="200" Height="20"
-                        Visibility="{Binding AddCardsVM.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                        Command="{Binding AddCardsVM.ClearCardsToAddCommand}" />
+                        Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Command="{Binding ModifyCollectionViewModel.ClearCardsToAddCommand}" />
         <Button Content="Add selected cards to my collection"
                         HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
                         Width="200" Height="20"
                         Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
-                        Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
+                        Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
         <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding AddCardsVM.StatusMessage}"/>
+            <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding ModifyCollectionViewModel.StatusMessage}"/>
         </ScrollViewer>
         <!--Cards to add listview-->
-        <ListView ItemsSource="{Binding AddCardsVM.CardsToAddOrEdit}"
-                  Visibility="{Binding AddCardsVM.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                  behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, Mode=OneWay}"
+        <ListView ItemsSource="{Binding ModifyCollectionViewModel.CardsToAddOrEdit}"
+                  Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                  behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding ModifyCollectionViewModel.RefreshColumnsTrigger, Mode=OneWay}"
                   Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
@@ -79,7 +79,7 @@
                             <DataTemplate>
                                 <Button Content="+" 
                                         Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.AddCardsVM.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -95,7 +95,7 @@
                             <DataTemplate>
                                 <Button Content="-"
                                         Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.AddCardsVM.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -103,7 +103,7 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="+" Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.AddCardsVM.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -118,7 +118,7 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="-" Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.AddCardsVM.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -130,7 +130,7 @@
                   ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
                   Style="{StaticResource CardGridBaseStyle}" 
                   SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"                  
-                  behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
+                  behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ModifyCollectionViewModel.ClearSelectionTrigger, Mode=TwoWay}">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">                    
                     <DataGridTemplateColumn.HeaderTemplate>
@@ -224,17 +224,17 @@
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="MouseDoubleClick">
                     <i:InvokeCommandAction 
-                                    Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
+                                    Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
                                     CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
                 </i:EventTrigger>
             </i:Interaction.Triggers>
             <DataGrid.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                     <MenuItem Header="Add selected card(s) to Collection"
-                              Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
+                              Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
                               CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                     <MenuItem Header="Add selected card(s) with DEFAULT values to Collection"
-                              Command="{Binding AddCardsVM.SubmitNewCardsWithDefaultsCommand}"
+                              Command="{Binding ModifyCollectionViewModel.SubmitNewCardsWithDefaultsCommand}"
                               CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               Style="{StaticResource BelerenBold}"/>
                     <MenuItem Header="">

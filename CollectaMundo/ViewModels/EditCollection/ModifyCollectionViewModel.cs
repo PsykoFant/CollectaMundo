@@ -10,7 +10,7 @@ using System.Text;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class EditCollectionViewModel : ObservableObject
+    public partial class ModifyCollectionViewModel : ObservableObject
     {
 
         public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
@@ -23,7 +23,7 @@ namespace CollectaMundo.ViewModels
         private readonly IParentViewModelContext _parentContext;
         private readonly bool _removeCardWhenZero;
 
-        public EditCollectionViewModel(IEditCollectionService service, IParentViewModelContext parentContext, bool removeCardWhenZero)
+        public ModifyCollectionViewModel(IEditCollectionService service, IParentViewModelContext parentContext, bool removeCardWhenZero)
         {
             _parentContext = parentContext;
             _service = service;

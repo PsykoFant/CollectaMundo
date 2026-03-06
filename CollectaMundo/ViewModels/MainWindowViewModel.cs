@@ -57,8 +57,8 @@ namespace CollectaMundo.ViewModels
         public CardViewModel AllCardsInDecksVM { get; }
         public CardViewModel MyCollectionVM { get; }
         public CardViewModel ColorIcons { get; }
-        public EditCollectionViewModel AddCardsVM { get; }
-        public EditCollectionViewModel EditCardsVM { get; }
+        public ModifyCollectionViewModel AddCardsVM { get; }
+        public ModifyCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public UtilitiesViewModel UtilitiesVM { get; }
@@ -143,8 +143,8 @@ namespace CollectaMundo.ViewModels
             ColorIcons = new CardViewModel { Cards = [.. ManaKeys.Select(CardSet.FromManaKey)] };
 
             // edit collection viewmodels
-            AddCardsVM = new EditCollectionViewModel(editService, this, removeCardWhenZero: true);
-            EditCardsVM = new EditCollectionViewModel(editService, this, removeCardWhenZero: false);
+            AddCardsVM = new ModifyCollectionViewModel(editService, this, removeCardWhenZero: true);
+            EditCardsVM = new ModifyCollectionViewModel(editService, this, removeCardWhenZero: false);
 
             // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);
