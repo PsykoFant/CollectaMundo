@@ -7,18 +7,18 @@ namespace CollectaMundo.ViewModels.Pages
         public CardViewModel CardsVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public FilterViewModel FilterVM { get; }
-        public EditCollectionViewModel? AddCardsVM { get; }
+        public EditCollectionViewModel? ModifyCollectionViewModel { get; }
         public PricesViewModel? PricesVM { get; }
 
         public FilterItemViewModel? NameFilter => FilterVM.Filters.TryGetValue("Name", out var f) ? f : null;
         public FilterItemViewModel? SetNameFilter => FilterVM.Filters.TryGetValue("SetName", out var f) ? f : null;
-        public CardListPageViewModel(CardViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, PricesViewModel? pricesVM = null, EditCollectionViewModel? addOrEditCardsVM = null)
+        public CardListPageViewModel(CardViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, PricesViewModel? pricesVM = null, EditCollectionViewModel? modifyCollectionVM = null)
         {
             CardsVM = cardsVM;
             CardImageVM = cardImageVM;
             FilterVM = filterVM;
             PricesVM = pricesVM;
-            AddCardsVM = addOrEditCardsVM;
+            ModifyCollectionViewModel = modifyCollectionVM;
 
             FilterVM.FiltersRebuilt += (_, _) =>
             {

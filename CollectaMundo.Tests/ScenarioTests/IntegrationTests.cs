@@ -898,7 +898,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { karox });
 
             // Assert: staged
-            Assert.Single(_mainVM.AddCardsVM.CardsToAdd, c => c.Uuid == uuidKarox);
+            Assert.Single(_mainVM.AddCardsVM.CardsToAddOrEdit, c => c.Uuid == uuidKarox);
 
             // Act: submit
             _mainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
@@ -925,10 +925,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { sokrates });
 
             // Assert: staged
-            Assert.Single(_mainVM.AddCardsVM.CardsToAdd, c => c.Uuid == uuidSokrates);
+            Assert.Single(_mainVM.AddCardsVM.CardsToAddOrEdit, c => c.Uuid == uuidSokrates);
 
             // Arrange: modify before submit
-            var pending = _mainVM.AddCardsVM.CardsToAdd.Single(c => c.Uuid == uuidSokrates);
+            var pending = _mainVM.AddCardsVM.CardsToAddOrEdit.Single(c => c.Uuid == uuidSokrates);
             pending.SelectedCondition = "Played";
             pending.CardsForTrade = 1;
 
@@ -943,7 +943,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(1, sokratesInCollection.CardsForTrade);
 
             // Assert: staging cleared
-            Assert.Empty(_mainVM.AddCardsVM.CardsToAdd);
+            Assert.Empty(_mainVM.AddCardsVM.CardsToAddOrEdit);
 
             //// Assert: filter facets include new values
             var conditionFilter = _mainVM.FilterVM.Filters["SelectedCondition"];

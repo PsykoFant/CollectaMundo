@@ -14,7 +14,10 @@ namespace CollectaMundo.ViewModels
     {
 
         public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
-        public ObservableCollection<CardSetEditRowViewModel> CardsToAdd { get; } = [];
+        public ObservableCollection<CardSetEditRowViewModel> CardsToAddOrEdit { get; } = [];
+        public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
+        public bool ShowCounts => !HasStatus;
+        public bool IsCollectionEditVisible => CardsToAddOrEdit.Count != 0 && !HasStatus;
 
         private readonly IEditCollectionService _service;
         private readonly IParentViewModelContext _parentContext;
@@ -26,15 +29,12 @@ namespace CollectaMundo.ViewModels
             _service = service;
             _removeCardWhenZero = removeCardWhenZero;
 
-            CardsToAdd.CollectionChanged += (_, _) =>
+            CardsToAddOrEdit.CollectionChanged += (_, _) =>
             {
                 OnPropertyChanged(nameof(IsCollectionEditVisible));
                 OnPropertyChanged(nameof(ShowCounts));
             };
         }
-
-
-
         partial void OnStatusMessageChanged(string? oldValue, string newValue)
         {
             OnPropertyChanged(nameof(HasStatus));
@@ -44,12 +44,6 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private string statusMessage = string.Empty;
-
-
-        public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
-        public bool ShowCounts => !HasStatus;
-        public bool IsCollectionEditVisible => CardsToAdd.Count != 0 && !HasStatus;
-
 
         [ObservableProperty]
         private int clearSelectionTrigger;
@@ -77,7 +71,7 @@ namespace CollectaMundo.ViewModels
                     continue;
                 }
 
-                CardsToAdd.Add(new CardSetEditRowViewModel(editable, RefreshColumnsCommand));
+                CardsToAddOrEdit.Add(new CardSetEditRowViewModel(editable, RefreshColumnsCommand));
             }
 
             ClearSelectionTrigger++;
@@ -102,7 +96,7 @@ namespace CollectaMundo.ViewModels
                     continue;
                 }
 
-                CardsToAdd.Add(new CardSetEditRowViewModel(editable, RefreshColumnsCommand));
+                CardsToAddOrEdit.Add(new CardSetEditRowViewModel(editable, RefreshColumnsCommand));
             }
 
             ClearSelectionTrigger++;
@@ -112,7 +106,7 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private void ClearCardsToAdd()
         {
-            CardsToAdd.Clear();
+            CardsToAddOrEdit.Clear();
             ClearSelectionTrigger++;
         }
 
@@ -149,7 +143,7 @@ namespace CollectaMundo.ViewModels
             // remove-when-zero without Dispatcher (commands run on UI thread)
             if (_removeCardWhenZero && row.CardsOwned <= 0)
             {
-                CardsToAdd.Remove(row);
+                CardsToAddOrEdit.Remove(row);
             }
 
             RefreshColumnsTrigger++;
@@ -177,13 +171,13 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task SubmitNewCardsAsync()
         {
-            await SubmitBatchAsync(CardsToAdd.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Added the following cards to your collection:");
+            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Added the following cards to your collection:");
         }
 
         [RelayCommand]
         private async Task SubmitCardEditsAsync()
         {
-            await SubmitBatchAsync(CardsToAdd.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Updated the following cards with these values:");
+            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Updated the following cards with these values:");
         }
 
         [RelayCommand]
@@ -249,7 +243,7 @@ namespace CollectaMundo.ViewModels
                 r.CardsForTrade = r.CardsOwned;
             }
 
-            await SubmitBatchAsync(CardsToAdd.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
+            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
         }
 
         [RelayCommand]
@@ -271,7 +265,7 @@ namespace CollectaMundo.ViewModels
                 r.CardsForTrade = 0;
             }
 
-            await SubmitBatchAsync(CardsToAdd.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
+            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
         }
 
         // Shared helper 
@@ -283,7 +277,7 @@ namespace CollectaMundo.ViewModels
 
             if (clearAfter)
             {
-                CardsToAdd.Clear();
+                CardsToAddOrEdit.Clear();
                 ClearSelectionTrigger++;
                 OnPropertyChanged(nameof(IsCollectionEditVisible));
             }

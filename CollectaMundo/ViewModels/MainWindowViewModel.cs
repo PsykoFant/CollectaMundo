@@ -164,7 +164,7 @@ namespace CollectaMundo.ViewModels
             PricesVM = new PricesViewModel(_settings, parentContext);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new CardListPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, pricesVM: PricesVM, filterVM: FilterVM, addOrEditCardsVM: AddCardsVM);
+            SearchAndFilterPageVM = new CardListPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, pricesVM: PricesVM, filterVM: FilterVM, modifyCollectionVM: AddCardsVM);
 
             CurrentPageViewModel = SearchAndFilterPageVM; // default page
 
