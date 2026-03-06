@@ -186,7 +186,7 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var originals = sel.OfType<CardSetEditRowViewModel>().Select(r => r.CardToAddOrEdit).ToList();
+            var originals = sel.OfType<CardSet>().ToList();
             if (originals.Count == 0)
             {
                 return;
