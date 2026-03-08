@@ -17,7 +17,6 @@
             <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
             <converters:CountToSummaryConverter x:Key="CountToSummaryConverter"/>
             <converters:OperatorToSymbolConverter x:Key="OperatorToSymbolConverter"/>
-            <converters:PageToBrushConverter x:Key="PageToBrushConverter" SelectedBrush="#5cb9ca" DefaultBrush="#FFDDDDDD"/>
             <converters:PageToVisibilityConverter x:Key="PageToVisibilityConverter" VisibleVisibility="Visible" HiddenVisibility="Collapsed" />
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -110,9 +109,28 @@
 
             <Style TargetType="{x:Type ToggleButton}" BasedOn="{StaticResource BaseButtonStyle}"/>
 
+            <!-- Top menu page swiching buttons -->
             <Style x:Key="TopMenuButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
                 <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}"/>
                 <Setter Property="FontSize" Value="16"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="Width" Value="160"/>
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="Foreground" Value="Black"/>
+                <Setter Property="Background" Value="#FFDDDDDD"/>
+                <Setter Property="BorderBrush" Value="#FF707070"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="ActiveTopMenuButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource TopMenuButtonStyle}">
+                <Setter Property="Background" Value="#5cb9ca"/>
+                <Setter Property="BorderBrush" Value="#2f6f7a"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="FontWeight" Value="Bold"/>
             </Style>
 
             <Style TargetType="{x:Type TextBox}">

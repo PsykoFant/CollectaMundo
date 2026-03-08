@@ -14,20 +14,14 @@
           Height="40"
           IsEnabled="{Binding IsTopMenuEnabled}">
 
-        <Button Content="All Cards"
-                Command="{Binding ShowAllCardsPageCommand}"
-                HorizontalAlignment="Center"
-                Margin="0,5,510,0"
-                VerticalAlignment="Top"
-                Width="160"
-                Height="30">
-            <Button.Effect>
-                <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-            </Button.Effect>
+        <Button Content="All Cards" Command="{Binding ShowAllCardsPageCommand}" Margin="0,5,510,5">
             <Button.Style>
                 <Style TargetType="Button" BasedOn="{StaticResource TopMenuButtonStyle}">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsAllCardsPageActive}" Value="True">
+                            <Setter Property="Background" Value="#5cb9ca"/>
+                            <Setter Property="BorderBrush" Value="#2f6f7a"/>
+                            <Setter Property="Foreground" Value="White"/>
                             <Setter Property="FontWeight" Value="Bold"/>
                         </DataTrigger>
                     </Style.Triggers>
@@ -35,20 +29,14 @@
             </Button.Style>
         </Button>
 
-        <Button Content="My Collection"
-                Command="{Binding ShowMyCollectionPageCommand}"
-                HorizontalAlignment="Center"
-                Margin="0,5,170,0"
-                VerticalAlignment="Top"
-                Width="160"
-                Height="30">
-            <Button.Effect>
-                <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-            </Button.Effect>
+        <Button Content="My Collection" Command="{Binding ShowMyCollectionPageCommand}" Margin="0,5,170,5">
             <Button.Style>
                 <Style TargetType="Button" BasedOn="{StaticResource TopMenuButtonStyle}">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsMyCollectionPageActive}" Value="True">
+                            <Setter Property="Background" Value="#5cb9ca"/>
+                            <Setter Property="BorderBrush" Value="#2f6f7a"/>
+                            <Setter Property="Foreground" Value="White"/>
                             <Setter Property="FontWeight" Value="Bold"/>
                         </DataTrigger>
                     </Style.Triggers>
@@ -56,32 +44,22 @@
             </Button.Style>
         </Button>
 
-        <Button Content="Decks"
-                HorizontalAlignment="Center"
-                Margin="170,5,0,0"
-                VerticalAlignment="Top"
-                Width="160"
-                Height="30"
-                Style="{StaticResource TopMenuButtonStyle}">
-            <Button.Effect>
-                <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-            </Button.Effect>
+        <Button Content="Decks" Margin="170,5,0,5">
+            <Button.Style>
+                <Style TargetType="Button" BasedOn="{StaticResource TopMenuButtonStyle}">
+                    <Style.Triggers>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
         </Button>
 
-        <Button 
-                Content="Utilities"
-                HorizontalAlignment="Center"
-                Margin="510,5,0,0"
-                VerticalAlignment="Top"
-                Width="160"
-                Height="30"
-                Style="{StaticResource TopMenuButtonStyle}">
-            <Button.Effect>
-                <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-            </Button.Effect>
+        <Button Content="Utilities" Margin="510,5,0,5">
+            <Button.Style>
+                <Style TargetType="Button" BasedOn="{StaticResource TopMenuButtonStyle}">
+                    <Style.Triggers>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
         </Button>
-        <!--Command="{Binding ShowUtilitiesCommand}"-->
-        <!--Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.Utilities}}"-->
-
     </Grid>
 </UserControl>
