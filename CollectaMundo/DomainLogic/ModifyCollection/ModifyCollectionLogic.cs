@@ -1,13 +1,13 @@
 ﻿using CollectaMundo.ApplicationServices.EditCollection.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.ModifyCollection.Models;
 using CollectaMundo.DomainLogic.Shared;
 using System.Diagnostics;
 
-namespace CollectaMundo.DomainLogic.EditCollection
+namespace CollectaMundo.DomainLogic.ModifyCollection
 {
-    public class EditCollectionLogic() : IEditCollectionLogic
+    public class ModifyCollectionLogic() : IModifyCollectionLogic
     {
         public CardSet PrepareCardForList(CardSet selectedCard, CardToAddMetadataDto metadata, bool isEdit)
         {
@@ -66,11 +66,11 @@ namespace CollectaMundo.DomainLogic.EditCollection
             clone.RecomputeCollectionPrice();
             return clone;
         }
-        public EditBatchPlan PlanBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot, bool isEdit)
+        public ModifyBatchPlan PlanBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot, bool isEdit)
         {
             Debug.WriteLine($"[PlanBatch] START isEdit={isEdit}");
 
-            var plan = new EditBatchPlan();
+            var plan = new ModifyBatchPlan();
             var removedIds = new HashSet<int>();
             var upsertsByIdentity = new Dictionary<CollectionIdentity, CardSet>();
 

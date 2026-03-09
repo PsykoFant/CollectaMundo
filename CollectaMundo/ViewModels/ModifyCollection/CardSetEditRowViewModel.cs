@@ -3,7 +3,7 @@ using CollectaMundo.ViewModels.Pages.SharedElements;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Input;
 
-namespace CollectaMundo.ViewModels.EditCollection;
+namespace CollectaMundo.ViewModels.ModifyCollection;
 
 public sealed partial class CardSetEditRowViewModel : ObservableObject
 {

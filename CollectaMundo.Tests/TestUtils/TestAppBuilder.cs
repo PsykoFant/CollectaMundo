@@ -82,7 +82,7 @@ public static class TestAppBuilder
             new CardCoreAggregator(),
             new MyCollectionChangeLogic());
 
-        var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(), new EditCollectionRepo());
+        var editService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo());
 
         var cardImageService = new CardImageService(
             dbFactory, remoteLookups, new CardImageLogic(),

@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Shell;
 public sealed partial class TopMenuViewModel : ObservableObject
@@ -12,7 +13,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
     public object? DecksPageViewModel { get; }
     public object? UtilitiesPageViewModel { get; }
 
-    public TopMenuViewModel(ITopMenuNavigationHost host,object allCardsPageViewModel,object myCollectionPageViewModel,object? decksPageViewModel = null,object? utilitiesPageViewModel = null)
+    public TopMenuViewModel(ITopMenuNavigationHost host, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
     {
         _host = host;
         AllCardsPageViewModel = allCardsPageViewModel;
@@ -63,5 +64,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(IsTopMenuEnabled));
         }
+
+        Debug.WriteLine($"Host property changed: {e.PropertyName}");
     }
 }

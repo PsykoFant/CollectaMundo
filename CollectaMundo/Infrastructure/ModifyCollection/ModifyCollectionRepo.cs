@@ -1,9 +1,9 @@
 ﻿using System.Data.SQLite;
 using System.Diagnostics;
 
-namespace CollectaMundo.Infrastructure.EditCollection
+namespace CollectaMundo.Infrastructure.ModifyCollection
 {
-    public class EditCollectionRepo() : IEditCollectionRepo
+    public class ModifyCollectionRepo() : IModifyCollectionRepo
     {
 
         // Lookups

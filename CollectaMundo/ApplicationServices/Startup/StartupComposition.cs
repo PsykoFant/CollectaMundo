@@ -4,25 +4,25 @@ using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardPrices;
-using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
+using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Aggregation;
-using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.DomainLogic.Import;
+using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardPrices;
-using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
+using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
@@ -85,7 +85,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 statusVM.StatusLabel3 = "Loading ALL the cards…";
                 await UIHelper.ForceRenderAsync();
 
-                var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(), new EditCollectionRepo());
+                var editService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo());
 
                 var fileSystemPicker = new FileSystemPicker();
                 var importService = new ImportService(dbFactory, new ImportRepo(), fileSystemPicker, new ImportLogic());

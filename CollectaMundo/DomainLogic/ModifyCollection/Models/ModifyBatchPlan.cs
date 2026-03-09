@@ -1,9 +1,9 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
 
-namespace CollectaMundo.DomainLogic.EditCollection.Models
+namespace CollectaMundo.DomainLogic.ModifyCollection.Models
 {
-    public sealed class EditBatchPlan
+    public sealed class ModifyBatchPlan
     {
         public List<int> DeleteIds { get; } = [];
         public List<UpdateCommand> Updates { get; } = [];

@@ -2,10 +2,10 @@
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
-using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Import.Models;
+using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
@@ -15,7 +15,6 @@ using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using System.Windows;
 
@@ -116,7 +115,7 @@ namespace CollectaMundo.ViewModels
         #region Constructor and factory method
         // Constructor
         private MainWindowViewModel(
-            IEditCollectionService editService,
+            IModifyCollectionService modifyService,
             ICardImageService cardImageService,
             ICardDatabaseManagementService cardDbManagementService,
             IImportService importService,
@@ -146,8 +145,8 @@ namespace CollectaMundo.ViewModels
             ColorIcons = new CardViewModel { Cards = [.. ManaKeys.Select(CardSet.FromManaKey)] };
 
             // edit collection viewmodels
-            AddCardsVM = new ModifyCollectionViewModel(editService, this, removeCardWhenZero: true);
-            EditCardsVM = new ModifyCollectionViewModel(editService, this, removeCardWhenZero: false);
+            AddCardsVM = new ModifyCollectionViewModel(modifyService, this, removeCardWhenZero: true);
+            EditCardsVM = new ModifyCollectionViewModel(modifyService, this, removeCardWhenZero: false);
 
             // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);
@@ -173,13 +172,13 @@ namespace CollectaMundo.ViewModels
             CurrentPageViewModel = SearchAndFilterPageVM; // default page
 
             // Set up top menu with references to page VMs
-            TopMenuVM = new TopMenuViewModel(host: this,allCardsPageViewModel: SearchAndFilterPageVM,myCollectionPageViewModel: MyCollectionPageVM);
+            TopMenuVM = new TopMenuViewModel(host: this, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM);
 
             // event wiring
             SubscribeChildVmEvents();
         }
         public static async Task<MainWindowViewModel> CreateAsync(
-            IEditCollectionService editService,
+            IModifyCollectionService editService,
             ICardImageService cardImageService,
             ICardDatabaseManagementService prepService,
             IImportService importService,

@@ -1,8 +1,8 @@
-﻿using CollectaMundo.ApplicationServices.EditCollection;
+﻿using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
-using CollectaMundo.ViewModels.EditCollection;
 using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.ModifyCollection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -19,11 +19,11 @@ namespace CollectaMundo.ViewModels
         public bool ShowCounts => !HasStatus;
         public bool IsCollectionEditVisible => CardsToAddOrEdit.Count != 0 && !HasStatus;
 
-        private readonly IEditCollectionService _service;
+        private readonly IModifyCollectionService _service;
         private readonly IParentViewModelContext _parentContext;
         private readonly bool _removeCardWhenZero;
 
-        public ModifyCollectionViewModel(IEditCollectionService service, IParentViewModelContext parentContext, bool removeCardWhenZero)
+        public ModifyCollectionViewModel(IModifyCollectionService service, IParentViewModelContext parentContext, bool removeCardWhenZero)
         {
             _parentContext = parentContext;
             _service = service;

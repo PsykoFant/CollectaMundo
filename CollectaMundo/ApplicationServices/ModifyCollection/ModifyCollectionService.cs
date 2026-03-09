@@ -1,20 +1,20 @@
 ﻿using CollectaMundo.ApplicationServices.EditCollection.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection;
-using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.DomainLogic.ModifyCollection;
+using CollectaMundo.DomainLogic.ModifyCollection.Models;
 using CollectaMundo.DomainLogic.Shared;
-using CollectaMundo.Infrastructure.EditCollection;
+using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
 
-namespace CollectaMundo.ApplicationServices.EditCollection
+namespace CollectaMundo.ApplicationServices.ModifyCollection
 {
-    public class EditCollectionService(IDbConnectionFactory dbFactory, IEditCollectionLogic editLogic, IEditCollectionRepo repo) : IEditCollectionService
+    public class ModifyCollectionService(IDbConnectionFactory dbFactory, IModifyCollectionLogic editLogic, IModifyCollectionRepo repo) : IModifyCollectionService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
-        private readonly IEditCollectionLogic _editLogic = editLogic;
-        private readonly IEditCollectionRepo _repo = repo;
+        private readonly IModifyCollectionLogic _editLogic = editLogic;
+        private readonly IModifyCollectionRepo _repo = repo;
         public Task<CardSet> CreateCardForAddAsync(CardSet selectedCard) => CreateCardForListAsync(selectedCard, isEdit: false);
         public Task<CardSet> CreateCardForEditAsync(CardSet selectedCard) => CreateCardForListAsync(selectedCard, isEdit: true);
         private async Task<CardSet> CreateCardForListAsync(CardSet selectedCard, bool isEdit)
@@ -102,7 +102,7 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                 throw;
             }
         }
-        private async Task ExecutePlanAsync(EditBatchPlan plan, SQLiteConnection connection)
+        private async Task ExecutePlanAsync(ModifyBatchPlan plan, SQLiteConnection connection)
         {
             foreach (var deleteId in plan.DeleteIds)
             {

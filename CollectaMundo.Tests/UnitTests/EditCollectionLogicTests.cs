@@ -37,7 +37,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Arrange: snapshot contains nothing (no existing identity)
             var snapshot = new EmptySnapshot();
 
-            var logic = new EditCollectionLogic();
+            var logic = new ModifyCollectionLogic();
             // ^ assuming your refactored logic no longer needs repo in ctor.
             // If it still has dependencies, inject them here (but repo should be gone).
 
@@ -103,7 +103,7 @@ namespace CollectaMundo.Tests.UnitTests
             }
                 ]);
 
-            var logic = new EditCollectionLogic();
+            var logic = new ModifyCollectionLogic();
 
             var newCard = new CardSet
             {
@@ -171,7 +171,7 @@ namespace CollectaMundo.Tests.UnitTests
             }
                 ]);
 
-            var logic = new EditCollectionLogic();
+            var logic = new ModifyCollectionLogic();
 
             var card = new CardSet
             {
@@ -227,7 +227,7 @@ namespace CollectaMundo.Tests.UnitTests
                 }
                 ]);
 
-            var logic = new EditCollectionLogic();
+            var logic = new ModifyCollectionLogic();
 
             var card = new CardSet
             {
@@ -306,7 +306,7 @@ namespace CollectaMundo.Tests.UnitTests
             }
                 ]);
 
-            var logic = new EditCollectionLogic();
+            var logic = new ModifyCollectionLogic();
 
             var editedCard = new CardSet
             {
@@ -393,7 +393,7 @@ namespace CollectaMundo.Tests.UnitTests
             }
                 ]);
 
-            var logic = new EditCollectionLogic();
+            var logic = new ModifyCollectionLogic();
 
             var editedCard = new CardSet
             {

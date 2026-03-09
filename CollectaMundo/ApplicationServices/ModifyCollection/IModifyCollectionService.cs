@@ -1,9 +1,9 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
 
-namespace CollectaMundo.ApplicationServices.EditCollection
+namespace CollectaMundo.ApplicationServices.ModifyCollection
 {
-    public interface IEditCollectionService
+    public interface IModifyCollectionService
     {
         Task<CardSet> CreateCardForAddAsync(CardSet selectedCard);
         Task<CardSet> CreateCardForEditAsync(CardSet selectedCard);

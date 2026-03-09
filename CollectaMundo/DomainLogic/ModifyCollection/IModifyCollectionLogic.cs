@@ -1,15 +1,14 @@
 ﻿using CollectaMundo.ApplicationServices.EditCollection.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.DomainLogic.ModifyCollection.Models;
 using CollectaMundo.DomainLogic.Shared;
-using System.Data.SQLite;
 
-namespace CollectaMundo.DomainLogic.EditCollection
+namespace CollectaMundo.DomainLogic.ModifyCollection
 {
-    public interface IEditCollectionLogic
+    public interface IModifyCollectionLogic
     {
         CardSet PrepareCardForList(CardSet selectedCard, CardToAddMetadataDto metadata, bool isEdit);
         CardSet PrepareNewCardWithDefaults(CardSet selectedCard, CardToAddMetadataDto metadata);
-        EditBatchPlan PlanBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot, bool isEdit);
+        ModifyBatchPlan PlanBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot, bool isEdit);
     }
 }

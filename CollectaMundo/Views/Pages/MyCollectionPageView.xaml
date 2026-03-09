@@ -12,7 +12,8 @@
              d:DesignHeight="450" d:DesignWidth="800">
 
     <Grid>
-        <Label Content="{Binding PageTitle}" Style="{StaticResource MediumHeaderLabelStyle}"/>
+        <!--<Label Content="{Binding PageTitle}" Style="{StaticResource MediumHeaderLabelStyle}"/>-->
+        <Label Content="Hvad fanden i helved!" Style="{StaticResource MediumHeaderLabelStyle}"/>
         <!-- Add status summary, listview buttons -->
         <shared:CardListPageChromeView />
 

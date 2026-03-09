@@ -1,8 +1,8 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.Infrastructure.EditCollection
+namespace CollectaMundo.Infrastructure.ModifyCollection
 {
-    public interface IEditCollectionRepo
+    public interface IModifyCollectionRepo
     {
         // Lookups
         Task<List<string>> FetchLanguagesForCardAsync(string uuid, SQLiteConnection conn);
