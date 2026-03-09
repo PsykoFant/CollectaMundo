@@ -13,6 +13,7 @@ using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
+using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
@@ -21,7 +22,7 @@ using System.Windows;
 namespace CollectaMundo.ViewModels
 {
     #endregion
-    public partial class MainWindowViewModel : ObservableObject, IParentViewModelContext
+    public partial class MainWindowViewModel : ObservableObject, IParentViewModelContext, ITopMenuNavigationHost
     {
         #region class: MainWindowViewModel (fields, ctor, factory)
 
@@ -49,6 +50,9 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region child viewmodels
+        // Shell
+        public TopMenuViewModel TopMenuVM { get; }
+
         // Pages
         public CardListPageViewModel SearchAndFilterPageVM { get; }
         public CardListPageViewModel MyCollectionPageVM { get; }
@@ -73,10 +77,6 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private object? currentPageViewModel;
-
-        public bool IsAllCardsPageActive => ReferenceEquals(CurrentPageViewModel, SearchAndFilterPageVM);
-        public bool IsMyCollectionPageActive => ReferenceEquals(CurrentPageViewModel, MyCollectionPageVM);
-
 
         // Column resize
         [ObservableProperty]
@@ -172,6 +172,9 @@ namespace CollectaMundo.ViewModels
 
             CurrentPageViewModel = SearchAndFilterPageVM; // default page
 
+            // Set up top menu with references to page VMs
+            TopMenuVM = new TopMenuViewModel(host: this,allCardsPageViewModel: SearchAndFilterPageVM,myCollectionPageViewModel: MyCollectionPageVM);
+
             // event wiring
             SubscribeChildVmEvents();
         }
@@ -200,30 +203,6 @@ namespace CollectaMundo.ViewModels
             return vm;
         }
         #endregion
-
-        #endregion
-
-        #region commands
-        // Commands to switch pages
-        [RelayCommand]
-        private void ShowAllCardsPage()
-        {
-            CurrentPageViewModel = SearchAndFilterPageVM;
-            OnPropertyChanged(nameof(IsAllCardsPageActive));
-            OnPropertyChanged(nameof(IsMyCollectionPageActive));
-            //OnPropertyChanged(nameof(IsDecksPageActive));
-            //OnPropertyChanged(nameof(IsUtilitiesPageActive));
-        }
-
-        [RelayCommand]
-        private void ShowMyCollectionPage()
-        {
-            CurrentPageViewModel = MyCollectionPageVM;
-            OnPropertyChanged(nameof(IsAllCardsPageActive));
-            OnPropertyChanged(nameof(IsMyCollectionPageActive));
-            //OnPropertyChanged(nameof(IsDecksPageActive));
-            //OnPropertyChanged(nameof(IsUtilitiesPageActive));
-        }
 
         #endregion
 

@@ -4,8 +4,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:presentation="clr-namespace:CollectaMundo.Presentation" 
-             xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels" 
-             d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}"
+             xmlns:vm="clr-namespace:CollectaMundo.ViewModels.Shell" 
+             d:DataContext="{d:DesignInstance Type=vm:TopMenuViewModel}"
              mc:Ignorable="d">
 
     <Grid x:Name="GridTopMenu"

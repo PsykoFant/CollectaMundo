@@ -26,7 +26,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <!-- Top menu -->
-            <shell:TopMenuView Grid.Row="0" Grid.ColumnSpan="3" />
+            <shell:TopMenuView DataContext="{Binding TopMenuVM}" Grid.Row="0" Grid.ColumnSpan="3" />
             <!-- Side menu -->
             <shell:SideMenuView Grid.Row="1" Grid.Column="0"/>
 
