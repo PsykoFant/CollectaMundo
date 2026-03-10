@@ -78,9 +78,6 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private object? currentPageViewModel;
 
-        // Column resize
-        //[ObservableProperty]
-        //private int myCollectionResizeToken;
         public void SetUiBusy(bool isBusy)
         {
             IsTopMenuEnabled = !isBusy;
