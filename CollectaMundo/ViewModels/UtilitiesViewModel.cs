@@ -11,13 +11,13 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, ImportViewModel importVM, IUserPromptService userPromptService, ICardCollectionHost parentViewModelcontext, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
+    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, ImportViewModel importVM, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
     {
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
         private readonly StatusViewModel _statusVM = statusVM;
         private readonly ImportViewModel _importVM = importVM;
         private readonly IUserPromptService _userPromptService = userPromptService;
-        private readonly ICardCollectionHost _parentViewModelContext = parentViewModelcontext;
+        private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
         private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
         private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
 
@@ -63,7 +63,7 @@ namespace CollectaMundo.ViewModels
                 }
 
                 // UI state preparation AFTER user clicked
-                _parentViewModelContext.SetUiBusy(true);
+                _cardCollectionHost.SetUiBusy(true);
                 _statusVM.ResetStatusOverlay();
                 _statusVM.StatusLabel1 = "Please wait - backing up up your collection ... ";
 
@@ -122,7 +122,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             _statusVM.ResetStatusOverlay();
-            _parentViewModelContext.SetUiBusy(true);
+            _cardCollectionHost.SetUiBusy(true);
             _statusVM.ShowStatusOverlay("Updating card prices, please wait...", true);
             var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
@@ -136,7 +136,7 @@ namespace CollectaMundo.ViewModels
             {
                 case OperationResultCode.Success:
                     _statusVM.StatusLabel1 = "Prices updated successfully!";
-                    _parentViewModelContext.RefreshAllPrices();
+                    _cardCollectionHost.RefreshAllPrices();
                     break;
 
                 case OperationResultCode.CancelledByUser:
@@ -156,7 +156,7 @@ namespace CollectaMundo.ViewModels
         private async Task CheckForDbUpdates()
         {
             PrepareUIForCommands("One moment - checking for updates...");
-            _parentViewModelContext.SetUiBusy(true);
+            _cardCollectionHost.SetUiBusy(true);
             var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
             // Run check
@@ -219,7 +219,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             _statusVM.ResetStatusOverlay();
-            _parentViewModelContext.SetUiBusy(true);
+            _cardCollectionHost.SetUiBusy(true);
             var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
             if (includeBackup)
@@ -268,7 +268,7 @@ namespace CollectaMundo.ViewModels
                     UpdateDbVisibility = Visibility.Collapsed;
 
                     _statusVM.StatusLabel2 = "Reloading card lists…";
-                    await _parentViewModelContext.ReloadAllCardListsAndFiltersAsync();
+                    await _cardCollectionHost.ReloadAllCardListsAndFiltersAsync();
                     _statusVM.StatusLabel2 = string.Empty;
                     break;
 
@@ -295,7 +295,7 @@ namespace CollectaMundo.ViewModels
         private void CompleteCommandUIFlow()
         {
             _statusVM.ResetStatusOverlay();
-            _parentViewModelContext.SetUiBusy(false);
+            _cardCollectionHost.SetUiBusy(false);
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
     }

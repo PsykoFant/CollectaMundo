@@ -1,11 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups;
-using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
-using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
@@ -16,14 +13,13 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator, IMyCollectionChangeLogic myCollectionChangeLogic) : ICardListService
+    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator) : ICardListService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardLookupsService _lookupService = lookupService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
-        private readonly IMyCollectionChangeLogic _myCollectionChangeLogic = myCollectionChangeLogic;
         public async Task InitializeCardListsAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork(_dbFactory);

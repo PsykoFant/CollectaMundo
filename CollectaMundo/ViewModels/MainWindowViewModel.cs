@@ -30,11 +30,12 @@ namespace CollectaMundo.ViewModels
         // App settings
         private readonly IAppSettings _settings;
 
-        // Services
-        private readonly IFilteringService _filteringService;
+        // Card list / card collection management services
+        private readonly IModifyCollectionService _modifyService;
         private readonly ICardListService _cardListService;
 
         // Filtering infrastructure
+        private readonly FilteringService _filteringService;
         private readonly IFacetUpdateScheduler _facetScheduler;
         private readonly IFacetUpdater _facetUpdater;
 
@@ -127,6 +128,7 @@ namespace CollectaMundo.ViewModels
         {
             StatusVM = statusVM;
 
+            _modifyService = modifyService;
             _settings = settings;
             _filteringService = new FilteringService();
             _cardListService = cardListService;
@@ -143,8 +145,8 @@ namespace CollectaMundo.ViewModels
             ColorIcons = new CardViewModel { Cards = [.. ManaKeys.Select(CardSet.FromManaKey)] };
 
             // edit collection viewmodels
-            AddCardsVM = new ModifyCollectionViewModel(modifyService, this, removeCardWhenZero: true);
-            EditCardsVM = new ModifyCollectionViewModel(modifyService, this, removeCardWhenZero: false);
+            AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true);
+            EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false);
 
             // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);
@@ -152,16 +154,16 @@ namespace CollectaMundo.ViewModels
             // card image viewmodel
             CardImageVM = new CardImageViewModel(cardImageService);
 
-            var parentContext = this;
+            var cardCollectionHost = this;
 
             // import viewmodel
-            ImportVM = new ImportViewModel(importService, parentContext, _userPromptService);
+            ImportVM = new ImportViewModel(importService, cardCollectionHost, _userPromptService);
 
             // Utility section viewmodel
-            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, ImportVM, _userPromptService, parentContext, () => MyCollectionVM.Cards.Count, _filesystemPicker);
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, ImportVM, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
 
             // prices viewmodel
-            PricesVM = new PricesViewModel(_settings, parentContext);
+            PricesVM = new PricesViewModel(_settings, cardCollectionHost);
 
             // Pages viewmodels
             SearchAndFilterPageVM = new SearchAndFilterPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);

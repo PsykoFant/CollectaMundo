@@ -11,7 +11,6 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
-using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.DomainLogic.Import;
@@ -85,7 +84,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 statusVM.StatusLabel3 = "Loading ALL the cards…";
                 await UIHelper.ForceRenderAsync();
 
-                var editService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo());
+                var modifyService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo());
 
                 var fileSystemPicker = new FileSystemPicker();
                 var importService = new ImportService(dbFactory, new ImportRepo(), fileSystemPicker, new ImportLogic());
@@ -97,10 +96,10 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var filterDefaultsLogic = new FilterDefaultsLogic();
                 var coreAggregator = new CardCoreAggregator();
                 var cardLookupsService = new CardLookupsService(dbFactory, new CardLookupsRepo(), getRetailer);
-                var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator, new MyCollectionChangeLogic());
+                var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(editService, cardImageService, cardDbManagementService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 statusVM.HideStatusOverlay();
