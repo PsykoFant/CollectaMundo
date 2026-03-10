@@ -53,13 +53,19 @@
             </Button.Style>
         </Button>
 
-        <Button Content="Utilities" Margin="510,5,0,5">
+        <Button Content="Utilities" Command="{Binding ShowUtilitiesPageCommand}" Margin="510,5,0,5">
             <Button.Style>
                 <Style TargetType="Button" BasedOn="{StaticResource TopMenuButtonStyle}">
                     <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsUtilitiesPageActive}" Value="True">
+                            <Setter Property="Background" Value="#5cb9ca"/>
+                            <Setter Property="BorderBrush" Value="#2f6f7a"/>
+                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Button.Style>
-        </Button>
+        </Button>        
     </Grid>
 </UserControl>

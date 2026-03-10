@@ -15,6 +15,7 @@ using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
+using CollectaMundo.ViewModels.SideMenuLeft;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
@@ -45,9 +46,6 @@ namespace CollectaMundo.ViewModels
         // File system picker
         private readonly FileSystemPicker _filesystemPicker;
 
-        // Mana keys for ColorIcons
-        private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
-
         #endregion
 
         #region child viewmodels
@@ -57,13 +55,18 @@ namespace CollectaMundo.ViewModels
         // Pages
         public CardListPageViewModel SearchAndFilterPageVM { get; }
         public CardListPageViewModel MyCollectionPageVM { get; }
+        public UtilitiesPageViewModel UtilitiesPageVM { get; }
+
+        // Menus
+        public FilteringSideMenuViewModel FilteringSideMenuVM { get; }
+        public UtilitiesSideMenuViewModel UtilitiesSideMenuVM { get; }
 
         public StatusViewModel StatusVM { get; }
         public CardViewModel AllCardsVM { get; }
         public CardViewModel AllCardsForDecksVM { get; }
         public CardViewModel AllCardsInDecksVM { get; }
         public CardViewModel MyCollectionVM { get; }
-        public CardViewModel ColorIcons { get; }
+        public CardViewModel ColorIconsViewModel { get; }
         public ModifyCollectionViewModel AddCardsVM { get; }
         public ModifyCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
@@ -79,10 +82,14 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private object? currentPageViewModel;
 
+        [ObservableProperty]
+        private object? currentSideMenuViewModel;
+
+        public bool IsSideMenuLeftVisible { get; set; }
         public void SetUiBusy(bool isBusy)
         {
             IsTopMenuEnabled = !isBusy;
-            SideMenuVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
+            IsSideMenuLeftVisible = !isBusy;
             CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
         }
 
@@ -91,10 +98,6 @@ namespace CollectaMundo.ViewModels
         private bool isTopMenuEnabled = true;
 
         #region Visibility properties
-
-        // Side menu visibility - we will eventually refactor this as well
-        [ObservableProperty]
-        private Visibility sideMenuVisibility = Visibility.Visible;
 
         // Side menu subsections visibility properties - we will eventually refactor this as well
         [ObservableProperty]
@@ -113,6 +116,8 @@ namespace CollectaMundo.ViewModels
 
         #region Constructor and factory method
         // Constructor
+        private static readonly string[] manaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
+        private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
         private MainWindowViewModel(
             IModifyCollectionService modifyService,
             ICardImageService cardImageService,
@@ -142,7 +147,8 @@ namespace CollectaMundo.ViewModels
             MyCollectionVM = new CardViewModel();
             AllCardsForDecksVM = new CardViewModel();
             AllCardsInDecksVM = new CardViewModel();
-            ColorIcons = new CardViewModel { Cards = [.. ManaKeys.Select(CardSet.FromManaKey)] };
+            List<string> manaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
+            ColorIconsViewModel = new CardViewModel { Cards = [.. manaKeys.Select(CardSet.FromManaKey)] };
 
             // edit collection viewmodels
             AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true);
@@ -168,15 +174,23 @@ namespace CollectaMundo.ViewModels
             // Pages viewmodels
             SearchAndFilterPageVM = new SearchAndFilterPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new MyCollectionPageViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
+            UtilitiesPageVM = new UtilitiesPageViewModel();
 
-            CurrentPageViewModel = SearchAndFilterPageVM; // default page
+            // Side menu viewmodels
+            FilteringSideMenuVM = new FilteringSideMenuViewModel(FilterVM, ColorIconsViewModel);
+            UtilitiesSideMenuVM = new UtilitiesSideMenuViewModel(UtilitiesVM, PricesVM);
+
+            // Set initial page and menu
+            CurrentPageViewModel = SearchAndFilterPageVM;
+            CurrentSideMenuViewModel = FilteringSideMenuVM;
 
             // Set up top menu with references to page VMs
-            TopMenuVM = new TopMenuViewModel(shellUIState: this, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM);
+            TopMenuVM = new TopMenuViewModel(shellUIState: this, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, utilitiesPageViewModel: UtilitiesPageVM);
 
             // event wiring
             SubscribeChildVmEvents();
         }
+
         public static async Task<MainWindowViewModel> CreateAsync(
             IModifyCollectionService editService,
             ICardImageService cardImageService,

@@ -9,14 +9,21 @@ public sealed partial class TopMenuViewModel : ObservableObject
 {
     private readonly IShellUiState _shellUIState;
 
+    // Page viewmodels
     public object AllCardsPageViewModel { get; }
     public object MyCollectionPageViewModel { get; }
     public object? DecksPageViewModel { get; }
     public object? UtilitiesPageViewModel { get; }
 
-    public TopMenuViewModel(IShellUiState shellUIState, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
+    // Sidemenu viewmodels
+    public object FilteringSideMenuViewModel { get; }
+    public object UtilitiesSideMenuViewModel { get; }
+
+    public TopMenuViewModel(IShellUiState shellUIState, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
     {
         _shellUIState = shellUIState;
+        FilteringSideMenuViewModel = filteringSideMenuViewModel;
+        UtilitiesSideMenuViewModel = utilitiesSideMenuViewModel;
         AllCardsPageViewModel = allCardsPageViewModel;
         MyCollectionPageViewModel = myCollectionPageViewModel;
         DecksPageViewModel = decksPageViewModel;
@@ -30,7 +37,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
     public bool IsAllCardsPageActive => ReferenceEquals(_shellUIState.CurrentPageViewModel, AllCardsPageViewModel);
     public bool IsMyCollectionPageActive => ReferenceEquals(_shellUIState.CurrentPageViewModel, MyCollectionPageViewModel);
     public bool IsDecksPageActive => DecksPageViewModel is not null && ReferenceEquals(_shellUIState.CurrentPageViewModel, DecksPageViewModel);
-    public bool IsUtilitiesPageActive => UtilitiesPageViewModel is not null && ReferenceEquals(_shellUIState.CurrentPageViewModel, UtilitiesPageViewModel);
+    public bool IsUtilitiesPageActive => ReferenceEquals(_shellUIState.CurrentPageViewModel, UtilitiesPageViewModel);
 
     [RelayCommand]
     private void ShowAllCardsPage() => NavigateTo(AllCardsPageViewModel);
@@ -57,11 +64,23 @@ public sealed partial class TopMenuViewModel : ObservableObject
         }
 
         _shellUIState.CurrentPageViewModel = pageViewModel;
+        _shellUIState.CurrentSideMenuViewModel = ResolveSideMenu(pageViewModel);
 
         if (_shellUIState.CurrentPageViewModel is IResetTransientUiState newPage)
         {
             newPage.ResetTransientUiState();
         }
+    }
+
+    private object? ResolveSideMenu(object pageViewModel)
+    {
+        if (ReferenceEquals(pageViewModel, UtilitiesPageViewModel))
+        {
+            return UtilitiesSideMenuViewModel;
+        }
+
+        // all current card-list pages use filtering side menu
+        return FilteringSideMenuViewModel;
     }
     private void Host_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
