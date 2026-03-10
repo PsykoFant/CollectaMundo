@@ -9,7 +9,5 @@ namespace CollectaMundo.ApplicationServices.CardLists
     {
         Task InitializeCardListsAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM);
         Task ReloadPriceLookupsAsync(string retailerKey);
-        CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardViewModel myCollection, CardViewModel allCards);
-        void ApplyMyCollectionChanges(IList<CardSet> collection, CollectionChangeSet<CardSet> changes);
     }
 }

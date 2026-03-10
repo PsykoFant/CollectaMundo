@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.EditCollection.Models;
+using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.ModifyCollection;
@@ -6,6 +7,7 @@ using CollectaMundo.DomainLogic.ModifyCollection.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.ViewModels;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.ModifyCollection
@@ -144,6 +146,14 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
 #endif
         }
 
-        // Build changeset 
+        // Update in-memory collection after batch submission
+        public CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardViewModel myCollection, CardViewModel allCards)
+        {
+            return _logic.BuildChangeSet(mutation, myCollection, allCards);
+        }
+        public void ApplyMyCollectionChanges(IList<CardSet> collection, CollectionChangeSet<CardSet> changes)
+        {
+            _logic.ApplyMyCollectionChanges(collection, changes);
+        }
     }
 }

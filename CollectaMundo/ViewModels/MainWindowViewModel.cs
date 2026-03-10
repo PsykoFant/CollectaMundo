@@ -227,7 +227,7 @@ namespace CollectaMundo.ViewModels
 
         private void OnImportCollectionMutationRequested(object? sender, CollectionMutation mutation)
         {
-            var changeSet = _cardListService.BuildCollectionChangeSet(mutation, MyCollectionVM, AllCardsVM);
+            var changeSet = _modifyService.BuildCollectionChangeSet(mutation, MyCollectionVM, AllCardsVM);
             OnCollectionChanged(sender, changeSet);
         }
         private void OnCardImageSelectionRequested(object? sender, string? uuid)
@@ -244,7 +244,7 @@ namespace CollectaMundo.ViewModels
         private void OnCollectionChanged(object? sender, CollectionChangeSet<CardSet> changeSet)
         {
             // Apply add/update
-            _cardListService.ApplyMyCollectionChanges(MyCollectionVM.Cards, changeSet);
+            _modifyService.ApplyMyCollectionChanges(MyCollectionVM.Cards, changeSet);
 
             // Reapply filters
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);

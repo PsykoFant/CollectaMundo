@@ -139,14 +139,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
         {
             await _lookupService.ResetPricesMetaProviderAsync(retailerKey);
         }
-        public CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardViewModel myCollection, CardViewModel allCards)
-        {
-            return _myCollectionChangeLogic.BuildChangeSet(mutation, myCollection, allCards);
-        }
-        public void ApplyMyCollectionChanges(IList<CardSet> collection, CollectionChangeSet<CardSet> changes)
-        {
-            _myCollectionChangeLogic.ApplyMyCollectionChanges(collection, changes);
-        }
 
         // helper to sort cards in the desired order
         private static List<CardSet> SortCards(IEnumerable<CardSet> cards)
