@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CollectaMundo.ViewModels.Pages.SharedElements;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -45,9 +46,21 @@ public sealed partial class TopMenuViewModel : ObservableObject
 
     private void NavigateTo(object? pageViewModel)
     {
-        if (pageViewModel is not null)
+        if (pageViewModel is null)
         {
-            _shellUIState.CurrentPageViewModel = pageViewModel;
+            return;
+        }
+
+        if (_shellUIState.CurrentPageViewModel is IResetTransientUiState oldPage)
+        {
+            oldPage.ResetTransientUiState();
+        }
+
+        _shellUIState.CurrentPageViewModel = pageViewModel;
+
+        if (_shellUIState.CurrentPageViewModel is IResetTransientUiState newPage)
+        {
+            newPage.ResetTransientUiState();
         }
     }
     private void Host_PropertyChanged(object? sender, PropertyChangedEventArgs e)

@@ -4,7 +4,7 @@ using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.Pages.SharedElements
 {
-    public abstract class CardListPageViewModel : ObservableObject
+    public abstract class CardListPageViewModel : ObservableObject, IResetTransientUiState
     {
         // Child VMs passed down from MainWindowViewModel
         public CardViewModel CardsVM { get; }
@@ -53,7 +53,10 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
                 ModifyCollectionViewModel.PropertyChanged += ModifyCollectionViewModel_PropertyChanged;
             }
         }
-
+        public virtual void ResetTransientUiState()
+        {
+            ModifyCollectionViewModel?.ClearStatus();
+        }
         private void ModifyCollectionViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName is nameof(ModifyCollectionViewModel.ShowCounts)

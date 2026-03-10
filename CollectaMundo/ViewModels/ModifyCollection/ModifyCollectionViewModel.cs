@@ -41,6 +41,10 @@ namespace CollectaMundo.ViewModels
             OnPropertyChanged(nameof(ShowCounts));
             OnPropertyChanged(nameof(IsCollectionEditVisible));
         }
+        public void ClearStatus()
+        {
+            StatusMessage = string.Empty;
+        }
 
         [ObservableProperty]
         private string statusMessage = string.Empty;
@@ -270,12 +274,8 @@ namespace CollectaMundo.ViewModels
             await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
         }
 
-        // Shared helper 
-        private async Task SubmitBatchAsync(
-    IEnumerable<CardSet> cards,
-    Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit,
-    bool clearAfter,
-    string summaryTitle)
+        // Shared helpers 
+        private async Task SubmitBatchAsync(IEnumerable<CardSet> cards, Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit, bool clearAfter, string summaryTitle)
         {
             var cardList = cards.ToList();
             var snapshot = _parentContext.CreateMyCollectionSnapshot();
