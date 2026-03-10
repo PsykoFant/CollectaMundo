@@ -10,19 +10,7 @@
              d:DesignWidth="600">
 
     <Grid>
-        <Image Source="/Resources/Images/Logo.png"
-                       Stretch="Fill"
-                       VerticalAlignment="Top"
-                       HorizontalAlignment="Center"
-                       Height="170"
-                       Width="170"
-                       RenderTransformOrigin="0.5,0.5"
-                       Margin="0,70,0,0"
-                       Opacity="0.8"/>
-        <ScrollViewer HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <TextBlock HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
-        </ScrollViewer>        
-        
+        <!-- Filter counts x out of y -->
         <Label Visibility="{Binding ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
                HorizontalAlignment="Left"
                Margin="0,25,0,0"
@@ -34,7 +22,24 @@
                     <Binding Path="CardsVM.TotalCount"/>
                 </MultiBinding>
             </Label.Content>
-        </Label>
+        </Label>        
+        
+        <!-- Mini-logo -->
+        <Image Source="/Resources/Images/Logo.png"
+               Visibility="{Binding ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
+               Stretch="Fill"
+               VerticalAlignment="Top"
+               HorizontalAlignment="Center"
+               Height="170"
+               Width="170"
+               RenderTransformOrigin="0.5,0.5"
+               Margin="0,70,0,0"
+               Opacity="0.8"/> 
+
+        <!-- Filter criteria summary -->
+        <ScrollViewer HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <TextBlock HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
+        </ScrollViewer>
 
         <Button Content="{Binding PrimarySubmitButtonText}"
                 HorizontalAlignment="Right"
