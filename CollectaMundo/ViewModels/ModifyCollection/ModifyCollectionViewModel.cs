@@ -271,7 +271,11 @@ namespace CollectaMundo.ViewModels
         }
 
         // Shared helper 
-        private async Task SubmitBatchAsync(IEnumerable<CardSet> cards, Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit, bool clearAfter, string summaryTitle)
+        private async Task SubmitBatchAsync(
+    IEnumerable<CardSet> cards,
+    Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit,
+    bool clearAfter,
+    string summaryTitle)
         {
             var cardList = cards.ToList();
             var snapshot = _parentContext.CreateMyCollectionSnapshot();
@@ -286,8 +290,7 @@ namespace CollectaMundo.ViewModels
             }
 
             CollectionChanged?.Invoke(this, changeSet);
-
-            BuildSubmitSummary(changeSet, cardList, summaryTitle);
+            StatusMessage = BuildSubmitSummary(changeSet, cardList, summaryTitle);
         }
         private static string BuildSubmitSummary(CollectionChangeSet<CardSet> changeSet, IReadOnlyList<CardSet> submittedCards, string summaryTitle)
         {
