@@ -10,8 +10,6 @@ namespace CollectaMundo.DomainLogic.CardLists
     {
         public CollectionChangeSet<CardSet> BuildChangeSet(CollectionMutation mutation, CardViewModel myCollection, CardViewModel allCards)
         {
-            var stopwatch = Stopwatch.StartNew();
-
             var addedOrUpdated = new List<CardSet>();
 
             // Build snapshot from in-memory collection
@@ -66,9 +64,6 @@ namespace CollectaMundo.DomainLogic.CardLists
                 RemovedIds = mutation.RemovedIds,
                 AddedOrUpdated = addedOrUpdated
             };
-
-            stopwatch.Stop();
-            Debug.WriteLine($"[Import] OnImportCollectionMutationRequested completed in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 
             return changeSet;
         }

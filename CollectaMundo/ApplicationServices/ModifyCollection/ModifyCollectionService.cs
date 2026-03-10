@@ -143,5 +143,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
             }
 #endif
         }
+
+        // Build changeset 
     }
 }
