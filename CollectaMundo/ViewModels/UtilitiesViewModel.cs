@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
@@ -10,13 +11,13 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, ImportViewModel importVM, IUserPromptService userPromptService, IParentViewModelContext parentViewModelcontext, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
+    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, ImportViewModel importVM, IUserPromptService userPromptService, ICardCollectionHost parentViewModelcontext, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
     {
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
         private readonly StatusViewModel _statusVM = statusVM;
         private readonly ImportViewModel _importVM = importVM;
         private readonly IUserPromptService _userPromptService = userPromptService;
-        private readonly IParentViewModelContext _parentViewModelContext = parentViewModelcontext;
+        private readonly ICardCollectionHost _parentViewModelContext = parentViewModelcontext;
         private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
         private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
 

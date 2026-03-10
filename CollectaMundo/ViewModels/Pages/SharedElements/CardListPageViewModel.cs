@@ -2,9 +2,9 @@
 using System.ComponentModel;
 using System.Windows.Input;
 
-namespace CollectaMundo.ViewModels.Pages
+namespace CollectaMundo.ViewModels.Pages.SharedElements
 {
-    public sealed class CardListPageViewModel : ObservableObject
+    public abstract class CardListPageViewModel : ObservableObject
     {
         // Child VMs passed down from MainWindowViewModel
         public CardViewModel CardsVM { get; }
@@ -30,7 +30,7 @@ namespace CollectaMundo.ViewModels.Pages
         public ICommand? PrimarySubmitCommand { get; }
         public ICommand? ClearPendingChangesCommand => ModifyCollectionViewModel?.ClearCardsToAddCommand;
 
-        public CardListPageViewModel(CardViewModel cardsVM,CardImageViewModel cardImageVM,FilterViewModel filterVM,string pageTitle,string primarySubmitButtonText,ICommand? primarySubmitCommand = null,PricesViewModel? pricesVM = null,ModifyCollectionViewModel? modifyCollectionVM = null)
+        public CardListPageViewModel(CardViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, string pageTitle, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
         {
             CardsVM = cardsVM;
             CardImageVM = cardImageVM;

@@ -13,6 +13,7 @@ using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
+using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Diagnostics;
@@ -21,7 +22,7 @@ using System.Windows;
 namespace CollectaMundo.ViewModels
 {
     #endregion
-    public partial class MainWindowViewModel : ObservableObject, IParentViewModelContext, ITopMenuNavigationHost
+    public partial class MainWindowViewModel : ObservableObject, ICardCollectionHost, IShellUiState
     {
         #region class: MainWindowViewModel (fields, ctor, factory)
 
@@ -78,8 +79,8 @@ namespace CollectaMundo.ViewModels
         private object? currentPageViewModel;
 
         // Column resize
-        [ObservableProperty]
-        private int myCollectionResizeToken;
+        //[ObservableProperty]
+        //private int myCollectionResizeToken;
         public void SetUiBusy(bool isBusy)
         {
             IsTopMenuEnabled = !isBusy;
@@ -166,13 +167,13 @@ namespace CollectaMundo.ViewModels
             PricesVM = new PricesViewModel(_settings, parentContext);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new CardListPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
-            MyCollectionPageVM = new CardListPageViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
+            SearchAndFilterPageVM = new SearchAndFilterPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
+            MyCollectionPageVM = new MyCollectionPageViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
 
             CurrentPageViewModel = SearchAndFilterPageVM; // default page
 
             // Set up top menu with references to page VMs
-            TopMenuVM = new TopMenuViewModel(host: this, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM);
+            TopMenuVM = new TopMenuViewModel(shellUIState: this, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM);
 
             // event wiring
             SubscribeChildVmEvents();

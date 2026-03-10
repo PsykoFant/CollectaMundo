@@ -6,30 +6,30 @@ using System.Diagnostics;
 namespace CollectaMundo.ViewModels.Shell;
 public sealed partial class TopMenuViewModel : ObservableObject
 {
-    private readonly ITopMenuNavigationHost _host;
+    private readonly IShellUiState _shellUIState;
 
     public object AllCardsPageViewModel { get; }
     public object MyCollectionPageViewModel { get; }
     public object? DecksPageViewModel { get; }
     public object? UtilitiesPageViewModel { get; }
 
-    public TopMenuViewModel(ITopMenuNavigationHost host, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
+    public TopMenuViewModel(IShellUiState shellUIState, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
     {
-        _host = host;
+        _shellUIState = shellUIState;
         AllCardsPageViewModel = allCardsPageViewModel;
         MyCollectionPageViewModel = myCollectionPageViewModel;
         DecksPageViewModel = decksPageViewModel;
         UtilitiesPageViewModel = utilitiesPageViewModel;
 
-        _host.PropertyChanged += Host_PropertyChanged;
+        _shellUIState.PropertyChanged += Host_PropertyChanged;
     }
 
-    public bool IsTopMenuEnabled => _host.IsTopMenuEnabled;
+    public bool IsTopMenuEnabled => _shellUIState.IsTopMenuEnabled;
 
-    public bool IsAllCardsPageActive => ReferenceEquals(_host.CurrentPageViewModel, AllCardsPageViewModel);
-    public bool IsMyCollectionPageActive => ReferenceEquals(_host.CurrentPageViewModel, MyCollectionPageViewModel);
-    public bool IsDecksPageActive => DecksPageViewModel is not null && ReferenceEquals(_host.CurrentPageViewModel, DecksPageViewModel);
-    public bool IsUtilitiesPageActive => UtilitiesPageViewModel is not null && ReferenceEquals(_host.CurrentPageViewModel, UtilitiesPageViewModel);
+    public bool IsAllCardsPageActive => ReferenceEquals(_shellUIState.CurrentPageViewModel, AllCardsPageViewModel);
+    public bool IsMyCollectionPageActive => ReferenceEquals(_shellUIState.CurrentPageViewModel, MyCollectionPageViewModel);
+    public bool IsDecksPageActive => DecksPageViewModel is not null && ReferenceEquals(_shellUIState.CurrentPageViewModel, DecksPageViewModel);
+    public bool IsUtilitiesPageActive => UtilitiesPageViewModel is not null && ReferenceEquals(_shellUIState.CurrentPageViewModel, UtilitiesPageViewModel);
 
     [RelayCommand]
     private void ShowAllCardsPage() => NavigateTo(AllCardsPageViewModel);
@@ -47,12 +47,12 @@ public sealed partial class TopMenuViewModel : ObservableObject
     {
         if (pageViewModel is not null)
         {
-            _host.CurrentPageViewModel = pageViewModel;
+            _shellUIState.CurrentPageViewModel = pageViewModel;
         }
     }
     private void Host_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(ITopMenuNavigationHost.CurrentPageViewModel))
+        if (e.PropertyName == nameof(IShellUiState.CurrentPageViewModel))
         {
             OnPropertyChanged(nameof(IsAllCardsPageActive));
             OnPropertyChanged(nameof(IsMyCollectionPageActive));
@@ -60,7 +60,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
             OnPropertyChanged(nameof(IsUtilitiesPageActive));
         }
 
-        if (e.PropertyName == nameof(ITopMenuNavigationHost.IsTopMenuEnabled))
+        if (e.PropertyName == nameof(IShellUiState.IsTopMenuEnabled))
         {
             OnPropertyChanged(nameof(IsTopMenuEnabled));
         }

@@ -10,10 +10,10 @@ using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.ModifyCollection
 {
-    public class ModifyCollectionService(IDbConnectionFactory dbFactory, IModifyCollectionLogic editLogic, IModifyCollectionRepo repo) : IModifyCollectionService
+    public class ModifyCollectionService(IDbConnectionFactory dbFactory, IModifyCollectionLogic logic, IModifyCollectionRepo repo) : IModifyCollectionService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
-        private readonly IModifyCollectionLogic _editLogic = editLogic;
+        private readonly IModifyCollectionLogic _logic = logic;
         private readonly IModifyCollectionRepo _repo = repo;
         public Task<CardSet> CreateCardForAddAsync(CardSet selectedCard) => CreateCardForListAsync(selectedCard, isEdit: false);
         public Task<CardSet> CreateCardForEditAsync(CardSet selectedCard) => CreateCardForListAsync(selectedCard, isEdit: true);
@@ -33,7 +33,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                     AvailableLanguages = languages ?? []
                 };
 
-                var prepared = _editLogic.PrepareCardForList(selectedCard, metadata, isEdit);
+                var prepared = _logic.PrepareCardForList(selectedCard, metadata, isEdit);
 
                 await uow.CommitAsync();
                 return prepared;
@@ -49,7 +49,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
         {
             var isEdit = cards.Any(c => c.CardId != null);
-            var plan = _editLogic.PlanBatch(cards, snapshot, isEdit);
+            var plan = _logic.PlanBatch(cards, snapshot, isEdit);
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
@@ -86,10 +86,10 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                         AvailableLanguages = languages ?? []
                     };
 
-                    prepared.Add(_editLogic.PrepareNewCardWithDefaults(raw, metadata));
+                    prepared.Add(_logic.PrepareNewCardWithDefaults(raw, metadata));
                 }
 
-                var plan = _editLogic.PlanBatch(prepared, snapshot, isEdit: false);
+                var plan = _logic.PlanBatch(prepared, snapshot, isEdit: false);
 
                 await ExecutePlanAsync(plan, uow.CurrentConnection);
                 await uow.CommitAsync();

@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardPrices;
-using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -13,7 +13,7 @@ namespace CollectaMundo.ViewModels
         private readonly IAppSettings _appSettings;
 
         // Retailer selection
-        private readonly IParentViewModelContext _parentViewModelContext;
+        private readonly ICardCollectionHost _parentViewModelContext;
 
         // Retailer options 
         public sealed record RetailerOption(string Key, string Display);
@@ -41,7 +41,7 @@ namespace CollectaMundo.ViewModels
         }
 
         // Constructor        
-        public PricesViewModel(IAppSettings settings, IParentViewModelContext parentViewModelContext)
+        public PricesViewModel(IAppSettings settings, ICardCollectionHost parentViewModelContext)
         {
             // settings
             _appSettings = settings;

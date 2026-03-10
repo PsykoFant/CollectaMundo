@@ -6,6 +6,7 @@ using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;
+using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -15,10 +16,10 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import
 {
-    public partial class ImportViewModel(IImportService importService, IParentViewModelContext parentContext, IUserPromptService userPromptService) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, ICardCollectionHost parentContext, IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IImportService _importService = importService;
-        private readonly IParentViewModelContext _parentViewModelContext = parentContext;
+        private readonly ICardCollectionHost _parentViewModelContext = parentContext;
         private readonly IUserPromptService _userPromptService = userPromptService;
 
         private ProgressSinks? _progress;

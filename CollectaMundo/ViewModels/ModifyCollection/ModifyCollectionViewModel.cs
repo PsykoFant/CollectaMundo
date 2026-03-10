@@ -1,8 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
-using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.ModifyCollection;
+using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -20,10 +20,10 @@ namespace CollectaMundo.ViewModels
         public bool IsCollectionEditVisible => CardsToAddOrEdit.Count != 0 && !HasStatus;
 
         private readonly IModifyCollectionService _service;
-        private readonly IParentViewModelContext _parentContext;
+        private readonly ICardCollectionHost _parentContext;
         private readonly bool _removeCardWhenZero;
 
-        public ModifyCollectionViewModel(IModifyCollectionService service, IParentViewModelContext parentContext, bool removeCardWhenZero)
+        public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost parentContext, bool removeCardWhenZero)
         {
             _parentContext = parentContext;
             _service = service;
@@ -205,21 +205,23 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var originals = sel.OfType<CardSetEditRowViewModel>().Select(r => r.CardToAddOrEdit).ToList();
-            if (originals.Count == 0)
+            var sourceCards = sel.OfType<CardSetEditRowViewModel>().Select(r => r.CardToAddOrEdit).Cast<CardSet>().Concat(sel.OfType<CardSet>());
+
+            var toDelete = sourceCards
+                .Select(o => new CardSet
+                {
+                    CardId = o.CardId,
+                    Name = o.Name,
+                    SelectedCondition = o.SelectedCondition,
+                    Language = o.Language,
+                    SelectedFinish = o.SelectedFinish,
+                    CardsOwned = 0,
+                }).ToList();
+
+            if (toDelete.Count == 0)
             {
                 return;
             }
-
-            var toDelete = originals.Select(o => new CardSet
-            {
-                CardId = o.CardId,
-                Name = o.Name,
-                SelectedCondition = o.SelectedCondition,
-                Language = o.Language,
-                SelectedFinish = o.SelectedFinish,
-                CardsOwned = 0,
-            }).ToList();
 
             await SubmitBatchAsync(toDelete, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
         }
@@ -232,7 +234,7 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var rows = sel.OfType<CardSetEditRowViewModel>().ToList();
+            var rows = sel.OfType<CardSet>().ToList();
             if (rows.Count == 0)
             {
                 return;
@@ -254,7 +256,7 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var rows = sel.OfType<CardSetEditRowViewModel>().ToList();
+            var rows = sel.OfType<CardSet>().ToList();
             if (rows.Count == 0)
             {
                 return;
@@ -271,9 +273,10 @@ namespace CollectaMundo.ViewModels
         // Shared helper 
         private async Task SubmitBatchAsync(IEnumerable<CardSet> cards, Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit, bool clearAfter, string summaryTitle)
         {
+            var cardList = cards.ToList();
             var snapshot = _parentContext.CreateMyCollectionSnapshot();
 
-            var changeSet = await submit(cards, snapshot);
+            var changeSet = await submit(cardList, snapshot);
 
             if (clearAfter)
             {
@@ -284,6 +287,10 @@ namespace CollectaMundo.ViewModels
 
             CollectionChanged?.Invoke(this, changeSet);
 
+            BuildSubmitSummary(changeSet, cardList, summaryTitle);
+        }
+        private static string BuildSubmitSummary(CollectionChangeSet<CardSet> changeSet, IReadOnlyList<CardSet> submittedCards, string summaryTitle)
+        {
             var sb = new StringBuilder();
 
             if (changeSet.AddedOrUpdated.Count > 0)
@@ -309,9 +316,10 @@ namespace CollectaMundo.ViewModels
                     sb.AppendLine();
                 }
 
-                sb.AppendLine("Deleted the following cards from your collection:").AppendLine();
+                sb.AppendLine("Deleted the following cards from your collection:")
+                  .AppendLine();
 
-                var deletedCards = cards
+                var deletedCards = submittedCards
                     .Where(c => c.CardId.HasValue && changeSet.RemovedIds.Contains(c.CardId.Value))
                     .ToList();
 
@@ -325,7 +333,7 @@ namespace CollectaMundo.ViewModels
                 }
             }
 
-            StatusMessage = sb.ToString().TrimEnd();
+            return sb.ToString().TrimEnd();
         }
     }
 }

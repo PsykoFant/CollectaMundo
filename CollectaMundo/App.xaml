@@ -10,7 +10,7 @@
 
             <!-- Merge first (optional, but common) -->
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/Views/Pages/PageTemplates.xaml"/>
+                <ResourceDictionary Source="/Views/Pages/SharedElements/PageTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             
             <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>

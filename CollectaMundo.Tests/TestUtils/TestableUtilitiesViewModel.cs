@@ -3,12 +3,13 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.Shell;
 using Moq;
 using System.Diagnostics;
 
 namespace CollectaMundo.Tests.TestUtils
 {
-    public class TestableUtilitiesViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, ImportViewModel importViewModel, IUserPromptService userPromptService, IParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFileSystemPicker fileSystemPicker) : UtilitiesViewModel(dbService, statusVM, importViewModel, userPromptService, parentCtx, getMyCollectionCount, fileSystemPicker)
+    public class TestableUtilitiesViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, ImportViewModel importViewModel, IUserPromptService userPromptService, ICardCollectionHost parentCtx, Func<int> getMyCollectionCount, IFileSystemPicker fileSystemPicker) : UtilitiesViewModel(dbService, statusVM, importViewModel, userPromptService, parentCtx, getMyCollectionCount, fileSystemPicker)
     {
         public Task InternalUpdateTask => _internalUpdateTask!;
         private Task? _internalUpdateTask;
@@ -148,7 +149,7 @@ namespace CollectaMundo.Tests.TestUtils
             var userPromptService = new UserPromptService();
             var statusVM = new StatusViewModel(userPromptService);
             var importVM = new ImportViewModel(null!, null!, userPromptService);
-            var parentCtx = new Mock<IParentViewModelContext>();
+            var parentCtx = new Mock<ICardCollectionHost>();
 
             var utilitiesVM = new TestableUtilitiesViewModel(dbService.Object, statusVM, importVM, userPromptService, parentCtx.Object, _collectionCount ?? (() => 5), new FileSystemPicker());
 
