@@ -18,9 +18,9 @@ namespace CollectaMundo.Views.Shell
     /// <summary>
     /// Interaction logic for SideMenuView.xaml
     /// </summary>
-    public partial class SideMenuView : UserControl
+    public partial class SideMenuLeftView : UserControl
     {
-        public SideMenuView()
+        public SideMenuLeftView()
         {
             InitializeComponent();
         }

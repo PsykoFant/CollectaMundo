@@ -28,7 +28,7 @@
             <!-- Top menu -->
             <shell:TopMenuView DataContext="{Binding TopMenuVM}" Grid.Row="0" Grid.ColumnSpan="3" />
             <!-- Side menu -->
-            <shell:SideMenuView Grid.Row="1" Grid.Column="0"/>
+            <shell:SideMenuLeftView Grid.Row="1" Grid.Column="0"/>
 
             <!-- Content section -->
             <shell:ContentSectionView Grid.Row="1" Grid.Column="1"/>

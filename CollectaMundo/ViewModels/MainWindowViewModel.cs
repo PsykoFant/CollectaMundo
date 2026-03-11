@@ -85,17 +85,19 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private object? currentSideMenuViewModel;
 
-        public bool IsSideMenuLeftVisible { get; set; }
+        // Shell UI state properties
+        [ObservableProperty]
+        private bool isSideMenuLeftVisible = true;
+
+        [ObservableProperty]
+        private bool isTopMenuEnabled = true;
+
         public void SetUiBusy(bool isBusy)
         {
             IsTopMenuEnabled = !isBusy;
             IsSideMenuLeftVisible = !isBusy;
             CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
         }
-
-        // Enable/disable top menu 
-        [ObservableProperty]
-        private bool isTopMenuEnabled = true;
 
         #region Visibility properties
 
@@ -116,8 +118,6 @@ namespace CollectaMundo.ViewModels
 
         #region Constructor and factory method
         // Constructor
-        private static readonly string[] manaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
-        private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
         private MainWindowViewModel(
             IModifyCollectionService modifyService,
             ICardImageService cardImageService,

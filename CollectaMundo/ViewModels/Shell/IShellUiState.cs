@@ -6,9 +6,10 @@ namespace CollectaMundo.ViewModels.Shell
     public interface IShellUiState : INotifyPropertyChanged
     {
         bool IsSideMenuLeftVisible { get; set; }
-        Visibility SideMenuVisibility { get; set; }
-        Visibility CardViewSectionVisibility { get; set; }
         bool IsTopMenuEnabled { get; set; }
+
+        Visibility CardViewSectionVisibility { get; set; }
+
         public void SetUiBusy(bool isBusy);
 
 

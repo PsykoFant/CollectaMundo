@@ -8,7 +8,6 @@
     <Application.Resources>
         <ResourceDictionary>
 
-            <!-- Merge first (optional, but common) -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Views/Shared/PageTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
