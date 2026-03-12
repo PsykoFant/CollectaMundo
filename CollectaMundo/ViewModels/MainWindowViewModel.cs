@@ -31,6 +31,9 @@ namespace CollectaMundo.ViewModels
         // App settings
         private readonly IAppSettings _settings;
 
+        // Operation overlay controller
+        private readonly IOperationOverlayController _operationOverlayController;
+
         // Card list / card collection management services
         private readonly IModifyCollectionService _modifyService;
         private readonly ICardListService _cardListService;
@@ -61,7 +64,6 @@ namespace CollectaMundo.ViewModels
         public FilteringSideMenuViewModel FilteringSideMenuVM { get; }
         public UtilitiesSideMenuViewModel UtilitiesSideMenuVM { get; }
 
-        public StatusViewModel StatusVM { get; }
         public CardViewModel AllCardsVM { get; }
         public CardViewModel AllCardsForDecksVM { get; }
         public CardViewModel AllCardsInDecksVM { get; }
@@ -123,7 +125,7 @@ namespace CollectaMundo.ViewModels
             ICardImageService cardImageService,
             ICardDatabaseManagementService cardDbManagementService,
             IImportService importService,
-            StatusViewModel statusVM,
+            IOperationOverlayController operationOverlayController,
             IUserPromptService userPromptService,
             FileSystemPicker fileSystemPicker,
             ICardListService cardListService,
@@ -131,10 +133,9 @@ namespace CollectaMundo.ViewModels
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null)
         {
-            StatusVM = statusVM;
-
             _modifyService = modifyService;
             _settings = settings;
+            _operationOverlayController = operationOverlayController;
             _filteringService = new FilteringService();
             _cardListService = cardListService;
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
@@ -166,7 +167,7 @@ namespace CollectaMundo.ViewModels
             ImportVM = new ImportViewModel(importService, cardCollectionHost, _userPromptService);
 
             // Utility section viewmodel
-            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, ImportVM, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, ImportVM, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
@@ -196,7 +197,7 @@ namespace CollectaMundo.ViewModels
             ICardImageService cardImageService,
             ICardDatabaseManagementService prepService,
             IImportService importService,
-            StatusViewModel statusVM,
+            IOperationOverlayController operationOverlayController,
             IUserPromptService userPromptService,
             FileSystemPicker fileSystemPicker,
             ICardListService cardListService,
@@ -205,7 +206,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

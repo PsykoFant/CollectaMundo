@@ -2,7 +2,6 @@
 using CollectaMundo.Presentation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Windows;
 
 namespace CollectaMundo.ViewModels.Shared
 {
@@ -40,7 +39,7 @@ namespace CollectaMundo.ViewModels.Shared
         private int progressValue;
 
         [ObservableProperty]
-        private string primaryButtonText = "  OK  ";
+        private string primaryButtonText;
 
         [ObservableProperty]
         private string secondaryButtonText = string.Empty;
@@ -51,44 +50,77 @@ namespace CollectaMundo.ViewModels.Shared
         [RelayCommand]
         private void SecondaryAction(object? parameter) => _secondaryAction(parameter);
 
-        public void SetPrimaryAction(Action<object?>? action)
-        {
-            _primaryAction = action ?? (_ => Hide());
-        }
-
-        public void SetSecondaryAction(Action<object?>? action)
-        {
-            _secondaryAction = action ?? (_ => { });
-        }
+        public void SetPrimaryAction(Action<object?>? action) { _primaryAction = action ?? (_ => Hide()); }
+        public void SetSecondaryAction(Action<object?>? action) { _secondaryAction = action ?? (_ => { }); }
 
         public CancellationToken PrepareCancelButton(PromptButton button)
         {
-            IsPrimaryButtonVisible = true;
-            PrimaryButtonText = "   Cancel   ";
-            return _userPromptService.Prepare(button);
-        }
+            var cancelMessage = "Cancelling…";
+            var buttonText = "   Cancel   ";
 
-        public async Task<bool> WaitForUserConfirmationAsync(
-            PromptButton button,
-            string confirmText)
-        {
-            PrimaryButtonVisibility = Visibility.Visible;
-            PrimaryButtonText = confirmText;
-            return await _userPromptService.WaitForUserConfirmationAsync(button);
-        }
+            var token = _userPromptService.GetNewCancellationToken();
 
-        public void Show(bool showProgress = false)
+            switch (button)
+            {
+                case PromptButton.Primary:
+                    IsPrimaryButtonVisible = true;
+                    PrimaryButtonText = buttonText;
+
+                    SetPrimaryAction(_ =>
+                    {
+                        Step = cancelMessage;
+                        _userPromptService.CancelCurrentOperation();
+                    });
+                    break;
+
+                case PromptButton.Secondary:
+                    IsSecondaryButtonVisible = true;
+                    SecondaryButtonText = buttonText;
+
+                    SetSecondaryAction(_ =>
+                    {
+                        Step = cancelMessage;
+                        _userPromptService.CancelCurrentOperation();
+                    });
+                    break;
+            }
+
+            return token;
+        }
+        public async Task<bool> WaitForUserConfirmationAsync(PromptButton button, string buttonText)
         {
+            _userPromptService.CancelPendingPrompt(); // ensures only one active at a time
+            var tcs = _userPromptService.CreatePrompt();
+
+            switch (button)
+            {
+                case PromptButton.Primary:
+                    IsPrimaryButtonVisible = true;
+                    PrimaryButtonText = buttonText;
+                    SetPrimaryAction(_ => _userPromptService.ConfirmPrompt());
+                    break;
+                case PromptButton.Secondary:
+                    IsSecondaryButtonVisible = true;
+                    SecondaryButtonText = buttonText;
+                    SetSecondaryAction(_ => _userPromptService.ConfirmPrompt());
+                    break;
+            }
+
+            return await tcs.Task;
+        }
+        public void Show(string message, bool showProgress = false)
+        {
+            Reset();
             IsOverlayVisible = true;
             IsProgressVisible = showProgress;
+            Headline = message;
+            IsProgressVisible = showProgress;
         }
-
         public void Hide()
         {
             IsOverlayVisible = false;
             Reset();
         }
-
         public void Reset()
         {
             IsLogoVisible = true;

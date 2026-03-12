@@ -27,7 +27,6 @@ using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
-using System.Windows;
 #endregion
 namespace CollectaMundo.ApplicationServices.Startup
 {
@@ -80,8 +79,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 }
 
                 // Main app services (feature layer)
-                operationOverlayVM.ResetStatusOverlay();
-                operationOverlayVM.StatusLabel3 = "Loading ALL the cards…";
+                operationOverlayController.Reset();
+                operationOverlayController.SetHeadline("Loading ALL the cards…");
                 await UIHelper.ForceRenderAsync();
 
                 var modifyService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo());
@@ -99,11 +98,11 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayVM, userPromptService, fileSystemPicker, cardListService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
-                operationOverlayVM.HideStatusOverlay();
-                return new RootViewModel(mainVM, operationOverlayVM);
+                operationOverlayController.Hide();
+                return new RootViewModel(mainVM, operationOverlayController);
             }
             catch (Exception ex)
             {
@@ -160,10 +159,10 @@ namespace CollectaMundo.ApplicationServices.Startup
                 operationOverlayController.Show(headline);
                 operationOverlayController.SetStep(above);
                 operationOverlayController.SetDetail(below);
-                operationOverlayController.ProgressVisibility = Visibility.Collapsed;
-                operationOverlayController.LogoVisibility = Visibility.Collapsed;
-                operationOverlayController.SetupFailVisibility = Visibility.Visible;
-                operationOverlayController.ProgressValue = 0;
+                operationOverlayController.ShowProgress(false);
+                operationOverlayController.ShowLogo(false);
+                operationOverlayController.ShowSetupFailure(true);
+                operationOverlayController.SetProgress(0);
             }
         }
     }
