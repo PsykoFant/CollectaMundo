@@ -35,7 +35,7 @@
             
             <!-- Wizards and windows -->            
             <import:ImportOverlay  Grid.Row="1" Grid.Column="1" DataContext="{Binding ImportVM}" />
-            <shared:StatusOverlay  Grid.Row="1" Grid.Column="1" DataContext="{Binding StatusVM}" />
+            <shared:OperationOverlayView  Grid.Row="1" Grid.Column="1" DataContext="{Binding StatusVM}" />
 
             <!-- Card Images -->
             <shell:CardImageView Grid.Row="1" Grid.Column="2"/>

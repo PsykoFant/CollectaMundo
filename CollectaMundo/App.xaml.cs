@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Shared;
 using CollectaMundo.Views.Shell;
 using System.Diagnostics;
 using System.Windows;
@@ -19,13 +20,14 @@ namespace CollectaMundo
             base.OnStartup(e);
 
             var userPromptService = new UserPromptService();
-            var statusVM = new StatusViewModel(userPromptService);
-            _statusWindow = new StartupWindow { DataContext = statusVM };
+            var operationOverlayVM = new OperationOverlayViewModel(userPromptService);
+            var operationOverlayController = new OperationOverlayController(operationOverlayVM);
+            _statusWindow = new StartupWindow { DataContext = operationOverlayVM };
             _statusWindow.Show();
 
             try
             {
-                var rootVM = await StartupComposition.BuildAndStartAsync(statusVM, userPromptService);
+                var rootVM = await StartupComposition.BuildAndStartAsync(operationOverlayController, userPromptService);
 
                 var mainWindow = new MainWindow
                 {

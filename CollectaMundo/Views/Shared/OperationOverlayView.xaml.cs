@@ -5,9 +5,9 @@ namespace CollectaMundo.Views.Shared
     /// <summary>
     /// Interaction logic for StatusOverlay.xaml
     /// </summary>
-    public partial class StatusOverlay : UserControl
+    public partial class OperationOverlayView : UserControl
     {
-        public StatusOverlay()
+        public OperationOverlayView()
         {
             InitializeComponent();
         }

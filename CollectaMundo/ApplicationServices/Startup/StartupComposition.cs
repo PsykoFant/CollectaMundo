@@ -26,6 +26,7 @@ using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Shared;
 using System.Diagnostics;
 using System.Windows;
 #endregion
@@ -33,7 +34,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public static class StartupComposition
     {
-        public static async Task<RootViewModel> BuildAndStartAsync(StatusViewModel statusVM, IUserPromptService userPromptService)
+        public static async Task<RootViewModel> BuildAndStartAsync(IOperationOverlayController operationOverlayController,IUserPromptService userPromptService)
         {
             try
             {
@@ -55,15 +56,15 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var priceService = new CardPriceService(settings, cardPriceRepo);
 
                 var cardDbManagementRepo = new CardDatabaseManagementRepo();
-                var progressSinks = CreateProgressSinks(statusVM);
+                var progressSinks = CreateProgressSinks(operationOverlayController);
 
                 var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, cardDbManagementRepo, priceService, missingPngSvc, remoteLookups);
 
                 var integrityService = new DatabaseIntegrityService(dbFactory, settings);
 
                 // Status overlay
-                statusVM.ShowStatusOverlay(string.Empty);
-                statusVM.StatusLabel3 = "Checking database integrity…";
+                operationOverlayController.Show(string.Empty);
+                operationOverlayController.("Checking database integrity…");
                 await UIHelper.ForceRenderAsync();
 
                 // First-time setup / repair if needed
@@ -74,14 +75,14 @@ namespace CollectaMundo.ApplicationServices.Startup
                     var prepResult = await cardDbManagementService.FirstTimeDbPrepOrchestrator();
                     if (prepResult.Code != OperationResultCode.Success)
                     {
-                        ShowStartupFailure(statusVM, prepResult);
+                        ShowStartupFailure(operationOverlayVM, prepResult);
                         throw new InvalidOperationException("Database preparation did not complete successfully.");
                     }
                 }
 
                 // Main app services (feature layer)
-                statusVM.ResetStatusOverlay();
-                statusVM.StatusLabel3 = "Loading ALL the cards…";
+                operationOverlayVM.ResetStatusOverlay();
+                operationOverlayVM.StatusLabel3 = "Loading ALL the cards…";
                 await UIHelper.ForceRenderAsync();
 
                 var modifyService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo());
@@ -99,11 +100,11 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayVM, userPromptService, fileSystemPicker, cardListService, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
-                statusVM.HideStatusOverlay();
-                return new RootViewModel(mainVM, statusVM);
+                operationOverlayVM.HideStatusOverlay();
+                return new RootViewModel(mainVM, operationOverlayVM);
             }
             catch (Exception ex)
             {
@@ -113,25 +114,24 @@ namespace CollectaMundo.ApplicationServices.Startup
 
             // --- local helpers ---
 
-            static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
+            static ProgressSinks CreateProgressSinks(IOperationOverlayController operationOverlayController) => new()
             {
-                Headline = new Progress<string>(s => vm.StatusLabel1 = s),
-                Detail = new Progress<string>(s => vm.StatusLabel2 = s),
-                Step = new Progress<string>(s => vm.StatusLabel3 = s),
-                Percent = new Progress<int>(p => vm.ProgressValue = p),
-                ProgressBarVisible = new Progress<bool>(v =>
-                    vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed),
-
+                Headline = new Progress<string>(s => operationOverlayController.SetHeadline(s)),
+                Detail = new Progress<string>(s => operationOverlayController.SetDetail(s)),
+                Step = new Progress<string>(s => operationOverlayController.SetStep(s)),
+                Percent = new Progress<int>(p => operationOverlayController.SetProgress(p)),
+                ProgressBarVisible = new Progress<bool>(v => operationOverlayController.ShowProgress(v)),
                 CancelEnabled = new Progress<bool>(enabled =>
                 {
                     if (enabled)
                     {
-                        vm.SetPrimaryAction(_ => vm.StatusLabel2 = "Cancelling...");
+                        operationOverlayController.ShowPrimaryButton(
+                            "   Cancel   ",
+                            _ => operationOverlayController.SetDetail("Cancelling..."));
                     }
                     else
                     {
-                        vm.SetPrimaryAction(null);
-                        vm.PrimaryButtonVisibility = Visibility.Collapsed;
+                        operationOverlayController.HidePrimaryButton();
                     }
                 })
             };

@@ -1,0 +1,78 @@
+﻿<UserControl x:Class="CollectaMundo.Views.Shared.OperationOverlayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="clr-namespace:CollectaMundo.ViewModels.Shared"
+             mc:Ignorable="d"
+             d:DesignHeight="600"
+             d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance vm:OperationOverlayViewModel}"
+             Visibility="{Binding OverlayVisibility}"
+             Style="{StaticResource {x:Type UserControl}}">
+
+    <Grid>
+        <Grid VerticalAlignment="Top" Margin="0,20,0,0">
+            <Image Source="/Resources/Images/Logo.png"
+                   Visibility="{Binding LogoVisibility}"
+                   Stretch="Fill"
+                   VerticalAlignment="Top"
+                   HorizontalAlignment="Center"
+                   Height="300"
+                   Width="300"
+                   Margin="0,76,0,0"/>
+
+            <Label Content="CollectaMundo" Style="{StaticResource BigHeaderLabelStyle}" />
+
+            <ProgressBar Value="{Binding ProgressValue}"
+                         Visibility="{Binding ProgressVisibility}"
+                         Margin="0,410,0,0"
+                         Style="{StaticResource CollectaMundoProgressBarStyle}" />
+
+            <Label Content="{Binding Headline}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Top"
+                   Margin="0,440,0,0"
+                   Style="{StaticResource MediumHeaderLabelStyle}" />
+
+            <Label Content="{Binding Detail}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Top"
+                   Margin="0,480,0,0"
+                   Style="{StaticResource MediumHeaderLabelStyle}" />
+
+            <Label Content="{Binding Step}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Top"
+                   Margin="0,520,0,0"
+                   Style="{StaticResource MediumHeaderLabelStyle}" />
+
+            <Image Source="/Resources/Images/SetupFail.png"
+                   Visibility="{Binding SetupFailVisibility}"
+                   Stretch="Fill"
+                   VerticalAlignment="Top"
+                   HorizontalAlignment="Center"
+                   Height="80"
+                   Width="80"
+                   Margin="0,600,0,0"/>
+
+            <Button Content="{Binding PrimaryButtonText}"
+                    Visibility="{Binding PrimaryButtonVisibility}"
+                    Command="{Binding PrimaryActionCommand}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Margin="0,650,120,0"
+                    Width="160"
+                    Height="30" />
+
+            <Button Content="{Binding SecondaryButtonText}"
+                    Visibility="{Binding SecondaryButtonVisibility}"
+                    Command="{Binding SecondaryActionCommand}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Margin="120,650,0,0"
+                    Width="160"
+                    Height="30" />
+        </Grid>
+    </Grid>
+</UserControl>

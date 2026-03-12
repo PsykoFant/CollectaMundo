@@ -8,6 +8,6 @@
         mc:Ignorable="d"
         Title="CollectaMundo" Height="600" Width="800">
     <Border Background="{StaticResource CollectaMundoBackground}" CornerRadius="10" Padding="20">
-        <shared:StatusOverlay />
+        <shared:OperationOverlayView />
     </Border>
 </Window>
