@@ -26,7 +26,6 @@ using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels;
-using CollectaMundo.ViewModels.Shared;
 using System.Diagnostics;
 using System.Windows;
 #endregion
@@ -34,7 +33,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public static class StartupComposition
     {
-        public static async Task<RootViewModel> BuildAndStartAsync(IOperationOverlayController operationOverlayController,IUserPromptService userPromptService)
+        public static async Task<RootViewModel> BuildAndStartAsync(IOperationOverlayController operationOverlayController, IUserPromptService userPromptService)
         {
             try
             {
@@ -64,7 +63,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 // Status overlay
                 operationOverlayController.Show(string.Empty);
-                operationOverlayController.("Checking database integrity…");
+                operationOverlayController.SetDetail("Checking database integrity…");
                 await UIHelper.ForceRenderAsync();
 
                 // First-time setup / repair if needed
@@ -75,7 +74,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                     var prepResult = await cardDbManagementService.FirstTimeDbPrepOrchestrator();
                     if (prepResult.Code != OperationResultCode.Success)
                     {
-                        ShowStartupFailure(operationOverlayVM, prepResult);
+                        ShowStartupFailure(operationOverlayController, prepResult);
                         throw new InvalidOperationException("Database preparation did not complete successfully.");
                     }
                 }
@@ -137,10 +136,10 @@ namespace CollectaMundo.ApplicationServices.Startup
             };
 
 
-            static void ShowStartupFailure(StatusViewModel vm, OperationResult result)
+            static void ShowStartupFailure(IOperationOverlayController operationOverlayController, OperationResult result)
             {
                 // Title/above/below mapping
-                string main = result.Code switch
+                string headline = result.Code switch
                 {
                     OperationResultCode.NoInternet => "No internet connection! Internet connection is required to continue.",
                     OperationResultCode.DownloadFailed => "First time setup failed! Could not download necessary resource files.",
@@ -158,13 +157,13 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 const string below = "CollectaMundo will close down shortly.";
 
-                vm.ShowStatusOverlay(main);
-                vm.StatusLabel2 = above;
-                vm.StatusLabel3 = below;
-                vm.ProgressVisibility = Visibility.Collapsed;
-                vm.LogoVisibility = Visibility.Collapsed;
-                vm.SetupFailVisibility = Visibility.Visible;
-                vm.ProgressValue = 0;
+                operationOverlayController.Show(headline);
+                operationOverlayController.SetStep(above);
+                operationOverlayController.SetDetail(below);
+                operationOverlayController.ProgressVisibility = Visibility.Collapsed;
+                operationOverlayController.LogoVisibility = Visibility.Collapsed;
+                operationOverlayController.SetupFailVisibility = Visibility.Visible;
+                operationOverlayController.ProgressValue = 0;
             }
         }
     }

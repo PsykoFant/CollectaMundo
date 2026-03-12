@@ -8,13 +8,13 @@
              d:DesignHeight="600"
              d:DesignWidth="800"
              d:DataContext="{d:DesignInstance vm:OperationOverlayViewModel}"
-             Visibility="{Binding OverlayVisibility}"
+             Visibility="{Binding IsOverlayVisible, Converter={StaticResource BoolToVisibilityConverter}}"
              Style="{StaticResource {x:Type UserControl}}">
 
     <Grid>
         <Grid VerticalAlignment="Top" Margin="0,20,0,0">
             <Image Source="/Resources/Images/Logo.png"
-                   Visibility="{Binding LogoVisibility}"
+                   Visibility="{Binding IsLogoVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                    Stretch="Fill"
                    VerticalAlignment="Top"
                    HorizontalAlignment="Center"
@@ -25,7 +25,7 @@
             <Label Content="CollectaMundo" Style="{StaticResource BigHeaderLabelStyle}" />
 
             <ProgressBar Value="{Binding ProgressValue}"
-                         Visibility="{Binding ProgressVisibility}"
+                         Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                          Margin="0,410,0,0"
                          Style="{StaticResource CollectaMundoProgressBarStyle}" />
 
@@ -48,7 +48,7 @@
                    Style="{StaticResource MediumHeaderLabelStyle}" />
 
             <Image Source="/Resources/Images/SetupFail.png"
-                   Visibility="{Binding SetupFailVisibility}"
+                   Visibility="{Binding IsSetupFailVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                    Stretch="Fill"
                    VerticalAlignment="Top"
                    HorizontalAlignment="Center"
@@ -57,7 +57,7 @@
                    Margin="0,600,0,0"/>
 
             <Button Content="{Binding PrimaryButtonText}"
-                    Visibility="{Binding PrimaryButtonVisibility}"
+                    Visibility="{Binding IsPrimaryButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                     Command="{Binding PrimaryActionCommand}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
@@ -66,7 +66,7 @@
                     Height="30" />
 
             <Button Content="{Binding SecondaryButtonText}"
-                    Visibility="{Binding SecondaryButtonVisibility}"
+                    Visibility="{Binding IsSecondaryButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                     Command="{Binding SecondaryActionCommand}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"

@@ -2,11 +2,7 @@
 using CollectaMundo.Presentation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace CollectaMundo.ViewModels.Shared
 {
@@ -24,23 +20,12 @@ namespace CollectaMundo.ViewModels.Shared
             _secondaryAction = _ => { };
         }
 
-        [ObservableProperty]
-        private Visibility overlayVisibility = Visibility.Collapsed;
-
-        [ObservableProperty]
-        private Visibility logoVisibility = Visibility.Visible;
-
-        [ObservableProperty]
-        private Visibility progressVisibility = Visibility.Collapsed;
-
-        [ObservableProperty]
-        private Visibility primaryButtonVisibility = Visibility.Collapsed;
-
-        [ObservableProperty]
-        private Visibility secondaryButtonVisibility = Visibility.Collapsed;
-
-        [ObservableProperty]
-        private Visibility setupFailVisibility = Visibility.Collapsed;
+        public bool IsOverlayVisible = false;
+        public bool IsLogoVisible = true;
+        public bool IsProgressVisible = false;
+        public bool IsPrimaryButtonVisible = false;
+        public bool IsSecondaryButtonVisible = false;
+        public bool IsSetupFailVisible = false;
 
         [ObservableProperty]
         private string headline = string.Empty;
@@ -78,7 +63,7 @@ namespace CollectaMundo.ViewModels.Shared
 
         public CancellationToken PrepareCancelButton(PromptButton button)
         {
-            PrimaryButtonVisibility = Visibility.Visible;
+            IsPrimaryButtonVisible = true;
             PrimaryButtonText = "   Cancel   ";
             return _userPromptService.Prepare(button);
         }
@@ -94,25 +79,25 @@ namespace CollectaMundo.ViewModels.Shared
 
         public void Show(bool showProgress = false)
         {
-            OverlayVisibility = Visibility.Visible;
-            ProgressVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;
+            IsOverlayVisible = true;
+            IsProgressVisible = showProgress;
         }
 
         public void Hide()
         {
-            OverlayVisibility = Visibility.Collapsed;
+            IsOverlayVisible = false;
             Reset();
         }
 
         public void Reset()
         {
-            LogoVisibility = Visibility.Visible;
-            ProgressVisibility = Visibility.Collapsed;
+            IsLogoVisible = true;
+            IsProgressVisible = false;
 
-            PrimaryButtonVisibility = Visibility.Collapsed;
-            SecondaryButtonVisibility = Visibility.Collapsed;
+            IsPrimaryButtonVisible = false;
+            IsSecondaryButtonVisible = false;
 
-            SetupFailVisibility = Visibility.Collapsed;
+            IsSetupFailVisible = false;
 
             Headline = string.Empty;
             Detail = string.Empty;
