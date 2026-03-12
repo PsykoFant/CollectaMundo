@@ -32,7 +32,6 @@ namespace CollectaMundo.ViewModels
             PrepareUIForCommands("Export csv-format backup of My Collection");
 
             var result = new OperationResult(OperationResultCode.Error, string.Empty);
-            _operationOverlayController.PrimaryButtonVisibility = Visibility.Visible;
 
             if (_getMyCollectionCount() == 0)
             {
@@ -40,20 +39,20 @@ namespace CollectaMundo.ViewModels
             }
             else
             {
-                _operationOverlayController.StatusLabel3 = $"Export to: {_cardDbManagementService.BackupFolderPath}";
-                _operationOverlayController.SecondaryButtonVisibility = Visibility.Visible;
+                _operationOverlayController.SetDetail($"Export to: {_cardDbManagementService.BackupFolderPath}");
 
                 // Setup primary
-                _operationOverlayController.PrimaryButtonText = "   Change backup location   ";
-                _operationOverlayController.SetPrimaryAction(_ =>
-                {
-                    string? selectedPath = _fileSystemPicker.PickFolder("Select backup folder location", _cardDbManagementService.BackupFolderPath);
-                    if (!string.IsNullOrWhiteSpace(selectedPath))
+                _operationOverlayController.ShowPrimaryButton(
+                    "   Change backup location   ",
+                    _ =>
                     {
-                        _cardDbManagementService.ChangeBackupFolderPath(selectedPath);
-                        _operationOverlayController.StatusLabel3 = $"Backup location: {selectedPath}";
-                    }
-                });
+                        string? selectedPath = _fileSystemPicker.PickFolder("Select backup folder location", _cardDbManagementService.BackupFolderPath);
+                        if (!string.IsNullOrWhiteSpace(selectedPath))
+                        {
+                            _cardDbManagementService.ChangeBackupFolderPath(selectedPath);
+                            _operationOverlayController.SetDetail($"Backup location: {selectedPath}");
+                        }
+                    });
 
                 // Await confirmation
                 if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButton.Secondary, "   Start backup   "))
@@ -64,8 +63,8 @@ namespace CollectaMundo.ViewModels
 
                 // UI state preparation AFTER user clicked
                 _cardCollectionHost.SetUiBusy(true);
-                _operationOverlayController.ResetStatusOverlay();
-                _operationOverlayController.StatusLabel1 = "Please wait - backing up up your collection ... ";
+                _operationOverlayController.Reset();
+                _operationOverlayController.SetHeadline("Please wait - backing up up your collection ... ");
 
                 // Prepare cancellation token before starting
                 var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
@@ -80,8 +79,8 @@ namespace CollectaMundo.ViewModels
             switch (result.Code)
             {
                 case OperationResultCode.Success:
-                    _operationOverlayController.StatusLabel1 = "Backup complete!";
-                    _operationOverlayController.StatusLabel3 = $"Backup created successfully at {result.Message}";
+                    _operationOverlayController.SetHeadline("Backup complete!");
+                    _operationOverlayController.SetDetail($"Backup created successfully at {result.Message}");
                     _operationOverlayController.PrimaryButtonText = "   Awesome!   ";
                     break;
 
