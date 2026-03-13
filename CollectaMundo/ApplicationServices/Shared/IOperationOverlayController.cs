@@ -21,9 +21,11 @@ namespace CollectaMundo.ApplicationServices.Shared
         void ShowProgress(bool show);
 
         void ShowPrimaryButton(string text, Action<object?>? action = null);
+        void SetPrimaryButtonText(string text);        
         void HidePrimaryButton();
 
         void ShowSecondaryButton(string text, Action<object?>? action = null);
+        void SetSecondaryButtonText(string text);
         void HideSecondaryButton();
 
         void ShowSetupFailure(bool show);

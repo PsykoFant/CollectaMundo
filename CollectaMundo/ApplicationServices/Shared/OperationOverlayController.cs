@@ -30,6 +30,11 @@ namespace CollectaMundo.ApplicationServices.Shared
             _vm.IsPrimaryButtonVisible = true;
             _vm.SetPrimaryAction(action);
         }
+        public void SetPrimaryButtonText(string text)
+        {
+            _vm.IsPrimaryButtonVisible = true;
+            _vm.PrimaryButtonText = text;
+        }
         public void HidePrimaryButton()
         {
             _vm.IsPrimaryButtonVisible = false;
@@ -40,6 +45,11 @@ namespace CollectaMundo.ApplicationServices.Shared
             _vm.SecondaryButtonText = text;
             _vm.IsSecondaryButtonVisible = true;
             _vm.SetSecondaryAction(action);
+        }
+        public void SetSecondaryButtonText(string text)
+        {
+            _vm.IsSecondaryButtonVisible= true;
+            _vm.SecondaryButtonText = text;
         }
         public void HideSecondaryButton()
         {

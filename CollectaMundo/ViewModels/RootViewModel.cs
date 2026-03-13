@@ -1,12 +1,13 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.Shared;
 
 namespace CollectaMundo.ViewModels
 {
-    public class RootViewModel(MainWindowViewModel main, IOperationOverlayController operationOverlayController)
+    public class RootViewModel(MainWindowViewModel main, OperationOverlayViewModel operationOverlayViewModel)
     {
         public MainWindowViewModel Main { get; } = main;
-        public IOperationOverlayController OperationOverlayController { get; } = operationOverlayController;
+        public OperationOverlayViewModel OperationOverlayVM { get; } = operationOverlayViewModel;
         public ImportViewModel ImportOverlay => Main.ImportVM;
     }
 }

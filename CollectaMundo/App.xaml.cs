@@ -21,13 +21,12 @@ namespace CollectaMundo
 
             var userPromptService = new UserPromptService();
             var operationOverlayVM = new OperationOverlayViewModel(userPromptService);
-            var operationOverlayController = new OperationOverlayController(operationOverlayVM);
             _statusWindow = new StartupWindow { DataContext = operationOverlayVM };
             _statusWindow.Show();
 
             try
             {
-                var rootVM = await StartupComposition.BuildAndStartAsync(operationOverlayController, userPromptService);
+                var rootVM = await StartupComposition.BuildAndStartAsync(operationOverlayVM, userPromptService);
 
                 var mainWindow = new MainWindow
                 {

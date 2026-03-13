@@ -39,7 +39,7 @@ namespace CollectaMundo.ViewModels.Shared
         private int progressValue;
 
         [ObservableProperty]
-        private string primaryButtonText;
+        private string primaryButtonText = "OK!";
 
         [ObservableProperty]
         private string secondaryButtonText = string.Empty;

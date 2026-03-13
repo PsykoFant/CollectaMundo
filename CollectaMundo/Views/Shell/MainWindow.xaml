@@ -4,9 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
-        xmlns:shell="clr-namespace:CollectaMundo.Views.Shell"
-        xmlns:shared="clr-namespace:CollectaMundo.Views.Shared"
-        xmlns:import="clr-namespace:CollectaMundo.Views.Import"        
+        xmlns:shellViews="clr-namespace:CollectaMundo.Views.Shell"
+        xmlns:sharedViews="clr-namespace:CollectaMundo.Views.Shared"
+        xmlns:importViews="clr-namespace:CollectaMundo.Views.Import"        
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodels:RootViewModel, IsDesignTimeCreatable=False}"
         Title="CollectaMundo"
@@ -26,19 +26,19 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <!-- Top menu -->
-            <shell:TopMenuView DataContext="{Binding TopMenuVM}" Grid.Row="0" Grid.ColumnSpan="3" />
+            <shellViews:TopMenuView DataContext="{Binding TopMenuVM}" Grid.Row="0" Grid.ColumnSpan="3" />
             <!-- Side menu -->
-            <shell:SideMenuLeftView Grid.Row="1" Grid.Column="0"/>
+            <shellViews:SideMenuLeftView Grid.Row="1" Grid.Column="0"/>
 
             <!-- Content section -->
-            <shell:ContentSectionView Grid.Row="1" Grid.Column="1"/>
+            <shellViews:ContentSectionView Grid.Row="1" Grid.Column="1"/>
             
             <!-- Wizards and windows -->            
-            <import:ImportOverlay  Grid.Row="1" Grid.Column="1" DataContext="{Binding ImportVM}" />
-            <shared:OperationOverlayView  Grid.Row="1" Grid.Column="1" DataContext="{Binding StatusVM}" />
+            <importViews:ImportOverlay  Grid.Row="1" Grid.Column="1" DataContext="{Binding ImportVM}" />
+            <sharedViews:OperationOverlayView  Grid.Row="1" Grid.Column="1" DataContext="{Binding OperationOverlayVM}" />
 
             <!-- Card Images -->
-            <shell:CardImageView Grid.Row="1" Grid.Column="2"/>
+            <shellViews:CardImageView Grid.Row="1" Grid.Column="2"/>
             
         </Grid>
     </Grid>    

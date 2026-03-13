@@ -35,13 +35,13 @@
                    Margin="0,440,0,0"
                    Style="{StaticResource MediumHeaderLabelStyle}" />
 
-            <Label Content="{Binding Detail}"
+            <Label Content="{Binding Step}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top"
                    Margin="0,480,0,0"
                    Style="{StaticResource MediumHeaderLabelStyle}" />
 
-            <Label Content="{Binding Step}"
+            <Label Content="{Binding Detail}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top"
                    Margin="0,520,0,0"

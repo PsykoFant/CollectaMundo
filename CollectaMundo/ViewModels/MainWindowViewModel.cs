@@ -14,6 +14,7 @@ using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Pages.SharedElements;
+using CollectaMundo.ViewModels.Shared;
 using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.SideMenuLeft;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -54,6 +55,9 @@ namespace CollectaMundo.ViewModels
         #region child viewmodels
         // Shell
         public TopMenuViewModel TopMenuVM { get; }
+
+        // OverlayViewModel
+        public OperationOverlayViewModel OperationOverlayVM { get; }
 
         // Pages
         public CardListPageViewModel SearchAndFilterPageVM { get; }
@@ -125,6 +129,7 @@ namespace CollectaMundo.ViewModels
             ICardImageService cardImageService,
             ICardDatabaseManagementService cardDbManagementService,
             IImportService importService,
+            OperationOverlayViewModel operationOverlayViewModel,
             IOperationOverlayController operationOverlayController,
             IUserPromptService userPromptService,
             FileSystemPicker fileSystemPicker,
@@ -142,6 +147,9 @@ namespace CollectaMundo.ViewModels
             _facetUpdater = facetUpdater ?? new FacetUpdater();
             _userPromptService = userPromptService;
             _filesystemPicker = fileSystemPicker;
+
+            // Operation overlay
+            OperationOverlayVM = operationOverlayViewModel;
 
             // cardlist viewmodels
             AllCardsVM = new CardViewModel();
@@ -197,6 +205,7 @@ namespace CollectaMundo.ViewModels
             ICardImageService cardImageService,
             ICardDatabaseManagementService prepService,
             IImportService importService,
+            OperationOverlayViewModel operationOverlayViewModel,
             IOperationOverlayController operationOverlayController,
             IUserPromptService userPromptService,
             FileSystemPicker fileSystemPicker,
@@ -206,7 +215,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayViewModel, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

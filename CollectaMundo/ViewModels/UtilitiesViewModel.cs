@@ -81,17 +81,17 @@ namespace CollectaMundo.ViewModels
                 case OperationResultCode.Success:
                     _operationOverlayController.SetHeadline("Backup complete!");
                     _operationOverlayController.SetDetail($"Backup created successfully at {result.Message}");
-                    _operationOverlayController.PrimaryButtonText = "   Awesome!   ";
+                    _operationOverlayController.SetPrimaryButtonText("   Awesome!   ");
                     break;
 
                 case OperationResultCode.Empty:
-                    _operationOverlayController.StatusLabel3 = result.Message;
-                    _operationOverlayController.PrimaryButtonText = "   Oh ... I guess that makes sense...   ";
+                    _operationOverlayController.SetDetail(result.Message);
+                    _operationOverlayController.SetPrimaryButtonText("   Oh ... I guess that makes sense...   ");
                     break;
 
                 default:
-                    _operationOverlayController.StatusLabel3 = $"Error: {result.Message}";
-                    _operationOverlayController.PrimaryButtonText = "   Ok :-/   ";
+                    _operationOverlayController.SetDetail($"Error: {result.Message}");
+                    _operationOverlayController.SetPrimaryButtonText("   Ok :-/   ");
                     break;
             }
         }
@@ -102,7 +102,7 @@ namespace CollectaMundo.ViewModels
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
 
-            _operationOverlayController.HideStatusOverlay();
+            _operationOverlayController.Hide();
             _importVM.ImportOverlayVisibility = Visibility.Visible;
             await _importVM.Begin(); // <-- activate first step
         }
@@ -120,9 +120,9 @@ namespace CollectaMundo.ViewModels
             }
 
             // UI state preparation AFTER user clicked
-            _operationOverlayController.ResetStatusOverlay();
+            _operationOverlayController.Reset();
             _cardCollectionHost.SetUiBusy(true);
-            _operationOverlayController.ShowStatusOverlay("Updating card prices, please wait...", true);
+            _operationOverlayController.Show("Updating card prices, please wait...", true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
 
             // Run the update
@@ -134,18 +134,18 @@ namespace CollectaMundo.ViewModels
             switch (result.Code)
             {
                 case OperationResultCode.Success:
-                    _operationOverlayController.StatusLabel1 = "Prices updated successfully!";
+                    _operationOverlayController.SetHeadline("Prices updated successfully!");
                     _cardCollectionHost.RefreshAllPrices();
                     break;
 
                 case OperationResultCode.CancelledByUser:
-                    _operationOverlayController.StatusLabel1 = "Update canceled";
-                    _operationOverlayController.StatusLabel3 = "Download aborted. No prices were updated.";
+                    _operationOverlayController.SetHeadline("Update canceled");
+                    _operationOverlayController.SetDetail("Download aborted. No prices were updated.");
                     break;
 
                 default:
-                    _operationOverlayController.StatusLabel1 = "Prices update failed!";
-                    _operationOverlayController.StatusLabel3 = result.Message;
+                    _operationOverlayController.SetHeadline("Prices update failed!");
+                    _operationOverlayController.SetDetail(result.Message);
                     break;
             }
         }
@@ -167,32 +167,31 @@ namespace CollectaMundo.ViewModels
             switch (result.Code)
             {
                 case OperationResultCode.UpToDate:
-                    _operationOverlayController.StatusLabel1 = "Check complete - card database is up to date.";
-                    _operationOverlayController.StatusLabel3 = result.Message;
+                    _operationOverlayController.SetHeadline("Check complete - card database is up to date.");
+                    _operationOverlayController.SetDetail(result.Message);
                     break;
 
                 case OperationResultCode.NeedsUpdate:
-                    _operationOverlayController.StatusLabel1 = "Check complete - update available.";
+                    _operationOverlayController.SetHeadline("Check complete - update available.");
 
                     UpdateDbVisibility = Visibility.Visible;
-                    _operationOverlayController.StatusLabel3 = result.Message;
+                    _operationOverlayController.SetDetail(result.Message);
 
-                    _operationOverlayController.SecondaryButtonVisibility = Visibility.Visible;
-                    _operationOverlayController.SecondaryButtonText = "   Update database now   ";
-                    _operationOverlayController.SetSecondaryAction(async _ =>
-                    {
-                        await UpdateDB();
-                    });
+                    _operationOverlayController.ShowSecondaryButton("   Update database now   ",
+                        async _ =>
+                        {
+                            await UpdateDB();
+                        });
                     break;
 
                 case OperationResultCode.CancelledByUser:
-                    _operationOverlayController.StatusLabel1 = "Cancelled";
-                    _operationOverlayController.StatusLabel3 = "No check was performed.";
+                    _operationOverlayController.SetHeadline("Cancelled");
+                    _operationOverlayController.SetDetail("No check was performed.");
                     break;
 
                 default:
-                    _operationOverlayController.StatusLabel1 = "Error in update check.";
-                    _operationOverlayController.StatusLabel3 = result.Message;
+                    _operationOverlayController.SetHeadline("Error in update check.");
+                    _operationOverlayController.SetDetail(result.Message);
                     break;
             }
         }
@@ -207,7 +206,7 @@ namespace CollectaMundo.ViewModels
 
             if (includeBackup)
             {
-                _operationOverlayController.StatusLabel3 = $"A csv-backup of your collection will also be created at {_cardDbManagementService.BackupFolderPath}";
+                _operationOverlayController.SetDetail($"A csv-backup of your collection will also be created at {_cardDbManagementService.BackupFolderPath}");
             }
 
             if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButton.Primary, "   Start card database update!   "))
@@ -217,24 +216,24 @@ namespace CollectaMundo.ViewModels
             }
 
             // UI state preparation AFTER user clicked
-            _operationOverlayController.ResetStatusOverlay();
+            _operationOverlayController.Reset();
             _cardCollectionHost.SetUiBusy(true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
 
             if (includeBackup)
             {
-                _operationOverlayController.ShowStatusOverlay("Please wait - backing up up your collection ... ", false);
+                _operationOverlayController.Show("Please wait - backing up up your collection ... ", false);
                 var backupResult = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
 
                 if (backupResult.Code is OperationResultCode.CancelledByUser or not OperationResultCode.Success)
                 {
-                    _operationOverlayController.StatusLabel1 = backupResult.Code == OperationResultCode.CancelledByUser
+                    _operationOverlayController.SetHeadline(
+                        backupResult.Code == OperationResultCode.CancelledByUser 
                         ? "Backup cancelled - aborting update..."
-                        : "Backup failed - aborting update...";
+                        : "Backup failed - aborting update...");
 
-                    _operationOverlayController.StatusLabel3 = backupResult.Message;
-                    _operationOverlayController.PrimaryButtonVisibility = Visibility.Visible;
-                    _operationOverlayController.PrimaryButtonText = "  OK  ";
+                    _operationOverlayController.SetDetail(backupResult.Message);
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
                     _userPromptService.ClearCancellation();
                     return;
                 }
@@ -243,13 +242,13 @@ namespace CollectaMundo.ViewModels
             }
             if (token.IsCancellationRequested)
             {
-                _operationOverlayController.ResetStatusOverlay();
-                _operationOverlayController.StatusLabel1 = "Update canceled during backup stage";
+                _operationOverlayController.Reset();
+                _operationOverlayController.SetHeadline("Update canceled during backup stage");
                 _userPromptService.ClearCancellation();
                 return;
             }
 
-            _operationOverlayController.ShowStatusOverlay("Updating database, please wait...", true);
+            _operationOverlayController.Show("Updating database, please wait...", true);
             token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary); // draw new token after backup
 
             // Run the update
@@ -262,23 +261,23 @@ namespace CollectaMundo.ViewModels
             switch (result.Code)
             {
                 case OperationResultCode.Success:
-                    _operationOverlayController.StatusLabel1 = "Database updated successfully!";
-                    if (includeBackup) { _operationOverlayController.StatusLabel3 = $"Your collection was backed up at {backupResultMessage}"; }
+                    _operationOverlayController.SetHeadline("Database updated successfully!");
+                    if (includeBackup) { _operationOverlayController.SetDetail($"Your collection was backed up at {backupResultMessage}"); }
                     UpdateDbVisibility = Visibility.Collapsed;
 
-                    _operationOverlayController.StatusLabel2 = "Reloading card lists…";
+                    _operationOverlayController.SetStep("Reloading card lists…");
                     await _cardCollectionHost.ReloadAllCardListsAndFiltersAsync();
-                    _operationOverlayController.StatusLabel2 = string.Empty;
+                    _operationOverlayController.SetStep(string.Empty);
                     break;
 
                 case OperationResultCode.CancelledByUser:
-                    _operationOverlayController.StatusLabel1 = "Update canceled";
-                    _operationOverlayController.StatusLabel3 = "Download aborted. No files were imported.";
+                    _operationOverlayController.SetHeadline("Update canceled");
+                    _operationOverlayController.SetDetail("Download aborted. No files were imported.");
                     break;
 
                 default:
-                    _operationOverlayController.StatusLabel1 = "Card database update failed!";
-                    _operationOverlayController.StatusLabel3 = result.Message;
+                    _operationOverlayController.SetHeadline("Card database update failed!");
+                    _operationOverlayController.SetDetail(result.Message);
                     break;
             }
         }
@@ -289,13 +288,12 @@ namespace CollectaMundo.ViewModels
             _importVM.ImportOverlayVisibility = Visibility.Collapsed;
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
-            _operationOverlayController.ShowStatusOverlay(message, false);
+            _operationOverlayController.Show(message, false);
         }
         private void CompleteCommandUIFlow()
         {
-            _operationOverlayController.ResetStatusOverlay();
+            _operationOverlayController.Reset();
             _cardCollectionHost.SetUiBusy(false);
-            _operationOverlayController.PrimaryButtonVisibility = Visibility.Visible;
         }
     }
 }

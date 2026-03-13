@@ -26,18 +26,20 @@ using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Shared;
 using System.Diagnostics;
 #endregion
 namespace CollectaMundo.ApplicationServices.Startup
 {
     public static class StartupComposition
     {
-        public static async Task<RootViewModel> BuildAndStartAsync(IOperationOverlayController operationOverlayController, IUserPromptService userPromptService)
+        public static async Task<RootViewModel> BuildAndStartAsync(OperationOverlayViewModel operationOverlayViewModel, IUserPromptService userPromptService)
         {
             try
             {
                 // Infrastructure
                 var settings = new AppSettings();
+                var operationOverlayController = new OperationOverlayController(operationOverlayViewModel);
 
                 // Delegate for retailer access from view models                
                 string getRetailer() => settings.PriceInfo.Retailer;
@@ -80,7 +82,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 // Main app services (feature layer)
                 operationOverlayController.Reset();
-                operationOverlayController.SetHeadline("Loading ALL the cards…");
+                operationOverlayController.SetDetail("Loading ALL the cards…");
                 await UIHelper.ForceRenderAsync();
 
                 var modifyService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo());
@@ -98,11 +100,11 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayViewModel, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 operationOverlayController.Hide();
-                return new RootViewModel(mainVM, operationOverlayController);
+                return new RootViewModel(mainVM, operationOverlayViewModel);
             }
             catch (Exception ex)
             {
@@ -133,7 +135,6 @@ namespace CollectaMundo.ApplicationServices.Startup
                     }
                 })
             };
-
 
             static void ShowStartupFailure(IOperationOverlayController operationOverlayController, OperationResult result)
             {
