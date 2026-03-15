@@ -32,9 +32,19 @@
                Visibility="{Binding IsLogoVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                Stretch="Uniform"
                HorizontalAlignment="Center"
-               Height="220"
-               Width="220"
+               Height="300"
+               Width="300"
                Margin="0,20,0,20"/>
+
+        <Image Grid.Row="1"
+               Source="/Resources/Images/SetupFail.png"
+               Visibility="{Binding IsSetupFailVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+               Stretch="Uniform"
+               HorizontalAlignment="Center"
+               Height="300"
+               Width="300"
+               Margin="0,20,0,20"/>
+
 
         <ProgressBar Grid.Row="2"
                      Value="{Binding ProgressValue}"
@@ -45,7 +55,7 @@
         <Label Grid.Row="3"
                Content="{Binding Headline}"
                HorizontalAlignment="Center"
-               Style="{StaticResource CollectaMundoHeaderFont}" />
+               Style="{StaticResource BigHeaderLabelStyle}" />
 
         <Label Grid.Row="4"
                Content="{Binding Step}"
