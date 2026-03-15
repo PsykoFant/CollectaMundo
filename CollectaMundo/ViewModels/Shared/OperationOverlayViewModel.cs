@@ -19,12 +19,23 @@ namespace CollectaMundo.ViewModels.Shared
             _secondaryAction = _ => { };
         }
 
-        public bool IsOverlayVisible = false;
-        public bool IsLogoVisible = true;
-        public bool IsProgressVisible = false;
-        public bool IsPrimaryButtonVisible = false;
-        public bool IsSecondaryButtonVisible = false;
-        public bool IsSetupFailVisible = false;
+        [ObservableProperty]
+        private bool isOverlayVisible;
+
+        [ObservableProperty]
+        private bool isLogoVisible = true;
+
+        [ObservableProperty]
+        private bool isProgressVisible;
+
+        [ObservableProperty]
+        private bool isPrimaryButtonVisible;
+
+        [ObservableProperty]
+        private bool isSecondaryButtonVisible;
+
+        [ObservableProperty]
+        private bool isSetupFailVisible;
 
         [ObservableProperty]
         private string headline = string.Empty;

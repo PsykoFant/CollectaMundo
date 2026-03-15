@@ -13,33 +13,47 @@
         Icon="/Resources/Images/Icon.ico"
         Width="1920"
         Height="960"
-        Style="{StaticResource {x:Type Window}}">    
+        Style="{StaticResource {x:Type Window}}">
     <Grid>
-        <Grid DataContext="{Binding Main}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="250"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="40"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <!-- Top menu -->
-            <shellViews:TopMenuView DataContext="{Binding TopMenuVM}" Grid.Row="0" Grid.ColumnSpan="3" />
-            <!-- Side menu -->
-            <shellViews:SideMenuLeftView Grid.Row="1" Grid.Column="0"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="250"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-            <!-- Content section -->
-            <shellViews:ContentSectionView Grid.Row="1" Grid.Column="1"/>
-            
-            <!-- Wizards and windows -->            
-            <importViews:ImportOverlay  Grid.Row="1" Grid.Column="1" DataContext="{Binding ImportVM}" />
-            <sharedViews:OperationOverlayView  Grid.Row="1" Grid.Column="1" DataContext="{Binding OperationOverlayVM}" />
+        <shellViews:TopMenuView
+        Grid.Row="0"
+        Grid.ColumnSpan="3"
+        DataContext="{Binding Main.TopMenuVM}" />
 
-            <!-- Card Images -->
-            <shellViews:CardImageView Grid.Row="1" Grid.Column="2"/>
-            
-        </Grid>
-    </Grid>    
+        <shellViews:SideMenuLeftView
+        Grid.Row="1"
+        Grid.Column="0"
+        DataContext="{Binding Main}" />
+
+        <shellViews:ContentSectionView
+        Grid.Row="1"
+        Grid.Column="1"
+        DataContext="{Binding Main}" />
+
+        <importViews:ImportOverlay
+        Grid.Row="1"
+        Grid.Column="1"
+        DataContext="{Binding Main.ImportVM}" />
+
+        <shellViews:CardImageView
+        Grid.Row="1"
+        Grid.Column="2"
+        DataContext="{Binding Main}" />
+
+        <sharedViews:OperationOverlayView
+        Grid.Row="1"
+        Grid.Column="1"
+        DataContext="{Binding OperationOverlayVM}"
+        Panel.ZIndex="100" />
+    </Grid>
 </Window>

@@ -11,68 +11,50 @@
              Visibility="{Binding IsOverlayVisible, Converter={StaticResource BoolToVisibilityConverter}}"
              Style="{StaticResource {x:Type UserControl}}">
 
-    <Grid>
-        <Grid VerticalAlignment="Top" Margin="0,20,0,0">
-            <Image Source="/Resources/Images/Logo.png"
-                   Visibility="{Binding IsLogoVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                   Stretch="Fill"
-                   VerticalAlignment="Top"
-                   HorizontalAlignment="Center"
-                   Height="300"
-                   Width="300"
-                   Margin="0,76,0,0"/>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-            <Label Content="CollectaMundo" Style="{StaticResource BigHeaderLabelStyle}" />
+        <Label Grid.Row="0"
+               Content="CollectaMundo"
+               HorizontalAlignment="Center"
+               Style="{StaticResource BigHeaderLabelStyle}" />
 
-            <ProgressBar Value="{Binding ProgressValue}"
-                         Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                         Margin="0,410,0,0"
-                         Style="{StaticResource CollectaMundoProgressBarStyle}" />
+        <Image Grid.Row="1"
+               Source="/Resources/Images/Logo.png"
+               Visibility="{Binding IsLogoVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+               Stretch="Uniform"
+               HorizontalAlignment="Center"
+               Height="220"
+               Width="220"
+               Margin="0,20,0,20"/>
 
-            <Label Content="{Binding Headline}"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Top"
-                   Margin="0,440,0,0"
-                   Style="{StaticResource MediumHeaderLabelStyle}" />
+        <ProgressBar Grid.Row="2"
+                     Value="{Binding ProgressValue}"
+                     Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                     Margin="40,10,40,20"
+                     Style="{StaticResource CollectaMundoProgressBarStyle}" />
 
-            <Label Content="{Binding Step}"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Top"
-                   Margin="0,480,0,0"
-                   Style="{StaticResource MediumHeaderLabelStyle}" />
+        <Label Grid.Row="3"
+               Content="{Binding Headline}"
+               HorizontalAlignment="Center"
+               Style="{StaticResource CollectaMundoHeaderFont}" />
 
-            <Label Content="{Binding Detail}"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Top"
-                   Margin="0,520,0,0"
-                   Style="{StaticResource MediumHeaderLabelStyle}" />
+        <Label Grid.Row="4"
+               Content="{Binding Step}"
+               HorizontalAlignment="Center"
+               Style="{StaticResource MediumHeaderLabelStyle}" />
 
-            <Image Source="/Resources/Images/SetupFail.png"
-                   Visibility="{Binding IsSetupFailVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                   Stretch="Fill"
-                   VerticalAlignment="Top"
-                   HorizontalAlignment="Center"
-                   Height="80"
-                   Width="80"
-                   Margin="0,600,0,0"/>
-
-            <Button Content="{Binding PrimaryButtonText}"
-                    Visibility="{Binding IsPrimaryButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                    Command="{Binding PrimaryActionCommand}"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    Margin="0,650,120,0"
-                    Width="160"
-                    Height="30" />
-
-            <Button Content="{Binding SecondaryButtonText}"
-                    Visibility="{Binding IsSecondaryButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                    Command="{Binding SecondaryActionCommand}"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
-                    Margin="120,650,0,0"
-                    Width="160"
-                    Height="30" />
-        </Grid>
+        <Label Grid.Row="5"
+               Content="{Binding Detail}"
+               HorizontalAlignment="Center"
+                />
     </Grid>
 </UserControl>

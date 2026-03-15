@@ -100,7 +100,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayViewModel, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 operationOverlayController.Hide();
