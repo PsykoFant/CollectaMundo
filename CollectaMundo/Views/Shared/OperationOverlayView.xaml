@@ -30,16 +30,16 @@
         <Image Grid.Row="1"
                Source="/Resources/Images/Logo.png"
                Visibility="{Binding IsLogoVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-               Stretch="Uniform"
+               Stretch="Fill"
                HorizontalAlignment="Center"
                Height="300"
                Width="300"
                Margin="0,20,0,20"/>
 
         <Image Grid.Row="1"
-               Source="/Resources/Images/SetupFail.png"
+               Source="/Resources/Images/counterspell_fail.png"
                Visibility="{Binding IsSetupFailVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-               Stretch="Uniform"
+               Stretch="None"
                HorizontalAlignment="Center"
                Height="300"
                Width="300"
@@ -55,16 +55,14 @@
         <Label Grid.Row="3"
                Content="{Binding Headline}"
                HorizontalAlignment="Center"
-               Style="{StaticResource BigHeaderLabelStyle}" />
+               Style="{StaticResource SmallHeaderLabelStyle}" />
 
         <Label Grid.Row="4"
                Content="{Binding Step}"
-               HorizontalAlignment="Center"
-               Style="{StaticResource MediumHeaderLabelStyle}" />
+               HorizontalAlignment="Center"/>
 
         <Label Grid.Row="5"
                Content="{Binding Detail}"
-               HorizontalAlignment="Center"
-                />
+               HorizontalAlignment="Center"/>
     </Grid>
 </UserControl>
