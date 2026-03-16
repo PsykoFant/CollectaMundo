@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ViewModels.Pages.SharedElements;
+﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ViewModels.Pages.SharedElements;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.ComponentModel;
@@ -19,9 +20,10 @@ public sealed partial class TopMenuViewModel : ObservableObject
     public object FilteringSideMenuViewModel { get; }
     public object UtilitiesSideMenuViewModel { get; }
 
-    public TopMenuViewModel(IShellUiState shellUIState, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
+    public TopMenuViewModel(IShellUiState shellUIState, IUserPromptService userPromptService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
     {
         _shellUIState = shellUIState;
+        _userPromptService = userPromptService;
         FilteringSideMenuViewModel = filteringSideMenuViewModel;
         UtilitiesSideMenuViewModel = utilitiesSideMenuViewModel;
         AllCardsPageViewModel = allCardsPageViewModel;
@@ -50,6 +52,18 @@ public sealed partial class TopMenuViewModel : ObservableObject
 
     [RelayCommand]
     private void ShowUtilitiesPage() => NavigateTo(UtilitiesPageViewModel);
+
+
+    //partial void OnCurrentPageChanged(Page oldValue, Page newValue)
+    //{
+    //    if (oldValue == newValue)
+    //        return;
+
+    //    _userPromptService.CancelPendingPrompt();
+    //    _userPromptService.CancelCurrentOperation();
+    //    _userPromptService.ClearCancellation();
+    //    _statusVM.HideStatusOverlay();
+    //    ImportVM.ImportOverlayVisibility = Visibility.Collapsed;
 
     private void NavigateTo(object? pageViewModel)
     {
