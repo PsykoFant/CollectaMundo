@@ -45,15 +45,17 @@
         Grid.Column="1"
         DataContext="{Binding Main.ImportVM}" />
 
+        <sharedViews:OperationOverlayView
+        Grid.Row="1"
+        Grid.Column="1"
+        DataContext="{Binding OperationOverlayVM}"
+        Panel.ZIndex="100" />        
+        
         <shellViews:CardImageView
         Grid.Row="1"
         Grid.Column="2"
         DataContext="{Binding Main}" />
 
-        <sharedViews:OperationOverlayView
-        Grid.Row="1"
-        Grid.Column="1"
-        DataContext="{Binding OperationOverlayVM}"
-        Panel.ZIndex="100" />
+
     </Grid>
 </Window>

@@ -104,7 +104,6 @@ namespace CollectaMundo.ViewModels
             _userPromptService.ClearCancellation();
 
             _operationOverlayController.Hide();
-            _importVM.ImportOverlayVisibility = Visibility.Visible;
             await _importVM.Begin(); // <-- activate first step
         }
 
@@ -286,7 +285,7 @@ namespace CollectaMundo.ViewModels
         // Private helpers
         private void PrepareUIForCommands(string message)
         {
-            _importVM.ImportOverlayVisibility = Visibility.Collapsed;
+            _importVM.IsImportOverlayVisible = false;
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
             _operationOverlayController.Show(message, false);

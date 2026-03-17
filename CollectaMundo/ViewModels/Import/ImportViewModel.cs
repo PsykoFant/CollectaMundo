@@ -6,6 +6,7 @@ using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;
+using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -16,7 +17,7 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import
 {
-    public partial class ImportViewModel(IImportService importService, IShellUiState shellUiState, IUserPromptService userPromptService) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, IShellUiState shellUiState, IUserPromptService userPromptService) : ObservableObject, IClearPageStatus
     {
         private readonly IImportService _importService = importService;
         private readonly IShellUiState _shellUiState = shellUiState;
@@ -101,6 +102,9 @@ namespace CollectaMundo.ViewModels.Import
         #region Visibility properties
 
         [ObservableProperty]
+        private bool isImportOverlayVisible;
+
+        [ObservableProperty]
         private Visibility progressVisibility = Visibility.Collapsed;
 
         [ObservableProperty]
@@ -112,8 +116,6 @@ namespace CollectaMundo.ViewModels.Import
         [ObservableProperty]
         private Visibility cancelVisibility = Visibility.Collapsed;
 
-        [ObservableProperty]
-        private Visibility importOverlayVisibility = Visibility.Collapsed;
         #endregion
 
         #region Data collections for import process
@@ -276,6 +278,7 @@ namespace CollectaMundo.ViewModels.Import
 
         public async Task Begin()
         {
+            IsImportOverlayVisible = true;
             GoToStep(ImportStep.Start);
             Progress.Headline.Report("The Import Wizard");
             _ = await _userPromptService.CreatePrompt().Task;
@@ -441,41 +444,7 @@ namespace CollectaMundo.ViewModels.Import
         }
         public Task<OperationResult> AfterStep10Action()
         {
-            ImportCardList.Clear();
-            IdMappings.Clear();
-            NameSetMappings.Clear();
-            AdditionalMappings.Clear();
-            ConditionMappings.Clear();
-            FinishMappings.Clear();
-            LanguageMappings.Clear();
-
-            // Reset progress
-            _progress = null;
-            ClearProgress();
-
-            // Reset card image view model
-            _shellUiState.CardViewSectionVisibility = Visibility.Collapsed;
-            CardImageSelectionRequested?.Invoke(this, null);
-
-            // Reset resolved import state
-            ResolvedImportItems = [];
-
-            // Reset summary
-            Summary.Reset();
-            _availableFinishes = null;
-            _availableLanguages = null;
-
-            _userPromptService.CancelPendingPrompt();
-            _userPromptService.ClearCancellation();
-
-            CurrentStepViewModel = null;
-            _currentStep = ImportStep.Start;
-
-            _shellUiState.SetUiBusy(false);
-            ImportOverlayVisibility = Visibility.Collapsed;
-            ImportFailVisibility = Visibility.Collapsed;
-            ImportSuccessVisibility = Visibility.Collapsed;
-
+            ClearPageStatus();
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Cleanup completed"));
         }
         public Task<OperationResult> SaveUnimportableItemsAsync()
@@ -592,12 +561,52 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report("User cancellation - no cards imported to collection.");
             GoToStep(ImportStep.Finish);
         }
+
+
         private void ClearProgress()
         {
             Progress.Headline.Report(string.Empty);
             Progress.Detail.Report(string.Empty);
             Progress.Percent.Report(0);
             Progress.ProgressBarVisible.Report(false);
+        }
+
+        public void ClearPageStatus()
+        {
+            ImportCardList.Clear();
+            IdMappings.Clear();
+            NameSetMappings.Clear();
+            AdditionalMappings.Clear();
+            ConditionMappings.Clear();
+            FinishMappings.Clear();
+            LanguageMappings.Clear();
+
+            // Reset progress
+            _progress = null;
+            ClearProgress();
+
+            // Reset card image view model
+            _shellUiState.CardViewSectionVisibility = Visibility.Collapsed;
+            CardImageSelectionRequested?.Invoke(this, null);
+
+            // Reset resolved import state
+            ResolvedImportItems = [];
+
+            // Reset summary
+            Summary.Reset();
+            _availableFinishes = null;
+            _availableLanguages = null;
+
+            _userPromptService.CancelPendingPrompt();
+            _userPromptService.ClearCancellation();
+
+            CurrentStepViewModel = null;
+            _currentStep = ImportStep.Start;
+
+            _shellUiState.SetUiBusy(false);
+            IsImportOverlayVisible = false;
+            ImportFailVisibility = Visibility.Collapsed;
+            ImportSuccessVisibility = Visibility.Collapsed;
         }
 
         #endregion

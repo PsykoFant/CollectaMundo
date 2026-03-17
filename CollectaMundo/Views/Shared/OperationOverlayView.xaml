@@ -13,7 +13,9 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/> <!-- Big Header -->
+            <RowDefinition Height="Auto"/> <!-- Logo -->
+            <RowDefinition Height="Auto"/> <!-- Progressbar -->
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -45,7 +47,6 @@
                Width="300"
                Margin="0,20,0,20"/>
 
-
         <ProgressBar Grid.Row="2"
                      Value="{Binding ProgressValue}"
                      Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
@@ -64,5 +65,19 @@
         <Label Grid.Row="5"
                Content="{Binding Detail}"
                HorizontalAlignment="Center"/>
+
+        <Button Grid.Row="6"
+                Command="{Binding PrimaryActionCommand}"
+                Content="{Binding PrimaryButtonText}" 
+                Visibility="{Binding IsPrimaryButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                Margin="40,10,40,20"
+                HorizontalAlignment="Center" VerticalAlignment="Top"/>
+        
+        <Button Grid.Row="7"
+                Command="{Binding SecondaryActionCommand}"
+                Content="{Binding SecondaryButtonText}" 
+                Visibility="{Binding IsSecondaryButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                Margin="40,10,40,20"
+                HorizontalAlignment="Center" VerticalAlignment="Top"/>
     </Grid>
 </UserControl>
