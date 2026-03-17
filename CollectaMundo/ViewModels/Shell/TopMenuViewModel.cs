@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shell;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,6 +10,7 @@ namespace CollectaMundo.ViewModels.Shell;
 public sealed partial class TopMenuViewModel : ObservableObject
 {
     private readonly IShellUiState _shellUIState;
+    private readonly INavigationCleanupService _navigationCleanupService;
 
     // Page viewmodels
     public object AllCardsPageViewModel { get; }
@@ -20,10 +22,11 @@ public sealed partial class TopMenuViewModel : ObservableObject
     public object FilteringSideMenuViewModel { get; }
     public object UtilitiesSideMenuViewModel { get; }
 
-    public TopMenuViewModel(IShellUiState shellUIState, IUserPromptService userPromptService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
+    public TopMenuViewModel(IShellUiState shellUIState, INavigationCleanupService navigationCleanupService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
     {
         _shellUIState = shellUIState;
-        _userPromptService = userPromptService;
+        _navigationCleanupService = navigationCleanupService;
+
         FilteringSideMenuViewModel = filteringSideMenuViewModel;
         UtilitiesSideMenuViewModel = utilitiesSideMenuViewModel;
         AllCardsPageViewModel = allCardsPageViewModel;
@@ -53,6 +56,18 @@ public sealed partial class TopMenuViewModel : ObservableObject
     [RelayCommand]
     private void ShowUtilitiesPage() => NavigateTo(UtilitiesPageViewModel);
 
+    private void NavigateTo(object? pageViewModel)
+    {
+        if (pageViewModel is null)
+            return;
+
+        var oldPage = _shellUIState.CurrentPageViewModel;
+
+        _navigationCleanupService.CleanupBeforePageChange(oldPage, pageViewModel);
+
+        _shellUIState.CurrentPageViewModel = pageViewModel;
+        _shellUIState.CurrentSideMenuViewModel = ResolveSideMenu(pageViewModel);
+    }
 
     //partial void OnCurrentPageChanged(Page oldValue, Page newValue)
     //{
@@ -65,26 +80,6 @@ public sealed partial class TopMenuViewModel : ObservableObject
     //    _statusVM.HideStatusOverlay();
     //    ImportVM.ImportOverlayVisibility = Visibility.Collapsed;
 
-    private void NavigateTo(object? pageViewModel)
-    {
-        if (pageViewModel is null)
-        {
-            return;
-        }
-
-        if (_shellUIState.CurrentPageViewModel is IResetTransientUiState oldPage)
-        {
-            oldPage.ResetTransientUiState();
-        }
-
-        _shellUIState.CurrentPageViewModel = pageViewModel;
-        _shellUIState.CurrentSideMenuViewModel = ResolveSideMenu(pageViewModel);
-
-        if (_shellUIState.CurrentPageViewModel is IResetTransientUiState newPage)
-        {
-            newPage.ResetTransientUiState();
-        }
-    }
 
     private object? ResolveSideMenu(object pageViewModel)
     {

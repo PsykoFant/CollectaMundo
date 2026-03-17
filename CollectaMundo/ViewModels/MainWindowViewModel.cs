@@ -7,6 +7,7 @@ using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shell;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.Shared;
@@ -48,6 +49,8 @@ namespace CollectaMundo.ViewModels
 
         // File system picker
         private readonly FileSystemPicker _filesystemPicker;
+
+        private readonly NavigationCleanupService _navigationCleanupService;
 
         #endregion
 
@@ -185,8 +188,11 @@ namespace CollectaMundo.ViewModels
             CurrentPageViewModel = SearchAndFilterPageVM;
             CurrentSideMenuViewModel = FilteringSideMenuVM;
 
+            // Navigation cleanup service
+            _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController);
+
             // Set up top menu with references to page VMs
-            TopMenuVM = new TopMenuViewModel(shellUIState: this, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, utilitiesPageViewModel: UtilitiesPageVM);
+            TopMenuVM = new TopMenuViewModel(shellUIState: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, utilitiesPageViewModel: UtilitiesPageVM);
 
             // event wiring
             SubscribeChildVmEvents();
