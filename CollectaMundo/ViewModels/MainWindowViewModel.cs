@@ -165,12 +165,13 @@ namespace CollectaMundo.ViewModels
             CardImageVM = new CardImageViewModel(cardImageService);
 
             var cardCollectionHost = this;
+            var shellUiState = this;
 
             // import viewmodel
-            ImportVM = new ImportViewModel(importService, cardCollectionHost, _userPromptService);
+            ImportVM = new ImportViewModel(importService, shellUiState, _userPromptService);
 
             // Utility section viewmodel
-            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, ImportVM, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
+            UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, ImportVM, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);

@@ -11,8 +11,9 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, ImportViewModel importVM, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
+    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, ImportViewModel importVM, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
     {
+        private readonly IShellUiState _shellUiState = shellUiState;
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
         private readonly IOperationOverlayController _operationOverlayController = operationOverlayController;
         private readonly ImportViewModel _importVM = importVM;
@@ -62,7 +63,7 @@ namespace CollectaMundo.ViewModels
                 }
 
                 // UI state preparation AFTER user clicked
-                _cardCollectionHost.SetUiBusy(true);
+                _shellUiState.SetUiBusy(true);
                 _operationOverlayController.Reset();
                 _operationOverlayController.SetHeadline("Please wait - backing up up your collection ... ");
 
@@ -121,7 +122,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             _operationOverlayController.Reset();
-            _cardCollectionHost.SetUiBusy(true);
+            _shellUiState.SetUiBusy(true);
             _operationOverlayController.Show("Updating card prices, please wait...", true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
 
@@ -155,7 +156,7 @@ namespace CollectaMundo.ViewModels
         private async Task CheckForDbUpdates()
         {
             PrepareUIForCommands("One moment - checking for updates...");
-            _cardCollectionHost.SetUiBusy(true);
+            _shellUiState.SetUiBusy(true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
 
             // Run check
@@ -217,7 +218,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             _operationOverlayController.Reset();
-            _cardCollectionHost.SetUiBusy(true);
+            _shellUiState.SetUiBusy(true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
 
             if (includeBackup)
@@ -228,7 +229,7 @@ namespace CollectaMundo.ViewModels
                 if (backupResult.Code is OperationResultCode.CancelledByUser or not OperationResultCode.Success)
                 {
                     _operationOverlayController.SetHeadline(
-                        backupResult.Code == OperationResultCode.CancelledByUser 
+                        backupResult.Code == OperationResultCode.CancelledByUser
                         ? "Backup cancelled - aborting update..."
                         : "Backup failed - aborting update...");
 
@@ -293,7 +294,7 @@ namespace CollectaMundo.ViewModels
         private void CompleteCommandUIFlow()
         {
             _operationOverlayController.Reset();
-            _cardCollectionHost.SetUiBusy(false);
+            _shellUiState.SetUiBusy(false);
         }
     }
 }

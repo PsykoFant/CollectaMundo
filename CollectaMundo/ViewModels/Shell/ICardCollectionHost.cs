@@ -2,7 +2,7 @@
 
 namespace CollectaMundo.ViewModels.Shell
 {
-    public interface ICardCollectionHost : IShellUiState
+    public interface ICardCollectionHost
     {
         // Cardlist and filter refresh
         ICollectionSnapshot CreateMyCollectionSnapshot();

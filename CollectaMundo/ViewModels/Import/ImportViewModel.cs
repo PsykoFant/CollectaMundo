@@ -16,10 +16,10 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import
 {
-    public partial class ImportViewModel(IImportService importService, ICardCollectionHost cardCollectionHost, IUserPromptService userPromptService) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, IShellUiState shellUiState, IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IImportService _importService = importService;
-        private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
+        private readonly IShellUiState _shellUiState = shellUiState;
         private readonly IUserPromptService _userPromptService = userPromptService;
 
         private ProgressSinks? _progress;
@@ -282,7 +282,7 @@ namespace CollectaMundo.ViewModels.Import
         }
         public async Task<OperationResult> AfterStep1Action()
         {
-            _cardCollectionHost.SetUiBusy(true);
+            _shellUiState.SetUiBusy(true);
 
             // Let the user pick the CSV file
             var filePath = _importService.PromptForCsvFile();
@@ -364,7 +364,7 @@ namespace CollectaMundo.ViewModels.Import
 
             if (result.ItemsWithMultipleUuids > 0)
             {
-                _cardCollectionHost.CardViewSectionVisibility = Visibility.Visible;
+                _shellUiState.CardViewSectionVisibility = Visibility.Visible;
                 GoToStep(ImportStep.MultipleUuidsSelection);
             }
             else
@@ -375,7 +375,7 @@ namespace CollectaMundo.ViewModels.Import
         }
         public async Task<OperationResult> AfterStep4Action()
         {
-            _cardCollectionHost.CardViewSectionVisibility = Visibility.Collapsed;
+            _shellUiState.CardViewSectionVisibility = Visibility.Collapsed;
 
             // Pass user choices to service layer
             var result = await Task.Run(() => _importService.ApplyUserSelectedUuids(ImportCardList, GetStep4Selections(), Progress));
@@ -454,7 +454,7 @@ namespace CollectaMundo.ViewModels.Import
             ClearProgress();
 
             // Reset card image view model
-            _cardCollectionHost.CardViewSectionVisibility = Visibility.Collapsed;
+            _shellUiState.CardViewSectionVisibility = Visibility.Collapsed;
             CardImageSelectionRequested?.Invoke(this, null);
 
             // Reset resolved import state
@@ -471,7 +471,7 @@ namespace CollectaMundo.ViewModels.Import
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
 
-            _cardCollectionHost.SetUiBusy(false);
+            _shellUiState.SetUiBusy(false);
             ImportOverlayVisibility = Visibility.Collapsed;
             ImportFailVisibility = Visibility.Collapsed;
             ImportSuccessVisibility = Visibility.Collapsed;
@@ -585,7 +585,7 @@ namespace CollectaMundo.ViewModels.Import
         {
             Debug.WriteLine("ImportViewModel: Cancelling import operation as per user request.");
             CancelVisibility = Visibility.Collapsed;
-            _cardCollectionHost.CardViewSectionVisibility = Visibility.Collapsed;
+            _shellUiState.CardViewSectionVisibility = Visibility.Collapsed;
             _userPromptService.CancelCurrentOperation();
             ImportFailVisibility = Visibility.Visible;
             Progress.Headline.Report("Import cancelled");
@@ -599,6 +599,7 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Percent.Report(0);
             Progress.ProgressBarVisible.Report(false);
         }
+
         #endregion
 
         #region Debug methods

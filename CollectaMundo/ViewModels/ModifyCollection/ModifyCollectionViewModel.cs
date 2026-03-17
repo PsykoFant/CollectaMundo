@@ -20,12 +20,12 @@ namespace CollectaMundo.ViewModels
         public bool IsCollectionEditVisible => CardsToAddOrEdit.Count != 0 && !HasStatus;
 
         private readonly IModifyCollectionService _service;
-        private readonly ICardCollectionHost _parentContext;
+        private readonly ICardCollectionHost _cardCollectionHost;
         private readonly bool _removeCardWhenZero;
 
-        public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost parentContext, bool removeCardWhenZero)
+        public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost cardCollectionHost, bool removeCardWhenZero)
         {
-            _parentContext = parentContext;
+            _cardCollectionHost = cardCollectionHost;
             _service = service;
             _removeCardWhenZero = removeCardWhenZero;
 
@@ -278,7 +278,7 @@ namespace CollectaMundo.ViewModels
         private async Task SubmitBatchAsync(IEnumerable<CardSet> cards, Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit, bool clearAfter, string summaryTitle)
         {
             var cardList = cards.ToList();
-            var snapshot = _parentContext.CreateMyCollectionSnapshot();
+            var snapshot = _cardCollectionHost.CreateMyCollectionSnapshot();
 
             var changeSet = await submit(cardList, snapshot);
 
