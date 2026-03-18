@@ -12,12 +12,12 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, ImportViewModel importVM, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject, IClearPageStatus
+    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IImportOverlayController importOverlayController, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
     {
         private readonly IShellUiState _shellUiState = shellUiState;
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
         private readonly IOperationOverlayController _operationOverlayController = operationOverlayController;
-        private readonly ImportViewModel _importVM = importVM;
+        private readonly IImportOverlayController _importOverlayController = importOverlayController;
         private readonly IUserPromptService _userPromptService = userPromptService;
         private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
         private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
@@ -103,9 +103,9 @@ namespace CollectaMundo.ViewModels
         {
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
-
             _operationOverlayController.Hide();
-            await _importVM.Begin(); // <-- activate first step
+
+            await _importOverlayController.ShowImportOverlayAndBeginImport(); // <-- activate first step
         }
 
         // Use case: Update prices
@@ -282,16 +282,11 @@ namespace CollectaMundo.ViewModels
                     break;
             }
         }
-        public void ClearPageStatus()
-        {
-            Debug.WriteLine("[UtilitiesViewModel] ClearPageStatus hit");
-            _importVM.EndImport();
-        }
 
         // Private helpers
         private void PrepareUIForCommands(string message)
         {
-            _importVM.IsImportOverlayVisible = false;
+            _importOverlayController.HideImportOverlayAndEndImport();
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
             _operationOverlayController.Show(message, false);
