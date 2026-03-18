@@ -63,6 +63,9 @@ public sealed partial class TopMenuViewModel : ObservableObject
 
         var oldPage = _shellUIState.CurrentPageViewModel;
 
+        Debug.WriteLine($"[TopMenu] oldPage={oldPage?.GetType().FullName ?? "<null>"}");
+        Debug.WriteLine($"[TopMenu] newPage={pageViewModel.GetType().FullName}");
+
         _navigationCleanupService.CleanupBeforePageChange(oldPage, pageViewModel);
 
         _shellUIState.CurrentPageViewModel = pageViewModel;

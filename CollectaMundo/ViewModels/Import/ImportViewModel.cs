@@ -17,7 +17,7 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import
 {
-    public partial class ImportViewModel(IImportService importService, IShellUiState shellUiState, IUserPromptService userPromptService) : ObservableObject, IClearPageStatus
+    public partial class ImportViewModel(IImportService importService, IShellUiState shellUiState, IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IImportService _importService = importService;
         private readonly IShellUiState _shellUiState = shellUiState;
@@ -444,7 +444,7 @@ namespace CollectaMundo.ViewModels.Import
         }
         public Task<OperationResult> AfterStep10Action()
         {
-            ClearPageStatus();
+            EndImport();
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Cleanup completed"));
         }
         public Task<OperationResult> SaveUnimportableItemsAsync()
@@ -571,8 +571,10 @@ namespace CollectaMundo.ViewModels.Import
             Progress.ProgressBarVisible.Report(false);
         }
 
-        public void ClearPageStatus()
+        public void EndImport()
         {
+            Debug.WriteLine("[ImportViewModel] EndImport hit");
+
             ImportCardList.Clear();
             IdMappings.Clear();
             NameSetMappings.Clear();

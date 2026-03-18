@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,7 +12,7 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, ImportViewModel importVM, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
+    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, ImportViewModel importVM, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject, IClearPageStatus
     {
         private readonly IShellUiState _shellUiState = shellUiState;
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
@@ -280,6 +281,11 @@ namespace CollectaMundo.ViewModels
                     _operationOverlayController.SetDetail(result.Message);
                     break;
             }
+        }
+        public void ClearPageStatus()
+        {
+            Debug.WriteLine("[UtilitiesViewModel] ClearPageStatus hit");
+            _importVM.EndImport();
         }
 
         // Private helpers
