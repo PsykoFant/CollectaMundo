@@ -4,10 +4,17 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
+             xmlns:vmSideMenuLeft="clr-namespace:CollectaMundo.ViewModels.SideMenuLeft"
+             xmlns:sideMenuLeftViews="clr-namespace:CollectaMundo.Views.SideMenuLeft"
              d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}"
              mc:Ignorable="d">
 
     <Grid Visibility="{Binding IsSideMenuLeftVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-        <ContentControl Content="{Binding CurrentSideMenuViewModel}" />
+        <ContentControl Content="{Binding CurrentSideMenuViewModel}">
+            <ContentControl.Resources>
+                <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuFilteringViewModel}"><sideMenuLeftViews:FilteringSideMenuView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuUtilitiesViewModel}"><sideMenuLeftViews:UtilitiesSideMenuView /></DataTemplate>
+            </ContentControl.Resources>
+        </ContentControl>
     </Grid>
 </UserControl>
