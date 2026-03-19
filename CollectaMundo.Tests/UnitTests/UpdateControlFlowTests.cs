@@ -292,7 +292,7 @@ namespace CollectaMundo.Tests.UnitTests
             await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(statusVM, "   Start backup   ");
 
             // Simulate user not confirming
-            userPromptService.CancelPendingPrompt(); // simulate close or navigation away
+            userPromptService.CancelActivePrompt(); // simulate close or navigation away
 
             await context.UtilitiesVM.InternalUpdateTask!;
 

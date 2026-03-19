@@ -69,7 +69,7 @@ namespace CollectaMundo.ViewModels.Shared
             var cancelMessage = "Cancelling…";
             var buttonText = "   Cancel   ";
 
-            var token = _userPromptService.GetNewCancellationToken();
+            var token = _userPromptService.StartOperationCancellation();
 
             switch (button)
             {
@@ -80,7 +80,7 @@ namespace CollectaMundo.ViewModels.Shared
                     SetPrimaryAction(_ =>
                     {
                         Step = cancelMessage;
-                        _userPromptService.CancelCurrentOperation();
+                        _userPromptService.CancelActiveOperation();
                     });
                     break;
 
@@ -91,7 +91,7 @@ namespace CollectaMundo.ViewModels.Shared
                     SetSecondaryAction(_ =>
                     {
                         Step = cancelMessage;
-                        _userPromptService.CancelCurrentOperation();
+                        _userPromptService.CancelActiveOperation();
                     });
                     break;
             }
@@ -100,20 +100,20 @@ namespace CollectaMundo.ViewModels.Shared
         }
         public async Task<bool> WaitForUserConfirmationAsync(PromptButton button, string buttonText)
         {
-            _userPromptService.CancelPendingPrompt(); // ensures only one active at a time
-            var tcs = _userPromptService.CreatePrompt();
+            _userPromptService.CancelActivePrompt(); // ensures only one active at a time
+            var tcs = _userPromptService.BeginPrompt();
 
             switch (button)
             {
                 case PromptButton.Primary:
                     IsPrimaryButtonVisible = true;
                     PrimaryButtonText = buttonText;
-                    SetPrimaryAction(_ => _userPromptService.ConfirmPrompt());
+                    SetPrimaryAction(_ => _userPromptService.ConfirmActivePrompt());
                     break;
                 case PromptButton.Secondary:
                     IsSecondaryButtonVisible = true;
                     SecondaryButtonText = buttonText;
-                    SetSecondaryAction(_ => _userPromptService.ConfirmPrompt());
+                    SetSecondaryAction(_ => _userPromptService.ConfirmActivePrompt());
                     break;
             }
 

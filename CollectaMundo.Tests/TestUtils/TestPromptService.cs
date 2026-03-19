@@ -4,18 +4,18 @@ namespace CollectaMundo.Tests.TestUtils
 {
     internal sealed class TestPromptService() : IUserPromptService
     {
-        public TaskCompletionSource<bool> CreatePrompt()
+        public TaskCompletionSource<bool> BeginPrompt()
         {
             var tcs = new TaskCompletionSource<bool>();
             tcs.SetResult(true); // Immediately complete
             return tcs;
         }
-        public CancellationToken GetNewCancellationToken() => CancellationToken.None;
-        public void CancelCurrentOperation() { }
-        public void ClearCancellation() { }
-        public void CancelPendingPrompt() { }
-        public void ConfirmPrompt() { }
-        public bool HasPendingPrompt => false;
+        public CancellationToken StartOperationCancellation() => CancellationToken.None;
+        public void CancelActiveOperation() { }
+        public void EndOperationCancellation() { }
+        public void CancelActivePrompt() { }
+        public void ConfirmActivePrompt() { }
+        public bool HasActivePrompt => false;
 
     }
 }

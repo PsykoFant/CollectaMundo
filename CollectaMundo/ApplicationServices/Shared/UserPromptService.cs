@@ -4,22 +4,37 @@ namespace CollectaMundo.ApplicationServices.Shared
 {
     public class UserPromptService : IUserPromptService
     {
-        private TaskCompletionSource<bool>? _confirmationTcs;
-        private CancellationTokenSource? _cts;
+        private TaskCompletionSource<bool>? _activePromptCompletion;
+        private CancellationTokenSource? _activeOperationCancellation;
 
-        public bool HasPendingPrompt => _confirmationTcs is { Task.IsCompleted: false };
+        public bool HasActivePrompt => _activePromptCompletion is { Task.IsCompleted: false };
 
-        public void CancelPendingPrompt()
+        // User confirmation prompt lifecycle
+        public TaskCompletionSource<bool> BeginPrompt()
         {
-            if (_confirmationTcs == null)
+            CancelActivePrompt();
+            _activePromptCompletion = new TaskCompletionSource<bool>();
+            return _activePromptCompletion;
+        }
+        public void ConfirmActivePrompt()
+        {
+            if (_activePromptCompletion is { Task.IsCompleted: false })
+            {
+                Debug.WriteLine("[PromptService] Confirmed prompt.");
+                _activePromptCompletion.SetResult(true);
+            }
+        }
+        public void CancelActivePrompt()
+        {
+            if (_activePromptCompletion == null)
                 return;
 
-            if (!_confirmationTcs.Task.IsCompleted)
+            if (!_activePromptCompletion.Task.IsCompleted)
             {
                 try
                 {
-                    _confirmationTcs.SetResult(false); // Mark task as completed
-                    Debug.WriteLine($"[PromptService] Prompt cancelled. Completed: {_confirmationTcs?.Task.IsCompleted}");
+                    _activePromptCompletion.SetResult(false); // Mark task as completed
+                    Debug.WriteLine($"[PromptService] Prompt cancelled. Completed: {_activePromptCompletion?.Task.IsCompleted}");
                 }
                 catch (InvalidOperationException)
                 {
@@ -27,43 +42,36 @@ namespace CollectaMundo.ApplicationServices.Shared
                 }
             }
 
-            _confirmationTcs = null; // 🧼 Always reset to ensure clean state
+            _activePromptCompletion = null; // Always reset to ensure clean state
         }
 
-        public TaskCompletionSource<bool> CreatePrompt()
+        // Operation cancellation lifecycle
+        public CancellationToken StartOperationCancellation()
         {
-            CancelPendingPrompt();
-            _confirmationTcs = new TaskCompletionSource<bool>();
-            return _confirmationTcs;
+            EndOperationCancellation();
+            _activeOperationCancellation = new CancellationTokenSource();
+            return _activeOperationCancellation.Token;
         }
-        public void ConfirmPrompt()
+        public void CancelActiveOperation()
         {
-            if (_confirmationTcs is { Task.IsCompleted: false })
-            {
-                Debug.WriteLine("[PromptService] Confirmed prompt.");
-                _confirmationTcs.SetResult(true);
-            }
-        }
-        public CancellationToken GetNewCancellationToken()
-        {
-            ClearCancellation();
-            _cts = new CancellationTokenSource();
-            return _cts.Token;
-        }
-
-        public void CancelCurrentOperation()
-        {
-            if (_cts is { IsCancellationRequested: false })
+            if (_activeOperationCancellation is { IsCancellationRequested: false })
             {
                 Debug.WriteLine("[PromptService] Cancellation requested.");
-                _cts.Cancel();
+                _activeOperationCancellation.Cancel();
             }
         }
-
-        public void ClearCancellation()
+        public void EndOperationCancellation()
         {
-            _cts?.Dispose();
-            _cts = null;
+            _activeOperationCancellation?.Dispose();
+            _activeOperationCancellation = null;
+        }
+
+        // Comprehensive reset for all interaction states
+        public void ResetInteractionState()
+        {
+            CancelActivePrompt();
+            CancelActiveOperation();
+            EndOperationCancellation();
         }
     }
 

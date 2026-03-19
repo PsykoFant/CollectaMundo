@@ -11,7 +11,7 @@ namespace CollectaMundo.ApplicationServices.Shared
     public sealed class ImportOverlayController(ImportViewModel vm) : IImportOverlayController
     {
         private readonly ImportViewModel _vm = vm;
-        public async void ShowImportOverlayAndBeginImport()
+        public async Task ShowImportOverlayAndBeginImport()
         {
             await _vm.Begin();
         }

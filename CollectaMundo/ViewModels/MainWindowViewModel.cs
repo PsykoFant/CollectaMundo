@@ -32,8 +32,9 @@ namespace CollectaMundo.ViewModels
         // App settings
         private readonly IAppSettings _settings;
 
-        // Operation overlay controller
+        // Overlay controllers
         private readonly IOperationOverlayController _operationOverlayController;
+        private readonly IImportOverlayController _importOverlayController;
 
         // Card list / card collection management services
         private readonly IModifyCollectionService _modifyService;
@@ -169,9 +170,10 @@ namespace CollectaMundo.ViewModels
 
             // import viewmodel
             ImportVM = new ImportViewModel(importService, shellUiState, _userPromptService);
+            _importOverlayController = new ImportOverlayController(ImportVM);
 
             // Utility section viewmodel
-            UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, ImportVM, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
+            UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, _importOverlayController, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
@@ -190,7 +192,7 @@ namespace CollectaMundo.ViewModels
             CurrentSideMenuViewModel = FilteringSideMenuVM;
 
             // Navigation cleanup service
-            _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController);
+            _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, _importOverlayController);
 
             // Set up top menu with references to page VMs
             TopMenuVM = new TopMenuViewModel(shellUIState: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, utilitiesPageViewModel: UtilitiesPageVM);

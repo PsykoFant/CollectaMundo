@@ -63,27 +63,11 @@ public sealed partial class TopMenuViewModel : ObservableObject
 
         var oldPage = _shellUIState.CurrentPageViewModel;
 
-        Debug.WriteLine($"[TopMenu] oldPage={oldPage?.GetType().FullName ?? "<null>"}");
-        Debug.WriteLine($"[TopMenu] newPage={pageViewModel.GetType().FullName}");
-
         _navigationCleanupService.CleanupBeforePageChange(oldPage, pageViewModel);
 
         _shellUIState.CurrentPageViewModel = pageViewModel;
         _shellUIState.CurrentSideMenuViewModel = ResolveSideMenu(pageViewModel);
     }
-
-    //partial void OnCurrentPageChanged(Page oldValue, Page newValue)
-    //{
-    //    if (oldValue == newValue)
-    //        return;
-
-    //    _userPromptService.CancelPendingPrompt();
-    //    _userPromptService.CancelCurrentOperation();
-    //    _userPromptService.ClearCancellation();
-    //    _statusVM.HideStatusOverlay();
-    //    ImportVM.ImportOverlayVisibility = Visibility.Collapsed;
-
-
     private object? ResolveSideMenu(object pageViewModel)
     {
         if (ReferenceEquals(pageViewModel, UtilitiesPageViewModel))
@@ -108,7 +92,5 @@ public sealed partial class TopMenuViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(IsTopMenuEnabled));
         }
-
-        Debug.WriteLine($"Host property changed: {e.PropertyName}");
     }
 }

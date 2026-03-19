@@ -101,8 +101,7 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         protected virtual async Task ImportFromCsv()
         {
-            _userPromptService.CancelPendingPrompt();
-            _userPromptService.ClearCancellation();
+            _userPromptService.ResetInteractionState();
             _operationOverlayController.Hide();
 
             await _importOverlayController.ShowImportOverlayAndBeginImport(); // <-- activate first step
@@ -235,7 +234,7 @@ namespace CollectaMundo.ViewModels
 
                     _operationOverlayController.SetDetail(backupResult.Message);
                     _operationOverlayController.SetPrimaryButtonText("  OK  ");
-                    _userPromptService.ClearCancellation();
+                    _userPromptService.EndOperationCancellation();
                     return;
                 }
 
@@ -245,7 +244,7 @@ namespace CollectaMundo.ViewModels
             {
                 _operationOverlayController.Reset();
                 _operationOverlayController.SetHeadline("Update canceled during backup stage");
-                _userPromptService.ClearCancellation();
+                _userPromptService.EndOperationCancellation();
                 return;
             }
 
@@ -287,8 +286,7 @@ namespace CollectaMundo.ViewModels
         private void PrepareUIForCommands(string message)
         {
             _importOverlayController.HideImportOverlayAndEndImport();
-            _userPromptService.CancelPendingPrompt();
-            _userPromptService.ClearCancellation();
+            _userPromptService.ResetInteractionState();
             _operationOverlayController.Show(message, false);
         }
         private void CompleteCommandUIFlow()
