@@ -1,4 +1,6 @@
-﻿namespace CollectaMundo.ViewModels.SideMenuLeft
+﻿using CollectaMundo.ViewModels.Filtering;
+
+namespace CollectaMundo.ViewModels.SideMenuLeft
 {
     public sealed class SideMenuFilteringViewModel(FilterViewModel filterVM, CardViewModel colorIconsViewModel)
     {

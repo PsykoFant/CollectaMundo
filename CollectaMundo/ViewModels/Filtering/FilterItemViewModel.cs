@@ -13,7 +13,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Timer = System.Timers.Timer;
 
-namespace CollectaMundo.ViewModels
+namespace CollectaMundo.ViewModels.Filtering
 {
     public partial class FilterItemViewModel : ObservableObject
     {
@@ -85,7 +85,9 @@ namespace CollectaMundo.ViewModels
         partial void OnFilterTextChanged(string value)
         {
             if (_initialized && !_suppressFiltering)
+            {
                 ApplyTextFilter();
+            }
         }
 
         [ObservableProperty]
@@ -93,7 +95,10 @@ namespace CollectaMundo.ViewModels
         partial void OnIsTradeCheckedChanged(bool value)
         {
             if (value)
+            {
                 IsNotTradeChecked = false;
+            }
+
             ApplyTradeFilter();
         }
 
@@ -102,7 +107,10 @@ namespace CollectaMundo.ViewModels
         partial void OnIsNotTradeCheckedChanged(bool value)
         {
             if (value)
+            {
                 IsTradeChecked = false;
+            }
+
             ApplyTradeFilter();
         }
 
@@ -120,10 +128,14 @@ namespace CollectaMundo.ViewModels
             var current = FilterOptions.Select(o => o.OptionName);
 
             if (_filterItemSearchLogic.IsEquivalentOptionList(current, incoming))
+            {
                 return;
+            }
 
             foreach (var opt in FilterOptions)
+            {
                 opt.PropertyChanged -= FilterOption_PropertyChanged;
+            }
 
             FilterOptions.Clear();
 
@@ -164,10 +176,14 @@ namespace CollectaMundo.ViewModels
             FilteredOptions = [.. FilterOptions];
 
             if (numericOptions != null)
+            {
                 AvailableNumericOptions = [.. numericOptions];
+            }
 
             foreach (var filterOption in FilterOptions)
+            {
                 filterOption.PropertyChanged += FilterOption_PropertyChanged;
+            }
 
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
@@ -188,14 +204,18 @@ namespace CollectaMundo.ViewModels
         private void FilterOption_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(FilterOption.IsSelected))
+            {
                 UpdateSelectedOptions();
+            }
         }
         private void UpdateSelectedOptions()
         {
             SelectedOptions.Clear();
 
             foreach (var opt in _filterItemSearchLogic.ExtractSelectedOptions(FilterOptions))
+            {
                 SelectedOptions.Add(opt);
+            }
 
             _filterViewModel.NotifyFilterChanged();
         }
@@ -233,15 +253,21 @@ namespace CollectaMundo.ViewModels
             var disp = Application.Current?.Dispatcher;
 
             if (disp != null)
+            {
                 disp.Invoke(ApplyTypingSelection);
+            }
             else
+            {
                 ApplyTypingSelection();
+            }
         }
         protected virtual void ApplyTypingSelection()
         {
             // If user already selected, don't override with CONTAINS
             if (OperatorSelection == OperatorType.EQUALS)
+            {
                 return;
+            }
 
             if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
             {
@@ -256,7 +282,9 @@ namespace CollectaMundo.ViewModels
         protected internal void HandleKeyLogic(Key key)
         {
             if (FilterCategory != FilterType.Single)
+            {
                 return;
+            }
 
             if (key == Key.Enter)
             {
@@ -319,7 +347,9 @@ namespace CollectaMundo.ViewModels
         private void KeyPressed(KeyEventArgs e)
         {
             if (FilterCategory != FilterType.Single)
+            {
                 return;
+            }
 
             var key = e.Key;
             HandleKeyLogic(key);

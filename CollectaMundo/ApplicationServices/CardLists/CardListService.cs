@@ -6,6 +6,7 @@ using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Filtering;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 

@@ -2,7 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace CollectaMundo.ViewModels
+namespace CollectaMundo.ViewModels.Filtering
 {
     public partial class FilterViewModel(IFilteringService filteringService) : ObservableObject
     {

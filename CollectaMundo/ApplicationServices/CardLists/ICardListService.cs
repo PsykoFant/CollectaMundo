@@ -1,7 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.Import.Models;
-using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Shared;
-using CollectaMundo.ViewModels;
+﻿using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Filtering;
 
 namespace CollectaMundo.ApplicationServices.CardLists
 {

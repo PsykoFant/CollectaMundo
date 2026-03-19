@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ViewModels.Pages.SharedElements;
+﻿using CollectaMundo.ViewModels.Filtering;
+using CollectaMundo.ViewModels.Pages.SharedElements;
 using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.Pages

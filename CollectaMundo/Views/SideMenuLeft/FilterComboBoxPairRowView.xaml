@@ -1,0 +1,24 @@
+﻿<UserControl x:Class="CollectaMundo.Views.SideMenuLeft.FilterComboBoxPairRowView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels.Filtering" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=viewmodels:FilterItemViewModel}">
+    <Grid Margin="0,0,0,10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="180" />
+            <ColumnDefinition Width="60" />
+        </Grid.ColumnDefinitions>
+
+        <ComboBox Grid.Column="0"
+                  IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                  Style="{StaticResource FilterMultiSelectComboStyle}" />
+
+        <ComboBox Grid.Column="1"
+                  Style="{StaticResource FilterComboBoxOperatorsStyle}"
+                  ItemsSource="{Binding AvailableOperators}"
+                  SelectedItem="{Binding OperatorSelection, Mode=TwoWay}" />
+    </Grid>
+</UserControl>

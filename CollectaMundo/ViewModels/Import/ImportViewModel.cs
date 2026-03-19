@@ -6,7 +6,6 @@ using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;
-using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -573,8 +572,6 @@ namespace CollectaMundo.ViewModels.Import
 
         public void EndImport()
         {
-            Debug.WriteLine("[ImportViewModel] EndImport hit");
-
             ImportCardList.Clear();
             IdMappings.Clear();
             NameSetMappings.Clear();

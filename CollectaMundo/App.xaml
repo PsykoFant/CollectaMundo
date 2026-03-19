@@ -4,6 +4,7 @@
              xmlns:viewmodelsPages="clr-namespace:CollectaMundo.ViewModels.Pages"    
              xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:local="clr-namespace:CollectaMundo">
     <Application.Resources>
         <ResourceDictionary>
@@ -24,6 +25,32 @@
             <FontFamily x:Key="CollectaMundoFont">pack://application:,,,/Resources/Fonts/#MPlantin</FontFamily>
             <FontFamily x:Key="CollectaMundoHeaderFont">pack://application:,,,/Resources/Fonts/#Beleren2016</FontFamily>
 
+            <!-- Header font style -->
+            <Style x:Key="BelerenBold">
+                <Setter Property="TextElement.FontFamily" Value="{StaticResource CollectaMundoHeaderFont}">
+                </Setter>
+            </Style>
+
+            <!-- Header label style -->
+            <Style x:Key="BaseHeaderLabelStyle" TargetType="Label">
+                <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalAlignment" Value="Top" />
+                <Setter Property="Margin" Value="0" />
+            </Style>
+
+            <Style x:Key="BigHeaderLabelStyle" TargetType="Label" BasedOn="{StaticResource BaseHeaderLabelStyle}">
+                <Setter Property="FontSize" Value="48" />
+            </Style>
+
+            <Style x:Key="MediumHeaderLabelStyle" TargetType="Label" BasedOn="{StaticResource BaseHeaderLabelStyle}">
+                <Setter Property="FontSize" Value="24" />
+            </Style>
+
+            <Style x:Key="SmallHeaderLabelStyle" TargetType="Label" BasedOn="{StaticResource BaseHeaderLabelStyle}">
+                <Setter Property="FontSize" Value="16" />
+            </Style>
+
             <Style x:Key="CollectaMundoControlBaseStyle" TargetType="Control">
                 <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}" />
                 <Setter Property="Background" Value="{StaticResource CollectaMundoBackground}" />
@@ -33,6 +60,7 @@
             <Style TargetType="Window" BasedOn="{StaticResource CollectaMundoControlBaseStyle}" />
             <Style TargetType="UserControl" BasedOn="{StaticResource CollectaMundoControlBaseStyle}" />
 
+            <!-- Style for card datagrid -->            
             <Style x:Key="CardGridBaseStyle" TargetType="{x:Type DataGrid}">
                 <!-- behavior / perf -->
                 <Setter Property="AutoGenerateColumns" Value="False"/>
@@ -60,6 +88,7 @@
                 <Setter Property="behaviors:DataGridPersistSortBehavior.Enable" Value="True"/>
             </Style>
 
+            <!-- Style for stepper buttons for card to add/edit listview -->
             <Style x:Key="StepperButtonStyle" TargetType="Button">
                 <Setter Property="Width" Value="15"/>
                 <Setter Property="Background" Value="#FFFBF7B4"/>
@@ -70,7 +99,7 @@
             <!-- Font for MenuItem (datagrid context menu) -->
             <Style TargetType="MenuItem"><Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}" /></Style>
 
-            <!-- Define the Style for the buttons -->
+            <!-- Define the Style for all buttons -->
             <Style x:Key="BaseButtonStyle" TargetType="{x:Type ButtonBase}">
                 <Setter Property="Background" Value="#FFDDDDDD"/>
                 <Setter Property="Foreground" Value="Black"/>
@@ -128,6 +157,7 @@
                 <Setter Property="FontWeight" Value="Bold"/>
             </Style>
 
+            <!-- Text fields -->
             <Style TargetType="{x:Type TextBox}">
                 <Setter Property="Background" Value="#FFDDDDDD"/>
                 <Setter Property="Foreground" Value="Black"/>
@@ -180,33 +210,102 @@
                 </Setter>
             </Style>
 
+            <!-- Filter menu styles -->
+            <Style x:Key="FilterComboBoxStyle" TargetType="ComboBox">
+                <Setter Property="Width" Value="180"/>
+                <Setter Property="Height" Value="20"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="VerticalAlignment" Value="Top"/>
+            </Style>
 
-            <!-- Header font style -->
-            <Style x:Key="BelerenBold">
-                <Setter Property="TextElement.FontFamily" Value="{StaticResource CollectaMundoHeaderFont}">
+            <Style x:Key="FilterComboBoxOperatorsStyle" TargetType="ComboBox">
+                <Setter Property="Width" Value="60"/>
+                <Setter Property="HorizontalAlignment" Value="Right"/>
+                <Setter Property="VerticalAlignment" Value="Top"/>
+            </Style>
+
+            <Style x:Key="FilterMultiSelectComboStyle"
+       TargetType="ComboBox"
+       BasedOn="{StaticResource FilterComboBoxStyle}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ComboBox}">
+                            <Grid>
+                                <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                             Background="Transparent"
+                             Padding="3,3,0,0"
+                             Margin="0"
+                             Foreground="{Binding TextForeground, Mode=TwoWay}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="GotFocus">
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
+
+                                <ToggleButton Focusable="False"
+                                  ClickMode="Press"
+                                  HorizontalAlignment="Right"
+                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <TextBlock Text="{Binding ReadableLabel}" Margin="5,0"/>
+                                </ToggleButton>
+
+                                <Popup x:Name="Popup"
+                           Placement="Bottom"
+                           IsOpen="{TemplateBinding IsDropDownOpen}"
+                           StaysOpen="False">
+                                    <Border Background="White"
+                                BorderThickness="1"
+                                BorderBrush="Black">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}"
+                                     SelectionMode="Multiple"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     ScrollViewer.CanContentScroll="True">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
+                                            <ListBox.Resources>
+                                                <Style TargetType="{x:Type ListBoxItem}">
+                                                    <Setter Property="SnapsToDevicePixels" Value="True"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                <CheckBox Margin="5,2"
+                                                              Width="225"
+                                                              Content="{Binding OptionName}"
+                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                              HorizontalContentAlignment="Left">
+                                                                    <CheckBox.ContentTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock Text="{Binding}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           ToolTip="{Binding}"
+                                                                           MaxWidth="215"
+                                                                           TextWrapping="NoWrap" />
+                                                                        </DataTemplate>
+                                                                    </CheckBox.ContentTemplate>
+                                                                </CheckBox>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ListBox.Resources>
+                                        </ListBox>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
                 </Setter>
             </Style>
 
-            <!-- Header label style -->
-            <Style x:Key="BaseHeaderLabelStyle" TargetType="Label">
-                <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}" />
-                <Setter Property="HorizontalAlignment" Value="Center" />
-                <Setter Property="VerticalAlignment" Value="Top" />
-                <Setter Property="Margin" Value="0" />
-            </Style>
 
-            <Style x:Key="BigHeaderLabelStyle" TargetType="Label" BasedOn="{StaticResource BaseHeaderLabelStyle}">
-                <Setter Property="FontSize" Value="48" />
-            </Style>
 
-            <Style x:Key="MediumHeaderLabelStyle" TargetType="Label" BasedOn="{StaticResource BaseHeaderLabelStyle}">
-                <Setter Property="FontSize" Value="24" />
-            </Style>
-
-            <Style x:Key="SmallHeaderLabelStyle" TargetType="Label" BasedOn="{StaticResource BaseHeaderLabelStyle}">
-                <Setter Property="FontSize" Value="16" />
-            </Style>            
-            
 
         </ResourceDictionary>
     </Application.Resources>

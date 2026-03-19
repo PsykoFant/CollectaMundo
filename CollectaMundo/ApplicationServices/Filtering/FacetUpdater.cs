@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering.Models;
-using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Filtering;
 
 namespace CollectaMundo.ApplicationServices.Filtering
 {

@@ -12,6 +12,7 @@ using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
+using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Pages.SharedElements;

@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
-using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Filtering;
 using System.Diagnostics;
 using System.Text;
 using System.Windows;
@@ -14,7 +14,9 @@ namespace CollectaMundo.ApplicationServices.Filtering
         public List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> vmFilters)
         {
             if (vmFilters == null || !vmFilters.Any())
+            {
                 return [.. cards];
+            }
 
             var criteria = vmFilters.Select(vm => new FilteringLogic(
                 vm.CriteriaKey,
@@ -26,7 +28,9 @@ namespace CollectaMundo.ApplicationServices.Filtering
                 vm.DefaultText)).ToList();
 
             if (criteria.Count == 0)
+            {
                 return [.. cards];
+            }
 
             try
             {
