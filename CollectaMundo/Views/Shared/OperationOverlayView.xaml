@@ -14,21 +14,19 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Big Header -->
-            <RowDefinition Height="Auto"/> <!-- Logo -->
+            <RowDefinition Height="Auto"/> <!-- Graphics -->
             <RowDefinition Height="Auto"/> <!-- Progressbar -->
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/> <!-- Step headline -->
+            <RowDefinition Height="Auto"/> <!-- Step stepname -->
+            <RowDefinition Height="Auto"/> <!-- Step detail -->
+            <RowDefinition Height="Auto"/> <!-- Primary Action Button -->
+            <RowDefinition Height="*"/> <!-- Secondary Action Button -->
         </Grid.RowDefinitions>
 
-        <Label Grid.Row="0"
-               Content="CollectaMundo"
-               HorizontalAlignment="Center"
-               Style="{StaticResource BigHeaderLabelStyle}" />
+        <!-- Big Header -->
+        <Label Grid.Row="0" Content="CollectaMundo" HorizontalAlignment="Center" Style="{StaticResource BigHeaderLabelStyle}" />
 
+        <!-- Graphics -->
         <Image Grid.Row="1"
                Source="/Resources/Images/Logo.png"
                Visibility="{Binding IsLogoVisible, Converter={StaticResource BoolToVisibilityConverter}}"
@@ -36,7 +34,7 @@
                HorizontalAlignment="Center"
                Height="300"
                Width="300"
-               Margin="0,20,0,20"/>
+               Margin="0,0,0,20"/>
 
         <Image Grid.Row="1"
                Source="/Resources/Images/counterspell_fail.png"
@@ -45,34 +43,33 @@
                HorizontalAlignment="Center"
                Height="300"
                Width="300"
-               Margin="0,20,0,20"/>
+               Margin="0,0,0,20"/>
 
+        <!-- Progressbar -->
         <ProgressBar Grid.Row="2"
                      Value="{Binding ProgressValue}"
                      Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                     Margin="40,10,40,20"
+                     Margin="40,0,40,20"
                      Style="{StaticResource CollectaMundoProgressBarStyle}" />
 
-        <Label Grid.Row="3"
-               Content="{Binding Headline}"
-               HorizontalAlignment="Center"
-               Style="{StaticResource SmallHeaderLabelStyle}" />
+        <!-- Step headline -->
+        <Label Grid.Row="3" Content="{Binding Headline}" HorizontalAlignment="Center" Style="{StaticResource SmallHeaderLabelStyle}" />
 
-        <Label Grid.Row="4"
-               Content="{Binding Step}"
-               HorizontalAlignment="Center"/>
+        <!-- Step stepname -->
+        <Label Grid.Row="4" Content="{Binding Step}" HorizontalAlignment="Center"/>
 
-        <Label Grid.Row="5"
-               Content="{Binding Detail}"
-               HorizontalAlignment="Center"/>
+        <!-- Step detail -->
+        <Label Grid.Row="5" Content="{Binding Detail}" HorizontalAlignment="Center"/>
 
+        <!-- Primary Action Button -->
         <Button Grid.Row="6"
                 Command="{Binding PrimaryActionCommand}"
                 Content="{Binding PrimaryButtonText}" 
                 Visibility="{Binding IsPrimaryButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                Margin="40,10,40,20"
+                Margin="40,20,40,20"
                 HorizontalAlignment="Center" VerticalAlignment="Top"/>
-        
+
+        <!-- Secondary Action Button -->
         <Button Grid.Row="7"
                 Command="{Binding SecondaryActionCommand}"
                 Content="{Binding SecondaryButtonText}" 

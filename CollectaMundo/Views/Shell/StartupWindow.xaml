@@ -6,8 +6,8 @@
         xmlns:shared="clr-namespace:CollectaMundo.Views.Shared"
         Icon="/Resources/Images/Icon.ico" 
         mc:Ignorable="d"
-        Title="CollectaMundo" Height="600" Width="800">
-    <Border Background="{StaticResource CollectaMundoBackground}" CornerRadius="10" Padding="20">
+        Title="CollectaMundo" Height="610" Width="800">
+    <Border Background="{StaticResource CollectaMundoBackground}" CornerRadius="10">
         <shared:OperationOverlayView />
     </Border>
 </Window>

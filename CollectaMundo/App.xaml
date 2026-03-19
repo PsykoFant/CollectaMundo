@@ -7,11 +7,7 @@
              xmlns:local="clr-namespace:CollectaMundo">
     <Application.Resources>
         <ResourceDictionary>
-
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/Views/Shared/PageTemplates.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-            
+           
             <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
             <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
             <converters:CountToSummaryConverter x:Key="CountToSummaryConverter"/>
