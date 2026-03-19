@@ -12,8 +12,8 @@
     <Grid Visibility="{Binding IsSideMenuLeftVisible, Converter={StaticResource BoolToVisibilityConverter}}">
         <ContentControl Content="{Binding CurrentSideMenuViewModel}">
             <ContentControl.Resources>
-                <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuFilteringViewModel}"><sideMenuLeftViews:FilteringSideMenuView /></DataTemplate>
-                <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuUtilitiesViewModel}"><sideMenuLeftViews:UtilitiesSideMenuView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuFilteringViewModel}"><sideMenuLeftViews:SideMenuFilteringView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuUtilitiesViewModel}"><sideMenuLeftViews:SideMenuUtilitiesView /></DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
     </Grid>
