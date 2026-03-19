@@ -62,11 +62,11 @@ namespace CollectaMundo.ViewModels
         // Pages
         public CardListPageViewModel SearchAndFilterPageVM { get; }
         public CardListPageViewModel MyCollectionPageVM { get; }
-        public UtilitiesPageViewModel UtilitiesPageVM { get; }
+        public PagesUtilitiesViewModel UtilitiesPageVM { get; }
 
         // Menus
-        public FilteringSideMenuViewModel FilteringSideMenuVM { get; }
-        public UtilitiesSideMenuViewModel UtilitiesSideMenuVM { get; }
+        public SideMenuFilteringViewModel FilteringSideMenuVM { get; }
+        public SideMenuUtilitiesViewModel UtilitiesSideMenuVM { get; }
 
         public CardViewModel AllCardsVM { get; }
         public CardViewModel AllCardsForDecksVM { get; }
@@ -179,13 +179,13 @@ namespace CollectaMundo.ViewModels
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new SearchAndFilterPageViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
-            MyCollectionPageVM = new MyCollectionPageViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
-            UtilitiesPageVM = new UtilitiesPageViewModel();
+            SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
+            MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
+            UtilitiesPageVM = new PagesUtilitiesViewModel();
 
             // Side menu viewmodels
-            FilteringSideMenuVM = new FilteringSideMenuViewModel(FilterVM, ColorIconsViewModel);
-            UtilitiesSideMenuVM = new UtilitiesSideMenuViewModel(UtilitiesVM, PricesVM);
+            FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterVM, ColorIconsViewModel);
+            UtilitiesSideMenuVM = new SideMenuUtilitiesViewModel(UtilitiesVM, PricesVM);
 
             // Set initial page and menu
             CurrentPageViewModel = SearchAndFilterPageVM;

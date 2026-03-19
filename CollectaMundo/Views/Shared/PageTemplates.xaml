@@ -5,23 +5,23 @@
                     xmlns:vmPages="clr-namespace:CollectaMundo.ViewModels.Pages"
                     xmlns:vmSideMenuLeft="clr-namespace:CollectaMundo.ViewModels.SideMenuLeft">
 
-    <DataTemplate DataType="{x:Type vmPages:SearchAndFilterPageViewModel}">
+    <DataTemplate DataType="{x:Type vmPages:PagesSearchAndFilterViewModel}">
         <pageViews:SearchAndFilterPageView />
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type vmPages:MyCollectionPageViewModel}">
+    <DataTemplate DataType="{x:Type vmPages:PagesMyCollectionViewModel}">
         <pageViews:MyCollectionPageView />
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type vmPages:UtilitiesPageViewModel}">
+    <DataTemplate DataType="{x:Type vmPages:PagesUtilitiesViewModel}">
         <pageViews:UtilitiesPageView />
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type vmSideMenuLeft:FilteringSideMenuViewModel}">
+    <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuFilteringViewModel}">
         <sideMenuLeftViews:FilteringSideMenuView />
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type vmSideMenuLeft:UtilitiesSideMenuViewModel}">
+    <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuUtilitiesViewModel}">
         <sideMenuLeftViews:UtilitiesSideMenuView />
     </DataTemplate>
 

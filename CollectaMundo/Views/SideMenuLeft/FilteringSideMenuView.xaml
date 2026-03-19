@@ -6,7 +6,7 @@
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:sideMenuVm="clr-namespace:CollectaMundo.ViewModels.SideMenuLeft"
              mc:Ignorable="d" 
-             d:DataContext="{d:DesignInstance Type=sideMenuVm:FilteringSideMenuViewModel, IsDesignTimeCreatable=False}"
+             d:DataContext="{d:DesignInstance Type=sideMenuVm:SideMenuFilteringViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid x:Name="GridFiltering">
 

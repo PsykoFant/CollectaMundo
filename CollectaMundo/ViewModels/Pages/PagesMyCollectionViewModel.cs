@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.Pages
 {
-    public sealed class SearchAndFilterPageViewModel(
+    public sealed class PagesMyCollectionViewModel(
         CardViewModel cardsVM,
         CardImageViewModel cardImageVM,
         FilterViewModel filterVM,

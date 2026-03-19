@@ -1,6 +1,6 @@
 ﻿namespace CollectaMundo.ViewModels.Pages
 {
-    public sealed class UtilitiesPageViewModel
+    public sealed class PagesUtilitiesViewModel
     {
         public static string PageTitle => "Utilities";
     }
