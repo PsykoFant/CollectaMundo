@@ -1,0 +1,15 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters">
+
+    <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
+    <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
+    <converters:CountToSummaryConverter x:Key="CountToSummaryConverter"/>
+    <converters:OperatorToSymbolConverter x:Key="OperatorToSymbolConverter"/>
+    <converters:PageToVisibilityConverter x:Key="PageToVisibilityConverter"
+                                          VisibleVisibility="Visible"
+                                          HiddenVisibility="Collapsed" />
+    <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+    <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+</ResourceDictionary>

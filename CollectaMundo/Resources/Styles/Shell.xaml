@@ -1,0 +1,13 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style x:Key="CollectaMundoControlBaseStyle" TargetType="Control">
+        <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}" />
+        <Setter Property="Background" Value="{StaticResource CollectaMundoBackground}" />
+    </Style>
+
+    <!-- Window and UserControl styles can inherit from this -->
+    <Style TargetType="Window" BasedOn="{StaticResource CollectaMundoControlBaseStyle}" />
+    <Style TargetType="UserControl" BasedOn="{StaticResource CollectaMundoControlBaseStyle}" />
+
+</ResourceDictionary>

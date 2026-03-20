@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using CollectaMundo.ViewModels.Shell;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
@@ -16,7 +17,7 @@ namespace CollectaMundo.Presentation.Converters
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is Page currentPage && parameter is Page buttonPage)
+            if (value is ShellPage currentPage && parameter is ShellPage buttonPage)
             {
                 return currentPage == buttonPage
                     ? VisibleVisibility

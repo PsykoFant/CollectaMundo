@@ -1,0 +1,11 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <LinearGradientBrush x:Key="CollectaMundoBackground" EndPoint="0.5,1" StartPoint="0.5,0">
+        <GradientStop Color="#FFFBF7B4"/>
+        <GradientStop Color="White" Offset="1"/>
+    </LinearGradientBrush>
+
+    <FontFamily x:Key="CollectaMundoFont">pack://application:,,,/Resources/Fonts/#MPlantin</FontFamily>
+    <FontFamily x:Key="CollectaMundoHeaderFont">pack://application:,,,/Resources/Fonts/#Beleren2016</FontFamily>
+</ResourceDictionary>
