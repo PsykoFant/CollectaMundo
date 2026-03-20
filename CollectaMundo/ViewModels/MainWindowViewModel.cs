@@ -18,6 +18,7 @@ using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.SideMenuLeft;
+using CollectaMundo.ViewModels.SideMenuRight;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
@@ -93,11 +94,17 @@ namespace CollectaMundo.ViewModels
         private ShellPage currentPage;
 
         [ObservableProperty]
-        private object? currentSideMenuViewModel;
+        private object? currentSideMenuLeftViewModel;
+
+        [ObservableProperty]
+        private object? currentSideMenuRightViewModel;
 
         // Shell UI state properties
         [ObservableProperty]
         private bool isSideMenuLeftVisible = true;
+
+        [ObservableProperty]
+        private bool isSideMenuRightVisible = true;
 
         [ObservableProperty]
         private bool isTopMenuEnabled = true;
@@ -106,23 +113,8 @@ namespace CollectaMundo.ViewModels
         {
             IsTopMenuEnabled = !isBusy;
             IsSideMenuLeftVisible = !isBusy;
-            CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
+            IsSideMenuRightVisible = !isBusy;
         }
-
-        #region Visibility properties
-
-        // Side menu subsections visibility properties - we will eventually refactor this as well
-        [ObservableProperty]
-        private Visibility sideMenuFilterVisibility = Visibility.Visible;
-
-        [ObservableProperty] //  - we will eventually refactor this as well
-        private Visibility sideMenuUtilsVisibility = Visibility.Hidden;
-
-        // Card view visibility  - we will eventually refactor this as well
-        [ObservableProperty]
-        private Visibility cardViewSectionVisibility = Visibility.Visible;
-
-        #endregion
 
         #endregion
 
@@ -193,7 +185,8 @@ namespace CollectaMundo.ViewModels
 
             // Set initial page and menu
             CurrentPageViewModel = SearchAndFilterPageVM;
-            CurrentSideMenuViewModel = FilteringSideMenuVM;
+            CurrentSideMenuLeftViewModel = FilteringSideMenuVM;
+            CurrentSideMenuRightViewModel = CardImageVM;
             CurrentPage = ShellPage.SearchAndFilter;
 
             // Navigation cleanup service

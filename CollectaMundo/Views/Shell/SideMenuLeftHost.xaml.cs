@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CollectaMundo.Views.SideMenuLeft
+namespace CollectaMundo.Views.Shell
 {
     /// <summary>
-    /// Interaction logic for FilterComboBoxPairRowView.xaml
+    /// Interaction logic for SideMenuView.xaml
     /// </summary>
-    public partial class FilterComboBoxPairRowView : UserControl
+    public partial class SideMenuLeftHost : UserControl
     {
-        public FilterComboBoxPairRowView()
+        public SideMenuLeftHost()
         {
             InitializeComponent();
         }

@@ -4,7 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using System.IO;
 using System.Windows.Media.Imaging;
 
-namespace CollectaMundo.ViewModels
+namespace CollectaMundo.ViewModels.SideMenuRight
 {
     public partial class CardImageViewModel(ICardImageService cardImageService) : ObservableObject
     {

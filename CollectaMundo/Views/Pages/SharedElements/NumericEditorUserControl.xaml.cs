@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CollectaMundo.Views.Shell
+namespace CollectaMundo.Views.Pages.SharedElements
 {
     /// <summary>
-    /// Interaction logic for SideMenuView.xaml
+    /// Interaction logic for NumericEditorUserControl.xaml
     /// </summary>
-    public partial class SideMenuLeftView : UserControl
+    public partial class NumericEditorUserControl : UserControl
     {
-        public SideMenuLeftView()
+        public NumericEditorUserControl()
         {
             InitializeComponent();
         }

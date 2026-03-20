@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace CollectaMundo.Views.Pages.SharedElements
 {
     /// <summary>
-    /// Interaction logic for NumericEditorView.xaml
+    /// Interaction logic for CardListPageChromeUserControl.xaml
     /// </summary>
-    public partial class NumericEditorView : UserControl
+    public partial class CardListPageChromeUserControl : UserControl
     {
-        public NumericEditorView()
+        public CardListPageChromeUserControl()
         {
             InitializeComponent();
         }

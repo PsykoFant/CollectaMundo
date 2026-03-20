@@ -66,7 +66,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
         _navigationCleanupService.CleanupBeforePageChange(oldPage, pageViewModel);
 
         _shellNavigationHost.CurrentPageViewModel = pageViewModel;
-        _shellNavigationHost.CurrentSideMenuViewModel = ResolveSideMenu(pageViewModel);
+        _shellNavigationHost.CurrentSideMenuLeftViewModel = ResolveSideMenu(pageViewModel);
         _shellNavigationHost.CurrentPage = page;
     }
     private object? ResolveSideMenu(object pageViewModel)

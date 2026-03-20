@@ -3,6 +3,7 @@
     public interface IShellNavigationHost : IShellUiState
     {
         object? CurrentPageViewModel { get; set; }
-        object? CurrentSideMenuViewModel { get; set; }
+        object? CurrentSideMenuLeftViewModel { get; set; }
+        object? CurrentSideMenuRightViewModel { get; set; }
     }
 }

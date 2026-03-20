@@ -366,7 +366,7 @@ namespace CollectaMundo.ViewModels.Import
 
             if (result.ItemsWithMultipleUuids > 0)
             {
-                _shellUiState.CardViewSectionVisibility = Visibility.Visible;
+                _shellUiState.IsSideMenuRightVisible = true;
                 GoToStep(ImportStep.MultipleUuidsSelection);
             }
             else
@@ -377,7 +377,7 @@ namespace CollectaMundo.ViewModels.Import
         }
         public async Task<OperationResult> AfterStep4Action()
         {
-            _shellUiState.CardViewSectionVisibility = Visibility.Collapsed;
+            _shellUiState.IsSideMenuRightVisible = false;
 
             // Pass user choices to service layer
             var result = await Task.Run(() => _importService.ApplyUserSelectedUuids(ImportCardList, GetStep4Selections(), Progress));
@@ -553,7 +553,7 @@ namespace CollectaMundo.ViewModels.Import
         {
             Debug.WriteLine("ImportViewModel: Cancelling import operation as per user request.");
             CancelVisibility = Visibility.Collapsed;
-            _shellUiState.CardViewSectionVisibility = Visibility.Collapsed;
+            _shellUiState.IsSideMenuRightVisible = false;
             _userPromptService.CancelActiveOperation();
             ImportFailVisibility = Visibility.Visible;
             Progress.Headline.Report("Import cancelled");
@@ -585,7 +585,7 @@ namespace CollectaMundo.ViewModels.Import
             ClearProgress();
 
             // Reset card image view model
-            _shellUiState.CardViewSectionVisibility = Visibility.Collapsed;
+            _shellUiState.IsSideMenuRightVisible = false;
             CardImageSelectionRequested?.Invoke(this, null);
 
             // Reset resolved import state

@@ -4,9 +4,9 @@ using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.Views.Pages.SharedElements
 {
-    public partial class FilterHeaderView : UserControl
+    public partial class FilterHeaderUserControl : UserControl
     {
-        public FilterHeaderView()
+        public FilterHeaderUserControl()
         {
             InitializeComponent();
         }

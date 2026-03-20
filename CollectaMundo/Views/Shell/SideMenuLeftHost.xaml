@@ -1,16 +1,16 @@
-﻿<UserControl x:Class="CollectaMundo.Views.Shell.SideMenuLeftView"
+﻿<UserControl x:Class="CollectaMundo.Views.Shell.SideMenuLeftHost"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
              xmlns:vmSideMenuLeft="clr-namespace:CollectaMundo.ViewModels.SideMenuLeft"
-             xmlns:sideMenuLeftViews="clr-namespace:CollectaMundo.Views.SideMenuLeft"
-             d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}"
-             mc:Ignorable="d">
+             xmlns:sideMenuLeftViews="clr-namespace:CollectaMundo.Views.SideMenuLeftViews"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}">
 
     <Grid Visibility="{Binding IsSideMenuLeftVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-        <ContentControl Content="{Binding CurrentSideMenuViewModel}">
+        <ContentControl Content="{Binding CurrentSideMenuLeftViewModel}">
             <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuFilteringViewModel}"><sideMenuLeftViews:SideMenuFilteringView /></DataTemplate>
                 <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuUtilitiesViewModel}"><sideMenuLeftViews:SideMenuUtilitiesView /></DataTemplate>

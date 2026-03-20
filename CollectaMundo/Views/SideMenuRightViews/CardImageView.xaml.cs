@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CollectaMundo.Views.Pages.SharedElements
+namespace CollectaMundo.Views.SideMenuRightViews
 {
     /// <summary>
-    /// Interaction logic for RefreshColumnsComboBoxView.xaml
+    /// Interaction logic for CardImageView.xaml
     /// </summary>
-    public partial class RefreshColumnsComboBoxView : UserControl
+    public partial class CardImageView : UserControl
     {
-        public RefreshColumnsComboBoxView()
+        public CardImageView()
         {
             InitializeComponent();
         }

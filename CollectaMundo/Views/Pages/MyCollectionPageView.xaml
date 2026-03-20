@@ -14,7 +14,7 @@
     <Grid>
         <Label Content="{Binding PageTitle}" Style="{StaticResource MediumHeaderLabelStyle}"/>
         <!-- Add status summary, listview buttons -->
-        <shared:CardListPageChromeView />
+        <shared:CardListPageChromeUserControl />
 
         <!--Cards to edit-->
         <ListView ItemsSource="{Binding ModifyCollectionViewModel.CardsToAddOrEdit}"
@@ -33,21 +33,21 @@
                     <GridViewColumn Header="Condition">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <shared:RefreshColumnsComboBoxView DataContext="{Binding ConditionCombo}" />
+                                <shared:RefreshColumnsComboBoxUserControl DataContext="{Binding ConditionCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Finish">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <shared:RefreshColumnsComboBoxView DataContext="{Binding FinishCombo}" />
+                                <shared:RefreshColumnsComboBoxUserControl DataContext="{Binding FinishCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="Language">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <shared:RefreshColumnsComboBoxView DataContext="{Binding LanguageCombo}" />
+                                <shared:RefreshColumnsComboBoxUserControl DataContext="{Binding LanguageCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -63,7 +63,7 @@
                     <GridViewColumn Header="Count">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <shared:NumericEditorView DataContext="{Binding Owned}" />
+                                <shared:NumericEditorUserControl DataContext="{Binding Owned}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -87,7 +87,7 @@
                     <GridViewColumn Header="Trade">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <shared:NumericEditorView DataContext="{Binding Trade}" />
+                                <shared:NumericEditorUserControl DataContext="{Binding Trade}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -119,7 +119,7 @@
                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <shared:FilterHeaderView DataContext="{Binding DataContext.NameFilter, ElementName=MyCollectionDataGrid}" />
+                            <shared:FilterHeaderUserControl DataContext="{Binding DataContext.NameFilter, ElementName=MyCollectionDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
@@ -131,7 +131,7 @@
                 <DataGridTemplateColumn Header="Set Name" Width="*" SortMemberPath="SetName">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <shared:FilterHeaderView DataContext="{Binding DataContext.SetNameFilter, ElementName=MyCollectionDataGrid}" />
+                            <shared:FilterHeaderUserControl DataContext="{Binding DataContext.SetNameFilter, ElementName=MyCollectionDataGrid}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>

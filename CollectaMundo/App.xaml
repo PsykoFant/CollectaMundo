@@ -1,11 +1,6 @@
 ﻿<Application x:Class="CollectaMundo.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:viewmodelsPages="clr-namespace:CollectaMundo.ViewModels.Pages"    
-             xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
-             
-             
-             xmlns:local="clr-namespace:CollectaMundo">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

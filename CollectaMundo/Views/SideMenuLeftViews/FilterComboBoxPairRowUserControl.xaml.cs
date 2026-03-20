@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CollectaMundo.Views.Pages.SharedElements
+namespace CollectaMundo.Views.SideMenuLeftViews
 {
     /// <summary>
-    /// Interaction logic for CardListPageChromeView.xaml
+    /// Interaction logic for FilterComboBoxPairRowView.xaml
     /// </summary>
-    public partial class CardListPageChromeView : UserControl
+    public partial class FilterComboBoxPairRowUserControl : UserControl
     {
-        public CardListPageChromeView()
+        public FilterComboBoxPairRowUserControl()
         {
             InitializeComponent();
         }

@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ViewModels.Filtering;
+using CollectaMundo.ViewModels.SideMenuRight;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.ComponentModel;
 using System.Windows.Input;

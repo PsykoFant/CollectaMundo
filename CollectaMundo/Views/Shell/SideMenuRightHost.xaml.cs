@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace CollectaMundo.Views.Shell
 {
     /// <summary>
-    /// Interaction logic for ContentSectionView.xaml
+    /// Interaction logic for SideMenuRightHost.xaml
     /// </summary>
-    public partial class ContentSectionView : UserControl
+    public partial class SideMenuRightHost : UserControl
     {
-        public ContentSectionView()
+        public SideMenuRightHost()
         {
             InitializeComponent();
         }

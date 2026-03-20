@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace CollectaMundo.Views.SideMenuLeft
+namespace CollectaMundo.Views.SideMenuLeftViews
 {
     /// <summary>
     /// Interaction logic for UtilitiesSideMenuView.xaml

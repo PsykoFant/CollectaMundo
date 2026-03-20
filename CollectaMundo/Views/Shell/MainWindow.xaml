@@ -4,9 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
-        xmlns:shellViews="clr-namespace:CollectaMundo.Views.Shell"
-        xmlns:sharedViews="clr-namespace:CollectaMundo.Views.Shared"
-        xmlns:importViews="clr-namespace:CollectaMundo.Views.Import"        
+        xmlns:shell="clr-namespace:CollectaMundo.Views.Shell"
+        xmlns:shared="clr-namespace:CollectaMundo.Views.Shared"
+        xmlns:import="clr-namespace:CollectaMundo.Views.Import"        
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodels:RootViewModel, IsDesignTimeCreatable=False}"
         Title="CollectaMundo"
@@ -25,37 +25,15 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <shellViews:TopMenuView
-        Grid.Row="0"
-        Grid.ColumnSpan="3"
-        DataContext="{Binding Main.TopMenuVM}" />
+        <shell:TopMenuView             Grid.Row="0"    Grid.ColumnSpan="3"     DataContext="{Binding Main.TopMenuVM}" />
 
-        <shellViews:SideMenuLeftView
-        Grid.Row="1"
-        Grid.Column="0"
-        DataContext="{Binding Main}" />
+        <shell:SideMenuLeftHost        Grid.Row="1"    Grid.Column="0"         DataContext="{Binding Main}" />
 
-        <shellViews:ContentSectionView
-        Grid.Row="1"
-        Grid.Column="1"
-        DataContext="{Binding Main}" />
-
-        <importViews:ImportOverlay
-        Grid.Row="1"
-        Grid.Column="1"
-        DataContext="{Binding Main.ImportVM}" />
-
-        <sharedViews:OperationOverlayView
-        Grid.Row="1"
-        Grid.Column="1"
-        DataContext="{Binding OperationOverlayVM}"
-        Panel.ZIndex="100" />        
+        <shell:ContentSectionHost      Grid.Row="1"    Grid.Column="1"         DataContext="{Binding Main}" />
+        <import:ImportOverlay          Grid.Row="1"    Grid.Column="1"         DataContext="{Binding Main.ImportVM}" />
+        <shared:OperationOverlayView   Grid.Row="1"    Grid.Column="1"         DataContext="{Binding OperationOverlayVM}" Panel.ZIndex="100" />        
         
-        <shellViews:CardImageView
-        Grid.Row="1"
-        Grid.Column="2"
-        DataContext="{Binding Main}" />
-
+        <shell:CardImageView           Grid.Row="1"    Grid.Column="2"         DataContext="{Binding Main}" />
 
     </Grid>
 </Window>
