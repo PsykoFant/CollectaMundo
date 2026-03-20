@@ -25,7 +25,7 @@ using System.Windows;
 namespace CollectaMundo.ViewModels
 {
     #endregion
-    public partial class MainWindowViewModel : ObservableObject, ICardCollectionHost, IShellUiState
+    public partial class MainWindowViewModel : ObservableObject, ICardCollectionHost, IShellNavigationHost
     {
         #region class: MainWindowViewModel (fields, ctor, factory)
 
@@ -200,7 +200,7 @@ namespace CollectaMundo.ViewModels
             _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, _importOverlayController);
 
             // Set up top menu with references to page VMs
-            TopMenuVM = new TopMenuViewModel(shellUIState: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, utilitiesPageViewModel: UtilitiesPageVM);
+            TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, utilitiesPageViewModel: UtilitiesPageVM);
 
             // event wiring
             SubscribeChildVmEvents();

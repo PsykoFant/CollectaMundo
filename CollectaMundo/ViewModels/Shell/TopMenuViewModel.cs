@@ -6,7 +6,7 @@ using System.ComponentModel;
 namespace CollectaMundo.ViewModels.Shell;
 public sealed partial class TopMenuViewModel : ObservableObject
 {
-    private readonly IShellUiState _shellUIState;
+    private readonly IShellNavigationHost _shellNavigationHost;
     private readonly INavigationCleanupService _navigationCleanupService;
 
     // Page viewmodels
@@ -19,11 +19,11 @@ public sealed partial class TopMenuViewModel : ObservableObject
     public object FilteringSideMenuViewModel { get; }
     public object UtilitiesSideMenuViewModel { get; }
 
-    public TopMenuViewModel(IShellUiState shellUIState, INavigationCleanupService navigationCleanupService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
+    //IShellNavigationHost shellNavigationHost
+    public TopMenuViewModel(IShellNavigationHost shellNavigationHost, INavigationCleanupService navigationCleanupService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
     {
-        _shellUIState = shellUIState;
+        _shellNavigationHost = shellNavigationHost;
         _navigationCleanupService = navigationCleanupService;
-
         FilteringSideMenuViewModel = filteringSideMenuViewModel;
         UtilitiesSideMenuViewModel = utilitiesSideMenuViewModel;
         AllCardsPageViewModel = allCardsPageViewModel;
@@ -31,15 +31,15 @@ public sealed partial class TopMenuViewModel : ObservableObject
         DecksPageViewModel = decksPageViewModel;
         UtilitiesPageViewModel = utilitiesPageViewModel;
 
-        _shellUIState.PropertyChanged += Host_PropertyChanged;
+        _shellNavigationHost.PropertyChanged += Host_PropertyChanged;
     }
 
-    public bool IsTopMenuEnabled => _shellUIState.IsTopMenuEnabled;
+    public bool IsTopMenuEnabled => _shellNavigationHost.IsTopMenuEnabled;
 
-    public bool IsAllCardsPageActive => _shellUIState.CurrentPage == ShellPage.SearchAndFilter;
-    public bool IsMyCollectionPageActive => _shellUIState.CurrentPage == ShellPage.MyCollection;
-    public bool IsDecksPageActive => _shellUIState.CurrentPage == ShellPage.Decks;
-    public bool IsUtilitiesPageActive => _shellUIState.CurrentPage == ShellPage.Utilities;
+    public bool IsAllCardsPageActive => _shellNavigationHost.CurrentPage == ShellPage.SearchAndFilter;
+    public bool IsMyCollectionPageActive => _shellNavigationHost.CurrentPage == ShellPage.MyCollection;
+    public bool IsDecksPageActive => _shellNavigationHost.CurrentPage == ShellPage.Decks;
+    public bool IsUtilitiesPageActive => _shellNavigationHost.CurrentPage == ShellPage.Utilities;
 
     [RelayCommand]
     private void ShowAllCardsPage() => NavigateTo(AllCardsPageViewModel, ShellPage.SearchAndFilter);
@@ -61,13 +61,13 @@ public sealed partial class TopMenuViewModel : ObservableObject
             return;
         }
 
-        var oldPage = _shellUIState.CurrentPageViewModel;
+        var oldPage = _shellNavigationHost.CurrentPageViewModel;
 
         _navigationCleanupService.CleanupBeforePageChange(oldPage, pageViewModel);
 
-        _shellUIState.CurrentPageViewModel = pageViewModel;
-        _shellUIState.CurrentSideMenuViewModel = ResolveSideMenu(pageViewModel);
-        _shellUIState.CurrentPage = page;
+        _shellNavigationHost.CurrentPageViewModel = pageViewModel;
+        _shellNavigationHost.CurrentSideMenuViewModel = ResolveSideMenu(pageViewModel);
+        _shellNavigationHost.CurrentPage = page;
     }
     private object? ResolveSideMenu(object pageViewModel)
     {

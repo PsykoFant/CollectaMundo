@@ -21,7 +21,7 @@
                         <DataTrigger Binding="{Binding IsAllCardsPageActive}" Value="True">
                             <Setter Property="Background" Value="#5cb9ca"/>
                             <Setter Property="BorderBrush" Value="#2f6f7a"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Foreground" Value="#2f6f7a"/>
                             <Setter Property="FontWeight" Value="Bold"/>
                         </DataTrigger>
                     </Style.Triggers>
@@ -36,7 +36,7 @@
                         <DataTrigger Binding="{Binding IsMyCollectionPageActive}" Value="True">
                             <Setter Property="Background" Value="#5cb9ca"/>
                             <Setter Property="BorderBrush" Value="#2f6f7a"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Foreground" Value="#2f6f7a"/>
                             <Setter Property="FontWeight" Value="Bold"/>
                         </DataTrigger>
                     </Style.Triggers>
@@ -60,7 +60,7 @@
                         <DataTrigger Binding="{Binding IsUtilitiesPageActive}" Value="True">
                             <Setter Property="Background" Value="#5cb9ca"/>
                             <Setter Property="BorderBrush" Value="#2f6f7a"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Foreground" Value="#2f6f7a"/>
                             <Setter Property="FontWeight" Value="Bold"/>
                         </DataTrigger>
                     </Style.Triggers>
