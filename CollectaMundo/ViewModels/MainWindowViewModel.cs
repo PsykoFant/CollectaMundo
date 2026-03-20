@@ -90,6 +90,9 @@ namespace CollectaMundo.ViewModels
         private object? currentPageViewModel;
 
         [ObservableProperty]
+        private ShellPage currentPage;
+
+        [ObservableProperty]
         private object? currentSideMenuViewModel;
 
         // Shell UI state properties
@@ -185,12 +188,13 @@ namespace CollectaMundo.ViewModels
             UtilitiesPageVM = new PagesUtilitiesViewModel();
 
             // Side menu viewmodels
-            FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterVM, ColorIconsViewModel);
+            FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterVM, ColorIconsViewModel, shellUiState);
             UtilitiesSideMenuVM = new SideMenuUtilitiesViewModel(UtilitiesVM, PricesVM);
 
             // Set initial page and menu
             CurrentPageViewModel = SearchAndFilterPageVM;
             CurrentSideMenuViewModel = FilteringSideMenuVM;
+            CurrentPage = ShellPage.SearchAndFilter;
 
             // Navigation cleanup service
             _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, _importOverlayController);

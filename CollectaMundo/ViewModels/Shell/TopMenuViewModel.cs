@@ -1,10 +1,7 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.ApplicationServices.Shell;
-using CollectaMundo.ViewModels.Pages.SharedElements;
+﻿using CollectaMundo.ApplicationServices.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.ComponentModel;
-using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Shell;
 public sealed partial class TopMenuViewModel : ObservableObject
@@ -39,27 +36,30 @@ public sealed partial class TopMenuViewModel : ObservableObject
 
     public bool IsTopMenuEnabled => _shellUIState.IsTopMenuEnabled;
 
-    public bool IsAllCardsPageActive => ReferenceEquals(_shellUIState.CurrentPageViewModel, AllCardsPageViewModel);
-    public bool IsMyCollectionPageActive => ReferenceEquals(_shellUIState.CurrentPageViewModel, MyCollectionPageViewModel);
-    public bool IsDecksPageActive => DecksPageViewModel is not null && ReferenceEquals(_shellUIState.CurrentPageViewModel, DecksPageViewModel);
-    public bool IsUtilitiesPageActive => ReferenceEquals(_shellUIState.CurrentPageViewModel, UtilitiesPageViewModel);
+    public bool IsAllCardsPageActive => _shellUIState.CurrentPage == ShellPage.SearchAndFilter;
+    public bool IsMyCollectionPageActive => _shellUIState.CurrentPage == ShellPage.MyCollection;
+    public bool IsDecksPageActive => _shellUIState.CurrentPage == ShellPage.Decks;
+    public bool IsUtilitiesPageActive => _shellUIState.CurrentPage == ShellPage.Utilities;
 
     [RelayCommand]
-    private void ShowAllCardsPage() => NavigateTo(AllCardsPageViewModel);
+    private void ShowAllCardsPage() => NavigateTo(AllCardsPageViewModel, ShellPage.SearchAndFilter);
 
     [RelayCommand]
-    private void ShowMyCollectionPage() => NavigateTo(MyCollectionPageViewModel);
+    private void ShowMyCollectionPage() => NavigateTo(MyCollectionPageViewModel, ShellPage.MyCollection);
 
     [RelayCommand]
-    private void ShowDecksPage() => NavigateTo(DecksPageViewModel);
+    private void ShowDecksPage() => NavigateTo(DecksPageViewModel, ShellPage.Decks);
 
     [RelayCommand]
-    private void ShowUtilitiesPage() => NavigateTo(UtilitiesPageViewModel);
+    private void ShowUtilitiesPage() => NavigateTo(UtilitiesPageViewModel, ShellPage.Utilities);
 
-    private void NavigateTo(object? pageViewModel)
+
+    private void NavigateTo(object? pageViewModel, ShellPage page)
     {
         if (pageViewModel is null)
+        {
             return;
+        }
 
         var oldPage = _shellUIState.CurrentPageViewModel;
 
@@ -67,6 +67,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
 
         _shellUIState.CurrentPageViewModel = pageViewModel;
         _shellUIState.CurrentSideMenuViewModel = ResolveSideMenu(pageViewModel);
+        _shellUIState.CurrentPage = page;
     }
     private object? ResolveSideMenu(object pageViewModel)
     {
@@ -80,7 +81,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
     }
     private void Host_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(IShellUiState.CurrentPageViewModel))
+        if (e.PropertyName == nameof(IShellUiState.CurrentPage))
         {
             OnPropertyChanged(nameof(IsAllCardsPageActive));
             OnPropertyChanged(nameof(IsMyCollectionPageActive));

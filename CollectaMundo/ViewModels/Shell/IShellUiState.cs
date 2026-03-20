@@ -12,7 +12,8 @@ namespace CollectaMundo.ViewModels.Shell
 
         public void SetUiBusy(bool isBusy);
 
-        object? CurrentPageViewModel { get; set; }
+        object? CurrentPageViewModel { get; set; } // What page are we on?
+        ShellPage CurrentPage { get; set; } // What page are we on?
         object? CurrentSideMenuViewModel { get; set; }
     }
 }
