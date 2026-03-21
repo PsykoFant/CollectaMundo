@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.ViewModels.Import;
+﻿using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Shared;
 
 namespace CollectaMundo.ViewModels

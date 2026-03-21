@@ -1,0 +1,20 @@
+﻿<UserControl x:Class="CollectaMundo.Views.SideMenuLeft.SideMenuLeftHost"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
+             xmlns:vmSideMenuLeft="clr-namespace:CollectaMundo.ViewModels.SideMenuLeft"
+             xmlns:sideMenuLeft="clr-namespace:CollectaMundo.Views.SideMenuLeft"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}">
+
+    <Grid Visibility="{Binding IsSideMenuLeftVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+        <ContentControl Content="{Binding CurrentSideMenuLeftViewModel}">
+            <ContentControl.Resources>
+                <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuFilteringViewModel}"><sideMenuLeft:SideMenuFilteringView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmSideMenuLeft:SideMenuUtilitiesViewModel}"><sideMenuLeft:SideMenuUtilitiesView /></DataTemplate>
+            </ContentControl.Resources>
+        </ContentControl>
+    </Grid>
+</UserControl>

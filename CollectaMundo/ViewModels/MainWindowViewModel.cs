@@ -21,7 +21,6 @@ using CollectaMundo.ViewModels.SideMenuLeft;
 using CollectaMundo.ViewModels.SideMenuRight;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Diagnostics;
-using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {

@@ -2,8 +2,6 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
-using CollectaMundo.ViewModels.Import;
-using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

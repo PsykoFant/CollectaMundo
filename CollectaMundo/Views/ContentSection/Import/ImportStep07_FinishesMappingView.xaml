@@ -1,0 +1,65 @@
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Import.ImportStep07_FinishesMappingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vmsteps="clr-namespace:CollectaMundo.ViewModels.Import.ImportSteps"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance vmsteps:ImportStep07_FinishMappingViewModel}"
+             d:Style="{StaticResource {x:Type UserControl}}"
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid Visibility="{Binding StepContentVisibility}" HorizontalAlignment="Center">
+        <Grid.RowDefinitions>
+            <!-- Explainer -->
+            <RowDefinition Height="Auto"/>
+            <!-- Listview -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <FlowDocumentScrollViewer Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Center">
+            <FlowDocument>
+                <Paragraph>
+                    Left column are the finishes found in the import file. Please map them to available finishes in the database.
+                </Paragraph>
+                <Paragraph>
+                    Blank Conditions will be imported as &quot;nonfoil&quot;
+                </Paragraph>
+            </FlowDocument>
+        </FlowDocumentScrollViewer>
+        <ListView Grid.Row="1" ItemsSource="{Binding FinishMappings}" HorizontalAlignment="Center" VerticalAlignment="Top">
+            <ListView.View>
+                <GridView>
+                    <!-- LEFT COLUMN: CsvValue - just show the string -->
+                    <GridViewColumn Header="Finishes found in import file" Width="200">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding CsvValue}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- RIGHT COLUMN: CardSetValues - dropdown of selectable values -->
+                    <GridViewColumn Header="Available finishes in database" Width="180">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding CardSetValues}"
+                                  SelectedItem="{Binding SelectedCardSetValue, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- RESET BUTTON -->
+                    <GridViewColumn Header="Reset" Width="100">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="   Clear   "
+                                Command="{Binding DataContext.ClearSelectedMappingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</UserControl>

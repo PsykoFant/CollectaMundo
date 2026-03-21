@@ -1,0 +1,39 @@
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.SharedElements.NumericEditorUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors" 
+             xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
+             xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors" 
+             xmlns:sharedelements="clr-namespace:CollectaMundo.ViewModels.Pages.SharedElements" 
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=sharedelements:NumericBindingViewModel}">
+
+    <TextBox HorizontalAlignment="Center" Background="White">
+        <TextBox.Text>
+            <!-- Bind to adapter Value -->
+            <Binding Path="Value"
+                     Mode="TwoWay"
+                     UpdateSourceTrigger="Explicit"
+                     ValidatesOnDataErrors="True"
+                     NotifyOnValidationError="True">
+                <Binding.ValidationRules>
+                    <validation:IntegerValidationRule />
+                </Binding.ValidationRules>
+            </Binding>
+        </TextBox.Text>
+
+        <i:Interaction.Behaviors>
+            <!-- Use DelayMs from adapter -->
+            <behaviors:DelayedUpdateBehavior Delay="{Binding DelayMs}" />
+            <behaviors:NumericValidationBehavior />
+        </i:Interaction.Behaviors>
+
+        <i:Interaction.Triggers>
+            <i:EventTrigger EventName="TextChanged">
+                <i:InvokeCommandAction Command="{Binding ChangedCommand}" />
+            </i:EventTrigger>
+        </i:Interaction.Triggers>
+    </TextBox>
+</UserControl>

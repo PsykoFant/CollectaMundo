@@ -1,8 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Startup;
-using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
-using CollectaMundo.Views.Shell;
+using CollectaMundo.Views;
 using System.Diagnostics;
 using System.Windows;
 

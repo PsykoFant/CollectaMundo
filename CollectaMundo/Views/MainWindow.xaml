@@ -1,0 +1,41 @@
+<Window x:Class="CollectaMundo.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
+        xmlns:sideMenuLeft="clr-namespace:CollectaMundo.Views.SideMenuLeft"
+        xmlns:contentSection="clr-namespace:CollectaMundo.Views.ContentSection"
+        xmlns:sideMenuRight="clr-namespace:CollectaMundo.Views.SideMenuRight"
+        xmlns:viewsRoot="clr-namespace:CollectaMundo.Views"
+        xmlns:import="clr-namespace:CollectaMundo.Views.ContentSection.Import"        
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=viewmodels:RootViewModel, IsDesignTimeCreatable=False}"
+        Title="CollectaMundo"
+        Icon="/Resources/Images/Icon.ico"
+        Width="1920"
+        Height="960"
+        Style="{StaticResource {x:Type Window}}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="250"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <viewsRoot:TopMenuView                  Grid.Row="0"    Grid.ColumnSpan="3"     DataContext="{Binding Main.TopMenuVM}" />
+
+        <sideMenuLeft:SideMenuLeftHost          Grid.Row="1"    Grid.Column="0"         DataContext="{Binding Main}" />
+
+        <contentSection:ContentSectionHost      Grid.Row="1"    Grid.Column="1"         DataContext="{Binding Main}" />
+        <import:ImportOverlay                   Grid.Row="1"    Grid.Column="1"         DataContext="{Binding Main.ImportVM}" />
+        <viewsRoot:OperationOverlayView         Grid.Row="1"    Grid.Column="1"         DataContext="{Binding OperationOverlayVM}" Panel.ZIndex="100" />
+
+        <sideMenuRight:SideMenuRightHost        Grid.Row="1"    Grid.Column="2"         DataContext="{Binding Main}" />
+
+    </Grid>
+</Window>

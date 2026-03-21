@@ -1,0 +1,19 @@
+﻿<UserControl x:Class="CollectaMundo.Views.SideMenuRight.SideMenuRightHost"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
+             xmlns:vmSideMenuRight="clr-namespace:CollectaMundo.ViewModels.SideMenuRight"
+             xmlns:sideMenuRight="clr-namespace:CollectaMundo.Views.SideMenuRight"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=viewmodels:MainWindowViewModel}">
+
+    <Grid Visibility="{Binding IsSideMenuRightVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+        <ContentControl Content="{Binding CurrentSideMenuRightViewModel}">
+            <ContentControl.Resources>
+                <DataTemplate DataType="{x:Type vmSideMenuRight:CardImageViewModel}"><sideMenuRight:CardImageView /></DataTemplate>
+            </ContentControl.Resources>
+        </ContentControl>
+    </Grid>
+</UserControl>

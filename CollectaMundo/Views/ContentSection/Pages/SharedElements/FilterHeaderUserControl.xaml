@@ -1,0 +1,49 @@
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.SharedElements.FilterHeaderUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="clr-namespace:CollectaMundo.ViewModels"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:FilterItemViewModel}"
+             d:DesignHeight="40"
+             d:DesignWidth="300">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Label Content="{Binding ReadableLabel}" Margin="0,0,6,0" VerticalAlignment="Center" Grid.Column="0"/>
+
+        <ComboBox Grid.Column="1"
+                  Margin="4,0,4,0"
+                  MinWidth="60"
+                  ItemsSource="{Binding FilteredOptions}"
+                  Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                  DisplayMemberPath="OptionName"
+                  IsTextSearchEnabled="False"
+                  IsEditable="True"
+                  Height="20"
+                  HorizontalAlignment="Stretch">
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="SelectionChanged">
+                    <i:InvokeCommandAction Command="{Binding ComboBoxSelectionChangedCommand}"
+                                           CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+            <i:Interaction.Behaviors>
+                <behaviors:ComboBoxUnselector ClearTrigger="{Binding ClearComboBoxSelectionTrigger}" />
+            </i:Interaction.Behaviors>
+
+            <ComboBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </ComboBox.ItemsPanel>
+        </ComboBox>
+    </Grid>
+</UserControl>
