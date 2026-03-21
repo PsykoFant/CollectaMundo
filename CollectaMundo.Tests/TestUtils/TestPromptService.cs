@@ -16,6 +16,6 @@ namespace CollectaMundo.Tests.TestUtils
         public void CancelActivePrompt() { }
         public void ConfirmActivePrompt() { }
         public bool HasActivePrompt => false;
-
+        public void ResetInteractionState() { }
     }
 }

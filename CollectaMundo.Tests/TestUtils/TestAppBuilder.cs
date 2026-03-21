@@ -3,40 +3,39 @@ using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardPrices;
-using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
+using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
-using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.DomainLogic.Import;
+using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardPrices;
-using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
+using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.ScenarioTests;
 using CollectaMundo.ViewModels;
-using System.Windows;
+using CollectaMundo.ViewModels.Shared;
 
 namespace CollectaMundo.Tests.TestUtils;
 
 public static class TestAppBuilder
 {
-    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(
+    public static async Task<(MainWindowViewModel VM, OperationOverlayViewModel OperationOverlayVM)> BuildAsync(
         InMemoryDatabaseFixture fixture,
         IDbConnectionFactory dbFactory,
         List<CollectionChangeSet<CardSet>>? eventSink = null,
@@ -46,11 +45,13 @@ public static class TestAppBuilder
         await fixture.InitializeAsync();
 
         var userPromptService = promptOverride ?? new UserPromptService();
+        var operationOverlayViewModel = new OperationOverlayViewModel(userPromptService);
 
-        var statusVM = new StatusViewModel(userPromptService);
+        var operationOverlayController = new OperationOverlayController(operationOverlayViewModel);
         var settings = new ApplicationServices.Shared.AppSettings();
 
         string getRetailer() => settings.PriceInfo.Retailer;
+
         var remoteLookups = new RemoteLookups();
 
         var missingPngSvc = new GenerateMissingPngService(
@@ -58,12 +59,14 @@ public static class TestAppBuilder
             remoteLookups,
             new GenerateMissingPngLogic());
 
-        var priceService = new CardPriceService(settings, new CardPriceRepository());
+        var priceService = new CardPriceService(
+            settings,
+            new CardPriceRepository());
 
         var prepService = new CardDatabaseManagementService(
             settings,
             dbFactory,
-            CreateProgressSinks(statusVM),
+            CreateProgressSinks(operationOverlayController),
             new CardDatabaseManagementRepo(),
             priceService,
             missingPngSvc,
@@ -79,28 +82,38 @@ public static class TestAppBuilder
             new CardListRepo(),
             new FilterDefaultsLogic(),
             cardLookupsService,
-            new CardCoreAggregator(),
-            new MyCollectionChangeLogic());
+            new CardCoreAggregator());
 
-        var editService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo());
+        var modifyService = new ModifyCollectionService(
+            dbFactory,
+            new ModifyCollectionLogic(),
+            new ModifyCollectionRepo());
 
         var cardImageService = new CardImageService(
-            dbFactory, remoteLookups, new CardImageLogic(),
-            new CardImageRepo(), new CardImageDownloader(settings));
+            dbFactory,
+            remoteLookups,
+            new CardImageLogic(),
+            new CardImageRepo(),
+            new CardImageDownloader(settings));
 
         var picker = filePickerOverride ?? new FileSystemPicker();
-        var importService = new ImportService(dbFactory, new ImportRepo(), picker, new ImportLogic());
+
+        var importService = new ImportService(
+            dbFactory,
+            new ImportRepo(),
+            picker,
+            new ImportLogic());
 
         var scheduler = new ImmediateScheduler();
 
         var mainVM = await MainWindowViewModel.CreateAsync(
-            editService,
+            modifyService,
             cardImageService,
             prepService,
             importService,
-            statusVM,
+            operationOverlayController,
             userPromptService,
-            new FileSystemPicker(),
+            picker,
             cardListService,
             settings,
             scheduler);
@@ -136,22 +149,34 @@ public static class TestAppBuilder
         }
 
         mainVM.FilterVM.NotifyFilterChanged();
-        mainVM.SideMenuVisibility = Visibility.Visible;
 
         SpinWait.SpinUntil(() =>
             mainVM.AllCardsVM.Cards.Count >= 61 &&
             mainVM.MyCollectionVM.Cards.Count >= 22,
             millisecondsTimeout: 500);
 
-        return (mainVM, statusVM);
+        return (mainVM, operationOverlayViewModel);
     }
 
-    private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
+    private static ProgressSinks CreateProgressSinks(IOperationOverlayController operationOverlayController) => new()
     {
-        Headline = new Progress<string>(s => vm.StatusLabel1 = s),
-        Detail = new Progress<string>(s => vm.StatusLabel2 = s),
-        Step = new Progress<string>(s => vm.StatusLabel3 = s),
-        Percent = new Progress<int>(p => vm.ProgressValue = p),
-        ProgressBarVisible = new Progress<bool>(v => vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+        Headline = new Progress<string>(s => operationOverlayController.SetHeadline(s)),
+        Detail = new Progress<string>(s => operationOverlayController.SetDetail(s)),
+        Step = new Progress<string>(s => operationOverlayController.SetStep(s)),
+        Percent = new Progress<int>(p => operationOverlayController.SetProgress(p)),
+        ProgressBarVisible = new Progress<bool>(v => operationOverlayController.ShowProgress(v)),
+        CancelEnabled = new Progress<bool>(enabled =>
+        {
+            if (enabled)
+            {
+                operationOverlayController.ShowPrimaryButton(
+                    "   Cancel   ",
+                    _ => operationOverlayController.SetDetail("Cancelling..."));
+            }
+            else
+            {
+                operationOverlayController.HidePrimaryButton();
+            }
+        })
     };
 }

@@ -898,7 +898,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { karox });
 
             // Assert: staged
-            Assert.Single(_mainVM.AddCardsVM.CardsToAddOrEdit, c => c.Uuid == uuidKarox);
+            Assert.Single(_mainVM.AddCardsVM.CardsToAddOrEdit, c => c.CardToAddOrEdit.Uuid == uuidKarox);
 
             // Act: submit
             _mainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
@@ -925,10 +925,12 @@ namespace CollectaMundo.Tests.ScenarioTests
             _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { sokrates });
 
             // Assert: staged
-            Assert.Single(_mainVM.AddCardsVM.CardsToAddOrEdit, c => c.Uuid == uuidSokrates);
+
+
+            Assert.Single(_mainVM.AddCardsVM.CardsToAddOrEdit, c => c.CardToAddOrEdit.Uuid == uuidSokrates);
 
             // Arrange: modify before submit
-            var pending = _mainVM.AddCardsVM.CardsToAddOrEdit.Single(c => c.Uuid == uuidSokrates);
+            var pending = _mainVM.AddCardsVM.CardsToAddOrEdit.Single(c => c.CardToAddOrEdit.Uuid == uuidSokrates);
             pending.SelectedCondition = "Played";
             pending.CardsForTrade = 1;
 

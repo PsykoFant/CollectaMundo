@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection;
+using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.DomainLogic.Shared;
 
 namespace CollectaMundo.Tests.UnitTests

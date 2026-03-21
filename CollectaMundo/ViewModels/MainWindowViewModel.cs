@@ -50,7 +50,7 @@ namespace CollectaMundo.ViewModels
         private readonly IUserPromptService _userPromptService;
 
         // File system picker
-        private readonly FileSystemPicker _filesystemPicker;
+        private readonly IFileSystemPicker _filesystemPicker;
 
         private readonly NavigationCleanupService _navigationCleanupService;
 
@@ -126,7 +126,7 @@ namespace CollectaMundo.ViewModels
             IImportService importService,
             IOperationOverlayController operationOverlayController,
             IUserPromptService userPromptService,
-            FileSystemPicker fileSystemPicker,
+            IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
@@ -205,7 +205,7 @@ namespace CollectaMundo.ViewModels
             IImportService importService,
             IOperationOverlayController operationOverlayController,
             IUserPromptService userPromptService,
-            FileSystemPicker fileSystemPicker,
+            IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
