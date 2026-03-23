@@ -34,7 +34,7 @@
                HorizontalAlignment="Center"
                Height="300"
                Width="300"
-               Margin="0,0,0,20"/>
+               Margin="0,0,0,30"/>
 
         <Image Grid.Row="1"
                Source="/Resources/Images/counterspell_fail.png"
@@ -43,13 +43,13 @@
                HorizontalAlignment="Center"
                Height="300"
                Width="300"
-               Margin="0,0,0,20"/>
+               Margin="0,0,0,30"/>
 
         <!-- Progressbar -->
         <ProgressBar Grid.Row="2"
                      Value="{Binding ProgressValue}"
                      Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                     Margin="40,0,40,20"
+                     Margin="0,0,0,20"
                      Style="{StaticResource CollectaMundoProgressBarStyle}" />
 
         <!-- Step headline -->

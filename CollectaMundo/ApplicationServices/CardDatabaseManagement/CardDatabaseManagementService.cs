@@ -178,27 +178,27 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // Step 1. Download resources
             // ---------------------------
 
-            var step1Name = "Step 1. Downloading card database and prices...";
-            var downloadResult = await _downloader.DownloadParallelAsync(
-                _settings.CardDatabaseUrl, _tempDbPath, "Card database",
-                _settings.CardPricesUrl, _pricesPath, "Price File",
-                retryDelayInMs: defaultDelay,
-                stepName: step1Name,
-                stepNameAndNumberProgress: _progressSinks.Step,
-                stepDetailAndErrorProgress: _progressSinks.Detail,
-                percentProgress: _progressSinks.Percent,
-                cancelToken: ct);
+            //var step1Name = "Step 1. Downloading card database and prices...";
+            //var downloadResult = await _downloader.DownloadParallelAsync(
+            //    _settings.CardDatabaseUrl, _tempDbPath, "Card database",
+            //    _settings.CardPricesUrl, _pricesPath, "Price File",
+            //    retryDelayInMs: defaultDelay,
+            //    stepName: step1Name,
+            //    stepNameAndNumberProgress: _progressSinks.Step,
+            //    stepDetailAndErrorProgress: _progressSinks.Detail,
+            //    percentProgress: _progressSinks.Percent,
+            //    cancelToken: ct);
 
-            if (ct.IsCancellationRequested)
-            {
-                return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
-            }
+            //if (ct.IsCancellationRequested)
+            //{
+            //    return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
+            //}
 
-            if (downloadResult.Code != OperationResultCode.Success)
-            {
-                Debug.WriteLine($"[FirstTimeDbPrepOrchestrator] Download failed: {downloadResult.Message}");
-                return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
-            }
+            //if (downloadResult.Code != OperationResultCode.Success)
+            //{
+            //    Debug.WriteLine($"[FirstTimeDbPrepOrchestrator] Download failed: {downloadResult.Message}");
+            //    return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
+            //}
 
             // ---------------------------
             // Step 2 - Copy tables from new DB
@@ -244,16 +244,16 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
 
             // Success: clean up temporary db and price file
-            try
-            {
-                File.Delete(_pricesPath);
-                File.Delete(_tempDbPath);
-            }
-            catch (IOException ex)
-            {
-                Debug.WriteLine($"Cleanup failed: {ex.Message}");
-                return new OperationResult(OperationResultCode.Error, ex.Message);
-            }
+            //try
+            //{
+            //    File.Delete(_pricesPath);
+            //    File.Delete(_tempDbPath);
+            //}
+            //catch (IOException ex)
+            //{
+            //    Debug.WriteLine($"Cleanup failed: {ex.Message}");
+            //    return new OperationResult(OperationResultCode.Error, ex.Message);
+            //}
             return new OperationResult(OperationResultCode.Success);
 
         }
@@ -358,6 +358,8 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 }
 
                 string stepLabel = $"Step {stepNumberStart++}. {label}";
+
+                Debug.WriteLine($"Starting: {stepLabel}");
 
                 _progressSinks.ProgressBarVisible.Report(showProgress);
                 _progressSinks.Detail.Report(string.Empty);

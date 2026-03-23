@@ -259,6 +259,7 @@ namespace CollectaMundo.ViewModels
             switch (result.Code)
             {
                 case OperationResultCode.Success:
+                    _operationOverlayController.SetPrimaryButtonText("   I love an updated database!   ");
                     _operationOverlayController.SetHeadline("Database updated successfully!");
                     if (includeBackup) { _operationOverlayController.SetDetail($"Your collection was backed up at {backupResultMessage}"); }
                     UpdateDbVisibility = Visibility.Collapsed;
