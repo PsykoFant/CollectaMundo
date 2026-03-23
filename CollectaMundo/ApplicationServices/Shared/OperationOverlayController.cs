@@ -3,65 +3,65 @@ using CollectaMundo.ViewModels.Shared;
 
 namespace CollectaMundo.ApplicationServices.Shared
 {
-    public sealed class OperationOverlayController(OperationOverlayViewModel vm) : IOperationOverlayController
+    public sealed class OperationOverlayController(OperationOverlayViewModel operationOverlayVm) : IOperationOverlayController
     {
-        private readonly OperationOverlayViewModel _vm = vm;
+        private readonly OperationOverlayViewModel _operationOverlayVm = operationOverlayVm;
         public void Show(string headline, bool showProgress = false)
         {
-            _vm.Show(headline, showProgress);
+            _operationOverlayVm.Show(headline, showProgress);
         }
-        public void Hide() => _vm.Hide();
-        public void Reset() => _vm.Reset();
-        public void SetHeadline(string text) => _vm.Headline = text;
-        public void SetDetail(string text) => _vm.Detail = text;
-        public void SetStep(string text) => _vm.Step = text;
-        public void SetProgress(int value) => _vm.ProgressValue = value;
+        public void Hide() => _operationOverlayVm.Hide();
+        public void Reset() => _operationOverlayVm.Reset();
+        public void SetHeadline(string text) => _operationOverlayVm.Headline = text;
+        public void SetDetail(string text) => _operationOverlayVm.Detail = text;
+        public void SetStep(string text) => _operationOverlayVm.Step = text;
+        public void SetProgress(int value) => _operationOverlayVm.ProgressValue = value;
         public void ShowLogo(bool show)
         {
-            _vm.IsLogoVisible = show;
+            _operationOverlayVm.IsLogoVisible = show;
         }
         public void ShowProgress(bool show)
         {
-            _vm.IsProgressVisible = show;
+            _operationOverlayVm.IsProgressVisible = show;
         }
         public void ShowPrimaryButton(string text, Action<object?>? action = null)
         {
-            _vm.PrimaryButtonText = text;
-            _vm.IsPrimaryButtonVisible = true;
-            _vm.SetPrimaryAction(action);
+            _operationOverlayVm.PrimaryButtonText = text;
+            _operationOverlayVm.IsPrimaryButtonVisible = true;
+            _operationOverlayVm.SetPrimaryAction(action);
         }
         public void SetPrimaryButtonText(string text)
         {
-            _vm.IsPrimaryButtonVisible = true;
-            _vm.PrimaryButtonText = text;
+            _operationOverlayVm.IsPrimaryButtonVisible = true;
+            _operationOverlayVm.PrimaryButtonText = text;
         }
         public void HidePrimaryButton()
         {
-            _vm.IsPrimaryButtonVisible = false;
-            _vm.SetPrimaryAction(null);
+            _operationOverlayVm.IsPrimaryButtonVisible = false;
+            _operationOverlayVm.SetPrimaryAction(null);
         }
         public void ShowSecondaryButton(string text, Action<object?>? action = null)
         {
-            _vm.SecondaryButtonText = text;
-            _vm.IsSecondaryButtonVisible = true;
-            _vm.SetSecondaryAction(action);
+            _operationOverlayVm.SecondaryButtonText = text;
+            _operationOverlayVm.IsSecondaryButtonVisible = true;
+            _operationOverlayVm.SetSecondaryAction(action);
         }
         public void SetSecondaryButtonText(string text)
         {
-            _vm.IsSecondaryButtonVisible= true;
-            _vm.SecondaryButtonText = text;
+            _operationOverlayVm.IsSecondaryButtonVisible= true;
+            _operationOverlayVm.SecondaryButtonText = text;
         }
         public void HideSecondaryButton()
         {
-            _vm.IsSecondaryButtonVisible = false;
-            _vm.SecondaryButtonText = string.Empty;
-            _vm.SetSecondaryAction(null);
+            _operationOverlayVm.IsSecondaryButtonVisible = false;
+            _operationOverlayVm.SecondaryButtonText = string.Empty;
+            _operationOverlayVm.SetSecondaryAction(null);
         }
         public void ShowSetupFailure(bool show)
         {
-            _vm.IsSetupFailVisible = show;
+            _operationOverlayVm.IsSetupFailVisible = show;
         }
-        public CancellationToken PrepareCancelButton(PromptButton button) => _vm.PrepareCancelButton(button);
-        public Task<bool> WaitForUserConfirmationAsync(PromptButton button, string confirmText) => _vm.WaitForUserConfirmationAsync(button, confirmText);
+        public CancellationToken PrepareCancelButton(PromptButton button) => _operationOverlayVm.PrepareCancelButton(button);
+        public Task<bool> WaitForUserConfirmationAsync(PromptButton button, string confirmText) => _operationOverlayVm.WaitForUserConfirmationAsync(button, confirmText);
     }
 }

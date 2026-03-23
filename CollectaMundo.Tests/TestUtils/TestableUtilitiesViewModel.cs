@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Shared;
 using CollectaMundo.ViewModels.Shell;
 using Moq;
 using System.Diagnostics;
@@ -44,234 +45,16 @@ namespace CollectaMundo.Tests.TestUtils
             return _internalUpdateTask;
         }
     }
-
-
-    public sealed class FakeOperationOverlayController : IOperationOverlayController
-    {
-        private TaskCompletionSource<bool>? _confirmationTcs;
-        private CancellationTokenSource _cts = new();
-
-        public string Headline { get; private set; } = string.Empty;
-        public string Detail { get; private set; } = string.Empty;
-        public string Step { get; private set; } = string.Empty;
-
-        public int ProgressValue { get; private set; }
-        public bool IsLogoVisible { get; private set; }
-        public bool IsProgressVisible { get; private set; }
-        public bool IsSetupFailVisible { get; private set; }
-
-        public string PrimaryButtonText { get; private set; } = string.Empty;
-        public string SecondaryButtonText { get; private set; } = string.Empty;
-
-        public Visibility PrimaryButtonVisibility { get; private set; } = Visibility.Collapsed;
-        public Visibility SecondaryButtonVisibility { get; private set; } = Visibility.Collapsed;
-
-        public bool IsVisible { get; private set; }
-
-        public Action<object?>? PrimaryButtonAction { get; private set; }
-        public Action<object?>? SecondaryButtonAction { get; private set; }
-
-        public void Show(string headline, bool showProgress = false)
-        {
-            IsVisible = true;
-            Headline = headline;
-            IsProgressVisible = showProgress;
-        }
-
-        public void Hide()
-        {
-            IsVisible = false;
-        }
-
-        public void Reset()
-        {
-            Headline = string.Empty;
-            Detail = string.Empty;
-            Step = string.Empty;
-            ProgressValue = 0;
-            IsLogoVisible = false;
-            IsProgressVisible = false;
-            IsSetupFailVisible = false;
-
-            PrimaryButtonText = string.Empty;
-            SecondaryButtonText = string.Empty;
-            PrimaryButtonVisibility = Visibility.Collapsed;
-            SecondaryButtonVisibility = Visibility.Collapsed;
-            PrimaryButtonAction = null;
-            SecondaryButtonAction = null;
-        }
-
-        public void SetHeadline(string text) => Headline = text;
-        public void SetDetail(string text) => Detail = text;
-        public void SetStep(string text) => Step = text;
-        public void SetProgress(int value) => ProgressValue = value;
-
-        public void ShowLogo(bool show) => IsLogoVisible = show;
-        public void ShowProgress(bool show) => IsProgressVisible = show;
-        public void ShowSetupFailure(bool show) => IsSetupFailVisible = show;
-
-        public void ShowPrimaryButton(string text, Action<object?>? action = null)
-        {
-            PrimaryButtonText = text;
-            PrimaryButtonVisibility = Visibility.Visible;
-            PrimaryButtonAction = action;
-        }
-
-        public void SetPrimaryButtonText(string text)
-        {
-            PrimaryButtonVisibility = Visibility.Visible;
-            PrimaryButtonText = text;
-        }
-
-        public void HidePrimaryButton()
-        {
-            PrimaryButtonVisibility = Visibility.Collapsed;
-            PrimaryButtonText = string.Empty;
-            PrimaryButtonAction = null;
-        }
-
-        public void ShowSecondaryButton(string text, Action<object?>? action = null)
-        {
-            SecondaryButtonText = text;
-            SecondaryButtonVisibility = Visibility.Visible;
-            SecondaryButtonAction = action;
-        }
-
-        public void SetSecondaryButtonText(string text)
-        {
-            SecondaryButtonVisibility = Visibility.Visible;
-            SecondaryButtonText = text;
-        }
-
-        public void HideSecondaryButton()
-        {
-            SecondaryButtonVisibility = Visibility.Collapsed;
-            SecondaryButtonText = string.Empty;
-            SecondaryButtonAction = null;
-        }
-
-        public CancellationToken PrepareCancelButton(PromptButton button)
-        {
-            _cts = new CancellationTokenSource();
-
-            if (button == PromptButton.Primary)
-            {
-                ShowPrimaryButton("Cancel", _ => _cts.Cancel());
-            }
-            else
-            {
-                ShowSecondaryButton("Cancel", _ => _cts.Cancel());
-            }
-
-            return _cts.Token;
-        }
-
-        public Task<bool> WaitForUserConfirmationAsync(PromptButton button, string confirmText)
-        {
-            _confirmationTcs = new TaskCompletionSource<bool>(
-                TaskCreationOptions.RunContinuationsAsynchronously);
-
-            if (button == PromptButton.Primary)
-            {
-                ShowPrimaryButton(confirmText, _ => _confirmationTcs.TrySetResult(true));
-            }
-            else
-            {
-                ShowSecondaryButton(confirmText, _ => _confirmationTcs.TrySetResult(true));
-            }
-
-            return _confirmationTcs.Task;
-        }
-
-        public void Confirm() => _confirmationTcs?.TrySetResult(true);
-        public void Decline() => _confirmationTcs?.TrySetResult(false);
-    }
-
-
-
-
-
-
-    public static class StatusTestDriver
-    {
-        public static async Task WaitUntilPrimaryButtonTextAsync(
-            FakeOperationOverlayController overlay,
-            string expectedText,
-            TimeSpan? timeout = null)
-        {
-            timeout ??= TimeSpan.FromSeconds(5);
-            var sw = Stopwatch.StartNew();
-
-            while (overlay.PrimaryButtonText != expectedText)
-            {
-                if (sw.Elapsed > timeout)
-                {
-                    throw new TimeoutException(
-                        $"Timed out waiting for PrimaryButtonText == \"{expectedText}\"");
-                }
-
-                await Task.Delay(10);
-            }
-        }
-
-        public static async Task WaitUntilSecondaryButtonTextAsync(
-            FakeOperationOverlayController overlay,
-            string expectedText,
-            TimeSpan? timeout = null)
-        {
-            timeout ??= TimeSpan.FromSeconds(5);
-            var sw = Stopwatch.StartNew();
-
-            while (overlay.SecondaryButtonText != expectedText)
-            {
-                if (sw.Elapsed > timeout)
-                {
-                    throw new TimeoutException(
-                        $"Timed out waiting for SecondaryButtonText == \"{expectedText}\"");
-                }
-
-                await Task.Delay(10);
-            }
-        }
-
-        public static void ClickPrimaryButton(FakeOperationOverlayController overlay)
-        {
-            if (overlay.PrimaryButtonAction is null)
-            {
-                throw new InvalidOperationException("PrimaryButtonAction is not assigned.");
-            }
-
-            overlay.PrimaryButtonAction(null);
-        }
-
-        public static void ClickSecondaryButton(FakeOperationOverlayController overlay)
-        {
-            if (overlay.SecondaryButtonAction is null)
-            {
-                throw new InvalidOperationException("SecondaryButtonAction is not assigned.");
-            }
-
-            overlay.SecondaryButtonAction(null);
-        }
-
-        public static void Confirm(FakeOperationOverlayController overlay) => overlay.Confirm();
-        public static void Decline(FakeOperationOverlayController overlay) => overlay.Decline();
-    }
-
-
-
-
-
     public class UpdateTestContext
     {
         public TestableUtilitiesViewModel UtilitiesVM { get; set; } = null!;
-        public FakeOperationOverlayController Overlay { get; set; } = null!;
+        public OperationOverlayViewModel OverlayVM { get; set; } = null!;
+        public OperationOverlayController OperationOverlayController { get; set; } = null!;
         public IUserPromptService UserPromptService { get; set; } = null!;
         public Mock<ICardDatabaseManagementService> DbServiceMock { get; set; } = null!;
         public Mock<ICardCollectionHost> CardCollectionHostMock { get; set; } = null!;
         public Mock<IShellUiState> ShellUiStateMock { get; set; } = null!;
     }
-
     public class UpdateTestContextBuilder
     {
         private OperationResult? _backupResult;
@@ -341,12 +124,14 @@ namespace CollectaMundo.Tests.TestUtils
             var importOverlayController = new Mock<IImportOverlayController>();
             var parentCtx = new Mock<ICardCollectionHost>();
             var userPromptService = new UserPromptService();
-            var overlay = new FakeOperationOverlayController();
+
+            var overlayVm = new OperationOverlayViewModel(userPromptService);
+            var overlayController = new OperationOverlayController(overlayVm);
 
             var utilitiesVM = new TestableUtilitiesViewModel(
                 shellUiState.Object,
                 dbService.Object,
-                overlay,
+                overlayController,
                 importOverlayController.Object,
                 userPromptService,
                 parentCtx.Object,
@@ -356,14 +141,68 @@ namespace CollectaMundo.Tests.TestUtils
             return new UpdateTestContext
             {
                 UtilitiesVM = utilitiesVM,
-                Overlay = overlay,
+                OverlayVM = overlayVm,
+                OperationOverlayController = overlayController,
                 UserPromptService = userPromptService,
                 DbServiceMock = dbService,
                 CardCollectionHostMock = parentCtx,
                 ShellUiStateMock = shellUiState
             };
         }
-
         public static UpdateTestContextBuilder Builder => new();
+    }
+
+    public static class StatusTestDriver
+    {
+        public static async Task WaitUntilPrimaryButtonTextAsync(OperationOverlayViewModel overlayVm,string expectedText,TimeSpan? timeout = null)
+        {
+            timeout ??= TimeSpan.FromSeconds(5);
+            var sw = Stopwatch.StartNew();
+
+            while (overlayVm.PrimaryButtonText != expectedText)
+            {
+                if (sw.Elapsed > timeout)
+                {
+                    throw new TimeoutException(
+                        $"Timed out waiting for PrimaryButtonText == \"{expectedText}\"");
+                }
+
+                await Task.Delay(10);
+            }
+        }
+        public static async Task WaitUntilSecondaryButtonTextAsync(OperationOverlayViewModel overlayVm, string expectedText, TimeSpan? timeout = null)
+        {
+            timeout ??= TimeSpan.FromSeconds(5);
+            var sw = Stopwatch.StartNew();
+
+            while (overlayVm.SecondaryButtonText != expectedText)
+            {
+                if (sw.Elapsed > timeout)
+                {
+                    throw new TimeoutException(
+                        $"Timed out waiting for SecondaryButtonText == \"{expectedText}\"");
+                }
+
+                await Task.Delay(10);
+            }
+        }
+        public static void ClickPrimaryButton(OperationOverlayViewModel overlayVm)
+        {
+            if (!overlayVm.PrimaryActionCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("PrimaryActionCommand is not executable.");
+            }
+
+            overlayVm.PrimaryActionCommand.Execute(null);
+        }
+        public static void ClickSecondaryButton(OperationOverlayViewModel overlayVm)
+        {
+            if (!overlayVm.SecondaryActionCommand.CanExecute(null))
+            {
+                throw new InvalidOperationException("SecondaryActionCommand is not executable.");
+            }
+
+            overlayVm.SecondaryActionCommand.Execute(null);
+        }   
     }
 }

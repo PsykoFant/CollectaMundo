@@ -19,20 +19,20 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             var updateVM = context.UtilitiesVM;
-            var overlay = context.Overlay;
+            var overlayVm = context.OverlayVM;
 
             updateVM.UpdateDBCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilPrimaryButtonTextAsync(
-                overlay,
+                overlayVm,
                 "   Start card database update!   ");
 
-            StatusTestDriver.Confirm(overlay);
+            StatusTestDriver.ClickPrimaryButton(overlayVm);
 
             await updateVM.InternalUpdateTask;
 
-            Assert.Equal("Database updated successfully!", overlay.Headline);
-            Assert.Equal("Your collection was backed up at mock-backup-path", overlay.Detail);
+            Assert.Equal("Database updated successfully!", overlayVm.Headline);
+            Assert.Equal("Your collection was backed up at mock-backup-path", overlayVm.Detail);
 
             context.DbServiceMock.Verify(
                 s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()),
@@ -58,17 +58,17 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             var updateVM = context.UtilitiesVM;
-            var overlay = context.Overlay;
+            var overlayVm = context.OverlayVM;
 
             // Act
             updateVM.UpdateDBCommand.Execute(null);
 
             // Simulate user confirmation
             await StatusTestDriver.WaitUntilPrimaryButtonTextAsync(
-                overlay,
+                overlayVm,
                 "   Start card database update!   ");
 
-            StatusTestDriver.Confirm(overlay);
+            StatusTestDriver.ClickPrimaryButton(overlayVm);
 
             // Wait until ViewModel finishes processing cancellation
             var timeout = TimeSpan.FromSeconds(5);
@@ -87,10 +87,10 @@ namespace CollectaMundo.Tests.UnitTests
 
             // Assert
             Assert.True(updateVM.InternalUpdateTask.IsCompletedSuccessfully);
-            Assert.Equal("Backup cancelled - aborting update...", overlay.Headline);
-            Assert.Equal("Update was cancelled by user during download.", overlay.Detail);
-            Assert.Equal("  OK  ", overlay.PrimaryButtonText);
-            Assert.Equal(Visibility.Visible, overlay.PrimaryButtonVisibility);
+            Assert.Equal("Backup cancelled - aborting update...", overlayVm.Headline);
+            Assert.Equal("Update was cancelled by user during download.", overlayVm.Detail);
+            Assert.Equal("  OK  ", overlayVm.PrimaryButtonText);
+            Assert.Equal(true, overlayVm.IsPrimaryButtonVisible);
 
             context.DbServiceMock.Verify(
                 s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()),
@@ -111,27 +111,27 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             var updateVM = context.UtilitiesVM;
-            var overlay = context.Overlay;
+            var overlayVM = context.OverlayVM;
 
             // Act
             updateVM.UpdateDBCommand.Execute(null);
 
             // Wait for prompt and simulate user confirming update
             await StatusTestDriver.WaitUntilPrimaryButtonTextAsync(
-                overlay,
+                overlayVM,
                 "   Start card database update!   ");
 
-            StatusTestDriver.Confirm(overlay);
+            StatusTestDriver.ClickPrimaryButton(overlayVM);
 
             // Wait until the backup flow completes
             await updateVM.InternalUpdateTask!;
 
             // Assert
             Assert.True(updateVM.InternalUpdateTask.IsCompletedSuccessfully);
-            Assert.Equal("Backup failed - aborting update...", overlay.Headline);
-            Assert.Equal("Backup Boom!", overlay.Detail);
-            Assert.Equal("  OK  ", overlay.PrimaryButtonText);
-            Assert.Equal(Visibility.Visible, overlay.PrimaryButtonVisibility);
+            Assert.Equal("Backup failed - aborting update...", overlayVM.Headline);
+            Assert.Equal("Backup Boom!", overlayVM.Detail);
+            Assert.Equal("  OK  ", overlayVM.PrimaryButtonText);
+            Assert.Equal(true, overlayVM.IsPrimaryButtonVisible);
 
             // Ensure update orchestration was never invoked
             context.DbServiceMock.Verify(
@@ -149,26 +149,26 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             var updateVM = context.UtilitiesVM;
-            var overlay = context.Overlay;
+            var overlayVM = context.OverlayVM;
 
             // Act
             updateVM.UpdateDBCommand.Execute(null);
 
             // Wait for prompt and simulate user confirming update
             await StatusTestDriver.WaitUntilPrimaryButtonTextAsync(
-                overlay,
+                overlayVM,
                 "   Start card database update!   ");
 
-            StatusTestDriver.Confirm(overlay);
+            StatusTestDriver.ClickPrimaryButton(overlayVM);
 
             // Await task completion
             await updateVM.InternalUpdateTask!;
 
             // Assert failure UI state
-            Assert.Equal("Card database update failed!", overlay.Headline);
-            Assert.Equal("Boom!", overlay.Detail);
-            Assert.Equal("  OK  ", overlay.PrimaryButtonText);
-            Assert.Equal(Visibility.Visible, overlay.PrimaryButtonVisibility);
+            Assert.Equal("Card database update failed!", overlayVM.Headline);
+            Assert.Equal("Boom!", overlayVM.Detail);
+            Assert.Equal("  OK  ", overlayVM.PrimaryButtonText);
+            Assert.Equal(true, overlayVM.IsPrimaryButtonVisible);
 
             // Verify both backup and update were called
             context.DbServiceMock.Verify(
@@ -203,15 +203,15 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             var updateVM = context.UtilitiesVM;
-            var overlay = context.Overlay;
+            var overlayVm = context.OverlayVM;
 
             updateVM.UpdateDBCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilPrimaryButtonTextAsync(
-                overlay,
+                overlayVm,
                 "   Start card database update!   ");
 
-            StatusTestDriver.Confirm(overlay);
+            StatusTestDriver.ClickPrimaryButton(overlayVm);
 
             while (updateVM.InternalUpdateTask is null)
             {
@@ -219,19 +219,19 @@ namespace CollectaMundo.Tests.UnitTests
             }
 
             await StatusTestDriver.WaitUntilPrimaryButtonTextAsync(
-                overlay,
+                overlayVm,
                 "   Cancel   ");
 
             orchestratorStarted.Wait();
 
-            StatusTestDriver.ClickPrimaryButton(overlay);
+            StatusTestDriver.ClickPrimaryButton(overlayVm);
 
             await updateVM.InternalUpdateTask;
 
-            Assert.Equal("Update canceled", overlay.Headline);
-            Assert.Equal("Download aborted. No files were imported.", overlay.Detail);
-            Assert.Equal("  OK  ", overlay.PrimaryButtonText);
-            Assert.Equal(Visibility.Visible, overlay.PrimaryButtonVisibility);
+            Assert.Equal("Update canceled", overlayVm.Headline);
+            Assert.Equal("Download aborted. No files were imported.", overlayVm.Detail);
+            Assert.Equal("  OK  ", overlayVm.PrimaryButtonText);
+            Assert.Equal(true, overlayVm.IsPrimaryButtonVisible);
 
             context.DbServiceMock.Verify(
                 s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
@@ -247,20 +247,22 @@ namespace CollectaMundo.Tests.UnitTests
                 .WithCollectionCount(0)
                 .Build();
 
+            var overlayVM = context.OverlayVM;
+
             // Act
             context.UtilitiesVM.UpdateDBCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilPrimaryButtonTextAsync(
-                context.Overlay,
+                overlayVM,
                 "   Start card database update!   ");
 
-            StatusTestDriver.Confirm(context.Overlay);
+            StatusTestDriver.ClickPrimaryButton(overlayVM);
 
             await context.UtilitiesVM.InternalUpdateTask!;
 
             // Assert
-            Assert.Equal("Database updated successfully!", context.Overlay.Headline);
-            Assert.DoesNotContain("backed up", context.Overlay.Detail);
+            Assert.Equal("Database updated successfully!", overlayVM.Headline);
+            Assert.DoesNotContain("backed up", overlayVM.Detail);
             context.DbServiceMock.Verify(
                 s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()),
                 Times.Never);
@@ -269,6 +271,7 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public async Task UpdateDbAsync_EmptyCollection_BackupSkipped_UpdateCancelledByUser()
         {
+            // Arrange
             var orchestratorStarted = new ManualResetEventSlim();
 
             var context = UpdateTestContextBuilder.Builder
@@ -289,28 +292,32 @@ namespace CollectaMundo.Tests.UnitTests
                 })
                 .Build();
 
+            var overlayVM = context.OverlayVM;
+
+            // Act
             context.UtilitiesVM.UpdateDBCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilPrimaryButtonTextAsync(
-                context.Overlay,
+                overlayVM,
                 "   Start card database update!   ");
 
-            StatusTestDriver.Confirm(context.Overlay);
+            StatusTestDriver.ClickPrimaryButton(overlayVM);
 
             await StatusTestDriver.WaitUntilPrimaryButtonTextAsync(
-                context.Overlay,
+                overlayVM,
                 "   Cancel   ");
 
             orchestratorStarted.Wait();
 
-            StatusTestDriver.ClickPrimaryButton(context.Overlay);
+            StatusTestDriver.ClickPrimaryButton(overlayVM);
 
             await context.UtilitiesVM.InternalUpdateTask;
 
-            Assert.Equal("Update canceled", context.Overlay.Headline);
-            Assert.Equal("Download aborted. No files were imported.", context.Overlay.Detail);
-            Assert.Equal("  OK  ", context.Overlay.PrimaryButtonText);
-            Assert.Equal(Visibility.Visible, context.Overlay.PrimaryButtonVisibility);
+            // Assert
+            Assert.Equal("Update canceled", overlayVM.Headline);
+            Assert.Equal("Download aborted. No files were imported.", overlayVM.Detail);
+            Assert.Equal("  OK  ", overlayVM.PrimaryButtonText);
+            Assert.Equal(true, overlayVM.IsPrimaryButtonVisible);
 
             context.DbServiceMock.Verify(
                 s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()),
@@ -321,7 +328,6 @@ namespace CollectaMundo.Tests.UnitTests
                 Times.Once);
         }
 
-
         [Fact]
         public async Task BackupCollection_EmptyCollection_ShowsEmptyMessage()
         {
@@ -330,14 +336,14 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             var updateVM = context.UtilitiesVM;
-            var overlay = context.Overlay;
+            var overlayVm = context.OverlayVM;
 
             updateVM.BackupCollectionCommand.Execute(null);
 
             await context.UtilitiesVM.InternalUpdateTask!;
 
-            Assert.Equal("Your collection is empty - nothing to back up", overlay.Detail);
-            Assert.Equal("   Oh ... I guess that makes sense...   ", overlay.PrimaryButtonText);
+            Assert.Equal("Your collection is empty - nothing to back up", overlayVm.Detail);
+            Assert.Equal("   Oh ... I guess that makes sense...   ", overlayVm.PrimaryButtonText);
         }
 
         [Fact]
@@ -349,13 +355,13 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             var updateVM = context.UtilitiesVM;
-            var overlay = context.Overlay;
+            var overlayVm = context.OverlayVM;
             var userPromptService = context.UserPromptService;
 
             updateVM.BackupCollectionCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(
-                overlay,
+                overlayVm,
                 "   Start backup   ");
 
             // Simulate user not confirming
@@ -364,7 +370,7 @@ namespace CollectaMundo.Tests.UnitTests
             await context.UtilitiesVM.InternalUpdateTask!;
 
             // No result should be shown
-            Assert.DoesNotContain("Backup complete", overlay.Headline);
+            Assert.DoesNotContain("Backup complete", overlayVm.Headline);
             context.DbServiceMock.Verify(
                 s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()),
                 Times.Never);
@@ -379,21 +385,21 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             var updateVM = context.UtilitiesVM;
-            var overlay = context.Overlay;
+            var overlayVm = context.OverlayVM;
 
             updateVM.BackupCollectionCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(
-                overlay,
+                overlayVm,
                 "   Start backup   ");
 
-            StatusTestDriver.ClickSecondaryButton(overlay);
+            StatusTestDriver.ClickSecondaryButton(overlayVm);
 
             await context.UtilitiesVM.InternalUpdateTask!;
 
-            Assert.Equal("Backup complete!", overlay.Headline);
-            Assert.Equal("Backup created successfully at mock-backup-path", overlay.Detail);
-            Assert.Equal("   Awesome!   ", overlay.PrimaryButtonText);
+            Assert.Equal("Backup complete!", overlayVm.Headline);
+            Assert.Equal("Backup created successfully at mock-backup-path", overlayVm.Detail);
+            Assert.Equal("   Awesome!   ", overlayVm.PrimaryButtonText);
         }
 
         [Fact]
@@ -405,20 +411,20 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             var updateVM = context.UtilitiesVM;
-            var overlay = context.Overlay;
+            var overlayVm = context.OverlayVM;
 
             updateVM.BackupCollectionCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(
-                overlay,
+                overlayVm,
                 "   Start backup   ");
 
-            StatusTestDriver.ClickSecondaryButton(overlay);
+            StatusTestDriver.ClickSecondaryButton(overlayVm);
 
             await context.UtilitiesVM.InternalUpdateTask!;
 
-            Assert.Equal("Error: Write access denied", overlay.Detail);
-            Assert.Equal("   Ok :-/   ", overlay.PrimaryButtonText);
+            Assert.Equal("Error: Write access denied", overlayVm.Detail);
+            Assert.Equal("   Ok :-/   ", overlayVm.PrimaryButtonText);
         }
 
     }
