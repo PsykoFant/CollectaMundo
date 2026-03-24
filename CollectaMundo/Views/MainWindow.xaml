@@ -7,8 +7,7 @@
         xmlns:sideMenuLeft="clr-namespace:CollectaMundo.Views.SideMenuLeft"
         xmlns:contentSection="clr-namespace:CollectaMundo.Views.ContentSection"
         xmlns:sideMenuRight="clr-namespace:CollectaMundo.Views.SideMenuRight"
-        xmlns:viewsRoot="clr-namespace:CollectaMundo.Views"
-        xmlns:import="clr-namespace:CollectaMundo.Views.ContentSection.Import"        
+        xmlns:viewsRoot="clr-namespace:CollectaMundo.Views"           
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodels:RootViewModel, IsDesignTimeCreatable=False}"
         Title="CollectaMundo"
@@ -30,11 +29,7 @@
         <viewsRoot:TopMenuView                  Grid.Row="0"    Grid.ColumnSpan="3"     DataContext="{Binding Main.TopMenuVM}" />
 
         <sideMenuLeft:SideMenuLeftHost          Grid.Row="1"    Grid.Column="0"         DataContext="{Binding Main}" />
-
         <contentSection:ContentSectionHost      Grid.Row="1"    Grid.Column="1"         DataContext="{Binding Main}" />
-        <import:ImportOverlay                   Grid.Row="1"    Grid.Column="1"         DataContext="{Binding Main.ImportVM}" />
-        <viewsRoot:OperationOverlayView         Grid.Row="1"    Grid.Column="1"         DataContext="{Binding OperationOverlayVM}" Panel.ZIndex="100" />
-
         <sideMenuRight:SideMenuRightHost        Grid.Row="1"    Grid.Column="2"         DataContext="{Binding Main}" />
 
     </Grid>

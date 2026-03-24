@@ -13,14 +13,14 @@ public sealed partial class TopMenuViewModel : ObservableObject
     public object AllCardsPageViewModel { get; }
     public object MyCollectionPageViewModel { get; }
     public object? DecksPageViewModel { get; }
-    public object? UtilitiesPageViewModel { get; }
+    public object? PagesUtilitiesHostViewModel { get; }
 
     // Sidemenu viewmodels
     public object FilteringSideMenuViewModel { get; }
     public object UtilitiesSideMenuViewModel { get; }
 
     //IShellNavigationHost shellNavigationHost
-    public TopMenuViewModel(IShellNavigationHost shellNavigationHost, INavigationCleanupService navigationCleanupService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? utilitiesPageViewModel = null)
+    public TopMenuViewModel(IShellNavigationHost shellNavigationHost, INavigationCleanupService navigationCleanupService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? pagesUtilitiesHostVM = null)
     {
         _shellNavigationHost = shellNavigationHost;
         _navigationCleanupService = navigationCleanupService;
@@ -29,7 +29,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
         AllCardsPageViewModel = allCardsPageViewModel;
         MyCollectionPageViewModel = myCollectionPageViewModel;
         DecksPageViewModel = decksPageViewModel;
-        UtilitiesPageViewModel = utilitiesPageViewModel;
+        PagesUtilitiesHostViewModel = pagesUtilitiesHostVM;
 
         _shellNavigationHost.PropertyChanged += Host_PropertyChanged;
     }
@@ -51,7 +51,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
     private void ShowDecksPage() => NavigateTo(DecksPageViewModel, ShellPage.Decks);
 
     [RelayCommand]
-    private void ShowUtilitiesPage() => NavigateTo(UtilitiesPageViewModel, ShellPage.Utilities);
+    private void ShowUtilitiesPage() => NavigateTo(PagesUtilitiesHostViewModel, ShellPage.Utilities);
 
 
     private void NavigateTo(object? pageViewModel, ShellPage page)
@@ -71,7 +71,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
     }
     private object? ResolveSideMenu(object pageViewModel)
     {
-        if (ReferenceEquals(pageViewModel, UtilitiesPageViewModel))
+        if (ReferenceEquals(pageViewModel, PagesUtilitiesHostViewModel))
         {
             return UtilitiesSideMenuViewModel;
         }

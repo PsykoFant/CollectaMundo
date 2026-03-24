@@ -1,0 +1,26 @@
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.UtilitiesPageHost"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:rootViews="clr-namespace:CollectaMundo.Views"
+             xmlns:pageViews="clr-namespace:CollectaMundo.Views.ContentSection.Pages"
+             xmlns:importHost="clr-namespace:CollectaMundo.Views.ContentSection.Import"     
+             xmlns:importVm="clr-namespace:CollectaMundo.ViewModels.Import"
+             xmlns:utilitiesVm="clr-namespace:CollectaMundo.ViewModels.Utilities"
+             xmlns:pagesVms="clr-namespace:CollectaMundo.ViewModels.Pages" 
+             d:DataContext="{d:DesignInstance Type=pagesVms:PagesUtilitiesHostViewModel}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <ContentControl Content="{Binding CurrentUtilitiesContentViewModel}">
+            <ContentControl.Resources>
+                <DataTemplate DataType="{x:Type utilitiesVm:UtilitiesHomeViewModel}"><pageViews:UtilitiesPageHomeView /></DataTemplate>
+                <DataTemplate DataType="{x:Type importVm:ImportViewModel}"><importHost:ImportWorkflowHost /></DataTemplate>
+            </ContentControl.Resources>
+        </ContentControl>
+
+        <rootViews:OperationOverlayView DataContext="{Binding DataContext.OperationOverlayVM, RelativeSource={RelativeSource AncestorType=Window}}"
+    Panel.ZIndex="100" />
+    </Grid>
+</UserControl>

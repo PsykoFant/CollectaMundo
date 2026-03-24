@@ -5,9 +5,9 @@ namespace CollectaMundo.Views.ContentSection.Import
     /// <summary>
     /// Interaction logic for StatusOverlay.xaml
     /// </summary>
-    public partial class ImportOverlay : UserControl
+    public partial class ImportWorkflowHost : UserControl
     {
-        public ImportOverlay()
+        public ImportWorkflowHost()
         {
             InitializeComponent();
         }

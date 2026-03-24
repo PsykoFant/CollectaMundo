@@ -19,6 +19,7 @@ using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.SideMenuLeft;
 using CollectaMundo.ViewModels.SideMenuRight;
+using CollectaMundo.ViewModels.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Diagnostics;
 
@@ -63,7 +64,7 @@ namespace CollectaMundo.ViewModels
         // Pages
         public CardListPageViewModel SearchAndFilterPageVM { get; }
         public CardListPageViewModel MyCollectionPageVM { get; }
-        public PagesUtilitiesViewModel UtilitiesPageVM { get; }
+        public PagesUtilitiesHostViewModel PagesUtilitiesHostVM { get; }
 
         // Menus
         public SideMenuFilteringViewModel FilteringSideMenuVM { get; }
@@ -176,7 +177,7 @@ namespace CollectaMundo.ViewModels
             // Pages viewmodels
             SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
-            UtilitiesPageVM = new PagesUtilitiesViewModel();
+            PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(new UtilitiesHomeViewModel(), ImportVM);
 
             // Side menu viewmodels
             FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterVM, ColorIconsViewModel, shellUiState);
@@ -192,7 +193,7 @@ namespace CollectaMundo.ViewModels
             _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, _importOverlayController);
 
             // Set up top menu with references to page VMs
-            TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, utilitiesPageViewModel: UtilitiesPageVM);
+            TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, pagesUtilitiesHostVM: PagesUtilitiesHostVM);
 
             // event wiring
             SubscribeChildVmEvents();
