@@ -207,19 +207,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                     if (updated)
                     {
                         updatedCount++;
-                        if (IsFallback)
-                        {
-                            Debug.WriteLine($"[PNGService] Persisted default.svg fallback for set {SetCode}");
-                        }
                     }
-                    else
-                    {
-                        Debug.WriteLine($"[PNGService] Keyrune for {SetCode} was already populated. Skipping update.");
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine($"[PNGService] Empty PNG for set: {SetCode} — not updating.");
                 }
             }
 

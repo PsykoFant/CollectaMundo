@@ -73,14 +73,13 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 // ---------------------------
                 // Steps 2–9. Prepare database
                 // ---------------------------
-                var prepResult = await PrepareDatabaseAsync(defaultDelay, stepNumberStart: 2);
+                var prepResult = await PrepareDatabaseAsync(defaultDelay, displayStepStart: 2, stepsToRun: FullPrepSteps);
                 if (prepResult.Code != OperationResultCode.Success)
                 {
                     return new OperationResult(OperationResultCode.Error, prepResult.Message);
                 }
 
                 // Success: clean up transient price file
-
                 try { File.Delete(_pricesPath); }
                 catch (IOException ex)
                 {
@@ -96,6 +95,18 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 return new OperationResult(OperationResultCode.Error, ex.Message);
             }
         }
+
+        private static readonly IReadOnlyList<DbPrepStep> FullPrepSteps =
+            [
+                DbPrepStep.CreateTables,
+                DbPrepStep.GenerateManaSymbols,
+                DbPrepStep.GenerateManaCostImages,
+                DbPrepStep.GenerateSetIcons,
+                DbPrepStep.ImportPrices,
+                DbPrepStep.CreateViews,
+                DbPrepStep.CreateIndices,
+                DbPrepStep.OptimizeDatabase
+            ];
 
         // Use case: check for updates to the card database
         public async Task<OperationResult> CheckForDbUpdatesAsync(CancellationToken ct = default)
@@ -175,33 +186,33 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             _progressSinks.ProgressBarVisible.Report(true);
 
             // ---------------------------
-            // Step 1. Download resources
+            // Download resources
             // ---------------------------
 
-            //var step1Name = "Step 1. Downloading card database and prices...";
-            //var downloadResult = await _downloader.DownloadParallelAsync(
-            //    _settings.CardDatabaseUrl, _tempDbPath, "Card database",
-            //    _settings.CardPricesUrl, _pricesPath, "Price File",
-            //    retryDelayInMs: defaultDelay,
-            //    stepName: step1Name,
-            //    stepNameAndNumberProgress: _progressSinks.Step,
-            //    stepDetailAndErrorProgress: _progressSinks.Detail,
-            //    percentProgress: _progressSinks.Percent,
-            //    cancelToken: ct);
+            var step1Name = "Step 1. Downloading card database and prices...";
+            var downloadResult = await _downloader.DownloadParallelAsync(
+                _settings.CardDatabaseUrl, _tempDbPath, "Card database",
+                _settings.CardPricesUrl, _pricesPath, "Price File",
+                retryDelayInMs: defaultDelay,
+                stepName: step1Name,
+                stepNameAndNumberProgress: _progressSinks.Step,
+                stepDetailAndErrorProgress: _progressSinks.Detail,
+                percentProgress: _progressSinks.Percent,
+                cancelToken: ct);
 
-            //if (ct.IsCancellationRequested)
-            //{
-            //    return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
-            //}
+            if (ct.IsCancellationRequested)
+            {
+                return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
+            }
 
-            //if (downloadResult.Code != OperationResultCode.Success)
-            //{
-            //    Debug.WriteLine($"[FirstTimeDbPrepOrchestrator] Download failed: {downloadResult.Message}");
-            //    return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
-            //}
+            if (downloadResult.Code != OperationResultCode.Success)
+            {
+                Debug.WriteLine($"[FirstTimeDbPrepOrchestrator] Download failed: {downloadResult.Message}");
+                return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
+            }
 
             // ---------------------------
-            // Step 2 - Copy tables from new DB
+            // Copy tables from new DB
             // ---------------------------
             _progressSinks.ProgressBarVisible.Report(false);
             _progressSinks.CancelEnabled?.Report(false); // Disable cancel button after download phase
@@ -235,28 +246,36 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
 
             // ---------------------------
-            // Steps 3–10. Prepare database
+            // Prepare database
             // ---------------------------
-            var prepResult = await PrepareDatabaseAsync(defaultDelay, stepNumberStart: 3);
+            var prepResult = await PrepareDatabaseAsync(defaultDelay, displayStepStart: 3, stepsToRun: UpdateDbSteps);
             if (prepResult.Code != OperationResultCode.Success)
             {
                 return new OperationResult(OperationResultCode.Error, prepResult.Message);
             }
 
             // Success: clean up temporary db and price file
-            //try
-            //{
-            //    File.Delete(_pricesPath);
-            //    File.Delete(_tempDbPath);
-            //}
-            //catch (IOException ex)
-            //{
-            //    Debug.WriteLine($"Cleanup failed: {ex.Message}");
-            //    return new OperationResult(OperationResultCode.Error, ex.Message);
-            //}
+            try
+            {
+                File.Delete(_pricesPath);
+                File.Delete(_tempDbPath);
+            }
+            catch (IOException ex)
+            {
+                Debug.WriteLine($"Cleanup failed: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, ex.Message);
+            }
             return new OperationResult(OperationResultCode.Success);
-
         }
+
+        private static readonly IReadOnlyList<DbPrepStep> UpdateDbSteps =
+            [
+                DbPrepStep.GenerateManaSymbols,
+                DbPrepStep.GenerateManaCostImages,
+                DbPrepStep.GenerateSetIcons,
+                DbPrepStep.ImportPrices,
+                DbPrepStep.OptimizeDatabase
+            ];
 
         // Use case: orchestrates card database update
         public async Task<OperationResult> UpdateCardPricesOrchetrator(int defaultDelay = 3000, CancellationToken ct = default)
@@ -312,7 +331,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // ---------------------------
             // Steps 3–10. Prepare database
             // ---------------------------
-            var prepResult = await PrepareDatabaseAsync(defaultDelay, stepNumberStart: 2, [DbPrepStep.ImportPrices, DbPrepStep.OptimizeDatabase]);
+            var prepResult = await PrepareDatabaseAsync(defaultDelay, displayStepStart: 2, stepsToRun: UpdatePricesSteps);
 
             if (prepResult.Code != OperationResultCode.Success)
             {
@@ -332,32 +351,21 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             return new OperationResult(OperationResultCode.Success);
         }
 
-        // Core logic for preparing the database (used by both first-time prep and update)
-        private async Task<OperationResult> PrepareDatabaseAsync(int defaultDelay, int stepNumberStart, IEnumerable<DbPrepStep>? stepsToRun = null)
+        private static readonly IReadOnlyList<DbPrepStep> UpdatePricesSteps =
+            [
+                DbPrepStep.ImportPrices,
+                DbPrepStep.OptimizeDatabase
+            ];
+
+        // Shared method for orchestrating the various database preparation steps, with retry logic and progress reporting
+        private async Task<OperationResult> PrepareDatabaseAsync(int defaultDelay, int displayStepStart, IReadOnlyList<DbPrepStep> stepsToRun)
         {
-            var allSteps = new List<(DbPrepStep Key, string Label, Func<Task> Work, bool ShowProgress)>
+            var stepMap = GetPrepSteps().ToDictionary(x => x.Key);
+
+            foreach (var stepKey in stepsToRun)
             {
-                (DbPrepStep.CreateTables, "Creating custom tables...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateTablesAsync(conn))), false),
-                (DbPrepStep.GenerateManaSymbols, "Generating mana symbols...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _progressSinks.Percent)), true),
-                (DbPrepStep.GenerateManaCostImages, "Generating mana cost images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _progressSinks.Percent)), true),
-                (DbPrepStep.GenerateSetIcons, "Generating set icon images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _progressSinks.Percent)), true),
-                (DbPrepStep.ImportPrices, "Processing card prices...", () => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _progressSinks.Detail, _progressSinks.Percent)), true),
-                (DbPrepStep.CreateViews, "Creating views...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateViewsAsync(conn, "cardmarket"))), false),
-                (DbPrepStep.CreateIndices, "Creating indices...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateIndicesAsync(conn))), false),
-                (DbPrepStep.OptimizeDatabase, "Optimizing database...", () => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbMgmtRepo.OptimizeAsync(conn))), false),
-            };
-
-            var runAll = stepsToRun is null || stepsToRun.Contains((DbPrepStep)0); // 0 means "run all"
-            var stepsToRunSet = runAll ? null : stepsToRun!.ToHashSet();
-
-            foreach (var (key, label, work, showProgress) in allSteps)
-            {
-                if (!runAll && !stepsToRunSet!.Contains(key))
-                {
-                    continue;
-                }
-
-                string stepLabel = $"Step {stepNumberStart++}. {label}";
+                var (_, label, work, showProgress) = stepMap[stepKey];
+                var stepLabel = $"Step {displayStepStart++}. {label}";
 
                 Debug.WriteLine($"Starting: {stepLabel}");
 
@@ -384,16 +392,30 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             return new OperationResult(OperationResultCode.Success, "Database preparation completed.");
         }
+        private List<(DbPrepStep Key, string Label, Func<Task> Work, bool ShowProgress)> GetPrepSteps()
+        {
+            return
+            [
+                (DbPrepStep.CreateTables, "Creating custom tables...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateTablesAsync(conn))), false),
+                (DbPrepStep.GenerateManaSymbols, "Generating mana symbols...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _progressSinks.Percent)), true),
+                (DbPrepStep.GenerateManaCostImages, "Generating mana cost images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _progressSinks.Percent)), true),
+                (DbPrepStep.GenerateSetIcons, "Generating set icon images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _progressSinks.Percent)), true),
+                (DbPrepStep.ImportPrices, "Processing card prices...", () => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _progressSinks.Detail, _progressSinks.Percent)), true),
+                (DbPrepStep.CreateViews, "Creating views...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateViewsAsync(conn, "cardmarket"))), false),
+                (DbPrepStep.CreateIndices, "Creating indices...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateIndicesAsync(conn))), false),
+                (DbPrepStep.OptimizeDatabase, "Optimizing database...", () => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbMgmtRepo.OptimizeAsync(conn))), false),
+            ];
+        }
         private enum DbPrepStep
         {
-            CreateTables = 1,
-            GenerateManaSymbols = 2,
-            GenerateManaCostImages = 3,
-            GenerateSetIcons = 4,
-            ImportPrices = 5,
-            CreateViews = 6,
-            CreateIndices = 7,
-            OptimizeDatabase = 8
+            CreateTables,
+            GenerateManaSymbols,
+            GenerateManaCostImages,
+            GenerateSetIcons,
+            ImportPrices,
+            CreateViews,
+            CreateIndices,
+            OptimizeDatabase
         }
 
         // Use case: Backup/export collection to CSV

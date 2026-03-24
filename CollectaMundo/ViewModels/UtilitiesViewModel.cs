@@ -6,7 +6,6 @@ using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
-using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
@@ -23,7 +22,7 @@ namespace CollectaMundo.ViewModels
 
         // Visibility property
         [ObservableProperty]
-        private Visibility updateDbVisibility = Visibility.Collapsed;
+        private bool isUpdateDbButtonVisible;
 
         // Use case: Backup collection
         [RelayCommand]
@@ -126,26 +125,39 @@ namespace CollectaMundo.ViewModels
             // Run the update
             var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: token);
 
-            CompleteCommandUIFlow();
+            // Clear UI
+            _operationOverlayController.Reset();
 
             // Show result
             switch (result.Code)
             {
                 case OperationResultCode.Success:
-                    _operationOverlayController.SetHeadline("Prices updated successfully!");
+
+
+
+                    // Reload collection
+                    _operationOverlayController.SetStep("Refreshing prices...");
                     _cardCollectionHost.RefreshAllPrices();
+                    _operationOverlayController.SetStep(string.Empty);
+
+                    _operationOverlayController.SetHeadline("Prices updated successfully!");
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
                     break;
 
                 case OperationResultCode.CancelledByUser:
                     _operationOverlayController.SetHeadline("Update canceled");
                     _operationOverlayController.SetDetail("Download aborted. No prices were updated.");
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
                     break;
 
                 default:
                     _operationOverlayController.SetHeadline("Prices update failed!");
                     _operationOverlayController.SetDetail(result.Message);
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
                     break;
             }
+
+            _shellUiState.SetUiBusy(false);
         }
 
         // Use case: Check for database updates
@@ -167,12 +179,13 @@ namespace CollectaMundo.ViewModels
                 case OperationResultCode.UpToDate:
                     _operationOverlayController.SetHeadline("Check complete - card database is up to date.");
                     _operationOverlayController.SetDetail(result.Message);
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
                     break;
 
                 case OperationResultCode.NeedsUpdate:
                     _operationOverlayController.SetHeadline("Check complete - update available.");
 
-                    UpdateDbVisibility = Visibility.Visible;
+                    IsUpdateDbButtonVisible = true;
                     _operationOverlayController.SetDetail(result.Message);
 
                     _operationOverlayController.ShowSecondaryButton("   Update database now   ",
@@ -185,11 +198,13 @@ namespace CollectaMundo.ViewModels
                 case OperationResultCode.CancelledByUser:
                     _operationOverlayController.SetHeadline("Cancelled");
                     _operationOverlayController.SetDetail("No check was performed.");
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
                     break;
 
                 default:
                     _operationOverlayController.SetHeadline("Error in update check.");
                     _operationOverlayController.SetDetail(result.Message);
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
                     break;
             }
         }
@@ -252,33 +267,40 @@ namespace CollectaMundo.ViewModels
             // Run the update
             var result = await _cardDbManagementService.UpdateDbPrepOrchetrator(ct: token);
 
-            // Reset UI state before exiting
-            CompleteCommandUIFlow();
+            // Clear UI
+            _operationOverlayController.Reset();
 
             // Show result
             switch (result.Code)
             {
                 case OperationResultCode.Success:
-                    _operationOverlayController.SetPrimaryButtonText("   I love an updated database!   ");
-                    _operationOverlayController.SetHeadline("Database updated successfully!");
-                    if (includeBackup) { _operationOverlayController.SetDetail($"Your collection was backed up at {backupResultMessage}"); }
-                    UpdateDbVisibility = Visibility.Collapsed;
 
+                    // Reload collection
                     _operationOverlayController.SetStep("Reloading card lists…");
                     await _cardCollectionHost.ReloadAllCardListsAndFiltersAsync();
                     _operationOverlayController.SetStep(string.Empty);
+
+                    // Show success message                    
+                    _operationOverlayController.SetHeadline("Database updated successfully!");
+                    if (includeBackup) { _operationOverlayController.SetDetail($"Your collection was backed up at {backupResultMessage}"); }
+                    IsUpdateDbButtonVisible = false;
+                    _operationOverlayController.SetPrimaryButtonText("   I love an updated database!   ");
                     break;
 
                 case OperationResultCode.CancelledByUser:
                     _operationOverlayController.SetHeadline("Update canceled");
                     _operationOverlayController.SetDetail("Download aborted. No files were imported.");
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
                     break;
 
                 default:
                     _operationOverlayController.SetHeadline("Card database update failed!");
                     _operationOverlayController.SetDetail(result.Message);
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
                     break;
             }
+
+            _shellUiState.SetUiBusy(false);
         }
 
         // Private helpers
