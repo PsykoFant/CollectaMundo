@@ -101,9 +101,6 @@ namespace CollectaMundo.ViewModels.Import
         #region Visibility properties
 
         [ObservableProperty]
-        private bool isImportOverlayVisible;
-
-        [ObservableProperty]
         private Visibility progressVisibility = Visibility.Collapsed;
 
         [ObservableProperty]
@@ -277,7 +274,6 @@ namespace CollectaMundo.ViewModels.Import
 
         public async Task Begin()
         {
-            IsImportOverlayVisible = true;
             GoToStep(ImportStep.Start);
             Progress.Headline.Report("The Import Wizard");
             _ = await _userPromptService.BeginPrompt().Task;
@@ -603,7 +599,6 @@ namespace CollectaMundo.ViewModels.Import
             _currentStep = ImportStep.Start;
 
             _shellUiState.SetUiBusy(false);
-            IsImportOverlayVisible = false;
             ImportFailVisibility = Visibility.Collapsed;
             ImportSuccessVisibility = Visibility.Collapsed;
         }

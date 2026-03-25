@@ -4,11 +4,10 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.Shell
 {
-    public sealed class NavigationCleanupService(IUserPromptService userPromptService, IOperationOverlayController operationOverlayController, IImportOverlayController importOverlayController) : INavigationCleanupService
+    public sealed class NavigationCleanupService(IUserPromptService userPromptService, IOperationOverlayController operationOverlayController) : INavigationCleanupService
     {
         private readonly IUserPromptService _userPromptService = userPromptService;
         private readonly IOperationOverlayController _operationOverlayController = operationOverlayController;
-        private readonly IImportOverlayController _importOverlayController = importOverlayController;
 
         public void CleanupBeforePageChange(object? oldPageViewModel, object? newPageViewModel)
         {
@@ -24,7 +23,6 @@ namespace CollectaMundo.ApplicationServices.Shell
             }
 
             _userPromptService.ResetInteractionState();
-            _importOverlayController.HideImportOverlayAndEndImport();
             _operationOverlayController.Hide();
         }
     }

@@ -36,7 +36,6 @@ namespace CollectaMundo.ViewModels
 
         // Overlay controllers
         private readonly IOperationOverlayController _operationOverlayController;
-        private readonly IImportOverlayController _importOverlayController;
 
         // Card list / card collection management services
         private readonly IModifyCollectionService _modifyService;
@@ -135,7 +134,7 @@ namespace CollectaMundo.ViewModels
         {
             _modifyService = modifyService;
             _settings = settings;
-            _operationOverlayController = operationOverlayController;
+            _operationOverlayController = operationOverlayController;            
             _filteringService = new FilteringService();
             _cardListService = cardListService;
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
@@ -166,10 +165,6 @@ namespace CollectaMundo.ViewModels
 
             // import viewmodel
             ImportVM = new ImportViewModel(importService, shellUiState, _userPromptService);
-            _importOverlayController = new ImportOverlayController(ImportVM);
-
-            // Utility section viewmodel
-            UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, _importOverlayController, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
@@ -178,6 +173,10 @@ namespace CollectaMundo.ViewModels
             SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
             PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(new UtilitiesHomeViewModel(), ImportVM);
+
+            // Utility section viewmodel
+            UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, PagesUtilitiesHostVM, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
+
 
             // Side menu viewmodels
             FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterVM, ColorIconsViewModel, shellUiState);
@@ -190,7 +189,7 @@ namespace CollectaMundo.ViewModels
             CurrentPage = ShellPage.SearchAndFilter;
 
             // Navigation cleanup service
-            _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, _importOverlayController);
+            _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController);
 
             // Set up top menu with references to page VMs
             TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, pagesUtilitiesHostVM: PagesUtilitiesHostVM);

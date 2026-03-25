@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
+using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,12 +10,12 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IImportOverlayController importOverlayController, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
+    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IUtilitiesHostController utilitiesHostController, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
     {
         private readonly IShellUiState _shellUiState = shellUiState;
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
         private readonly IOperationOverlayController _operationOverlayController = operationOverlayController;
-        private readonly IImportOverlayController _importOverlayController = importOverlayController;
+        private readonly IUtilitiesHostController _utilitiesHostController = utilitiesHostController;
         private readonly IUserPromptService _userPromptService = userPromptService;
         private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
         private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
@@ -101,7 +102,7 @@ namespace CollectaMundo.ViewModels
             _userPromptService.ResetInteractionState();
             _operationOverlayController.Hide();
 
-            await _importOverlayController.ShowImportOverlayAndBeginImport(); // <-- activate first step
+            await _utilitiesHostController.ShowImportAsync(); // <-- activate first step
         }
 
         // Use case: Update prices
@@ -306,7 +307,7 @@ namespace CollectaMundo.ViewModels
         // Private helpers
         private void PrepareUIForCommands(string message)
         {
-            _importOverlayController.HideImportOverlayAndEndImport();
+            _utilitiesHostController.ShowUtilitiesHome();
             _userPromptService.ResetInteractionState();
             _operationOverlayController.Show(message, false);
         }
