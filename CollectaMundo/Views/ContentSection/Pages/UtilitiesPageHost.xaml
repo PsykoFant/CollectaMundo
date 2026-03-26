@@ -15,7 +15,7 @@
     <Grid>
         <ContentControl Content="{Binding CurrentUtilitiesContentViewModel}">
             <ContentControl.Resources>
-                <DataTemplate DataType="{x:Type utilitiesVm:UtilitiesHomeViewModel}"><pageViews:UtilitiesPageHomeView /></DataTemplate>
+                <DataTemplate DataType="{x:Type utilitiesVm:UtilitiesViewModel}"><pageViews:UtilitiesPageHomeView /></DataTemplate>
                 <DataTemplate DataType="{x:Type importVm:ImportViewModel}"><importHost:ImportWorkflowHost /></DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
