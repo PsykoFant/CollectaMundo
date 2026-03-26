@@ -1,4 +1,6 @@
-﻿namespace CollectaMundo.ViewModels.SideMenuLeft
+﻿using CollectaMundo.ViewModels.Utilities;
+
+namespace CollectaMundo.ViewModels.SideMenuLeft
 {
 
     public sealed class SideMenuUtilitiesViewModel(UtilitiesViewModel utilitiesVM, PricesViewModel pricesVM)

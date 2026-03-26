@@ -8,14 +8,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 
-namespace CollectaMundo.ViewModels
+namespace CollectaMundo.ViewModels.Utilities
 {
-    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IUtilitiesHostController utilitiesHostController, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
+    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
     {
         private readonly IShellUiState _shellUiState = shellUiState;
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
         private readonly IOperationOverlayController _operationOverlayController = operationOverlayController;
-        private readonly IUtilitiesHostController _utilitiesHostController = utilitiesHostController;
+        private readonly IUtilitiesNavigator _utilitiesNavigator = utilitiesNavigator;
         private readonly IUserPromptService _userPromptService = userPromptService;
         private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
         private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
@@ -102,7 +102,7 @@ namespace CollectaMundo.ViewModels
             _userPromptService.ResetInteractionState();
             _operationOverlayController.Hide();
 
-            await _utilitiesHostController.ShowImportAsync(); // <-- activate first step
+            await _utilitiesNavigator.ShowImport(); // <-- activate first step
         }
 
         // Use case: Update prices
@@ -307,7 +307,7 @@ namespace CollectaMundo.ViewModels
         // Private helpers
         private void PrepareUIForCommands(string message)
         {
-            _utilitiesHostController.ShowUtilitiesHome();
+            _utilitiesNavigator.ShowHome();
             _userPromptService.ResetInteractionState();
             _operationOverlayController.Show(message, false);
         }

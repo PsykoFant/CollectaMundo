@@ -162,6 +162,11 @@ namespace CollectaMundo.ViewModels
 
             var cardCollectionHost = this;
             var shellUiState = this;
+            var utilitiesNavigator = new UtilitiesNavigator();
+
+
+            // Utility section viewmodel
+            UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
 
             // import viewmodel
             ImportVM = new ImportViewModel(importService, shellUiState, _userPromptService);
@@ -169,13 +174,13 @@ namespace CollectaMundo.ViewModels
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
 
+
+
             // Pages viewmodels
             SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
-            PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(new UtilitiesHomeViewModel(), ImportVM);
+            PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, utilitiesNavigator);
 
-            // Utility section viewmodel
-            UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, PagesUtilitiesHostVM, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
 
 
             // Side menu viewmodels

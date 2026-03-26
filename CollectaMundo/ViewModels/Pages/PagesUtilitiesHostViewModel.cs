@@ -1,41 +1,43 @@
 ﻿using CollectaMundo.ViewModels.Import;
-using CollectaMundo.ViewModels.Pages;
+using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CollectaMundo.ViewModels.Pages
 {
-    public partial class PagesUtilitiesHostViewModel : ObservableObject, IUtilitiesHostController
+    public partial class PagesUtilitiesHostViewModel : ObservableObject
     {
-        public UtilitiesHomeViewModel UtilitiesHomeVM { get; }
+        private readonly IUtilitiesNavigator _navigator;
+        public UtilitiesViewModel UtilitiesVM { get; }
         public ImportViewModel ImportVM { get; }
 
         [ObservableProperty]
         private object currentUtilitiesContentViewModel;
-
-        public PagesUtilitiesHostViewModel(
-            UtilitiesHomeViewModel utilitiesHomeVM,
-            ImportViewModel importVM)
+        public PagesUtilitiesHostViewModel(UtilitiesViewModel utilitiesVM,ImportViewModel importVM,IUtilitiesNavigator navigator)
         {
-            UtilitiesHomeVM = utilitiesHomeVM;
+            UtilitiesVM = utilitiesVM;
             ImportVM = importVM;
-            currentUtilitiesContentViewModel = UtilitiesHomeVM;
+            _navigator = navigator;
+
+            currentUtilitiesContentViewModel = ResolveRoute(navigator.CurrentRoute);
+            _navigator.RouteChanged += OnRouteChanged;
         }
-
-        public void ShowHome() => CurrentUtilitiesContentViewModel = UtilitiesHomeVM;
-
-        public void ShowImport() => CurrentUtilitiesContentViewModel = ImportVM;
-
-        public async Task ShowImportAsync()
+        private void OnRouteChanged(object? sender, UtilitiesRoute route)
         {
-            CurrentUtilitiesContentViewModel = ImportVM;
-            await ImportVM.Begin();
+            CurrentUtilitiesContentViewModel = ResolveRoute(route);
         }
 
-        public void ShowUtilitiesHome()
+        private object ResolveRoute(UtilitiesRoute route) => route switch
         {
-            ImportVM.EndImport();
-            CurrentUtilitiesContentViewModel = UtilitiesHomeVM;
-        }
+            UtilitiesRoute.Home => UtilitiesVM,
+            UtilitiesRoute.Import => ImportVM,
+            _ => UtilitiesVM
+        };
+    }
+
+    public enum UtilitiesRoute
+    {
+        Home,
+        Import
     }
 }
