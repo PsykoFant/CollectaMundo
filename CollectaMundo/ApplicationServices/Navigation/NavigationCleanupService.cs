@@ -2,7 +2,7 @@
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using System.Diagnostics;
 
-namespace CollectaMundo.ApplicationServices.Shell
+namespace CollectaMundo.ApplicationServices.Navigation
 {
     public sealed class NavigationCleanupService(IUserPromptService userPromptService, IOperationOverlayController operationOverlayController) : INavigationCleanupService
     {

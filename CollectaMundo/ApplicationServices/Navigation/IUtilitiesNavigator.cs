@@ -1,4 +1,6 @@
-﻿namespace CollectaMundo.ViewModels.Pages
+﻿using CollectaMundo.ViewModels.Pages;
+
+namespace CollectaMundo.ApplicationServices.Navigation
 {
     public interface IUtilitiesNavigator
     {

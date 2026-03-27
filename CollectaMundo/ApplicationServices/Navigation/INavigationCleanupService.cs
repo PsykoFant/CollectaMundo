@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CollectaMundo.ApplicationServices.Shell
+namespace CollectaMundo.ApplicationServices.Navigation
 {
     public interface INavigationCleanupService
     {

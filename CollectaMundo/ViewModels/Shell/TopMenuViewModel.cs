@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Shell;
+﻿using CollectaMundo.ApplicationServices.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.ComponentModel;
