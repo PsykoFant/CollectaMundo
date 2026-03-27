@@ -19,7 +19,6 @@ public sealed partial class TopMenuViewModel : ObservableObject
     public object FilteringSideMenuViewModel { get; }
     public object UtilitiesSideMenuViewModel { get; }
 
-    //IShellNavigationHost shellNavigationHost
     public TopMenuViewModel(IShellNavigationHost shellNavigationHost, INavigationCleanupService navigationCleanupService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? pagesUtilitiesHostVM = null)
     {
         _shellNavigationHost = shellNavigationHost;

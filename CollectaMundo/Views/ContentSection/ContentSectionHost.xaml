@@ -13,9 +13,9 @@
     <Grid Margin="10,0,10,0">
         <ContentControl Content="{Binding CurrentPageViewModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <ContentControl.Resources>
-                <DataTemplate DataType="{x:Type vmPages:PagesSearchAndFilterViewModel}"><pageViews:SearchAndFilterPageView /></DataTemplate>
-                <DataTemplate DataType="{x:Type vmPages:PagesMyCollectionViewModel}"><pageViews:MyCollectionPageView /></DataTemplate>
-                <DataTemplate DataType="{x:Type vmPages:PagesUtilitiesHostViewModel}"><pageViews:UtilitiesPageHost /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmPages:PagesSearchAndFilterViewModel}"><pageViews:PagesSearchAndFilterView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmPages:PagesMyCollectionViewModel}"><pageViews:PagesMyCollectionView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmPages:PagesUtilitiesHostViewModel}"><pageViews:PagesUtilitiesHost /></DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
     </Grid>

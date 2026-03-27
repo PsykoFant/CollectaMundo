@@ -3,11 +3,11 @@
 namespace CollectaMundo.Views.ContentSection.Pages
 {
     /// <summary>
-    /// Interaction logic for DecksPageView.xaml
+    /// Interaction logic for PagesDecksView.xaml
     /// </summary>
-    public partial class DecksPageView : UserControl
+    public partial class PagesDecksView : UserControl
     {
-        public DecksPageView()
+        public PagesDecksView()
         {
             InitializeComponent();
         }

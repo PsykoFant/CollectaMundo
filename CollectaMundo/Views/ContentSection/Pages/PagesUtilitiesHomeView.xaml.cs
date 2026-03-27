@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace CollectaMundo.Views.ContentSection.Pages
 {
     /// <summary>
-    /// Interaction logic for MyCollectionPageView.xaml
+    /// Interaction logic for PagesUtilitiesHomeView.xaml
     /// </summary>
-    public partial class MyCollectionPageView : UserControl
+    public partial class PagesUtilitiesHomeView : UserControl
     {
-        public MyCollectionPageView()
+        public PagesUtilitiesHomeView()
         {
             InitializeComponent();
         }

@@ -3,11 +3,11 @@
 namespace CollectaMundo.Views.ContentSection.Pages
 {
     /// <summary>
-    /// Interaction logic for SearchAndFilterPageView.xaml
+    /// Interaction logic for PagesSearchAndFilterView.xaml
     /// </summary>
-    public partial class SearchAndFilterPageView : UserControl
+    public partial class PagesSearchAndFilterView : UserControl
     {
-        public SearchAndFilterPageView()
+        public PagesSearchAndFilterView()
         {
             InitializeComponent();
         }
