@@ -35,25 +35,25 @@ public sealed partial class TopMenuViewModel : ObservableObject
 
     public bool IsTopMenuEnabled => _shellNavigationHost.IsTopMenuEnabled;
 
-    public bool IsAllCardsPageActive => _shellNavigationHost.CurrentPage == ShellPage.SearchAndFilter;
-    public bool IsMyCollectionPageActive => _shellNavigationHost.CurrentPage == ShellPage.MyCollection;
-    public bool IsDecksPageActive => _shellNavigationHost.CurrentPage == ShellPage.Decks;
-    public bool IsUtilitiesPageActive => _shellNavigationHost.CurrentPage == ShellPage.Utilities;
+    public bool IsAllCardsPageActive => _shellNavigationHost.CurrentPage == ShellPageEnum.SearchAndFilter;
+    public bool IsMyCollectionPageActive => _shellNavigationHost.CurrentPage == ShellPageEnum.MyCollection;
+    public bool IsDecksPageActive => _shellNavigationHost.CurrentPage == ShellPageEnum.Decks;
+    public bool IsUtilitiesPageActive => _shellNavigationHost.CurrentPage == ShellPageEnum.Utilities;
 
     [RelayCommand]
-    private void ShowAllCardsPage() => NavigateTo(AllCardsPageViewModel, ShellPage.SearchAndFilter);
+    private void ShowAllCardsPage() => NavigateTo(AllCardsPageViewModel, ShellPageEnum.SearchAndFilter);
 
     [RelayCommand]
-    private void ShowMyCollectionPage() => NavigateTo(MyCollectionPageViewModel, ShellPage.MyCollection);
+    private void ShowMyCollectionPage() => NavigateTo(MyCollectionPageViewModel, ShellPageEnum.MyCollection);
 
     [RelayCommand]
-    private void ShowDecksPage() => NavigateTo(DecksPageViewModel, ShellPage.Decks);
+    private void ShowDecksPage() => NavigateTo(DecksPageViewModel, ShellPageEnum.Decks);
 
     [RelayCommand]
-    private void ShowUtilitiesPage() => NavigateTo(PagesUtilitiesHostViewModel, ShellPage.Utilities);
+    private void ShowUtilitiesPage() => NavigateTo(PagesUtilitiesHostViewModel, ShellPageEnum.Utilities);
 
 
-    private void NavigateTo(object? pageViewModel, ShellPage page)
+    private void NavigateTo(object? pageViewModel, ShellPageEnum page)
     {
         if (pageViewModel is null)
         {

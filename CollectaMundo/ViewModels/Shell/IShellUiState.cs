@@ -8,6 +8,6 @@ namespace CollectaMundo.ViewModels.Shell
         bool IsSideMenuRightVisible { get; set; }
         bool IsTopMenuEnabled { get; set; }
         void SetUiBusy(bool isBusy);
-        ShellPage CurrentPage { get; set; }
+        ShellPageEnum CurrentPage { get; set; }
     }
 }

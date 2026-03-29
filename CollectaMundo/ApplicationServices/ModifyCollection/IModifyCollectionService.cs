@@ -11,7 +11,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         Task<CardSet> CreateCardForEditAsync(CardSet selectedCard);
         Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot);
         Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot);
-        CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardViewModel myCollection, CardViewModel allCards);
+        CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardListViewModel myCollection, CardListViewModel allCards);
         void ApplyMyCollectionChanges(IList<CardSet> collection, CollectionChangeSet<CardSet> changes);
     }
 }

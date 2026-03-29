@@ -64,7 +64,7 @@ namespace CollectaMundo.Tests.ScenarioTests
         public void CardViewModel_Object_Creation_Initialization()
         {
 
-            // Assert: Both CardViewModel objects have the expected names
+            // Assert: Both CardListViewModel objects have the expected names
             var expectedAllCardsNames = new List<string>
             {
                 "Boundary Lands Ranger",
@@ -218,7 +218,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             var foilCount = _mainVM.MyCollectionVM.Cards.Count(c => string.Equals(c.SelectedFinish, "foil", StringComparison.OrdinalIgnoreCase));
             Assert.Equal(4, foilCount);
 
-            // Assert mana cost images load correctly for known keys for both CardViewModel objects
+            // Assert mana cost images load correctly for known keys for both CardListViewModel objects
             var validManaCostKeys = new HashSet<string>
             {
                 "{1}{B}",
@@ -295,7 +295,7 @@ namespace CollectaMundo.Tests.ScenarioTests
                 }
             }
 
-            // Assert set icons images load correctly for known keys for both CardViewModel objects
+            // Assert set icons images load correctly for known keys for both CardListViewModel objects
             var validSetCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "3ED",

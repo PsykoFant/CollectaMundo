@@ -6,7 +6,7 @@ using System.Windows.Input;
 namespace CollectaMundo.ViewModels.Pages
 {
     public sealed class PagesSearchAndFilterViewModel(
-        CardViewModel cardsVM,
+        CardListViewModel cardsVM,
         CardImageViewModel cardImageVM,
         FilterViewModel filterVM,
         string pageTitle,

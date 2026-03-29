@@ -166,7 +166,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
         }
 
         // Updating in-memory collection
-        public CollectionChangeSet<CardSet> BuildChangeSet(CollectionMutation mutation, CardViewModel myCollection, CardViewModel allCards)
+        public CollectionChangeSet<CardSet> BuildChangeSet(CollectionMutation mutation, CardListViewModel myCollection, CardListViewModel allCards)
         {
             var addedOrUpdated = new List<CardSet>();
 

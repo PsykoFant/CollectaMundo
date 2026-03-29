@@ -9,7 +9,7 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
     public abstract class CardListPageViewModel : ObservableObject, IClearPageStatus
     {
         // Child VMs passed down from MainWindowViewModel
-        public CardViewModel CardsVM { get; }
+        public CardListViewModel CardsVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public FilterViewModel FilterVM { get; }
         public ModifyCollectionViewModel? ModifyCollectionViewModel { get; }
@@ -32,7 +32,7 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
         public ICommand? PrimarySubmitCommand { get; }
         public ICommand? ClearPendingChangesCommand => ModifyCollectionViewModel?.ClearCardsToAddCommand;
 
-        public CardListPageViewModel(CardViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, string pageTitle, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
+        public CardListPageViewModel(CardListViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, string pageTitle, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
         {
             CardsVM = cardsVM;
             CardImageVM = cardImageVM;

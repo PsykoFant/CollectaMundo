@@ -6,7 +6,7 @@ using System.Windows.Input;
 namespace CollectaMundo.ViewModels.Pages
 {
     public sealed class PagesMyCollectionViewModel(
-        CardViewModel cardsVM,
+        CardListViewModel cardsVM,
         CardImageViewModel cardImageVM,
         FilterViewModel filterVM,
         string pageTitle,

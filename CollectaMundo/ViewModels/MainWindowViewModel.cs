@@ -69,11 +69,11 @@ namespace CollectaMundo.ViewModels
         public SideMenuFilteringViewModel FilteringSideMenuVM { get; }
         public SideMenuUtilitiesViewModel UtilitiesSideMenuVM { get; }
 
-        public CardViewModel AllCardsVM { get; }
-        public CardViewModel AllCardsForDecksVM { get; }
-        public CardViewModel AllCardsInDecksVM { get; }
-        public CardViewModel MyCollectionVM { get; }
-        public CardViewModel ColorIconsViewModel { get; }
+        public CardListViewModel AllCardsVM { get; }
+        public CardListViewModel AllCardsForDecksVM { get; }
+        public CardListViewModel AllCardsInDecksVM { get; }
+        public CardListViewModel MyCollectionVM { get; }
+        public CardListViewModel ColorIconsViewModel { get; }
         public ModifyCollectionViewModel AddCardsVM { get; }
         public ModifyCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
@@ -90,7 +90,7 @@ namespace CollectaMundo.ViewModels
         private object? currentPageViewModel;
 
         [ObservableProperty]
-        private ShellPage currentPage;
+        private ShellPageEnum currentPage;
 
         [ObservableProperty]
         private object? currentSideMenuLeftViewModel;
@@ -143,12 +143,12 @@ namespace CollectaMundo.ViewModels
             _filesystemPicker = fileSystemPicker;
 
             // cardlist viewmodels
-            AllCardsVM = new CardViewModel();
-            MyCollectionVM = new CardViewModel();
-            AllCardsForDecksVM = new CardViewModel();
-            AllCardsInDecksVM = new CardViewModel();
+            AllCardsVM = new CardListViewModel();
+            MyCollectionVM = new CardListViewModel();
+            AllCardsForDecksVM = new CardListViewModel();
+            AllCardsInDecksVM = new CardListViewModel();
             List<string> manaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
-            ColorIconsViewModel = new CardViewModel { Cards = [.. manaKeys.Select(CardSet.FromManaKey)] };
+            ColorIconsViewModel = new CardListViewModel { Cards = [.. manaKeys.Select(CardSet.FromManaKey)] };
 
             // edit collection viewmodels
             AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true);
@@ -191,7 +191,7 @@ namespace CollectaMundo.ViewModels
             CurrentPageViewModel = SearchAndFilterPageVM;
             CurrentSideMenuLeftViewModel = FilteringSideMenuVM;
             CurrentSideMenuRightViewModel = CardImageVM;
-            CurrentPage = ShellPage.SearchAndFilter;
+            CurrentPage = ShellPageEnum.SearchAndFilter;
 
             // Navigation cleanup service
             _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController);

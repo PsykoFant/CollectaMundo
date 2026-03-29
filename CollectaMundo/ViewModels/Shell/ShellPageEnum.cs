@@ -1,6 +1,6 @@
 ﻿namespace CollectaMundo.ViewModels.Shell
 {
-    public enum ShellPage
+    public enum ShellPageEnum
     {
         None,
         SearchAndFilter,

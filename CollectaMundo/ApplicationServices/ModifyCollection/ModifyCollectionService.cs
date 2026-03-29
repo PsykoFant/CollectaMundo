@@ -147,7 +147,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         }
 
         // Update in-memory collection after batch submission
-        public CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardViewModel myCollection, CardViewModel allCards)
+        public CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardListViewModel myCollection, CardListViewModel allCards)
         {
             return _logic.BuildChangeSet(mutation, myCollection, allCards);
         }

@@ -21,7 +21,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardLookupsService _lookupService = lookupService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
-        public async Task InitializeCardListsAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
+        public async Task InitializeCardListsAsync(CardListViewModel allCardsVM, CardListViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork(_dbFactory);
             try

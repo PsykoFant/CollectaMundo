@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class CardViewModel : ObservableObject
+    public partial class CardListViewModel : ObservableObject
     {
         public List<CardSet> Cards { get; set; } = [];
 

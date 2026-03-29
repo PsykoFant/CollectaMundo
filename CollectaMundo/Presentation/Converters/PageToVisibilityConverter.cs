@@ -17,7 +17,7 @@ namespace CollectaMundo.Presentation.Converters
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is ShellPage currentPage && parameter is ShellPage buttonPage)
+            if (value is ShellPageEnum currentPage && parameter is ShellPageEnum buttonPage)
             {
                 return currentPage == buttonPage
                     ? VisibleVisibility

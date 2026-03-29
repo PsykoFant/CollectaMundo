@@ -12,7 +12,7 @@ namespace CollectaMundo.Tests.UnitTests
         public void Converter_Reflects_ViewModel_Counts()
         {
             // Arrange – populate the view‑model exactly as you already do in other tests
-            var vm = new CardViewModel();
+            var vm = new CardListViewModel();
             vm.Cards.AddRange(TestCardFactory.GetTestCards());
 
             // pretend the user applied a filter that left 7 cards
