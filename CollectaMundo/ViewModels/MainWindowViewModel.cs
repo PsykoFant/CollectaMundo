@@ -134,7 +134,7 @@ namespace CollectaMundo.ViewModels
         {
             _modifyService = modifyService;
             _settings = settings;
-            _operationOverlayController = operationOverlayController;            
+            _operationOverlayController = operationOverlayController;
             _filteringService = new FilteringService();
             _cardListService = cardListService;
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
@@ -174,14 +174,10 @@ namespace CollectaMundo.ViewModels
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
 
-
-
             // Pages viewmodels
             SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
             PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, utilitiesNavigator);
-
-
 
             // Side menu viewmodels
             FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterVM, ColorIconsViewModel, shellUiState);
@@ -194,7 +190,7 @@ namespace CollectaMundo.ViewModels
             CurrentPage = ShellPageEnum.SearchAndFilter;
 
             // Navigation cleanup service
-            _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController);
+            _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, utilitiesNavigator);
 
             // Set up top menu with references to page VMs
             TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, pagesUtilitiesHostVM: PagesUtilitiesHostVM);

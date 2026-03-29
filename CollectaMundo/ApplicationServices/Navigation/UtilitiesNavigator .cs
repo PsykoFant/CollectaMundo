@@ -9,7 +9,11 @@ namespace CollectaMundo.ApplicationServices.Navigation
 
         public event EventHandler<UtilitiesRoute>? RouteChanged;
         public void ShowHome() => SetRoute(UtilitiesRoute.Home);
-        public async Task ShowImport() => SetRoute(UtilitiesRoute.Import);
+        public void ShowImport() => SetRoute(UtilitiesRoute.Import);
+        //{
+        //    SetRoute(UtilitiesRoute.Import);
+        //    return Task.CompletedTask;
+        //}
         private void SetRoute(UtilitiesRoute route)
         {
             if (_currentRoute == route)

@@ -97,12 +97,12 @@ namespace CollectaMundo.ViewModels.Utilities
         }
 
         [RelayCommand]
-        protected virtual async Task ImportFromCsv()
+        private void ImportFromCsv()
         {
             _userPromptService.ResetInteractionState();
             _operationOverlayController.Hide();
 
-            await _utilitiesNavigator.ShowImport(); // <-- activate first step
+            _utilitiesNavigator.ShowImport(); // <-- activate first step
         }
 
         // Use case: Update prices
