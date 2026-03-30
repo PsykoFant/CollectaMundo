@@ -2,14 +2,11 @@
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.Shared;
-using CollectaMundo.Presentation;
-using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
 using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.Utilities;
 using Moq;
 using System.Diagnostics;
-using System.Windows;
 
 namespace CollectaMundo.Tests.TestUtils
 {
