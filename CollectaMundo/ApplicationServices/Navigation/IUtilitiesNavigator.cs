@@ -8,6 +8,8 @@ namespace CollectaMundo.ApplicationServices.Navigation
         event EventHandler<UtilitiesRoute>? RouteChanged;
 
         void ShowHome();
-        void ShowImport();
+        Task ShowImport();
+
+        void CompletePendingNavigation();
     }
 }

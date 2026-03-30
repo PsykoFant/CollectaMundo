@@ -103,7 +103,7 @@ namespace CollectaMundo.ViewModels.Utilities
             _userPromptService.ResetInteractionState();
             _operationOverlayController.Hide();
 
-            _utilitiesNavigator.ShowImport(); // <-- activate first step
+            await _utilitiesNavigator.ShowImport(); // <-- activate first step
         }
 
         // Use case: Update prices

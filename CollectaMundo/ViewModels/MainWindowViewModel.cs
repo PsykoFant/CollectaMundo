@@ -169,7 +169,7 @@ namespace CollectaMundo.ViewModels
             UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
 
             // import viewmodel
-            ImportVM = new ImportViewModel(importService, shellUiState, _userPromptService);
+            ImportVM = new ImportViewModel(importService, shellUiState, utilitiesNavigator, _userPromptService);
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);

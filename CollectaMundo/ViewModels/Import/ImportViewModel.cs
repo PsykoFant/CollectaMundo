@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Import.Models;
+using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
@@ -16,10 +17,11 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import
 {
-    public partial class ImportViewModel(IImportService importService, IShellUiState shellUiState, IUserPromptService userPromptService) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, IShellUiState shellUiState, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IImportService _importService = importService;
         private readonly IShellUiState _shellUiState = shellUiState;
+        private readonly IUtilitiesNavigator _utilitiesNavigator = utilitiesNavigator;
         private readonly IUserPromptService _userPromptService = userPromptService;
 
         private ProgressSinks? _progress;
@@ -272,6 +274,7 @@ namespace CollectaMundo.ViewModels.Import
             return vm;
         }
 
+        #region Step action methods - called by child VMs when primary/secondary actions are executed.
         public async Task Begin()
         {
             GoToStep(ImportStep.Start);
@@ -442,6 +445,7 @@ namespace CollectaMundo.ViewModels.Import
             EndImport();
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Cleanup completed"));
         }
+        #endregion
         public Task<OperationResult> SaveUnimportableItemsAsync()
         {
             return _importService.SaveUnimportableItemsAsync(Summary, ResolvedImportItems, ImportCardList);
@@ -598,9 +602,11 @@ namespace CollectaMundo.ViewModels.Import
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
 
-            _shellUiState.SetUiBusy(false);
             ImportFailVisibility = Visibility.Collapsed;
             ImportSuccessVisibility = Visibility.Collapsed;
+
+            _utilitiesNavigator.ShowHome();
+            _shellUiState.SetUiBusy(false);
         }
 
         #endregion

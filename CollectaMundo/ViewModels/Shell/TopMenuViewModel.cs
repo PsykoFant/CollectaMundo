@@ -34,7 +34,6 @@ public sealed partial class TopMenuViewModel : ObservableObject
     }
 
     public bool IsTopMenuEnabled => _shellNavigationHost.IsTopMenuEnabled;
-
     public bool IsAllCardsPageActive => _shellNavigationHost.CurrentPage == ShellPageEnum.SearchAndFilter;
     public bool IsMyCollectionPageActive => _shellNavigationHost.CurrentPage == ShellPageEnum.MyCollection;
     public bool IsDecksPageActive => _shellNavigationHost.CurrentPage == ShellPageEnum.Decks;

@@ -27,16 +27,17 @@ namespace CollectaMundo.ViewModels.Pages
 
         private async void OnRouteChanged(object? sender, UtilitiesRoute route)
         {
-            CurrentUtilitiesContentViewModel = ResolveRoute(route);
-
             switch (route)
             {
                 case UtilitiesRoute.Home:
                     ImportVM.EndImport();
+                    CurrentUtilitiesContentViewModel = UtilitiesVM;
                     break;
 
                 case UtilitiesRoute.Import:
+                    CurrentUtilitiesContentViewModel = ImportVM;
                     await ImportVM.Begin();
+                    _navigator.CompletePendingNavigation();
                     break;
             }
         }
