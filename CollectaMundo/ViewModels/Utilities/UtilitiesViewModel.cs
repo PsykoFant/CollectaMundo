@@ -96,8 +96,9 @@ namespace CollectaMundo.ViewModels.Utilities
             }
         }
 
-        [RelayCommand]
-        private void ImportFromCsv()
+        //private void ImportFromCsv()
+        [RelayCommand]        
+        protected virtual async Task ImportFromCsv()
         {
             _userPromptService.ResetInteractionState();
             _operationOverlayController.Hide();
