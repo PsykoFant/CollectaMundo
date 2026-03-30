@@ -1,10 +1,12 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
 using CollectaMundo.ViewModels.Shell;
+using CollectaMundo.ViewModels.Utilities;
 using Moq;
 using System.Diagnostics;
 using System.Windows;
@@ -15,7 +17,7 @@ namespace CollectaMundo.Tests.TestUtils
     IShellUiState shellUiState,
     ICardDatabaseManagementService dbService,
     IOperationOverlayController operationOverlayController,
-    IImportOverlayController importOverlayController,
+    IUtilitiesNavigator utilitiesNavigator,
     IUserPromptService userPromptService,
     ICardCollectionHost parentCtx,
     Func<int> getMyCollectionCount,
@@ -24,7 +26,7 @@ namespace CollectaMundo.Tests.TestUtils
         shellUiState,
         dbService,
         operationOverlayController,
-        importOverlayController,
+        utilitiesNavigator,
         userPromptService,
         parentCtx,
         getMyCollectionCount,
@@ -121,7 +123,7 @@ namespace CollectaMundo.Tests.TestUtils
             }
 
             var shellUiState = new Mock<IShellUiState>();
-            var importOverlayController = new Mock<IImportOverlayController>();
+            var utilitiesNavigator = new Mock<IUtilitiesNavigator>();
             var parentCtx = new Mock<ICardCollectionHost>();
             var userPromptService = new UserPromptService();
 
@@ -132,7 +134,7 @@ namespace CollectaMundo.Tests.TestUtils
                 shellUiState.Object,
                 dbService.Object,
                 overlayController,
-                importOverlayController.Object,
+                utilitiesNavigator.Object,
                 userPromptService,
                 parentCtx.Object,
                 _collectionCount ?? (() => 5),
