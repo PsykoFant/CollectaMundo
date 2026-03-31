@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups;
+using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
@@ -12,12 +13,14 @@ using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists.Aggregation;
+using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
+using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
@@ -48,17 +51,11 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var dbFactory = new DbConnectionFactory(settings);
 
                 // Card DB prep (repos + services)
-                var missingPngRepo = new GenerateMissingPngRepo();
-                var missingPngLogic = new GenerateMissingPngLogic();
-                var missingPngSvc = new GenerateMissingPngService(missingPngRepo, remoteLookups, missingPngLogic);
+                var missingPngService = new GenerateMissingPngService(new GenerateMissingPngRepo(), remoteLookups, new GenerateMissingPngLogic());                
+                var priceService = new CardPriceService(settings, new CardPriceRepository());
 
-                var cardPriceRepo = new CardPriceRepository();
-                var priceService = new CardPriceService(settings, cardPriceRepo);
-
-                var cardDbManagementRepo = new CardDatabaseManagementRepo();
                 var progressSinks = CreateProgressSinks(operationOverlayController);
-
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, cardDbManagementRepo, priceService, missingPngSvc, remoteLookups);
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, new CardDatabaseManagementRepo(), priceService, missingPngService, remoteLookups);
 
                 var integrityService = new DatabaseIntegrityService(dbFactory, settings);
 
@@ -93,14 +90,12 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardImageDownloader = new CardImageDownloader(settings);
                 var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
 
-                var cardListRepo = new CardListRepo();
-                var filterDefaultsLogic = new FilterDefaultsLogic();
-                var coreAggregator = new CardCoreAggregator();
                 var cardLookupsService = new CardLookupsService(dbFactory, new CardLookupsRepo(), getRetailer);
-                var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
+                var cardListService = new CardListService(dbFactory, new CardListRepo(), new FilterDefaultsLogic(), cardLookupsService, new CardCoreAggregator());
+                var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic());
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 operationOverlayController.Hide();

@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
+using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Import.Models;
@@ -40,6 +41,7 @@ namespace CollectaMundo.ViewModels
         // Card list / card collection management services
         private readonly IModifyCollectionService _modifyService;
         private readonly ICardListService _cardListService;
+        private readonly ICardLocationService _cardLocationService; 
 
         // Filtering infrastructure
         private readonly FilteringService _filteringService;
@@ -128,6 +130,7 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
+            ICardLocationService cardLocationService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null)
@@ -137,6 +140,7 @@ namespace CollectaMundo.ViewModels
             _operationOverlayController = operationOverlayController;
             _filteringService = new FilteringService();
             _cardListService = cardListService;
+            _cardLocationService = cardLocationService;
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
             _userPromptService = userPromptService;
@@ -208,12 +212,13 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
+            ICardLocationService cardLocationService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

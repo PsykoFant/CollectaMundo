@@ -3,17 +3,16 @@ using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.Shared;
+using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CardLocations
 {
-    public sealed class CardLocationService(
-        IDbConnectionFactory dbFactory,
-        ICardLocationRepo cardLocationRepo,
-        ICardLocationLogic cardLocationLogic) : ICardLocationService
+    public sealed class CardLocationService(IDbConnectionFactory dbFactory, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic) : ICardLocationService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardLocationRepo _cardLocationRepo = cardLocationRepo;
         private readonly ICardLocationLogic _cardLocationLogic = cardLocationLogic;
+        
         public async Task<IReadOnlyList<CardLocation>> GetAllAsync()
         {
             await using var uow = new UnitOfWork(_dbFactory);
@@ -70,6 +69,13 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new OperationResult(
                     OperationResultCode.Success,
                     $"Location created successfully (Id {newId}).");
+            }
+            catch (SQLiteException ex) when (IsDuplicateLocationNameViolation(ex))
+            {
+                await uow.RollbackAsync();
+                return new OperationResult(
+                    OperationResultCode.AlreadyExists,
+                    $"A location named '{normalizedName}' already exists.");
             }
             catch (Exception ex)
             {
@@ -128,6 +134,13 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new OperationResult(
                     OperationResultCode.Success,
                     "Location updated successfully.");
+            }
+            catch (SQLiteException ex) when (IsDuplicateLocationNameViolation(ex))
+            {
+                await uow.RollbackAsync();
+                return new OperationResult(
+                    OperationResultCode.AlreadyExists,
+                    $"A location named '{normalizedName}' already exists.");
             }
             catch (Exception ex)
             {
@@ -203,6 +216,22 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 "Deck" => CardLocationType.Deck,
                 _ => throw new InvalidOperationException($"Unsupported card location type in database: '{dbType}'.")
             };
+        }
+        private static bool IsDuplicateLocationNameViolation(SQLiteException ex)
+        {
+            // SQLite constraint violation (UNIQUE)
+            // ResultCode is the most reliable if available
+            if (ex.ResultCode == SQLiteErrorCode.Constraint ||
+                ex.ResultCode == SQLiteErrorCode.Constraint_Unique)
+            {
+                // Optional: narrow further to this specific table/column
+                return ex.Message.Contains("cardLocations", StringComparison.OrdinalIgnoreCase)
+                    && ex.Message.Contains("name", StringComparison.OrdinalIgnoreCase);
+            }
+
+            // Fallback (provider variations)
+            return ex.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase)
+                && ex.Message.Contains("cardLocations", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
