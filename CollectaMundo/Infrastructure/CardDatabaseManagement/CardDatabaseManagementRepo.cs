@@ -39,6 +39,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 ["myCollection"] = "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY,uuid TEXT NOT NULL,language TEXT NOT NULL,finish TEXT NOT NULL,condition TEXT NOT NULL,cardsOwned INTEGER NOT NULL CHECK (cardsOwned >= 0),cardsForTrade INTEGER NOT NULL CHECK (cardsForTrade >= 0),UNIQUE (uuid, language, finish, condition));",
                 ["myDecks"] = "CREATE TABLE IF NOT EXISTS myDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckName TEXT, deckDescription TEXT, targetFormat TEXT);",
                 ["cardsInDecks"] = "CREATE TABLE IF NOT EXISTS cardsInDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckId INTEGER, name TEXT, uuid TEXT, count INTEGER);",
+                ["cardLocations"] = "CREATE TABLE IF NOT EXISTS cardLocations (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL COLLATE NOCASE UNIQUE, type TEXT NOT NULL CHECK (type IN ('Storage', 'Deck')));",
                 ["cardPrices"] = cardPricesSql
             };
 

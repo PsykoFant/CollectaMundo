@@ -11,6 +11,9 @@
         DownloadFailed = 5,
         NoInternet = 6,
         CancelledByUser = 7,
-        NoOp = 8
+        NoOp = 8,
+        ValidationFailed = 9,
+        AlreadyExists = 10,
+        NotFound = 11
     }
 }
