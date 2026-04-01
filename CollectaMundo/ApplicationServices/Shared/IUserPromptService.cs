@@ -3,15 +3,15 @@
     public interface IUserPromptService
     {
         // Prompt handling
-        TaskCompletionSource<bool> BeginPrompt();
+        TaskCompletionSource<bool> CreatePrompt();
         void ConfirmActivePrompt();
-        void CancelActivePrompt();
+        void DisposeActivePrompt();
         bool HasActivePrompt { get; }
 
         // Cancellation handling
-        CancellationToken StartOperationCancellation();
+        CancellationToken CreateOperationCancellationToken();
         void CancelActiveOperation();
-        void EndOperationCancellation();
+        void DisposeOperationCancellationToken();
 
         // Total state reset
         void ResetInteractionState();

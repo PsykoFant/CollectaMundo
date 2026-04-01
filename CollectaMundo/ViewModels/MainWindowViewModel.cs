@@ -82,6 +82,7 @@ namespace CollectaMundo.ViewModels
         public CardImageViewModel CardImageVM { get; }
         public UtilitiesViewModel UtilitiesVM { get; }
         public ImportViewModel ImportVM { get; }
+        public CardLocationViewModel CardLocationVM { get; }
         public PricesViewModel PricesVM { get; }
         #endregion
 
@@ -169,11 +170,10 @@ namespace CollectaMundo.ViewModels
             var utilitiesNavigator = new UtilitiesNavigator();
 
 
-            // Utility section viewmodel
+            // Utility viewmodels
             UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
-
-            // import viewmodel
             ImportVM = new ImportViewModel(importService, shellUiState, utilitiesNavigator, _userPromptService);
+            CardLocationVM = new CardLocationViewModel();
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
@@ -181,7 +181,7 @@ namespace CollectaMundo.ViewModels
             // Pages viewmodels
             SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
-            PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, utilitiesNavigator);
+            PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, utilitiesNavigator);
 
             // Side menu viewmodels
             FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterVM, ColorIconsViewModel, shellUiState);

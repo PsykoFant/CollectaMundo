@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:rootViews="clr-namespace:CollectaMundo.Views"
              xmlns:pageViews="clr-namespace:CollectaMundo.Views.ContentSection.Pages"
+             xmlns:cardLocationView="clr-namespace:CollectaMundo.Views.ContentSection.CardLocations"
              xmlns:importHost="clr-namespace:CollectaMundo.Views.ContentSection.Import"     
              xmlns:importVm="clr-namespace:CollectaMundo.ViewModels.Import"
              xmlns:utilitiesVm="clr-namespace:CollectaMundo.ViewModels.Utilities"
@@ -17,6 +18,7 @@
             <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type utilitiesVm:UtilitiesViewModel}"><pageViews:PagesUtilitiesHomeView /></DataTemplate>
                 <DataTemplate DataType="{x:Type importVm:ImportViewModel}"><importHost:ImportWorkflowHost /></DataTemplate>
+                <DataTemplate DataType="{x:Type utilitiesVm:CardLocationViewModel}"><cardLocationView:CardLocationView /></DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
 

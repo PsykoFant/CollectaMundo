@@ -11,14 +11,16 @@ namespace CollectaMundo.ViewModels.Pages
 
         public UtilitiesViewModel UtilitiesVM { get; }
         public ImportViewModel ImportVM { get; }
+        public CardLocationViewModel CardLocationVM { get; }
 
         [ObservableProperty]
         private object currentUtilitiesContentViewModel;
 
-        public PagesUtilitiesHostViewModel(UtilitiesViewModel utilitiesVM, ImportViewModel importVM, IUtilitiesNavigator navigator)
+        public PagesUtilitiesHostViewModel(UtilitiesViewModel utilitiesVM, ImportViewModel importVM, CardLocationViewModel cardLocationViewModel, IUtilitiesNavigator navigator)
         {
             UtilitiesVM = utilitiesVM;
             ImportVM = importVM;
+            CardLocationVM = cardLocationViewModel;
             _navigator = navigator;
 
             currentUtilitiesContentViewModel = ResolveRoute(navigator.CurrentRoute);
@@ -30,14 +32,16 @@ namespace CollectaMundo.ViewModels.Pages
             switch (route)
             {
                 case UtilitiesRoute.Home:
-                    ImportVM.EndImport();
                     CurrentUtilitiesContentViewModel = UtilitiesVM;
                     break;
 
                 case UtilitiesRoute.Import:
                     CurrentUtilitiesContentViewModel = ImportVM;
                     await ImportVM.Begin();
-                    _navigator.CompletePendingNavigation();
+                    break;
+
+                case UtilitiesRoute.CardLocations:
+                    CurrentUtilitiesContentViewModel = CardLocationVM;
                     break;
             }
         }
@@ -46,6 +50,7 @@ namespace CollectaMundo.ViewModels.Pages
         {
             UtilitiesRoute.Home => UtilitiesVM,
             UtilitiesRoute.Import => ImportVM,
+            UtilitiesRoute.CardLocations => CardLocationVM,
             _ => UtilitiesVM
         };
     }
@@ -53,6 +58,7 @@ namespace CollectaMundo.ViewModels.Pages
     public enum UtilitiesRoute
     {
         Home,
-        Import
+        Import,
+        CardLocations
     }
 }

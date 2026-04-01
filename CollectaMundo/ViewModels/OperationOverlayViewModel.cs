@@ -69,7 +69,7 @@ namespace CollectaMundo.ViewModels.Shared
             var cancelMessage = "Cancelling…";
             var buttonText = "   Cancel   ";
 
-            var token = _userPromptService.StartOperationCancellation();
+            var token = _userPromptService.CreateOperationCancellationToken();
 
             switch (button)
             {
@@ -100,8 +100,8 @@ namespace CollectaMundo.ViewModels.Shared
         }
         public async Task<bool> WaitForUserConfirmationAsync(PromptButton button, string buttonText)
         {
-            _userPromptService.CancelActivePrompt(); // ensures only one active at a time
-            var tcs = _userPromptService.BeginPrompt();
+            _userPromptService.DisposeActivePrompt(); // ensures only one active at a time
+            var tcs = _userPromptService.CreatePrompt();
 
             switch (button)
             {

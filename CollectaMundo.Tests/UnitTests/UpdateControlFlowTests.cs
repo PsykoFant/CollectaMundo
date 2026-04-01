@@ -365,7 +365,7 @@ namespace CollectaMundo.Tests.UnitTests
                 "   Start backup   ");
 
             // Simulate user not confirming
-            userPromptService.CancelActivePrompt();
+            userPromptService.DisposeActivePrompt();
 
             await context.UtilitiesVM.InternalUpdateTask!;
 

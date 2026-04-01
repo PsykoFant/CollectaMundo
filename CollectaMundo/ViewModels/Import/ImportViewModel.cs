@@ -239,7 +239,7 @@ namespace CollectaMundo.ViewModels.Import
                 Progress.Detail.Report("Resolving import items...");
                 Progress.Percent.Report(0);
 
-                var token = _userPromptService.StartOperationCancellation();
+                var token = _userPromptService.CreateOperationCancellationToken();
                 ResolvedImportItems = await _importService.ResolveImportItemsStrictAsync(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings, token);
 
                 Progress.Detail.Report("Building summary...");
@@ -262,7 +262,7 @@ namespace CollectaMundo.ViewModels.Import
             finally
             {
                 IsProcessing = false;
-                _userPromptService.EndOperationCancellation();
+                _userPromptService.DisposeOperationCancellationToken();
             }
         }
 
@@ -279,7 +279,6 @@ namespace CollectaMundo.ViewModels.Import
         {
             GoToStep(ImportStep.Start);
             Progress.Headline.Report("The Import Wizard");
-            _ = await _userPromptService.BeginPrompt().Task;
         }
         public async Task<OperationResult> AfterStep1Action()
         {
@@ -298,7 +297,7 @@ namespace CollectaMundo.ViewModels.Import
 
                 // Prepare cancel
                 CancelVisibility = Visibility.Visible;
-                var cancelToken = _userPromptService.StartOperationCancellation();
+                var cancelToken = _userPromptService.CreateOperationCancellationToken();
 
                 // Perform parsing 
                 var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, Progress, cancelToken);
@@ -330,7 +329,7 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report("Please wait - attempting to match ids...");
 
             // Prepare cancel
-            var cancelToken = _userPromptService.StartOperationCancellation();
+            var cancelToken = _userPromptService.CreateOperationCancellationToken();
 
             var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping, Progress, cancelToken));
 
@@ -359,7 +358,7 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report("Please wait - attempting to match by name and set...");
 
             // Prepare cancel
-            var cancelToken = _userPromptService.StartOperationCancellation();
+            var cancelToken = _userPromptService.CreateOperationCancellationToken();
 
             var result = await Task.Run(() => _importService.TryResolveUuidsFromNameAndSetAsync(ImportCardList, NameSetMappings, Progress, cancelToken));
 
@@ -428,7 +427,7 @@ namespace CollectaMundo.ViewModels.Import
             Progress.ProgressBarVisible.Report(true);
             Progress.Detail.Report("Importing cards…");
 
-            var token = _userPromptService.StartOperationCancellation();
+            var token = _userPromptService.CreateOperationCancellationToken();
 
             var importResult = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, Progress, token));
 
@@ -542,7 +541,7 @@ namespace CollectaMundo.ViewModels.Import
             }
             finally
             {
-                _userPromptService.EndOperationCancellation();
+                _userPromptService.DisposeOperationCancellationToken();
                 IsProcessing = false;
             }
         }
@@ -596,8 +595,7 @@ namespace CollectaMundo.ViewModels.Import
             _availableFinishes = null;
             _availableLanguages = null;
 
-            _userPromptService.CancelActivePrompt();
-            _userPromptService.EndOperationCancellation();
+            _userPromptService.DisposeOperationCancellationToken();
 
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;

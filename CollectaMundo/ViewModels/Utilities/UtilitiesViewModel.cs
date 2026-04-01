@@ -29,7 +29,7 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         protected virtual async Task BackupCollection()
         {
-            PrepareUIForCommands("Export csv-format backup of My Collection");
+            PrepareUIForActionCommands("Export csv-format backup of My Collection");
 
             var result = new OperationResult(OperationResultCode.Error, string.Empty);
 
@@ -73,7 +73,7 @@ namespace CollectaMundo.ViewModels.Utilities
                 result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
 
                 // Reset UI state
-                CompleteCommandUIFlow();
+                CompleteActionCommandUIFlow();
             }
             // Display result
             switch (result.Code)
@@ -96,7 +96,6 @@ namespace CollectaMundo.ViewModels.Utilities
             }
         }
 
-        //private void ImportFromCsv()
         [RelayCommand]        
         protected virtual async Task ImportFromCsv()
         {
@@ -110,7 +109,7 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         protected virtual async Task UpdatePrices()
         {
-            PrepareUIForCommands("Download and update card prices?");
+            PrepareUIForActionCommands("Download and update card prices?");
 
             if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButton.Primary, "   Go for it!   "))
             {
@@ -134,8 +133,6 @@ namespace CollectaMundo.ViewModels.Utilities
             switch (result.Code)
             {
                 case OperationResultCode.Success:
-
-
 
                     // Reload collection
                     _operationOverlayController.SetStep("Refreshing prices...");
@@ -166,14 +163,14 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private async Task CheckForDbUpdates()
         {
-            PrepareUIForCommands("One moment - checking for updates...");
+            PrepareUIForActionCommands("One moment - checking for updates...");
             _shellUiState.SetUiBusy(true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
 
             // Run check
             var result = await _cardDbManagementService.CheckForDbUpdatesAsync(token);
 
-            CompleteCommandUIFlow();
+            CompleteActionCommandUIFlow();
 
             // Show result
             switch (result.Code)
@@ -215,7 +212,7 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         protected virtual async Task UpdateDB()
         {
-            PrepareUIForCommands("Ready to update card database?");
+            PrepareUIForActionCommands("Ready to update card database?");
             bool includeBackup = _getMyCollectionCount() > 0;
             string backupResultMessage = string.Empty;
 
@@ -249,7 +246,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
                     _operationOverlayController.SetDetail(backupResult.Message);
                     _operationOverlayController.SetPrimaryButtonText("  OK  ");
-                    _userPromptService.EndOperationCancellation();
+                    _userPromptService.DisposeOperationCancellationToken();
                     return;
                 }
 
@@ -259,7 +256,7 @@ namespace CollectaMundo.ViewModels.Utilities
             {
                 _operationOverlayController.Reset();
                 _operationOverlayController.SetHeadline("Update canceled during backup stage");
-                _userPromptService.EndOperationCancellation();
+                _userPromptService.DisposeOperationCancellationToken();
                 return;
             }
 
@@ -305,14 +302,24 @@ namespace CollectaMundo.ViewModels.Utilities
             _shellUiState.SetUiBusy(false);
         }
 
+        // Use case: Manage card locations
+        [RelayCommand]
+        protected virtual async Task ManageCardLocations()
+        {
+            _userPromptService.ResetInteractionState();
+            _operationOverlayController.Hide();
+
+            await _utilitiesNavigator.ShowCardLocationManagement();
+        }
+
         // Private helpers
-        private void PrepareUIForCommands(string message)
+        private void PrepareUIForActionCommands(string message)
         {
             _utilitiesNavigator.ShowHome();
             _userPromptService.ResetInteractionState();
             _operationOverlayController.Show(message, false);
         }
-        private void CompleteCommandUIFlow()
+        private void CompleteActionCommandUIFlow()
         {
             _operationOverlayController.Reset();
             _shellUiState.SetUiBusy(false);

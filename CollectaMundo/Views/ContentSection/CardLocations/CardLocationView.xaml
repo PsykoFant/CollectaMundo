@@ -1,0 +1,49 @@
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.CardLocations.CardLocationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:utilities="clr-namespace:CollectaMundo.ViewModels.Utilities" 
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=utilities:CardLocationViewModel}"
+             d:Style="{StaticResource {x:Type UserControl}}"             
+             d:DesignHeight="450"
+             d:DesignWidth="800">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="{Binding PageTitle}"
+                   FontSize="24"
+                   FontWeight="SemiBold" />
+
+        <TextBlock Grid.Row="2"
+                   Text="Dummy layout only - real location rows will bind here later."
+                   FontSize="14"
+                   Opacity="0.75" />
+
+        <Border Grid.Row="4"
+                Padding="8"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                CornerRadius="4">
+            <DataGrid AutoGenerateColumns="False"
+                      HeadersVisibility="Column"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      MinHeight="220">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="Type" Width="180" Binding="{Binding Type}" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

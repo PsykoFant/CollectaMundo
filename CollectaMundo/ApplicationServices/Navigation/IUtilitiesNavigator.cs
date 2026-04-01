@@ -9,6 +9,7 @@ namespace CollectaMundo.ApplicationServices.Navigation
 
         void ShowHome();
         Task ShowImport();
+        Task ShowCardLocationManagement();
 
         void CompletePendingNavigation();
     }

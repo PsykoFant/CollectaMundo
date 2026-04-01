@@ -10,9 +10,9 @@ namespace CollectaMundo.ApplicationServices.Shared
         public bool HasActivePrompt => _activePromptCompletion is { Task.IsCompleted: false };
 
         // User confirmation prompt lifecycle
-        public TaskCompletionSource<bool> BeginPrompt()
+        public TaskCompletionSource<bool> CreatePrompt()
         {
-            CancelActivePrompt();
+            DisposeActivePrompt();
             _activePromptCompletion = new TaskCompletionSource<bool>();
             return _activePromptCompletion;
         }
@@ -24,7 +24,7 @@ namespace CollectaMundo.ApplicationServices.Shared
                 _activePromptCompletion.SetResult(true);
             }
         }
-        public void CancelActivePrompt()
+        public void DisposeActivePrompt()
         {
             if (_activePromptCompletion == null)
                 return;
@@ -46,9 +46,9 @@ namespace CollectaMundo.ApplicationServices.Shared
         }
 
         // Operation cancellation lifecycle
-        public CancellationToken StartOperationCancellation()
+        public CancellationToken CreateOperationCancellationToken()
         {
-            EndOperationCancellation();
+            DisposeOperationCancellationToken();
             _activeOperationCancellation = new CancellationTokenSource();
             return _activeOperationCancellation.Token;
         }
@@ -60,7 +60,7 @@ namespace CollectaMundo.ApplicationServices.Shared
                 _activeOperationCancellation.Cancel();
             }
         }
-        public void EndOperationCancellation()
+        public void DisposeOperationCancellationToken()
         {
             _activeOperationCancellation?.Dispose();
             _activeOperationCancellation = null;
@@ -69,9 +69,9 @@ namespace CollectaMundo.ApplicationServices.Shared
         // Comprehensive reset for all interaction states
         public void ResetInteractionState()
         {
-            CancelActivePrompt();
+            DisposeActivePrompt();
             CancelActiveOperation();
-            EndOperationCancellation();
+            DisposeOperationCancellationToken();
         }
     }
 
