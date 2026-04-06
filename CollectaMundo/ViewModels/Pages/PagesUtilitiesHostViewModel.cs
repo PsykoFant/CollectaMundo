@@ -27,7 +27,7 @@ namespace CollectaMundo.ViewModels.Pages
             _navigator.RouteChanged += OnRouteChanged;
         }
 
-        private async void OnRouteChanged(object? sender, UtilitiesRoute route)
+        private void OnRouteChanged(object? sender, UtilitiesRoute route)
         {
             switch (route)
             {
@@ -37,7 +37,7 @@ namespace CollectaMundo.ViewModels.Pages
 
                 case UtilitiesRoute.Import:
                     CurrentUtilitiesContentViewModel = ImportVM;
-                    await ImportVM.Begin();
+                    ImportVM.Begin();
                     break;
 
                 case UtilitiesRoute.CardLocations:

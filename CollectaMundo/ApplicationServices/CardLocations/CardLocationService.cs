@@ -12,7 +12,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardLocationRepo _cardLocationRepo = cardLocationRepo;
         private readonly ICardLocationLogic _cardLocationLogic = cardLocationLogic;
-        
+
         public async Task<IReadOnlyList<CardLocation>> GetAllAsync()
         {
             await using var uow = new UnitOfWork(_dbFactory);
@@ -221,8 +221,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         {
             // SQLite constraint violation (UNIQUE)
             // ResultCode is the most reliable if available
-            if (ex.ResultCode == SQLiteErrorCode.Constraint ||
-                ex.ResultCode == SQLiteErrorCode.Constraint_Unique)
+            if (ex.ResultCode == SQLiteErrorCode.Constraint || ex.ResultCode == SQLiteErrorCode.Constraint_Unique)
             {
                 // Optional: narrow further to this specific table/column
                 return ex.Message.Contains("cardLocations", StringComparison.OrdinalIgnoreCase)

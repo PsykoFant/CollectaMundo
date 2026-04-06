@@ -50,7 +50,7 @@ namespace CollectaMundo.ApplicationServices.Navigation
 
             return tcs.Task;
         }
-        public void CompletePendingNavigation()
+        private void CompletePendingNavigation()
         {
             _activeFeatureSessionTcs?.TrySetResult();
             _activeFeatureSessionTcs = null;

@@ -275,7 +275,7 @@ namespace CollectaMundo.ViewModels.Import
         }
 
         #region Step action methods - called by child VMs when primary/secondary actions are executed.
-        public async Task Begin()
+        public void Begin()
         {
             GoToStep(ImportStep.Start);
             Progress.Headline.Report("The Import Wizard");

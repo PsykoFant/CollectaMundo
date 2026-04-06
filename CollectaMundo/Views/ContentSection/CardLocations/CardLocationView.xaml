@@ -13,37 +13,21 @@
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="12"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="12"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0"
-                   Text="{Binding PageTitle}"
-                   FontSize="24"
-                   FontWeight="SemiBold" />
-
-        <TextBlock Grid.Row="2"
-                   Text="Dummy layout only - real location rows will bind here later."
-                   FontSize="14"
-                   Opacity="0.75" />
-
-        <Border Grid.Row="4"
-                Padding="8"
-                BorderBrush="Gray"
-                BorderThickness="1"
-                CornerRadius="4">
-            <DataGrid AutoGenerateColumns="False"
-                      HeadersVisibility="Column"
-                      CanUserAddRows="False"
-                      IsReadOnly="True"
-                      MinHeight="220">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
-                    <DataGridTextColumn Header="Type" Width="180" Binding="{Binding Type}" />
-                </DataGrid.Columns>
-            </DataGrid>
-        </Border>
+        <Label Grid.Row="0" Content="{Binding PageTitle}" Style="{StaticResource BigHeaderLabelStyle}" />
+        <Label Grid.Row="1" Content="Where's your cards at?" Style="{StaticResource SmallHeaderLabelStyle}" />
+        
+        <DataGrid Grid.Row="2" Style="{StaticResource DataGridBaseStyle}" 
+                  Width="500" 
+                  MinHeight="220"
+                  Margin="0,10,0,0">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
+                <DataGridTextColumn Header="Type" Width="180" Binding="{Binding Type}" />
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </UserControl>
