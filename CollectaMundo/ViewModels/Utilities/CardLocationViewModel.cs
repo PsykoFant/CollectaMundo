@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,7 +12,20 @@ namespace CollectaMundo.ViewModels.Utilities
         private readonly ICardLocationService _cardLocationService = cardLocationService;
 
         [ObservableProperty]
+        private bool isBusy;
+
+        [ObservableProperty]
         private string pageTitle = "Manage Locations";
+        public ObservableCollection<CardLocation> Locations { get; } = [];
+        public async Task LoadCardLocationsAsync()
+        {
+            if (IsBusy)
+            {
+                return;
+            }
+
+            await LoadInternalAsync();
+        }
 
         [ObservableProperty]
         private string locationName = string.Empty;
@@ -34,15 +48,49 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private async Task SubmitLocation()
         {
-            var result = await _cardLocationService.CreateAsync(LocationName, SelectedLocationType);
-
-            StatusMessage = result.Message;
-            IsStatusVisible = !string.IsNullOrWhiteSpace(result.Message);
-
-            if (result.Code == ApplicationServices.Shared.OperationResultCode.Success)
+            if (IsBusy)
             {
-                LocationName = string.Empty;
-                SelectedLocationType = CardLocationType.Storage;
+                return;
+            }
+
+            try
+            {
+                IsBusy = true;
+
+                var mutation = await _cardLocationService.CreateAsync(LocationName, SelectedLocationType);
+                StatusMessage = mutation.Result.Message;
+
+                IsStatusVisible = !string.IsNullOrWhiteSpace(mutation.Result.Message);
+
+                if (mutation.Result.Code == OperationResultCode.Success && mutation.Location is not null)
+                {
+                    Locations.Add(mutation.Location);
+                }
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private async Task LoadInternalAsync()
+        {
+            try
+            {
+                IsBusy = true;
+
+                var locations = await _cardLocationService.GetAllAsync();
+
+                Locations.Clear();
+
+                foreach (var loc in locations)
+                {
+                    Locations.Add(loc);
+                }
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
     }

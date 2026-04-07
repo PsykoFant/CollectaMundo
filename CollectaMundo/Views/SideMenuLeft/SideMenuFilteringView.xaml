@@ -100,8 +100,7 @@
                          TextWrapping="Wrap" 
                          Foreground="{Binding TextForeground, Mode=TwoWay}" 
                          VerticalAlignment="Top" 
-                         Width="240" Height="45" 
-                         Background="White">
+                         Width="240" Height="45">
             <i:Interaction.Triggers>
                 <!-- Enter + Escape key binding -->
                 <i:EventTrigger EventName="PreviewKeyDown">

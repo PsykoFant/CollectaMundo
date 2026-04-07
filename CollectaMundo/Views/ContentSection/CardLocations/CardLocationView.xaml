@@ -7,7 +7,7 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=utilities:CardLocationViewModel}"
              d:Style="{StaticResource {x:Type UserControl}}"             
-             d:DesignHeight="450"
+             d:DesignHeight="600"
              d:DesignWidth="800">
 
     <Grid Margin="16">
@@ -16,25 +16,62 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Label Grid.Row="0" Content="{Binding PageTitle}" Style="{StaticResource BigHeaderLabelStyle}" />
+        <Label Grid.Row="0"
+               Content="{Binding PageTitle}"
+               Style="{StaticResource BigHeaderLabelStyle}" />
 
-        <Label Grid.Row="1" Content="Add new location" Style="{StaticResource SmallHeaderLabelStyle}" />
+        <Label Grid.Row="1"
+               Content="Where's your cards at?"
+               Style="{StaticResource SmallHeaderLabelStyle}" />
 
-        <StackPanel Grid.Row="2" Margin="0,16,0,0" Width="350" HorizontalAlignment="Left">
+        <StackPanel Grid.Row="2"
+                    Margin="0,10,0,0"
+                    Width="350"
+                    HorizontalAlignment="Center">
 
-            <Label Content="Location name:" />
-            <TextBox Text="{Binding LocationName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
-            
-            <Label Content="Location type (storage or deck):" />
-            <ComboBox ItemsSource="{Binding LocationTypes}" SelectedItem="{Binding SelectedLocationType, Mode=TwoWay}" Margin="0,0,0,14" />
+            <Label Content="Location name" />
 
-            <Button Content="Add new location" Command="{Binding SubmitLocationCommand}" Width="140" Height="24" HorizontalAlignment="Left" />
+            <TextBox Text="{Binding LocationName, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,0,0,10" />
+
+            <Label Content="Location type" />
+
+            <ComboBox ItemsSource="{Binding LocationTypes}"
+                      SelectedItem="{Binding SelectedLocationType, Mode=TwoWay}"
+                      Margin="0,0,0,10" />
+
+            <Button Content="Add location"
+                    Command="{Binding SubmitLocationCommand}"
+                    Width="140"
+                    Height="24"
+                    HorizontalAlignment="Left" />
         </StackPanel>
 
-        <TextBlock Grid.Row="3" Margin="0,16,0,0" Text="{Binding StatusMessage}" Visibility="{Binding IsStatusVisible, Converter={StaticResource BoolToVisibilityConverter}}" TextWrapping="Wrap" />
+        <TextBlock Grid.Row="3"
+                   Margin="0,10,0,10"
+                   Text="{Binding StatusMessage}"
+                   Visibility="{Binding IsStatusVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                   HorizontalAlignment="Center"
+                   TextWrapping="Wrap" />
+
+        <DataGrid Grid.Row="4"
+                  ItemsSource="{Binding Locations}"
+                  Style="{StaticResource DataGridBaseStyle}"
+                  Width="500"
+                  MinHeight="100"
+                  Margin="0,10,0,0"
+                  AutoGenerateColumns="False" VerticalAlignment="Top">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name"
+                                    Width="*"
+                                    Binding="{Binding Name}" />
+                <DataGridTextColumn Header="Type"
+                                    Width="180"
+                                    Binding="{Binding Type}" />
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </UserControl>

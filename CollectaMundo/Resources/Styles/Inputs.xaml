@@ -3,12 +3,10 @@
 
     <!-- Text fields -->
     <Style TargetType="{x:Type TextBox}">
-        <Setter Property="Background" Value="#FFDDDDDD"/>
+        <Setter Property="Background" Value="White"/>
         <Setter Property="Foreground" Value="Black"/>
         <Setter Property="BorderThickness" Value="1"/>
     </Style>
-
-
 
     <!-- Define the Style for the ProgressBar -->
     <Style x:Key="CollectaMundoProgressBarStyle" TargetType="{x:Type ProgressBar}">
