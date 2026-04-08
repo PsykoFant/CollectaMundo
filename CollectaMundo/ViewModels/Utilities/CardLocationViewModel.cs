@@ -12,20 +12,7 @@ namespace CollectaMundo.ViewModels.Utilities
         private readonly ICardLocationService _cardLocationService = cardLocationService;
 
         [ObservableProperty]
-        private bool isBusy;
-
-        [ObservableProperty]
         private string pageTitle = "Manage Locations";
-        public ObservableCollection<CardLocation> Locations { get; } = [];
-        public async Task LoadCardLocationsAsync()
-        {
-            if (IsBusy)
-            {
-                return;
-            }
-
-            await LoadInternalAsync();
-        }
 
         [ObservableProperty]
         private string locationName = string.Empty;
@@ -39,40 +26,41 @@ namespace CollectaMundo.ViewModels.Utilities
         [ObservableProperty]
         private bool isStatusVisible;
 
-        public ObservableCollection<CardLocationType> LocationTypes { get; } =
-        [
-            CardLocationType.Storage,
-            CardLocationType.Deck
-        ];
+        [ObservableProperty]
+        private bool isBusy;
 
-        [RelayCommand]
-        private async Task SubmitLocation()
+        [ObservableProperty]
+        private CardLocation? selectedLocation;
+        public ObservableCollection<CardLocation> Locations { get; } = [];
+        public ObservableCollection<CardLocationType> LocationTypes { get; } = [CardLocationType.Storage,CardLocationType.Deck];
+        public bool IsEditing => SelectedLocation is not null;
+        public string SubmitButtonText => IsEditing ? "Save changes" : "Add location";
+        partial void OnSelectedLocationChanged(CardLocation? value)
         {
-            if (IsBusy)
+            if (value is not null)
             {
-                return;
+                LocationName = value.Name;
+                SelectedLocationType = value.Type;
             }
 
-            try
-            {
-                IsBusy = true;
-
-                var mutation = await _cardLocationService.CreateAsync(LocationName, SelectedLocationType);
-                StatusMessage = mutation.Result.Message;
-
-                IsStatusVisible = !string.IsNullOrWhiteSpace(mutation.Result.Message);
-
-                if (mutation.Result.Code == OperationResultCode.Success && mutation.Location is not null)
-                {
-                    Locations.Add(mutation.Location);
-                }
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            OnPropertyChanged(nameof(IsEditing));
+            OnPropertyChanged(nameof(SubmitButtonText));
+        }
+        private void ExitEditModeAndClearEditor()
+        {
+            SelectedLocation = null;
+            LocationName = string.Empty;
+            SelectedLocationType = CardLocationType.Storage;
         }
 
+        // Public method to load locations, can be called from outside (e.g., when the view appears)
+        public async Task LoadCardLocationsAsync()
+        {
+            if (IsBusy)
+                return;
+
+            await LoadInternalAsync();
+        }
         private async Task LoadInternalAsync()
         {
             try
@@ -91,6 +79,75 @@ namespace CollectaMundo.ViewModels.Utilities
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        // Command to handle both adding and updating locations
+
+        [RelayCommand]
+        private async Task SubmitLocation()
+        {
+            if (IsBusy)
+                return;
+
+            try
+            {
+                IsBusy = true;
+                IsStatusVisible = false;
+                StatusMessage = string.Empty;
+
+                if (IsEditing && SelectedLocation is not null)
+                {
+                    var mutation = await _cardLocationService.UpdateAsync(
+                        SelectedLocation.Id,
+                        LocationName,
+                        SelectedLocationType);
+
+                    StatusMessage = mutation.Result.Message;
+                    IsStatusVisible = !string.IsNullOrWhiteSpace(StatusMessage);
+
+                    if (mutation.Result.Code == OperationResultCode.Success && mutation.Location is not null)
+                    {
+                        ReplaceLocationInCollection(mutation.Location);
+                        ExitEditModeAndClearEditor();
+                    }
+                }
+                else
+                {
+                    var mutation = await _cardLocationService.CreateAsync(LocationName, SelectedLocationType);
+
+                    StatusMessage = mutation.Result.Message;
+                    IsStatusVisible = !string.IsNullOrWhiteSpace(StatusMessage);
+
+                    if (mutation.Result.Code == OperationResultCode.Success && mutation.Location is not null)
+                    {
+                        Locations.Add(mutation.Location);
+                        ExitEditModeAndClearEditor();
+                    }
+                }
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        [RelayCommand]
+        private void CancelEdit()
+        {
+            ExitEditModeAndClearEditor();
+            IsStatusVisible = false;
+            StatusMessage = string.Empty;
+        }
+        private void ReplaceLocationInCollection(CardLocation updatedLocation)
+        {
+            int index = Locations
+                .Select((location, i) => new { location, i })
+                .FirstOrDefault(x => x.location.Id == updatedLocation.Id)?.i ?? -1;
+
+            if (index >= 0)
+            {
+                Locations[index] = updatedLocation;
             }
         }
     }
