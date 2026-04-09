@@ -42,7 +42,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 0 – Begin wizard
             // =====================================================
 
-            await importVM.Begin();
+            importVM.Begin();
             var step1 = importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>().Subject;
 
             // =====================================================
@@ -543,7 +543,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 0 – Begin wizard
             // =====================================================
 
-            await importVM.Begin();
+            importVM.Begin();
             var step1 = importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>().Subject;
 
             // =====================================================
@@ -633,7 +633,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Restart the import after cancellation and continue up to step 3 again
 
             // Step 1
-            await importVM.Begin();
+            importVM.Begin();
             var step1AfterRestart = importVM.CurrentStepViewModel.Should().BeOfType<ImportStep01_StartViewModel>().Subject;
             var step1AfterRestartResult = await step1.OnPrimaryAction();
             step1AfterRestartResult.Code.Should().Be(OperationResultCode.Success);

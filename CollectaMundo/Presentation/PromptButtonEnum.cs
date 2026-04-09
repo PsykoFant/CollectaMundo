@@ -1,6 +1,6 @@
 ﻿namespace CollectaMundo.Presentation
 {
-    public enum PromptButton
+    public enum PromptButtonEnum
     {
         Primary,
         Secondary

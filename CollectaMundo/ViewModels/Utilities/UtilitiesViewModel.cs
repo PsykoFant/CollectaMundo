@@ -55,7 +55,7 @@ namespace CollectaMundo.ViewModels.Utilities
                     });
 
                 // Await confirmation
-                if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButton.Secondary, "   Start backup   "))
+                if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButtonEnum.Secondary, "   Start backup   "))
                 {
                     Debug.WriteLine("[Backup] User did not confirm. Aborting.");
                     return;
@@ -67,7 +67,7 @@ namespace CollectaMundo.ViewModels.Utilities
                 _operationOverlayController.SetHeadline("Please wait - backing up up your collection ... ");
 
                 // Prepare cancellation token before starting
-                var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
+                var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
 
                 // Run backup
                 result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
@@ -111,7 +111,7 @@ namespace CollectaMundo.ViewModels.Utilities
         {
             PrepareUIForActionCommands("Download and update card prices?");
 
-            if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButton.Primary, "   Go for it!   "))
+            if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButtonEnum.Primary, "   Go for it!   "))
             {
                 Debug.WriteLine("[UpdatePrices] User bailed.");
                 return;
@@ -121,7 +121,7 @@ namespace CollectaMundo.ViewModels.Utilities
             _operationOverlayController.Reset();
             _shellUiState.SetUiBusy(true);
             _operationOverlayController.Show("Updating card prices, please wait...", true);
-            var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
+            var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
 
             // Run the update
             var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: token);
@@ -165,7 +165,7 @@ namespace CollectaMundo.ViewModels.Utilities
         {
             PrepareUIForActionCommands("One moment - checking for updates...");
             _shellUiState.SetUiBusy(true);
-            var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
+            var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
 
             // Run check
             var result = await _cardDbManagementService.CheckForDbUpdatesAsync(token);
@@ -221,7 +221,7 @@ namespace CollectaMundo.ViewModels.Utilities
                 _operationOverlayController.SetDetail($"A csv-backup of your collection will also be created at {_cardDbManagementService.BackupFolderPath}");
             }
 
-            if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButton.Primary, "   Start card database update!   "))
+            if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButtonEnum.Primary, "   Start card database update!   "))
             {
                 Debug.WriteLine("[UpdateDB] User did not confirm. Skipping update.");
                 return;
@@ -230,7 +230,7 @@ namespace CollectaMundo.ViewModels.Utilities
             // UI state preparation AFTER user clicked
             _operationOverlayController.Reset();
             _shellUiState.SetUiBusy(true);
-            var token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary);
+            var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
 
             if (includeBackup)
             {
@@ -261,7 +261,7 @@ namespace CollectaMundo.ViewModels.Utilities
             }
 
             _operationOverlayController.Show("Updating database, please wait...", true);
-            token = _operationOverlayController.PrepareCancelButton(PromptButton.Primary); // draw new token after backup
+            token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary); // draw new token after backup
 
             // Run the update
             var result = await _cardDbManagementService.UpdateDbPrepOrchetrator(ct: token);

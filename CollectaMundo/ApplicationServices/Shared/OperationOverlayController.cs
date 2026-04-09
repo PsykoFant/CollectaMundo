@@ -61,7 +61,7 @@ namespace CollectaMundo.ApplicationServices.Shared
         {
             _operationOverlayVm.IsSetupFailVisible = show;
         }
-        public CancellationToken PrepareCancelButton(PromptButton button) => _operationOverlayVm.PrepareCancelButton(button);
-        public Task<bool> WaitForUserConfirmationAsync(PromptButton button, string confirmText) => _operationOverlayVm.WaitForUserConfirmationAsync(button, confirmText);
+        public CancellationToken PrepareCancelButton(PromptButtonEnum button) => _operationOverlayVm.PrepareCancelButton(button);
+        public Task<bool> WaitForUserConfirmationAsync(PromptButtonEnum button, string confirmText) => _operationOverlayVm.WaitForUserConfirmationAsync(button, confirmText);
     }
 }

@@ -30,7 +30,7 @@ namespace CollectaMundo.ApplicationServices.Shared
 
         void ShowSetupFailure(bool show);
 
-        CancellationToken PrepareCancelButton(PromptButton button);
-        Task<bool> WaitForUserConfirmationAsync(PromptButton button, string confirmText);
+        CancellationToken PrepareCancelButton(PromptButtonEnum button);
+        Task<bool> WaitForUserConfirmationAsync(PromptButtonEnum button, string confirmText);
     }
 }

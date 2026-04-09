@@ -64,7 +64,7 @@ namespace CollectaMundo.ViewModels.Shared
         public void SetPrimaryAction(Action<object?>? action) { _primaryAction = action ?? (_ => Hide()); }
         public void SetSecondaryAction(Action<object?>? action) { _secondaryAction = action ?? (_ => { }); }
 
-        public CancellationToken PrepareCancelButton(PromptButton button)
+        public CancellationToken PrepareCancelButton(PromptButtonEnum button)
         {
             var cancelMessage = "Cancelling…";
             var buttonText = "   Cancel   ";
@@ -73,7 +73,7 @@ namespace CollectaMundo.ViewModels.Shared
 
             switch (button)
             {
-                case PromptButton.Primary:
+                case PromptButtonEnum.Primary:
                     IsPrimaryButtonVisible = true;
                     PrimaryButtonText = buttonText;
 
@@ -84,7 +84,7 @@ namespace CollectaMundo.ViewModels.Shared
                     });
                     break;
 
-                case PromptButton.Secondary:
+                case PromptButtonEnum.Secondary:
                     IsSecondaryButtonVisible = true;
                     SecondaryButtonText = buttonText;
 
@@ -98,19 +98,19 @@ namespace CollectaMundo.ViewModels.Shared
 
             return token;
         }
-        public async Task<bool> WaitForUserConfirmationAsync(PromptButton button, string buttonText)
+        public async Task<bool> WaitForUserConfirmationAsync(PromptButtonEnum button, string buttonText)
         {
             _userPromptService.DisposeActivePrompt(); // ensures only one active at a time
             var tcs = _userPromptService.CreatePrompt();
 
             switch (button)
             {
-                case PromptButton.Primary:
+                case PromptButtonEnum.Primary:
                     IsPrimaryButtonVisible = true;
                     PrimaryButtonText = buttonText;
                     SetPrimaryAction(_ => _userPromptService.ConfirmActivePrompt());
                     break;
-                case PromptButton.Secondary:
+                case PromptButtonEnum.Secondary:
                     IsSecondaryButtonVisible = true;
                     SecondaryButtonText = buttonText;
                     SetSecondaryAction(_ => _userPromptService.ConfirmActivePrompt());

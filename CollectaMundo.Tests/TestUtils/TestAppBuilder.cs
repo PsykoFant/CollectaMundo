@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups;
+using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
@@ -12,6 +13,7 @@ using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
@@ -21,6 +23,7 @@ using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
+using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
@@ -84,6 +87,8 @@ public static class TestAppBuilder
             cardLookupsService,
             new CardCoreAggregator());
 
+        var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic());
+
         var modifyService = new ModifyCollectionService(
             dbFactory,
             new ModifyCollectionLogic(),
@@ -115,6 +120,7 @@ public static class TestAppBuilder
             userPromptService,
             picker,
             cardListService,
+            cardLocationService,
             settings,
             scheduler);
 
