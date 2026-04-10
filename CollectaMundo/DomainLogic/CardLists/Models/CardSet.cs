@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.CardLookups;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Media;
 
@@ -13,6 +14,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public static ILookupProvider<string, ImageSource>? SetIconImages { get; set; }
         public static ILookupProvider<string, SetDto>? SetMetaProvider { get; set; }
         public static ILookupProvider<string, PriceDto>? PriceMetaProvider { get; set; }
+        public static ILookupProvider<int, CardLocation>? CardLocationProvider { get; set; }
 
         // -------------------------------
         // Core reference
@@ -147,25 +149,32 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         // -------------------------------
         public int? CardId { get; set; }
 
+        // Condition       
+        [ObservableProperty]
+        private string? selectedCondition;
+        public List<string> Conditions { get; } = ["Mint", "Near Mint", "Excellent", "Good","Light Played", "Played", "Poor"];
+
+        // Finish
+        [ObservableProperty]
+        private string? selectedFinish;
+        public List<string> AvailableFinishes { get; set; } = [];
+
+        // Owned and for trade counts
         [ObservableProperty]
         private int cardsOwned;
 
         [ObservableProperty]
         private int cardsForTrade;
 
+        // Location
         [ObservableProperty]
-        private string? selectedCondition;
+        private int? selectedLocationId;
+        public string? SelectedLocationName => SelectedLocationId is int id ? CardLocationProvider?.Get(id)?.Name : null;
+        public CardLocationType? SelectedLocationType => SelectedLocationId is int id ? CardLocationProvider?.Get(id)?.Type : null;
 
+        // Comment
         [ObservableProperty]
-        private string? selectedFinish;
-
-        public List<string> Conditions { get; } =
-        [
-            "Mint", "Near Mint", "Excellent", "Good",
-        "Light Played", "Played", "Poor"
-        ];
-
-        public List<string> AvailableFinishes { get; set; } = [];
+        private string? comment;
 
         // -------------------------------
         // Price lookups (live from PriceMetaProvider)
@@ -213,7 +222,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 
             return c;
         }
-        public static CardSet FromCoreWithCollection(CardCore core, int cardId, int cardsOwned, int cardsForTrade, string? condition, string? language, string? finish)
+        public static CardSet FromCoreWithCollection(CardCore core,int cardId,int cardsOwned,int cardsForTrade,string? condition,string? language,string? finish,int? locationId,string? comment)
         {
             var c = FromCore(core);
 
@@ -223,6 +232,8 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             c.SelectedCondition = condition;
             c.Language = language ?? core.Language;
             c.SelectedFinish = finish;
+            c.SelectedLocationId = locationId;
+            c.Comment = comment;
 
             c.RecomputeCollectionPrice();
 

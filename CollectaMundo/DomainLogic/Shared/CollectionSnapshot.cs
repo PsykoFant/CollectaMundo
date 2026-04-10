@@ -7,16 +7,14 @@ namespace CollectaMundo.DomainLogic.Shared
         private readonly Dictionary<int, MyCollectionRow> _byId;
         private readonly Dictionary<CollectionIdentity, MyCollectionRow> _byIdentity;
 
-        private CollectionSnapshot(Dictionary<int, MyCollectionRow> byId, Dictionary<CollectionIdentity, MyCollectionRow> byIdentity)
+        private CollectionSnapshot(Dictionary<int, MyCollectionRow> byId,Dictionary<CollectionIdentity, MyCollectionRow> byIdentity)
         {
             _byId = byId;
             _byIdentity = byIdentity;
         }
 
         public bool TryGetById(int cardId, out MyCollectionRow row) => _byId.TryGetValue(cardId, out row!);
-
         public bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row) => _byIdentity.TryGetValue(identity, out row!);
-
         public static CollectionSnapshot From(IEnumerable<CardSet> cards)
         {
             var byId = new Dictionary<int, MyCollectionRow>(capacity: 1024);
@@ -24,17 +22,12 @@ namespace CollectaMundo.DomainLogic.Shared
 
             foreach (var card in cards)
             {
-                // We rely on the invariant: in-memory collection mirrors DB
                 if (card.CardId is not int cardId)
                 {
-                    continue; // or throw, depending on how strict you want to be
+                    continue;
                 }
 
-                var identity = new CollectionIdentity(
-                    card.Uuid ?? throw new InvalidOperationException("Uuid is required"),
-                    card.SelectedCondition ?? throw new InvalidOperationException("Condition is required"),
-                    card.Language ?? throw new InvalidOperationException("Language is required"),
-                    card.SelectedFinish ?? throw new InvalidOperationException("Finish is required"));
+                var identity = CollectionIdentityFactory.Create(card.Uuid,card.SelectedCondition,card.Language,card.SelectedFinish,card.SelectedLocationId,card.Comment);
 
                 var row = new MyCollectionRow
                 {
@@ -47,8 +40,8 @@ namespace CollectaMundo.DomainLogic.Shared
                 byId[cardId] = row;
                 byIdentity[identity] = row;
             }
+
             return new CollectionSnapshot(byId, byIdentity);
         }
-
     }
 }
