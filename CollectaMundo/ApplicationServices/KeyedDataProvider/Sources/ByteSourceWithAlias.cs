@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices.CardLists.CardLookups.Sources
+﻿namespace CollectaMundo.ApplicationServices.KeyedDataProvider.Sources
 {
     public sealed class ByteSourceWithAlias<TKey>(IByteSource<TKey> inner, IReadOnlyDictionary<TKey, TKey> aliasMap) : IByteSource<TKey> where TKey : notnull
     {

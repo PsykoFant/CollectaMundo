@@ -2,11 +2,11 @@
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
-using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
+using CollectaMundo.ApplicationServices.KeyedDataProvider;
 using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
@@ -24,6 +24,7 @@ using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
+using CollectaMundo.Infrastructure.KeyedDataProvider;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
@@ -51,7 +52,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var dbFactory = new DbConnectionFactory(settings);
 
                 // Card DB prep (repos + services)
-                var missingPngService = new GenerateMissingPngService(new GenerateMissingPngRepo(), remoteLookups, new GenerateMissingPngLogic());                
+                var missingPngService = new GenerateMissingPngService(new GenerateMissingPngRepo(), remoteLookups, new GenerateMissingPngLogic());
                 var priceService = new CardPriceService(settings, new CardPriceRepository());
 
                 var progressSinks = CreateProgressSinks(operationOverlayController);
@@ -90,8 +91,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardImageDownloader = new CardImageDownloader(settings);
                 var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
 
-                var cardLookupsService = new CardLookupsService(dbFactory, new CardLookupsRepo(), getRetailer);
-                var cardListService = new CardListService(dbFactory, new CardListRepo(), new FilterDefaultsLogic(), cardLookupsService, new CardCoreAggregator());
+                var keyedDataProviderService = new KeyedDataProviderService(dbFactory, new KeyedDataProviderRepo(), getRetailer);
+                var cardListService = new CardListService(dbFactory, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, new CardCoreAggregator());
                 var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic());
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread

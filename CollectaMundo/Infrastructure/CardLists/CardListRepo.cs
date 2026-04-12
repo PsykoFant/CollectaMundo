@@ -86,28 +86,55 @@ namespace CollectaMundo.Infrastructure.CardLists
         }
         public async Task<List<MyCollectionRow>> ReadMyCollectionAsync(SQLiteConnection conn)
         {
-            using var cmd = new SQLiteCommand("SELECT id, uuid, cardsOwned, cardsForTrade, condition, language, finish FROM myCollection", conn);
+            const string sql = """
+                                SELECT
+                                    id,
+                                    uuid,
+                                    cardsOwned,
+                                    cardsForTrade,
+                                    condition,
+                                    language,
+                                    finish,
+                                    locationId,
+                                    comment
+                                FROM myCollection;
+                                """;
+
+            using var cmd = new SQLiteCommand(sql, conn);
 
             var list = new List<MyCollectionRow>();
             using var rdr = await cmd.ExecuteReaderAsync();
+
             while (await rdr.ReadAsync())
             {
                 var uuid = rdr["uuid"]?.ToString() ?? throw new InvalidOperationException("uuid must not be null");
+
                 var condition = rdr["condition"]?.ToString() ?? throw new InvalidOperationException("condition must not be null");
+
                 var language = rdr["language"]?.ToString() ?? throw new InvalidOperationException("language must not be null");
+
                 var finish = rdr["finish"]?.ToString() ?? throw new InvalidOperationException("finish must not be null");
+
+                int? locationId = rdr["locationId"] == DBNull.Value
+                    ? null
+                    : rdr["locationId"] is long ll
+                        ? (int)ll
+                        : Convert.ToInt32(rdr["locationId"]);
+
+                string? comment = rdr["comment"] == DBNull.Value
+                    ? null
+                    : rdr["comment"]?.ToString();
 
                 list.Add(new MyCollectionRow
                 {
                     CardId = rdr["id"] is long li ? (int)li : Convert.ToInt32(rdr["id"]),
-                    Identity = new CollectionIdentity(uuid, condition, language, finish),
+                    Identity = CollectionIdentityFactory.Create(uuid, condition, language, finish, locationId, comment),
                     CardsOwned = rdr["cardsOwned"] is long lo ? (int)lo : Convert.ToInt32(rdr["cardsOwned"]),
                     CardsForTrade = rdr["cardsForTrade"] is long lt ? (int)lt : Convert.ToInt32(rdr["cardsForTrade"])
                 });
             }
 
             return list;
-
         }
         private static T? GetFieldValue<T>(DbDataReader reader, string columnName)
         {

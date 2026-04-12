@@ -1,9 +1,9 @@
-﻿using CollectaMundo.DomainLogic.CardLists.CardLookups;
-using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.KeyedDataProvider;
 
-namespace CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers
+namespace CollectaMundo.ApplicationServices.KeyedDataProvider.Providers
 {
-    public sealed class SetDtoLookupProvider(IReadOnlyDictionary<string, SetDto> baseMap) : ILookupProvider<string, SetDto>
+    public sealed class SetDtoLookupProvider(IReadOnlyDictionary<string, SetDto> baseMap) : IKeyedDataProvider<string, SetDto>
     {
         private readonly IReadOnlyDictionary<string, SetDto> _map = baseMap;
         private readonly Dictionary<string, SetDto> _tokenMap = baseMap

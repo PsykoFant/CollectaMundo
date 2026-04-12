@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices.CardLists.CardLookups
+﻿namespace CollectaMundo.ApplicationServices.KeyedDataProvider
 {
     public interface IByteSource<TKey>
     {

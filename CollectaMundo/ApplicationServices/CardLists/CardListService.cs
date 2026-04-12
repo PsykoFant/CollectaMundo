@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups;
+﻿using CollectaMundo.ApplicationServices.KeyedDataProvider;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -14,12 +14,12 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator) : ICardListService
+    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, IKeyedDataProviderService keyedDataProviderService, ICardCoreAggregator aggregator) : ICardListService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
-        private readonly ICardLookupsService _lookupService = lookupService;
+        private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
         public async Task InitializeCardListsAsync(CardListViewModel allCardsVM, CardListViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
@@ -32,7 +32,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 var dbIoSw = Stopwatch.StartNew();
 
                 // Phase 1: DB I/O
-                var lookupPackageTask = _lookupService.LoadLookupDataAsync(conn, CardLookupsOptions.All);
+                var lookupPackageTask = _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All);
                 var coreDtosTask = _cardListRepo.ReadAllCardsCoreDtosAsync(conn);
                 var collectionRowsTask = _cardListRepo.ReadMyCollectionAsync(conn);
 
@@ -48,6 +48,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 CardSet.SetIconImages = lookupPackage.SetIconImages;
                 CardSet.SetMetaProvider = lookupPackage.SetMetaProvider;
                 CardSet.PriceMetaProvider = lookupPackage.PriceMetaProvider;
+                CardSet.CardLocationProvider = lookupPackage.CardLocationProvider;
 
                 // Phase 2b: Hydrate and aggregate
                 var coreDtos = coreDtosTask.Result;
@@ -66,9 +67,14 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
                 // PHASE 3a, 3b in parallel
                 var phase3abSw = Stopwatch.StartNew();
+
                 var allCardsTask = Task.Run(() =>
                 {
-                    var allCards = aggregatedCores.AsParallel().AsOrdered().Select(CardSet.FromCore).ToList();
+                    var allCards = aggregatedCores
+                        .AsParallel()
+                        .AsOrdered()
+                        .Select(CardSet.FromCore)
+                        .ToList();
 
                     var sortSw = Stopwatch.StartNew();
                     allCardsVM.Cards = SortCards(allCards);
@@ -84,15 +90,17 @@ namespace CollectaMundo.ApplicationServices.CardLists
                     var myCollection = collectionRows
                         .AsParallel()
                         .Select(r => byUuid.TryGetValue(r.Identity.Uuid, out var core)
-                        ? CardSet.FromCoreWithCollection(
-                            core,
-                            r.CardId,
-                            r.CardsOwned,
-                            r.CardsForTrade,
-                            r.Identity.Condition,
-                            r.Identity.Language,
-                            r.Identity.Finish)
-                        : null)
+                            ? CardSet.FromCoreWithCollection(
+                                core,
+                                r.CardId,
+                                r.CardsOwned,
+                                r.CardsForTrade,
+                                r.Identity.Condition,
+                                r.Identity.Language,
+                                r.Identity.Finish,
+                                r.Identity.LocationId,
+                                r.Identity.Comment)
+                            : null)
                         .Where(c => c is not null)
                         .Cast<CardSet>()
                         .ToList();
@@ -101,7 +109,8 @@ namespace CollectaMundo.ApplicationServices.CardLists
                     myCollectionVM.FilteredCards = myCollectionVM.Cards;
                     return myCollection;
                 });
-                await Task.WhenAll(allCardsTask, myCollectionTask); // Required
+
+                await Task.WhenAll(allCardsTask, myCollectionTask);
 
                 phase3abSw.Stop();
                 Debug.WriteLine($"[InitializeCardListsAsync] phase 3a and 3b (build AllCards and MyCollection objects): {phase3abSw.ElapsedMilliseconds} ms");
@@ -110,6 +119,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
                 var defs = _filterLogic.Build(allCardsTask.Result, myCollectionTask.Result);
                 filters.Clear();
+
                 foreach (var def in defs)
                 {
                     filters[def.CriteriaKey] = new FilterItemViewModel(
@@ -124,7 +134,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
                 phase3cSw.Stop();
                 Debug.WriteLine($"[InitializeCardListsAsync] phase 3c (build filters): {phase3cSw.ElapsedMilliseconds} ms");
-
             }
             catch
             {
@@ -134,7 +143,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
         }
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {
-            await _lookupService.ResetPricesMetaProviderAsync(retailerKey);
+            await _keyedDataProviderService.ResetPricesMetaProviderAsync(retailerKey);
         }
 
         // helper to sort cards in the desired order

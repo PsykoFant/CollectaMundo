@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices.CardLists.CardLookups.Sources
+﻿namespace CollectaMundo.ApplicationServices.KeyedDataProvider.Sources
 {
     internal sealed class DictionaryByteSource<TKey>(IReadOnlyDictionary<TKey, byte[]> map) : IByteSource<TKey> where TKey : notnull
     {

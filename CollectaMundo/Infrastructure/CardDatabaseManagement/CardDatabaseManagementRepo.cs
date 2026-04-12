@@ -36,7 +36,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 ["uniqueManaSymbols"] = "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);",
                 ["uniqueManaCostImages"] = "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);",
                 ["keyruneImages"] = "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB, defaultSvgUsed BOOLEAN);",
-                ["myCollection"] = "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY,uuid TEXT NOT NULL,language TEXT NOT NULL,finish TEXT NOT NULL,condition TEXT NOT NULL,cardsOwned INTEGER NOT NULL CHECK (cardsOwned >= 0),cardsForTrade INTEGER NOT NULL CHECK (cardsForTrade >= 0),UNIQUE (uuid, language, finish, condition));",
+                ["myCollection"] = "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY, uuid TEXT NOT NULL, language TEXT NOT NULL, finish TEXT NOT NULL, condition TEXT NOT NULL, locationId INTEGER NULL, comment TEXT NULL, cardsOwned INTEGER NOT NULL CHECK (cardsOwned >= 0), cardsForTrade INTEGER NOT NULL CHECK (cardsForTrade >= 0), FOREIGN KEY (locationId) REFERENCES cardLocations(id));",
                 ["myDecks"] = "CREATE TABLE IF NOT EXISTS myDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckName TEXT, deckDescription TEXT, targetFormat TEXT);",
                 ["cardsInDecks"] = "CREATE TABLE IF NOT EXISTS cardsInDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckId INTEGER, name TEXT, uuid TEXT, count INTEGER);",
                 ["cardLocations"] = "CREATE TABLE IF NOT EXISTS cardLocations (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL COLLATE NOCASE UNIQUE, type TEXT NOT NULL CHECK (type IN ('Storage', 'Deck')));",
@@ -76,7 +76,8 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 {"idx_sets_code_tokensetcode", "CREATE INDEX IF NOT EXISTS idx_sets_code_tokensetcode ON sets(code, tokenSetCode);"},
                 {"idx_cards_setcode_name_type", "CREATE INDEX IF NOT EXISTS idx_cards_setcode_name_type ON cards(setCode, name, type);"},
                 {"idx_tokens_setcode_name_type", "CREATE INDEX IF NOT EXISTS idx_tokens_setcode_name_type ON tokens(setCode, name, type);"},
-                {"idx_myCollection_uuid", "CREATE INDEX IF NOT EXISTS idx_myCollection_uuid ON myCollection (uuid);"}
+                {"idx_myCollection_uuid", "CREATE INDEX IF NOT EXISTS idx_myCollection_uuid ON myCollection (uuid);"},
+                {"ux_myCollection_identity", "CREATE UNIQUE INDEX IF NOT EXISTS ux_myCollection_identity ON myCollection (uuid,language,finish,condition,COALESCE(locationId, -1),COALESCE(comment, ''));"}
             };
 
             foreach (var (_, sql) in indices)

@@ -1,5 +1,5 @@
-﻿using CollectaMundo.DomainLogic.CardLists.CardLookups;
-using CollectaMundo.DomainLogic.CardLocations.Models;
+﻿using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Media;
 
@@ -10,11 +10,11 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         // -------------------------------
         // Static providers (shared metadata + images)
         // -------------------------------
-        public static ILookupProvider<string, ImageSource>? ManaCostImages { get; set; }
-        public static ILookupProvider<string, ImageSource>? SetIconImages { get; set; }
-        public static ILookupProvider<string, SetDto>? SetMetaProvider { get; set; }
-        public static ILookupProvider<string, PriceDto>? PriceMetaProvider { get; set; }
-        public static ILookupProvider<int, CardLocation>? CardLocationProvider { get; set; }
+        public static IKeyedDataProvider<string, ImageSource>? ManaCostImages { get; set; }
+        public static IKeyedDataProvider<string, ImageSource>? SetIconImages { get; set; }
+        public static IKeyedDataProvider<string, SetDto>? SetMetaProvider { get; set; }
+        public static IKeyedDataProvider<string, PriceDto>? PriceMetaProvider { get; set; }
+        public static IKeyedDataProvider<int, CardLocation>? CardLocationProvider { get; set; }
 
         // -------------------------------
         // Core reference

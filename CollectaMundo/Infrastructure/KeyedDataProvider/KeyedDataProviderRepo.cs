@@ -1,13 +1,14 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.CardPrices;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Globalization;
 
-namespace CollectaMundo.Infrastructure.CardLists
+namespace CollectaMundo.Infrastructure.KeyedDataProvider
 {
-    public class CardLookupsRepo : ICardLookupsRepo
+    public class KeyedDataProviderRepo : IKeyedDataProviderRepo
     {
         public async Task<IReadOnlyDictionary<string, byte[]>> ReadManaCostImagesAsync(SQLiteConnection conn)
         {
@@ -145,6 +146,48 @@ namespace CollectaMundo.Infrastructure.CardLists
 
                 map[uuid] = dto;
             }
+
+            return map;
+        }
+        public async Task<IReadOnlyDictionary<int, CardLocation>> ReadLocationsAsync(SQLiteConnection conn)
+        {
+            var map = new Dictionary<int, CardLocation>(capacity: 128);
+
+            const string sql = """
+                                SELECT id, name, type
+                                FROM cardLocations;
+                                """;
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            using var rdr = await cmd.ExecuteReaderAsync();
+
+            int idOrdinal = rdr.GetOrdinal("id");
+            int nameOrdinal = rdr.GetOrdinal("name");
+            int typeOrdinal = rdr.GetOrdinal("type");
+
+            while (await rdr.ReadAsync())
+            {
+                int id = rdr.GetInt32(idOrdinal);
+                string name = rdr.GetString(nameOrdinal);
+                string dbType = rdr.GetString(typeOrdinal);
+
+                var type = dbType switch
+                {
+                    "Storage" => CardLocationType.Storage,
+                    "Deck" => CardLocationType.Deck,
+                    _ => throw new InvalidOperationException(
+                        $"Unsupported card location type '{dbType}' for cardLocation id {id}.")
+                };
+
+                map[id] = new CardLocation
+                {
+                    Id = id,
+                    Name = name,
+                    Type = type
+                };
+            }
+
+            Debug.WriteLine($"Loaded {map.Count} card locations from database.");
 
             return map;
         }
