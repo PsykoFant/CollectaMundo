@@ -37,6 +37,8 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 clone.Language = selectedCard.Language!;
                 clone.SelectedFinish = selectedCard.SelectedFinish!;
                 clone.SelectedCondition = selectedCard.SelectedCondition!;
+                clone.SelectedLocationId = selectedCard.SelectedLocationId;
+                clone.Comment = selectedCard.Comment;
             }
             else
             {
@@ -87,7 +89,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                     continue;
                 }
 
-                var identity = CollectionIdentityFactory.Create(card.Uuid, card.SelectedCondition, card.Language, card.SelectedFinish);
+                var identity = CollectionIdentityFactory.Create(card.Uuid, card.SelectedCondition, card.Language, card.SelectedFinish, card.SelectedLocationId, card.Comment);
 
                 snapshot.TryGetByIdentity(identity, out var existingByIdentity);
 
@@ -212,7 +214,9 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                     cardsForTrade: row.CardsForTrade,
                     condition: identity.Condition,
                     language: identity.Language,
-                    finish: identity.Finish);
+                    finish: identity.Finish,
+                    locationId: identity.LocationId,
+                    comment: identity.Comment);
 
                 addedOrUpdated.Add(card);
             }
