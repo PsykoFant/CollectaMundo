@@ -10,7 +10,8 @@
         Language,
         CardsOwned,
         CardsForTrade,
+        Location,
+        Comment,
         None
     }
-
 }

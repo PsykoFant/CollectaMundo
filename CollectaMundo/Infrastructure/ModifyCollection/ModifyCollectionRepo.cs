@@ -83,14 +83,14 @@ namespace CollectaMundo.Infrastructure.ModifyCollection
         }
 
         // CRUD
-        public async Task<int> AddCardAndReturnIdAsync(string uuid, string condition, string language, string finish, int cardsOwned, int cardsForTrade, SQLiteConnection conn)
+        public async Task<int> AddCardAndReturnIdAsync(string uuid,string condition,string language,string finish,int? locationId,string? comment,int cardsOwned,int cardsForTrade,SQLiteConnection conn)
         {
-            const string insertSql = @"
-                INSERT INTO myCollection
-                    (uuid, cardsOwned, cardsForTrade, condition, language, finish)
-                VALUES
-                    (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish);
-            ";
+            const string insertSql =    """
+                                        INSERT INTO myCollection
+                                            (uuid, cardsOwned, cardsForTrade, condition, language, finish, locationId, comment)
+                                        VALUES
+                                            (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish, @locationId, @comment);
+                                        """;
 
             try
             {
@@ -101,6 +101,8 @@ namespace CollectaMundo.Infrastructure.ModifyCollection
                 insertCmd.Parameters.AddWithValue("@condition", condition);
                 insertCmd.Parameters.AddWithValue("@language", language);
                 insertCmd.Parameters.AddWithValue("@finish", finish);
+                insertCmd.Parameters.AddWithValue("@locationId", locationId.HasValue ? locationId.Value : DBNull.Value);
+                insertCmd.Parameters.AddWithValue("@comment", string.IsNullOrWhiteSpace(comment) ? DBNull.Value : comment.Trim());
 
                 await insertCmd.ExecuteNonQueryAsync();
 
@@ -112,8 +114,9 @@ namespace CollectaMundo.Infrastructure.ModifyCollection
             catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
                 throw new InvalidOperationException(
-                    $"Duplicate CollectionIdentity detected. " +
-                    $"Uuid={uuid}, Language={language}, Finish={finish}, Condition={condition}.",
+                    "Duplicate CollectionIdentity detected. " +
+                    $"Uuid={uuid}, Language={language}, Finish={finish}, Condition={condition}, " +
+                    $"LocationId={(locationId?.ToString() ?? "null")}, Comment={(string.IsNullOrWhiteSpace(comment) ? "null" : comment.Trim())}.",
                     ex);
             }
         }
@@ -126,17 +129,19 @@ namespace CollectaMundo.Infrastructure.ModifyCollection
 
             await cmd.ExecuteNonQueryAsync();
         }
-        public async Task UpdateCardFieldsByIdAsync(int id, int owned, int trade, string condition, string language, string finish, SQLiteConnection conn)
+        public async Task UpdateCardFieldsByIdAsync(int id,int owned,int trade,string condition,string language,string finish,int? locationId,string? comment,SQLiteConnection conn)
         {
-            const string sql = @"
-                UPDATE myCollection
-                   SET cardsOwned    = @owned,
-                       cardsForTrade = @trade,
-                       condition     = @cond,
-                       language      = @lang,
-                       finish        = @fin
-                 WHERE id = @id;
-            ";
+            const string sql =  """
+                                UPDATE myCollection
+                                   SET cardsOwned    = @owned,
+                                       cardsForTrade = @trade,
+                                       condition     = @cond,
+                                       language      = @lang,
+                                       finish        = @fin,
+                                       locationId    = @locationId,
+                                       comment       = @comment
+                                 WHERE id = @id;
+                                """;
 
             using var cmd = new SQLiteCommand(sql, conn);
             cmd.Parameters.AddWithValue("@owned", owned);
@@ -144,10 +149,11 @@ namespace CollectaMundo.Infrastructure.ModifyCollection
             cmd.Parameters.AddWithValue("@cond", condition);
             cmd.Parameters.AddWithValue("@lang", language);
             cmd.Parameters.AddWithValue("@fin", finish);
+            cmd.Parameters.AddWithValue("@locationId", locationId.HasValue ? locationId.Value : DBNull.Value);
+            cmd.Parameters.AddWithValue("@comment", string.IsNullOrWhiteSpace(comment) ? DBNull.Value : comment.Trim());
             cmd.Parameters.AddWithValue("@id", id);
 
             await cmd.ExecuteNonQueryAsync();
         }
-
     }
 }

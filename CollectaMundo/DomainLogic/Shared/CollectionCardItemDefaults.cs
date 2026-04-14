@@ -11,6 +11,7 @@ namespace CollectaMundo.DomainLogic.Shared
             ImportField.Condition => "Near Mint",
             ImportField.CardFinish => "nonfoil",
             ImportField.Language => "English",
+            ImportField.Comment => string.Empty,
             _ => throw new NotSupportedException($"No string default defined for {field}")
         };
 
@@ -21,11 +22,13 @@ namespace CollectaMundo.DomainLogic.Shared
             ImportField.CardsForTrade => 0,
             _ => throw new NotSupportedException($"No int default defined for {field}")
         };
+
         public static string GetDefaultDisplayValue(ImportField field) => field switch
         {
             ImportField.Condition => GetDefaultString(ImportField.Condition),
             ImportField.CardFinish => GetDefaultString(ImportField.CardFinish),
             ImportField.Language => GetDefaultString(ImportField.Language),
+            ImportField.Comment => GetDefaultString(ImportField.Comment),
 
             ImportField.CardsOwned => GetDefaultInt(ImportField.CardsOwned).ToString(CultureInfo.InvariantCulture),
             ImportField.CardsForTrade => GetDefaultInt(ImportField.CardsForTrade).ToString(CultureInfo.InvariantCulture),

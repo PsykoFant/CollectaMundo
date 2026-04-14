@@ -286,6 +286,8 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
             clone.CardsForTrade = CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsForTrade);
             clone.SelectedCondition = CollectionCardItemDefaults.GetDefaultString(ImportField.Condition);
             clone.SelectedFinish = ChooseDefaultFinish(clone.AvailableFinishes);
+            clone.SelectedLocationId = null;
+            clone.Comment = null;
 
             // prefer English; else first; else "English"
             clone.Language = ChooseDefaultLanguage(clone.OtherLanguages);

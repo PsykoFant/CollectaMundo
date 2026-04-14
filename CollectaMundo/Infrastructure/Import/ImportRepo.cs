@@ -553,60 +553,123 @@ namespace CollectaMundo.Infrastructure.Import
             return dict;
         }
 
-        
+
         // Final upsert step that inserts/updates myCollection based on the imported data, returning the resulting rows with their assigned CardIds. This is where we apply the "additive" logic for owned/trade counts.
-        public async Task<IReadOnlyList<MyCollectionRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token)
+        public async Task<IReadOnlyList<MyCollectionRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items,SQLiteConnection conn,SQLiteTransaction tx,IProgress<int>? percent,CancellationToken token)
         {
-            const string sql = @"
-                INSERT INTO myCollection
-                    (uuid, language, finish, condition, cardsOwned, cardsForTrade)
-                VALUES
-                    (@uuid, @language, @finish, @condition, @owned, @trade)
-                ON CONFLICT(uuid, language, finish, condition) DO UPDATE SET
-                    cardsOwned    = cardsOwned + excluded.cardsOwned,
-                    cardsForTrade = cardsForTrade + excluded.cardsForTrade
-                RETURNING id;
-            ";
-
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-
-            var pUuid = cmd.Parameters.Add("@uuid", DbType.String);
-            var pLanguage = cmd.Parameters.Add("@language", DbType.String);
-            var pFinish = cmd.Parameters.Add("@finish", DbType.String);
-            var pCondition = cmd.Parameters.Add("@condition", DbType.String);
-            var pOwned = cmd.Parameters.Add("@owned", DbType.Int32);
-            var pTrade = cmd.Parameters.Add("@trade", DbType.Int32);
-
+            const string insertSql = """
+                                    INSERT INTO myCollection
+                                        (uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade)
+                                    VALUES
+                                        (@uuid, @language, @finish, @condition, @locationId, @comment, @owned, @trade);
+                                    """;
+            
+            const string updateSql = """
+                                    UPDATE myCollection
+                                       SET cardsOwned    = cardsOwned + @owned,
+                                           cardsForTrade = cardsForTrade + @trade
+                                     WHERE uuid = @uuid
+                                       AND language = @language
+                                       AND finish = @finish
+                                       AND condition = @condition
+                                       AND COALESCE(locationId, -1) = COALESCE(@locationId, -1)
+                                       AND COALESCE(comment, '') = COALESCE(@comment, '');
+                                    """;
+            
+            const string selectIdSql = """
+                                    SELECT id
+                                    FROM myCollection
+                                    WHERE uuid = @uuid
+                                      AND language = @language
+                                      AND finish = @finish
+                                      AND condition = @condition
+                                      AND COALESCE(locationId, -1) = COALESCE(@locationId, -1)
+                                      AND COALESCE(comment, '') = COALESCE(@comment, '');
+                                    LIMIT 1;
+                                    """;
+            
+            using var insertCmd = new SQLiteCommand(insertSql, conn, tx);
+            using var updateCmd = new SQLiteCommand(updateSql, conn, tx);
+            using var selectIdCmd = new SQLiteCommand(selectIdSql, conn, tx);
+            
+            AddParameters(insertCmd);
+            AddParameters(updateCmd);
+            AddParameters(selectIdCmd);
+            
             var result = new List<MyCollectionRow>(items.Count);
 
             for (int i = 0; i < items.Count; i++)
             {
                 token.ThrowIfCancellationRequested();
-
+                
                 var it = items[i];
+                var normalizedComment = NormalizeComment(it.Comment);
+                
+                BindIdentityParameters(insertCmd, it, normalizedComment);
+                BindIdentityParameters(updateCmd, it, normalizedComment);
+                BindIdentityParameters(selectIdCmd, it, normalizedComment);
+                
+                try
+                {
+                    await insertCmd.ExecuteNonQueryAsync(token);
+                }
 
-                pUuid.Value = it.Uuid;
-                pLanguage.Value = it.Language;
-                pFinish.Value = it.Finish;
-                pCondition.Value = it.Condition;
-                pOwned.Value = it.CardsOwned;
-                pTrade.Value = it.CardsForTrade;
-
-                var id = Convert.ToInt32(await cmd.ExecuteScalarAsync(token));
-
+                catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
+                {
+                    await updateCmd.ExecuteNonQueryAsync(token);
+                }
+                
+                var idObj = await selectIdCmd.ExecuteScalarAsync(token);
+                if (idObj is null || idObj == DBNull.Value)
+                {
+                    throw new InvalidOperationException($"Failed to resolve myCollection row id for identity: " + $"Uuid={it.Uuid}, Language={it.Language}, Finish={it.Finish}, Condition={it.Condition}, " + $"LocationId={(it.LocationId?.ToString() ?? "null")}, Comment={(normalizedComment ?? "null")}.");
+                }
+                
+                var id = Convert.ToInt32(idObj);
+                
                 result.Add(new MyCollectionRow
                 {
                     CardId = id,
-                    Identity = new CollectionIdentity(it.Uuid, it.Condition, it.Language, it.Finish),
-                    CardsOwned = it.CardsOwned,
-                    CardsForTrade = it.CardsForTrade
-                });
+                    Identity = CollectionIdentityFactory.Create(it.Uuid,it.Condition,it.Language,it.Finish,it.LocationId,normalizedComment), CardsOwned = it.CardsOwned, CardsForTrade = it.CardsForTrade});
 
-                percent?.Report((int)(((i + 1) / (double)items.Count) * 100));
+                    percent?.Report((int)(((i + 1) / (double)items.Count) * 100));
+                }
+
+                return result;
             }
-
-            return result;
+        
+        private static void AddParameters(SQLiteCommand cmd)
+        {
+            cmd.Parameters.Add("@uuid", DbType.String);
+            cmd.Parameters.Add("@language", DbType.String);
+            cmd.Parameters.Add("@finish", DbType.String);
+            cmd.Parameters.Add("@condition", DbType.String);
+            cmd.Parameters.Add("@locationId", DbType.Int32);
+            cmd.Parameters.Add("@comment", DbType.String);
+            cmd.Parameters.Add("@owned", DbType.Int32);
+            cmd.Parameters.Add("@trade", DbType.Int32);
         }
-
-    }
+        
+        private static void BindIdentityParameters(SQLiteCommand cmd,CollectionUpsertItem item,string? normalizedComment)
+        {
+            cmd.Parameters["@uuid"].Value = item.Uuid;
+            cmd.Parameters["@language"].Value = item.Language;
+            cmd.Parameters["@finish"].Value = item.Finish;
+            cmd.Parameters["@condition"].Value = item.Condition;
+            cmd.Parameters["@locationId"].Value = item.LocationId.HasValue
+                ? item.LocationId.Value
+                : DBNull.Value;
+            cmd.Parameters["@comment"].Value = normalizedComment is not null
+                ? normalizedComment
+                : DBNull.Value;
+            cmd.Parameters["@owned"].Value = item.CardsOwned;
+            cmd.Parameters["@trade"].Value = item.CardsForTrade;
+        }        
+        private static string? NormalizeComment(string? comment)
+        {
+            var trimmed = comment?.Trim();
+            return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+        }
+    }    
 }
+

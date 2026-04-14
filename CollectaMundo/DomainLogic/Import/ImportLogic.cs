@@ -913,39 +913,44 @@ namespace CollectaMundo.DomainLogic.Import
         public IReadOnlyList<CollectionUpsertItem> CollapseResolvedItemsForCollection(IReadOnlyList<ResolvedImportItem> resolvedItems)
         {
             return
-            [.. resolvedItems
-        .Where(r => r.IsImportable)
-        .Select(r => new
-        {
-            Identity = CollectionIdentityFactory.Create(
-                r.Uuid,
-                r.Condition ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition),
-                r.Language ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language),
-                r.Finish ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish)),
-            r.CardsOwned,
-            r.CardsForTrade
-        })
-        .GroupBy(x => x.Identity)
-        .Select(g =>
-        {
-            var ownedTotal = g.Sum(x => x.CardsOwned);
-            var tradeTotal = g.Sum(x => x.CardsForTrade);
-
-            // Clamp: trade can never exceed owned
-            if (tradeTotal > ownedTotal)
+            [
+                .. resolvedItems
+            .Where(r => r.IsImportable)
+            .Select(r => new
             {
-                tradeTotal = ownedTotal;
-            }
+                Identity = CollectionIdentityFactory.Create(
+                    r.Uuid,
+                    r.Condition ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition),
+                    r.Language ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language),
+                    r.Finish ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish),
+                    locationId: null,
+                    comment: CollectionCardItemDefaults.GetDefaultString(ImportField.Comment)),
+                r.CardsOwned,
+                r.CardsForTrade
+            })
+            .GroupBy(x => x.Identity)
+            .Select(g =>
+            {
+                var ownedTotal = g.Sum(x => x.CardsOwned);
+                var tradeTotal = g.Sum(x => x.CardsForTrade);
 
-            return new CollectionUpsertItem(
-                Uuid: g.Key.Uuid,
-                Language: g.Key.Language,
-                Finish: g.Key.Finish,
-                Condition: g.Key.Condition,
-                CardsOwned: ownedTotal,
-                CardsForTrade: tradeTotal
-            );
-        })];
+                if (tradeTotal > ownedTotal)
+                {
+                    tradeTotal = ownedTotal;
+                }
+
+                return new CollectionUpsertItem(
+                    Uuid: g.Key.Uuid,
+                    Language: g.Key.Language,
+                    Finish: g.Key.Finish,
+                    Condition: g.Key.Condition,
+                    LocationId: g.Key.LocationId,
+                    Comment: g.Key.Comment,
+                    CardsOwned: ownedTotal,
+                    CardsForTrade: tradeTotal
+                );
+            })
+            ];
         }
 
         #endregion

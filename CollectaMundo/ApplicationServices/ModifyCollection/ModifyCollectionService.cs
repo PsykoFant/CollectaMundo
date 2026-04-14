@@ -120,6 +120,8 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                     update.Identity.Condition,
                     update.Identity.Language,
                     update.Identity.Finish,
+                    update.Identity.LocationId,
+                    update.Identity.Comment,
                     connection);
             }
 
@@ -130,6 +132,8 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                     insert.Identity.Condition,
                     insert.Identity.Language,
                     insert.Identity.Finish,
+                    insert.Identity.LocationId,
+                    insert.Identity.Comment,
                     insert.CardsOwned,
                     insert.CardsForTrade,
                     connection);
