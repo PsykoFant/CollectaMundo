@@ -6,13 +6,13 @@ namespace CollectaMundo.DomainLogic.Shared
     {
         private readonly Dictionary<int, MyCollectionRow> _byId;
         private readonly Dictionary<CollectionIdentity, MyCollectionRow> _byIdentity;
-
-        private CollectionSnapshot(Dictionary<int, MyCollectionRow> byId,Dictionary<CollectionIdentity, MyCollectionRow> byIdentity)
+        private CollectionSnapshot(Dictionary<int, MyCollectionRow> byId, Dictionary<CollectionIdentity, MyCollectionRow> byIdentity)
         {
             _byId = byId;
             _byIdentity = byIdentity;
         }
 
+        public IReadOnlyCollection<MyCollectionRow> Rows => _byId.Values;
         public bool TryGetById(int cardId, out MyCollectionRow row) => _byId.TryGetValue(cardId, out row!);
         public bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row) => _byIdentity.TryGetValue(identity, out row!);
         public static CollectionSnapshot From(IEnumerable<CardSet> cards)
@@ -27,7 +27,7 @@ namespace CollectaMundo.DomainLogic.Shared
                     continue;
                 }
 
-                var identity = CollectionIdentityFactory.Create(card.Uuid,card.SelectedCondition,card.Language,card.SelectedFinish,card.SelectedLocationId,card.Comment);
+                var identity = CollectionIdentityFactory.Create(card.Uuid, card.SelectedCondition, card.Language, card.SelectedFinish, card.SelectedLocationId, card.Comment);
 
                 var row = new MyCollectionRow
                 {

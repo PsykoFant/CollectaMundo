@@ -11,6 +11,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
 {
     public class ModifyCollectionLogic() : IModifyCollectionLogic
     {
+        private static readonly string _defaultLanguage = CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
         public CardSet PrepareCardForList(CardSet selectedCard, CardToAddMetadataDto metadata, bool isEdit)
         {
             if (selectedCard.Core is null)
@@ -20,17 +21,18 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
 
             var clone = CardSet.FromCore(selectedCard.Core);
 
-            // carry over view-only fields
+            // Carry over view-only fields from the source row
             clone.SelectedFinish = selectedCard.SelectedFinish;
             clone.SelectedCondition = selectedCard.SelectedCondition;
             clone.Count = selectedCard.Count;
 
-            // attach metadata
+            // Attach selectable metadata for the editor
             clone.AvailableFinishes = [.. metadata.AvailableFinishes];
             clone.OtherLanguages = NormalizeLanguages(metadata.AvailableLanguages, selectedCard.Language);
 
             if (isEdit)
             {
+                // Preserve the full collection row state when editing
                 clone.CardId = selectedCard.CardId;
                 clone.CardsOwned = selectedCard.CardsOwned;
                 clone.CardsForTrade = selectedCard.CardsForTrade;
@@ -42,6 +44,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
             }
             else
             {
+                // New rows start from collection defaults
                 ApplyNewDefaults(clone);
             }
 
@@ -52,19 +55,15 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
         {
             if (selectedCard.Core is null)
             {
-                throw new InvalidOperationException(
-                    "CardSet.Core must be set. Use CardSet.FromCore.");
+                throw new InvalidOperationException("CardSet.Core must be set. Use CardSet.FromCore.");
             }
 
             var clone = CardSet.FromCore(selectedCard.Core);
 
-            // Attach metadata (copy, do not share)
+            // Copy metadata lists so the edit row owns its own selections
             clone.AvailableFinishes = metadata.AvailableFinishes.ToList();
-            clone.OtherLanguages = NormalizeLanguages(
-                metadata.AvailableLanguages,
-                selectedCard.Language);
+            clone.OtherLanguages = NormalizeLanguages(metadata.AvailableLanguages, selectedCard.Language);
 
-            // Apply defaults for new cards
             ApplyNewDefaults(clone);
 
             clone.RecomputeCollectionPrice();
@@ -78,84 +77,23 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
             var removedIds = new HashSet<int>();
             var upsertsByIdentity = new Dictionary<CollectionIdentity, CardSet>();
 
+            // Simulate the collection as each row in the batch is planned
+            var workingById = new Dictionary<int, WorkingRow>();
+            var workingByIdentity = new Dictionary<CollectionIdentity, WorkingRow>();
+
+            SeedWorkingState(snapshot, workingById, workingByIdentity);
+
             foreach (var card in cards)
             {
-                // -------- EDIT: deletion-by-zero --------
-                if (isEdit && card.CardsOwned == 0)
-                {
-                    var id = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
-                    plan.DeleteIds.Add(id);
-                    removedIds.Add(id);
-                    continue;
-                }
-
                 var identity = CollectionIdentityFactory.Create(card.Uuid, card.SelectedCondition, card.Language, card.SelectedFinish, card.SelectedLocationId, card.Comment);
-
-                snapshot.TryGetByIdentity(identity, out var existingByIdentity);
 
                 if (!isEdit)
                 {
-                    // ADD flow
-                    if (existingByIdentity is null)
-                    {
-                        plan.Inserts.Add(new InsertCommand(identity, card.CardsOwned, card.CardsForTrade, card));
-                        upsertsByIdentity[identity] = card;
-                    }
-                    else
-                    {
-                        var mergedOwned = existingByIdentity.CardsOwned + card.CardsOwned;
-                        var mergedTrade = existingByIdentity.CardsForTrade + card.CardsForTrade;
-
-                        plan.Updates.Add(new UpdateCommand(existingByIdentity.CardId, identity, mergedOwned, mergedTrade));
-
-                        card.CardId = existingByIdentity.CardId;
-                        card.CardsOwned = mergedOwned;
-                        card.CardsForTrade = mergedTrade;
-
-                        upsertsByIdentity[identity] = card;
-                    }
-
+                    PlanAdd(card, identity, plan, upsertsByIdentity, workingByIdentity);
                     continue;
                 }
 
-                // EDIT flow
-                var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
-
-                if (!snapshot.TryGetById(currentId, out var originalRow))
-                {
-                    throw new InvalidOperationException($"CardId {currentId} not found in snapshot");
-                }
-
-                var originalIdentity = originalRow.Identity;
-
-                if (identity.Equals(originalIdentity))
-                {
-                    plan.Updates.Add(new UpdateCommand(currentId, identity, card.CardsOwned, card.CardsForTrade));
-                    upsertsByIdentity[identity] = card;
-                    continue;
-                }
-
-                if (existingByIdentity is not null)
-                {
-                    var survivorId = existingByIdentity.CardId;
-                    var mergedOwned = existingByIdentity.CardsOwned + card.CardsOwned;
-                    var mergedTrade = existingByIdentity.CardsForTrade + card.CardsForTrade;
-
-                    plan.DeleteIds.Add(currentId);
-                    removedIds.Add(currentId);
-
-                    plan.Updates.Add(new UpdateCommand(survivorId, identity, mergedOwned, mergedTrade));
-
-                    card.CardId = survivorId;
-                    card.CardsOwned = mergedOwned;
-                    card.CardsForTrade = mergedTrade;
-
-                    upsertsByIdentity[identity] = card;
-                    continue;
-                }
-
-                plan.Updates.Add(new UpdateCommand(currentId, identity, card.CardsOwned, card.CardsForTrade));
-                upsertsByIdentity[identity] = card;
+                PlanEdit(card, identity, plan, removedIds, upsertsByIdentity, workingById, workingByIdentity);
             }
 
             plan.ChangeSet = new CollectionChangeSet<CardSet>
@@ -163,33 +101,34 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 RemovedIds = [.. removedIds],
                 AddedOrUpdated = [.. upsertsByIdentity.Values]
             };
-            Debug.WriteLine($"[PlanBatch] END Deletes={plan.DeleteIds.Count} Updates={plan.Updates.Count} Inserts={plan.Inserts.Count}");
+
+            Debug.WriteLine(
+                $"[PlanBatch] END Deletes={plan.DeleteIds.Count} Updates={plan.Updates.Count} Inserts={plan.Inserts.Count}");
+
             return plan;
         }
-
-        // Updating in-memory collection
         public CollectionChangeSet<CardSet> BuildChangeSet(CollectionMutation mutation, CardListViewModel myCollection, CardListViewModel allCards)
         {
             var addedOrUpdated = new List<CardSet>();
 
-            // Build snapshot from in-memory collection
+            // Snapshot is used to decide whether an upsert row already exists in memory
             var snapshot = CollectionSnapshot.From(myCollection.Cards);
 
-            // Build fast lookup for CardId --> CardSet
+            // Fast lookup for in-memory collection rows by CardId
             var cardById = myCollection.Cards.Where(c => c.CardId.HasValue).ToDictionary(c => c.CardId!.Value);
 
-            // Build fast lookup for UUID --> Core
+            // Fast lookup for card core data by UUID
             var coreByUuid = allCards.Cards.Select(c => c.Core!).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
 
             foreach (var row in mutation.UpsertedRows)
             {
                 var identity = row.Identity;
 
-                // CASE A: Already exists in memory --> update quantities
-                if (snapshot.TryGetById(row.CardId, out var existingRow))
+                // Existing row contract: same CardId means same identity, so only quantities change
+                if (snapshot.TryGetById(row.CardId, out _))
                 {
                     cardById.TryGetValue(row.CardId, out var existingCard);
-                    if (existingCard != null)
+                    if (existingCard is not null)
                     {
                         existingCard.CardsOwned = row.CardsOwned + existingCard.CardsOwned;
                         existingCard.CardsForTrade = row.CardsForTrade + existingCard.CardsForTrade;
@@ -199,8 +138,8 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                     }
                 }
 
-                // CASE B: New card --> hydrate from Core
-                var uuid = identity.Uuid ?? throw new InvalidOperationException("Import identity must have a UUID.");
+                var uuid = identity.Uuid
+                    ?? throw new InvalidOperationException("Import identity must have a UUID.");
 
                 if (!coreByUuid.TryGetValue(uuid, out var core))
                 {
@@ -208,7 +147,8 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                     throw new InvalidOperationException($"[ERROR] Core not found for UUID: {uuid}");
                 }
 
-                var card = CardSet.FromCoreWithCollection(core,
+                var card = CardSet.FromCoreWithCollection(
+                    core,
                     cardId: row.CardId,
                     cardsOwned: row.CardsOwned,
                     cardsForTrade: row.CardsForTrade,
@@ -221,13 +161,11 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 addedOrUpdated.Add(card);
             }
 
-            var changeSet = new CollectionChangeSet<CardSet>
+            return new CollectionChangeSet<CardSet>
             {
                 RemovedIds = mutation.RemovedIds,
                 AddedOrUpdated = addedOrUpdated
             };
-
-            return changeSet;
         }
         public void ApplyMyCollectionChanges(IList<CardSet> collection, CollectionChangeSet<CardSet> changes)
         {
@@ -236,26 +174,26 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 return;
             }
 
-            // Remove
+            // Remove deleted rows first
             if (changes.RemovedIds.Count > 0)
             {
-                // iterate backwards to avoid index issues on IList
                 for (int i = collection.Count - 1; i >= 0; i--)
                 {
-                    var c = collection[i];
-                    if (c.CardId is int id && changes.RemovedIds.Contains(id))
+                    var card = collection[i];
+                    if (card.CardId is int id && changes.RemovedIds.Contains(id))
                     {
                         collection.RemoveAt(i);
                     }
                 }
             }
 
-            // Upsert
+            // Replace existing rows by CardId, otherwise append
             foreach (var incoming in changes.AddedOrUpdated)
             {
                 if (incoming.CardId is int cardId)
                 {
                     var index = -1;
+
                     for (int i = 0; i < collection.Count; i++)
                     {
                         if (collection[i].CardId == cardId)
@@ -267,7 +205,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
 
                     if (index >= 0)
                     {
-                        collection[index] = incoming; // works for ObservableCollection too
+                        collection[index] = incoming;
                         continue;
                     }
                 }
@@ -276,9 +214,140 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
             }
         }
 
-        // Private helpers
+        // Helper methods for PlanBatch
+        private static void SeedWorkingState(ICollectionSnapshot snapshot, Dictionary<int, WorkingRow> workingById, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        {
+            if (snapshot is not CollectionSnapshot concreteSnapshot)
+            {
+                throw new InvalidOperationException("PlanBatch requires a CollectionSnapshot instance.");
+            }
 
-        private static readonly string _defaultLanguage = CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
+            foreach (var row in concreteSnapshot.Rows)
+            {
+                var working = new WorkingRow
+                {
+                    CardId = row.CardId,
+                    Identity = row.Identity,
+                    CardsOwned = row.CardsOwned,
+                    CardsForTrade = row.CardsForTrade
+                };
+
+                workingById[working.CardId] = working;
+                workingByIdentity[working.Identity] = working;
+            }
+        }
+        private static void PlanAdd(CardSet card, CollectionIdentity identity, ModifyBatchPlan plan, Dictionary<CollectionIdentity, CardSet> upsertsByIdentity, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        {
+            if (!workingByIdentity.TryGetValue(identity, out var existing))
+            {
+                plan.Inserts.Add(new InsertCommand(identity, card.CardsOwned, card.CardsForTrade, card));
+                upsertsByIdentity[identity] = card;
+                return;
+            }
+
+            var mergedOwned = existing.CardsOwned + card.CardsOwned;
+            var mergedTrade = existing.CardsForTrade + card.CardsForTrade;
+
+            plan.Updates.Add(new UpdateCommand(existing.CardId, identity, mergedOwned, mergedTrade));
+
+            existing.CardsOwned = mergedOwned;
+            existing.CardsForTrade = mergedTrade;
+
+            card.CardId = existing.CardId;
+            card.CardsOwned = mergedOwned;
+            card.CardsForTrade = mergedTrade;
+
+            upsertsByIdentity[identity] = card;
+        }
+        private static void PlanEdit(CardSet card, CollectionIdentity targetIdentity, ModifyBatchPlan plan, HashSet<int> removedIds, Dictionary<CollectionIdentity, CardSet> upsertsByIdentity, Dictionary<int, WorkingRow> workingById, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        {
+            var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
+
+            if (!workingById.TryGetValue(currentId, out var currentRow))
+            {
+                throw new InvalidOperationException($"CardId {currentId} not found in working state");
+            }
+
+            var currentIdentity = currentRow.Identity;
+
+            // Editing a row down to zero deletes it
+            if (card.CardsOwned == 0)
+            {
+                plan.DeleteIds.Add(currentId);
+                removedIds.Add(currentId);
+
+                workingById.Remove(currentId);
+                workingByIdentity.Remove(currentIdentity);
+                upsertsByIdentity.Remove(currentIdentity);
+
+                return;
+            }
+
+            // Same identity means only quantities changed
+            if (targetIdentity.Equals(currentIdentity))
+            {
+                plan.Updates.Add(new UpdateCommand(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade));
+
+                currentRow.CardsOwned = card.CardsOwned;
+                currentRow.CardsForTrade = card.CardsForTrade;
+
+                upsertsByIdentity[targetIdentity] = card;
+                return;
+            }
+
+            // If another row already occupies the target identity, merge into it
+            if (workingByIdentity.TryGetValue(targetIdentity, out var survivor))
+            {
+                if (survivor.CardId == currentId)
+                {
+                    plan.Updates.Add(new UpdateCommand(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade));
+
+                    currentRow.Identity = targetIdentity;
+                    currentRow.CardsOwned = card.CardsOwned;
+                    currentRow.CardsForTrade = card.CardsForTrade;
+
+                    workingByIdentity.Remove(currentIdentity);
+                    workingByIdentity[targetIdentity] = currentRow;
+
+                    upsertsByIdentity[targetIdentity] = card;
+                    return;
+                }
+
+                var mergedOwned = survivor.CardsOwned + card.CardsOwned;
+                var mergedTrade = survivor.CardsForTrade + card.CardsForTrade;
+
+                plan.DeleteIds.Add(currentId);
+                removedIds.Add(currentId);
+                plan.Updates.Add(new UpdateCommand(survivor.CardId, targetIdentity, mergedOwned, mergedTrade));
+
+                workingById.Remove(currentId);
+                workingByIdentity.Remove(currentIdentity);
+
+                survivor.CardsOwned = mergedOwned;
+                survivor.CardsForTrade = mergedTrade;
+
+                card.CardId = survivor.CardId;
+                card.CardsOwned = mergedOwned;
+                card.CardsForTrade = mergedTrade;
+
+                upsertsByIdentity[targetIdentity] = card;
+                return;
+            }
+
+            // Otherwise retarget the current row to the new identity
+            plan.Updates.Add(new UpdateCommand(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade));
+
+            workingByIdentity.Remove(currentIdentity);
+
+            currentRow.Identity = targetIdentity;
+            currentRow.CardsOwned = card.CardsOwned;
+            currentRow.CardsForTrade = card.CardsForTrade;
+
+            workingByIdentity[targetIdentity] = currentRow;
+            upsertsByIdentity[targetIdentity] = card;
+        }
+
+        // Helper methods for PrepareCardForList
         private static void ApplyNewDefaults(CardSet clone)
         {
             clone.CardId = null;
@@ -288,11 +357,9 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
             clone.SelectedFinish = ChooseDefaultFinish(clone.AvailableFinishes);
             clone.SelectedLocationId = null;
             clone.Comment = null;
-
-            // prefer English; else first; else "English"
             clone.Language = ChooseDefaultLanguage(clone.OtherLanguages);
         }
-        private static string? ChooseDefaultFinish(IReadOnlyList<string>? finishes)
+        private static string? ChooseDefaultFinish(List<string>? finishes)
         {
             if (finishes == null || finishes.Count == 0)
             {
@@ -301,7 +368,6 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
 
             static int Rank(string s) => s switch
             {
-                // adjust to your canonical strings
                 var x when x.Equals("nonfoil", StringComparison.OrdinalIgnoreCase) => 0,
                 var x when x.Equals("foil", StringComparison.OrdinalIgnoreCase) => 1,
                 var x when x.Equals("etched", StringComparison.OrdinalIgnoreCase) => 2,
@@ -313,14 +379,16 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
                 .First();
         }
-        private static string ChooseDefaultLanguage(IReadOnlyList<string>? langs)
+        private static string ChooseDefaultLanguage(List<string>? langs)
         {
             if (langs == null || langs.Count == 0)
             {
                 return _defaultLanguage;
             }
 
-            var english = langs.FirstOrDefault(l => l.Equals(_defaultLanguage, StringComparison.OrdinalIgnoreCase));
+            var english = langs.FirstOrDefault(l =>
+                l.Equals(_defaultLanguage, StringComparison.OrdinalIgnoreCase));
+
             return english ?? langs[0];
         }
         private static List<string> NormalizeLanguages(IEnumerable<string>? langs, string? primary)
@@ -330,16 +398,17 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            // If we have a primary language from the card itself and it's not in the list, include it
+            // Include the current language if it is not already present
             if (!string.IsNullOrWhiteSpace(primary) &&
                 !list.Contains(primary, StringComparer.OrdinalIgnoreCase))
             {
                 list.Add(primary);
             }
 
-            // Sort with English first (if present), then primary (if not English), then alphabetical
+            // Prefer English first, then the current language, then alphabetical
             list.Sort(StringComparer.OrdinalIgnoreCase);
             MoveToFront(list, _defaultLanguage);
+
             if (!string.Equals(primary, _defaultLanguage, StringComparison.OrdinalIgnoreCase) &&
                 !string.IsNullOrWhiteSpace(primary))
             {
@@ -353,10 +422,19 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
             var idx = list.FindIndex(s => string.Equals(s, value, StringComparison.OrdinalIgnoreCase));
             if (idx > 0)
             {
-                var v = list[idx];
+                var item = list[idx];
                 list.RemoveAt(idx);
-                list.Insert(0, v);
+                list.Insert(0, item);
             }
+        }
+
+        // Internal class used to track working state during PlanBatch
+        private sealed class WorkingRow
+        {
+            public int CardId { get; set; }
+            public CollectionIdentity Identity { get; set; } = default!;
+            public int CardsOwned { get; set; }
+            public int CardsForTrade { get; set; }
         }
     }
 }
