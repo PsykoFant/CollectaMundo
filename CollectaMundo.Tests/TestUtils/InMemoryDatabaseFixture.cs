@@ -1,4 +1,5 @@
-﻿using CsvHelper;
+﻿using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
+using CsvHelper;
 using CsvHelper.Configuration;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -47,11 +48,15 @@ namespace CollectaMundo.Tests.TestUtils
         private async Task InitializeSchemaAndSeedAsync()
         {
             SetupSchema();
+            await CreateIndicesAsync();
             await SeedDataAsync();
         }
         private void SetupSchema()
         {
             using var command = new SQLiteCommand(_masterConnection);
+
+            // Build-in tables
+
             // CREATE TABLE IF NOT EXISTS: cards
             command.CommandText = @"
             CREATE TABLE IF NOT EXISTS cards (
@@ -228,10 +233,6 @@ namespace CollectaMundo.Tests.TestUtils
             ";
             command.ExecuteNonQuery();
 
-            // CREATE TABLE IF NOT EXISTS: keyruneImages
-            command.CommandText = @"CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB, defaultSvgUsed BOOLEAN);";
-            command.ExecuteNonQuery();
-
             // CREATE TABLE IF NOT EXISTS: cardForeignData
             command.CommandText = @"
             CREATE TABLE IF NOT EXISTS cardForeignData (
@@ -305,17 +306,24 @@ namespace CollectaMundo.Tests.TestUtils
             ";
             command.ExecuteNonQuery();
 
+
+            // Custom tables
+
+            // CREATE TABLE IF NOT EXISTS: keyruneImages
+            command.CommandText = @"CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB, defaultSvgUsed BOOLEAN);";
+            command.ExecuteNonQuery();
+
             // CREATE TABLE IF NOT EXISTS: cardPrices
             command.CommandText = @"CREATE TABLE cardPrices (uuid TEXT UNIQUE PRIMARY KEY, cardkingdomNormal DECIMAL(10, 2), cardkingdomFoil DECIMAL(10, 2), cardkingdomEtched DECIMAL(10, 2), cardmarketNormal DECIMAL(10, 2), cardmarketFoil DECIMAL(10, 2), cardmarketEtched DECIMAL(10, 2), cardsphereNormal DECIMAL(10, 2), cardsphereFoil DECIMAL(10, 2), cardsphereEtched DECIMAL(10, 2), tcgplayerNormal DECIMAL(10, 2), tcgplayerFoil DECIMAL(10, 2), tcgplayerEtched DECIMAL(10, 2), cardhoarderNormal DECIMAL(10, 2), cardhoarderFoil DECIMAL(10, 2), cardhoarderEtched DECIMAL(10, 2))";
             command.ExecuteNonQuery();
 
             // CREATE TABLE IF NOT EXISTS: myCollection
-            command.CommandText = @"CREATE TABLE myCollection (id INTEGER PRIMARY KEY,uuid TEXT NOT NULL,language TEXT NOT NULL,finish TEXT NOT NULL,condition TEXT NOT NULL,cardsOwned INTEGER NOT NULL CHECK (cardsOwned >= 0),cardsForTrade INTEGER NOT NULL CHECK (cardsForTrade >= 0),UNIQUE (uuid, language, finish, condition));";
+            command.CommandText = @"CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY, uuid TEXT NOT NULL, condition TEXT NOT NULL, finish TEXT NOT NULL, language TEXT NOT NULL, locationId INTEGER NULL, comment TEXT NULL, cardsOwned INTEGER NOT NULL CHECK (cardsOwned >= 0), cardsForTrade INTEGER NOT NULL CHECK (cardsForTrade >= 0), FOREIGN KEY (locationId) REFERENCES cardLocations(id));";
             command.ExecuteNonQuery();
 
-            // CREATE TABLE IF NOT EXISTS: cardsInDecks
+            // CREATE TABLE IF NOT EXISTS: cardLocations
             command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS cardsInDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckId INTEGER, name TEXT, uuid TEXT, count INTEGER)
+                CREATE TABLE IF NOT EXISTS cardLocations (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL COLLATE NOCASE UNIQUE, type TEXT NOT NULL CHECK (type IN ('Storage', 'Deck')));
             ";
             command.ExecuteNonQuery();
 
@@ -363,6 +371,24 @@ namespace CollectaMundo.Tests.TestUtils
                     t.side IS NULL OR t.side = 'a'
             ";
             command.ExecuteNonQuery();
+        }
+        private async Task CreateIndicesAsync()
+        {
+            foreach (var (name, sql) in DatabaseIndexSql.Statements)
+            {
+                try
+                {
+                    using var command = new SQLiteCommand(sql, _masterConnection);
+                    await command.ExecuteNonQueryAsync();
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to create index '{name}'. SQL: {sql}", ex);
+                }
+            }
+
+            Debug.WriteLine("In-memory DB indices created successfully.");
         }
         private async Task SeedDataAsync()
         {

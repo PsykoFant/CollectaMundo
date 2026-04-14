@@ -4,30 +4,36 @@ using CollectaMundo.DomainLogic.Shared;
 
 namespace CollectaMundo.Tests.UnitTests
 {
-    public class EditCollectionLogicTests
+    public class ModifyCollectionLogicTests
     {
         // Snapshot stub for unit tests: represents an empty in-memory collection.
         private sealed class EmptySnapshot : ICollectionSnapshot
         {
+            public IReadOnlyCollection<MyCollectionRow> Rows { get; } = [];
             public bool TryGetById(int cardId, out MyCollectionRow row)
             {
                 row = default!;
                 return false;
             }
-
             public bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row)
             {
                 row = default!;
                 return false;
             }
         }
-        private sealed class TestSnapshot(IEnumerable<MyCollectionRow> rows) : ICollectionSnapshot
+        private sealed class TestSnapshot : ICollectionSnapshot
         {
-            private readonly Dictionary<int, MyCollectionRow> _byId = rows.ToDictionary(r => r.CardId);
-            private readonly Dictionary<CollectionIdentity, MyCollectionRow> _byIdentity = rows.ToDictionary(r => r.Identity);
-
+            private readonly Dictionary<int, MyCollectionRow> _byId;
+            private readonly Dictionary<CollectionIdentity, MyCollectionRow> _byIdentity;
+            public IReadOnlyCollection<MyCollectionRow> Rows { get; }
+            public TestSnapshot(IEnumerable<MyCollectionRow> rows)
+            {
+                var rowList = rows.ToList();
+                Rows = rowList;
+                _byId = rowList.ToDictionary(r => r.CardId);
+                _byIdentity = rowList.ToDictionary(r => r.Identity);
+            }
             public bool TryGetById(int cardId, out MyCollectionRow row) => _byId.TryGetValue(cardId, out row!);
-
             public bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row) => _byIdentity.TryGetValue(identity, out row!);
         }
 
@@ -38,8 +44,6 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new EmptySnapshot();
 
             var logic = new ModifyCollectionLogic();
-            // ^ assuming your refactored logic no longer needs repo in ctor.
-            // If it still has dependencies, inject them here (but repo should be gone).
 
             var newCard = new CardSet
             {
@@ -89,7 +93,9 @@ namespace CollectaMundo.Tests.UnitTests
                 "foo-uuid",
                 "Near Mint",
                 "German",
-                "nonfoil");
+                "nonfoil",
+                null,
+                null);
 
             var snapshot = new TestSnapshot(
                 rows:
@@ -157,7 +163,9 @@ namespace CollectaMundo.Tests.UnitTests
                 "foo-uuid",
                 "Near Mint",
                 "German",
-                "nonfoil");
+                "nonfoil",
+                null,
+                null);
 
             var snapshot = new TestSnapshot(
                 rows:
@@ -215,7 +223,9 @@ namespace CollectaMundo.Tests.UnitTests
                 "foo-uuid",
                 "Near Mint",
                 "German",
-                "nonfoil");
+                "nonfoil",
+                null,
+                null);
 
             var snapshot = new TestSnapshot(rows:
                 [new MyCollectionRow
@@ -278,7 +288,9 @@ namespace CollectaMundo.Tests.UnitTests
                 "foo-uuid",
                 "Near Mint",
                 "German",
-                "nonfoil");
+                "nonfoil",
+                null,
+                null);
 
             var snapshot = new TestSnapshot(
                 rows:
@@ -300,7 +312,9 @@ namespace CollectaMundo.Tests.UnitTests
                     "foo-uuid",
                     "Excellent",   // original condition
                     "German",
-                    "nonfoil"),
+                    "nonfoil",
+                    null,
+                    null),
                 CardsOwned = 3,
                 CardsForTrade = 1
             }
@@ -365,7 +379,9 @@ namespace CollectaMundo.Tests.UnitTests
                 "foo-uuid",
                 "Near Mint",
                 "German",
-                "nonfoil");
+                "nonfoil",
+                null,
+                null);
 
             var snapshot = new TestSnapshot(
                 rows:
@@ -387,7 +403,9 @@ namespace CollectaMundo.Tests.UnitTests
                     "foo-uuid",
                     "Excellent",   // original condition
                     "German",
-                    "nonfoil"),
+                    "nonfoil",
+                    null,
+                    null),
                 CardsOwned = 2,
                 CardsForTrade = 1
             }
@@ -434,6 +452,100 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(456, survivor.CardId);
             Assert.Equal(7, survivor.CardsOwned);
             Assert.Equal(3, survivor.CardsForTrade);
+        }
+
+        [Fact]
+        public void PlanBatch_EditTwoCards_ToSameTargetIdentity_MergesIntoSingleSurvivor()
+        {
+            // Arrange
+            var targetIdentity = new CollectionIdentity(
+                "foo-uuid",
+                "Near Mint",
+                "German",
+                "nonfoil",
+                null,
+                null);
+
+            var snapshot = new TestSnapshot(rows:
+                [new MyCollectionRow
+                {
+                    CardId = 101,
+                    Identity = new CollectionIdentity(
+                        "foo-uuid",
+                        "Excellent",
+                        "German",
+                        "nonfoil",
+                        null,
+                        null),
+                    CardsOwned = 2,
+                    CardsForTrade = 1
+                },
+                new MyCollectionRow
+                {
+                    CardId = 202,
+                    Identity = new CollectionIdentity(
+                        "foo-uuid",
+                        "Good",
+                        "German",
+                        "nonfoil",
+                        null,
+                        null),
+                    CardsOwned = 3,
+                    CardsForTrade = 1
+                }
+                ]);
+
+            var logic = new ModifyCollectionLogic();
+
+            var editedA = new CardSet
+            {
+                CardId = 101,
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "German",
+                CardsOwned = 2,
+                CardsForTrade = 1
+            };
+
+            var editedB = new CardSet
+            {
+                CardId = 202,
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "German",
+                CardsOwned = 3,
+                CardsForTrade = 1
+            };
+
+            // Act
+            var plan = logic.PlanBatch([editedA, editedB], snapshot, isEdit: true);
+
+            // Assert: one row survives, the other is deleted
+            var deletedId = Assert.Single(plan.DeleteIds);
+            Assert.Equal(202, deletedId);
+
+            var update = Assert.Single(plan.Updates);
+            Assert.Equal(101, update.CardId);
+            Assert.Equal(targetIdentity, update.Identity);
+            Assert.Equal(5, update.CardsOwned);      // 2 + 3
+            Assert.Equal(2, update.CardsForTrade);   // 1 + 1
+
+            Assert.Empty(plan.Inserts);
+
+            Assert.Equal([202], plan.ChangeSet.RemovedIds);
+
+            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
+            Assert.Same(editedB, survivor);
+
+            Assert.Equal(101, survivor.CardId);
+            Assert.Equal("foo-uuid", survivor.Uuid);
+            Assert.Equal("Near Mint", survivor.SelectedCondition);
+            Assert.Equal("German", survivor.Language);
+            Assert.Equal("nonfoil", survivor.SelectedFinish);
+            Assert.Equal(5, survivor.CardsOwned);
+            Assert.Equal(2, survivor.CardsForTrade);
         }
     }
 }

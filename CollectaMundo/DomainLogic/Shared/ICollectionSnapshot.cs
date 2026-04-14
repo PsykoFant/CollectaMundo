@@ -4,6 +4,7 @@
     {
         bool TryGetById(int cardId, out MyCollectionRow row);
         bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row);
+        IReadOnlyCollection<MyCollectionRow> Rows { get; }
     }
 
 }

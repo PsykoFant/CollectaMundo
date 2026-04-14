@@ -1,11 +1,11 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
-using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
+using CollectaMundo.ApplicationServices.KeyedDataProvider;
 using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
@@ -27,6 +27,7 @@ using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
+using CollectaMundo.Infrastructure.KeyedDataProvider;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
@@ -75,16 +76,16 @@ public static class TestAppBuilder
             missingPngSvc,
             remoteLookups);
 
-        var cardLookupsService = new CardLookupsService(
+        var keyedDataProviderService = new KeyedDataProviderService(
             dbFactory,
-            new CardLookupsRepo(),
+            new KeyedDataProviderRepo(),
             getRetailer);
 
         var cardListService = new CardListService(
             dbFactory,
             new CardListRepo(),
             new FilterDefaultsLogic(),
-            cardLookupsService,
+            keyedDataProviderService,
             new CardCoreAggregator());
 
         var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic());

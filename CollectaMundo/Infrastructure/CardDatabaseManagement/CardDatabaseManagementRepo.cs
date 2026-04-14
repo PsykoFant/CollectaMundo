@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardPrices;
+﻿using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
 using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -13,74 +13,27 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
         private static readonly string[] first = ["uuid TEXT UNIQUE PRIMARY KEY"];
         public async Task CreateTablesAsync(SQLiteConnection conn)
         {
-            var finishes = CardPriceDefinitions.Finishes;
-
-            // Use KEYS (canonical ids) across all formats
-            var retailerIds = CardPriceDefinitions.RetailersByFormat
-                .SelectMany(kvp => kvp.Value.Keys)
-                .Distinct(StringComparer.OrdinalIgnoreCase);
-
-            // CreateCollectionChangeSetFromEdits columns like: cardmarketNormal, cardmarketFoil, cardmarketEtched, ...
-            var retailerColumns = retailerIds
-                .SelectMany(id => finishes.Select(f => $"{id}{f} DECIMAL(10, 2)"))
-                .ToList();
-
-            var cardPricesColumns = string.Join(", ", first.Concat(retailerColumns));
-            var cardPricesSql = $"CREATE TABLE IF NOT EXISTS cardPrices ({cardPricesColumns});";
-
-            Debug.WriteLine(cardPricesSql);
-
-
-            var tables = new Dictionary<string, string>
-            {
-                ["uniqueManaSymbols"] = "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);",
-                ["uniqueManaCostImages"] = "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);",
-                ["keyruneImages"] = "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB, defaultSvgUsed BOOLEAN);",
-                ["myCollection"] = "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY, uuid TEXT NOT NULL, language TEXT NOT NULL, finish TEXT NOT NULL, condition TEXT NOT NULL, locationId INTEGER NULL, comment TEXT NULL, cardsOwned INTEGER NOT NULL CHECK (cardsOwned >= 0), cardsForTrade INTEGER NOT NULL CHECK (cardsForTrade >= 0), FOREIGN KEY (locationId) REFERENCES cardLocations(id));",
-                ["myDecks"] = "CREATE TABLE IF NOT EXISTS myDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckName TEXT, deckDescription TEXT, targetFormat TEXT);",
-                ["cardsInDecks"] = "CREATE TABLE IF NOT EXISTS cardsInDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckId INTEGER, name TEXT, uuid TEXT, count INTEGER);",
-                ["cardLocations"] = "CREATE TABLE IF NOT EXISTS cardLocations (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL COLLATE NOCASE UNIQUE, type TEXT NOT NULL CHECK (type IN ('Storage', 'Deck')));",
-                ["cardPrices"] = cardPricesSql
-            };
+            var tables = DatabaseTableSql.GetAllStatements();
 
             foreach (var (name, sql) in tables)
             {
-                using var command = new SQLiteCommand(sql, conn);
-                await command.ExecuteNonQueryAsync();
+                try
+                {
+                    using var command = new SQLiteCommand(sql, conn);
+                    await command.ExecuteNonQueryAsync();
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to create table '{name}'. SQL: {sql}", ex);
+                }
             }
 
             Debug.WriteLine("Custom tables created successfully.");
         }
         public async Task CreateIndicesAsync(SQLiteConnection conn)
         {
-            var indices = new Dictionary<string, string>
-            {
-                {"idx_uniquemanasymbols_uniquemanasymbol", "CREATE INDEX IF NOT EXISTS idx_uniquemanasymbols_uniquemanasymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
-                {"idx_uniquemanaCostimages_uniquemanaCost", "CREATE INDEX IF NOT EXISTS idx_uniquemanaCostimages_uniquemanaCost ON uniqueManaCostImages(uniqueManaCost);"},
-                {"idx_keyruneimages_setcode", "CREATE INDEX IF NOT EXISTS idx_keyruneimages_setcode ON keyruneImages(setCode);"},
-                {"idx_cardprices_uuid", "CREATE INDEX IF NOT EXISTS idx_cardprices_uuid ON cardPrices(uuid);"},
-                {"idx_cardidentifiers_uuid", "CREATE INDEX IF NOT EXISTS idx_cardidentifiers_uuid ON cardIdentifiers(uuid);"},
-                {"idx_cardforeigndata_uuid", "CREATE INDEX IF NOT EXISTS idx_cardforeigndata_uuid ON cardForeignData(uuid);"},
-                {"idx_cardlegalities_uuid", "CREATE INDEX IF NOT EXISTS idx_cardlegalities_uuid ON cardLegalities(uuid);"},
-                {"idx_cards_uuid", "CREATE INDEX IF NOT EXISTS idx_cards_uuid ON cards(uuid);"},
-                {"idx_cards_setcode_name", "CREATE INDEX IF NOT EXISTS idx_cards_setcode_name ON cards(setCode, name);"},
-                {"idx_tokens_setcode_name", "CREATE INDEX IF NOT EXISTS idx_tokens_setcode_name ON tokens(setCode, name);"},
-                {"idx_cards_keywords", "CREATE INDEX IF NOT EXISTS idx_cards_keywords ON cards(keywords);"},
-                {"idx_sets_tokenSetcode", "CREATE INDEX IF NOT EXISTS idx_sets_tokenSetcode ON sets(tokenSetCode);"},
-                {"idx_tokenidentifiers_uuid", "CREATE INDEX IF NOT EXISTS idx_tokenidentifiers_uuid ON tokenIdentifiers(uuid);"},
-                {"idx_tokens_uuid", "CREATE INDEX IF NOT EXISTS idx_tokens_uuid ON tokens(uuid);"},
-                {"idx_tokens_name", "CREATE INDEX IF NOT EXISTS idx_tokens_name ON tokens(name);"},
-                {"idx_tokens_facename", "CREATE INDEX IF NOT EXISTS idx_tokens_facename ON tokens(faceName);"},
-                {"idx_cards_side_uuid", "CREATE INDEX IF NOT EXISTS idx_cards_side_uuid ON cards(side, uuid);"},
-                {"idx_tokens_side_uuid", "CREATE INDEX IF NOT EXISTS idx_tokens_side_uuid ON tokens(side, uuid);"},
-                {"idx_sets_code_tokensetcode", "CREATE INDEX IF NOT EXISTS idx_sets_code_tokensetcode ON sets(code, tokenSetCode);"},
-                {"idx_cards_setcode_name_type", "CREATE INDEX IF NOT EXISTS idx_cards_setcode_name_type ON cards(setCode, name, type);"},
-                {"idx_tokens_setcode_name_type", "CREATE INDEX IF NOT EXISTS idx_tokens_setcode_name_type ON tokens(setCode, name, type);"},
-                {"idx_myCollection_uuid", "CREATE INDEX IF NOT EXISTS idx_myCollection_uuid ON myCollection (uuid);"},
-                {"ux_myCollection_identity", "CREATE UNIQUE INDEX IF NOT EXISTS ux_myCollection_identity ON myCollection (uuid,language,finish,condition,COALESCE(locationId, -1),COALESCE(comment, ''));"}
-            };
-
-            foreach (var (_, sql) in indices)
+            foreach (var (_, sql) in DatabaseIndexSql.Statements)
             {
                 using var command = new SQLiteCommand(sql, conn);
                 await command.ExecuteNonQueryAsync();
@@ -120,73 +73,10 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 WHERE 
                     t.side IS NULL OR t.side = 'a';
             ";
-            string createAllCardsForDecksViewQuery = $@"
-                CREATE VIEW IF NOT EXISTS view_allCardsForDecks AS
-                SELECT * FROM (
-                    SELECT 
-                        DISTINCT c.name AS Name, 
-                        c.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        c.types AS Types, 
-                        CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
-                        c.supertypes AS SuperTypes, 
-                        c.subtypes AS SubTypes, 
-                        c.type AS Type, 
-                        CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
-                        c.text AS RulesText, 
-                        c.manaValue AS ManaValue, 
-                        c.side AS Side
-                    FROM cards c
-                    JOIN sets s ON c.setCode = s.code
-                    LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                    LEFT JOIN (
-                        SELECT cc.Name, GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                        FROM cards cc GROUP BY cc.Name
-                    ) cg ON c.Name = cg.Name
-                    LEFT JOIN (
-                        SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
-                        FROM cards cc GROUP BY cc.Name
-                    ) ccol ON c.Name = ccol.Name
-                    WHERE c.side IS NULL OR c.side = 'a'
-                ) 
-                ORDER BY Types,
-                    CASE Colors
-                        WHEN 'W' THEN 1
-                        WHEN 'U' THEN 2
-                        WHEN 'B' THEN 3
-                        WHEN 'R' THEN 4
-                        WHEN 'G' THEN 5
-                        ELSE 7
-                    END;
-            ";
-            string createCardsInDecksViewQuery = @"
-                CREATE VIEW IF NOT EXISTS view_cardsInDecks AS
-                SELECT 
-                    cardsInDecks.id AS CardId,
-                    cardsInDecks.name AS Name,
-                    cardsInDecks.deckId AS DeckId,
-                    cardsInDecks.uuid AS Uuid,
-                    cardsInDecks.count AS Count,
-                    c.manaCost AS ManaCost,
-                    c.colors AS Colors,
-                    c.manaValue AS ManaValue, 
-                    u.manaCostImage AS ManaCostImage, 
-                    c.type AS Type
-                FROM 
-                    cardsInDecks
-                LEFT JOIN (
-                    SELECT name, colors, manaCost, manaValue, type
-                    FROM cards
-                    GROUP BY name
-                ) c ON cardsInDecks.name = c.name
-                LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost;
-            ";
 
             var viewSqls = new[]
             {
                 createCardTokenViewQuery,
-                createAllCardsForDecksViewQuery,
-                createCardsInDecksViewQuery,
             };
 
             foreach (var sql in viewSqls)

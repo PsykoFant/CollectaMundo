@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers;
+﻿using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
 using CollectaMundo.DomainLogic.CardLists.Models;
 
 namespace CollectaMundo.Tests.TestUtils
