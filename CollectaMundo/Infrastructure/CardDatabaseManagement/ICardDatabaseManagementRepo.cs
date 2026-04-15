@@ -7,7 +7,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
         // Create
         Task CreateTablesAsync(SQLiteConnection conn);
         Task CreateIndicesAsync(SQLiteConnection conn);
-        Task CreateViewsAsync(SQLiteConnection conn, string retailer);
+        Task CreateViewsAsync(SQLiteConnection conn);
         Task OptimizeAsync(SQLiteConnection conn);
 
         // Update

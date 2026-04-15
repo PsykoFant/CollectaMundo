@@ -401,7 +401,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 (DbPrepStep.GenerateManaCostImages, "Generating mana cost images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _progressSinks.Percent)), true),
                 (DbPrepStep.GenerateSetIcons, "Generating set icon images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _progressSinks.Percent)), true),
                 (DbPrepStep.ImportPrices, "Processing card prices...", () => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _progressSinks.Detail, _progressSinks.Percent)), true),
-                (DbPrepStep.CreateViews, "Creating views...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateViewsAsync(conn, "cardmarket"))), false),
+                (DbPrepStep.CreateViews, "Creating views...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateViewsAsync(conn))), false),
                 (DbPrepStep.CreateIndices, "Creating indices...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateIndicesAsync(conn))), false),
                 (DbPrepStep.OptimizeDatabase, "Optimizing database...", () => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbMgmtRepo.OptimizeAsync(conn))), false),
             ];

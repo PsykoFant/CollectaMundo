@@ -100,7 +100,7 @@ namespace CollectaMundo.Tests.TestUtils
         public void StubAllStepsAsSuccess()
         {
             SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
-            SchemaRepo.Setup(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+            SchemaRepo.Setup(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
             SchemaRepo.Setup(r => r.CreateIndicesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
             SchemaRepo.Setup(r => r.OptimizeAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
 

@@ -47,330 +47,277 @@ namespace CollectaMundo.Tests.TestUtils
         }
         private async Task InitializeSchemaAndSeedAsync()
         {
-            SetupSchema();
+            using var command = new SQLiteCommand(_masterConnection);
+
+            CreateBuiltInTables(command);
+            CreateCustomTables(command);
+            CreateViews(command);
             await CreateIndicesAsync();
             await SeedDataAsync();
         }
-        private void SetupSchema()
+        private static void CreateBuiltInTables(SQLiteCommand command)
         {
-            using var command = new SQLiteCommand(_masterConnection);
-
-            // Build-in tables
-
-            // CREATE TABLE IF NOT EXISTS: cards
             command.CommandText = @"
-            CREATE TABLE IF NOT EXISTS cards (
-	            artist TEXT, 
-	            artistIds TEXT, 
-	            asciiName TEXT, 
-	            attractionLights TEXT, 
-	            availability TEXT, 
-	            boosterTypes TEXT, 
-	            borderColor TEXT, 
-	            cardParts TEXT, 
-	            colorIdentity TEXT, 
-	            colorIndicator TEXT, 
-	            colors TEXT, 
-	            defense TEXT, 
-	            duelDeck TEXT, 
-	            edhrecRank INTEGER, 
-	            edhrecSaltiness REAL, 
-	            faceConvertedManaCost REAL, 
-	            faceFlavorName TEXT, 
-	            faceManaValue REAL, 
-	            faceName TEXT, 
-	            facePrintedName TEXT, 
-	            finishes TEXT, 
-	            flavorName TEXT, 
-	            flavorText TEXT, 
-	            frameEffects TEXT, 
-	            frameVersion TEXT, 
-	            hand TEXT, 
-	            hasAlternativeDeckLimit INTEGER, 
-	            hasContentWarning INTEGER, 
-	            hasFoil INTEGER, 
-	            hasNonFoil INTEGER, 
-	            isAlternative INTEGER, 
-	            isFullArt INTEGER, 
-	            isFunny INTEGER, 
-	            isGameChanger INTEGER, 
-	            isOnlineOnly INTEGER, 
-	            isOversized INTEGER, 
-	            isPromo INTEGER, 
-	            isRebalanced INTEGER, 
-	            isReprint INTEGER, 
-	            isReserved INTEGER, 
-	            isStorySpotlight INTEGER, 
-	            isTextless INTEGER, 
-	            isTimeshifted INTEGER, 
-	            keywords TEXT, 
-	            language TEXT, 
-	            layout TEXT, 
-	            leadershipSkills TEXT, 
-	            life TEXT, 
-	            loyalty TEXT, 
-	            manaCost TEXT, 
-	            manaValue REAL, 
-	            name TEXT, 
-	            number TEXT, 
-	            originalPrintings TEXT, 
-	            originalReleaseDate TEXT, 
-	            originalText TEXT, 
-	            otherFaceIds TEXT, 
-	            power TEXT, 
-	            printedName TEXT, 
-	            printedText TEXT, 
-	            printedType TEXT, 
-	            printings TEXT, 
-	            producedMana TEXT, 
-	            promoTypes TEXT, 
-	            rarity TEXT, 
-	            rebalancedPrintings TEXT, 
-	            relatedCards TEXT, 
-	            securityStamp TEXT, 
-	            setCode TEXT, 
-	            side TEXT, 
-	            signature TEXT, 
-	            sourceProducts TEXT, 
-	            subsets TEXT, 
-	            subtypes TEXT, 
-	            supertypes TEXT, 
-	            text TEXT, 
-	            toughness TEXT, 
-	            type TEXT, 
-	            types TEXT, 
-	            uuid TEXT, 
-	            variations TEXT, 
-	            watermark TEXT);
-            ";
+        CREATE TABLE IF NOT EXISTS cards (
+            artist TEXT,
+            artistIds TEXT,
+            asciiName TEXT,
+            attractionLights TEXT,
+            availability TEXT,
+            boosterTypes TEXT,
+            borderColor TEXT,
+            cardParts TEXT,
+            colorIdentity TEXT,
+            colorIndicator TEXT,
+            colors TEXT,
+            defense TEXT,
+            duelDeck TEXT,
+            edhrecRank INTEGER,
+            edhrecSaltiness REAL,
+            faceConvertedManaCost REAL,
+            faceFlavorName TEXT,
+            faceManaValue REAL,
+            faceName TEXT,
+            facePrintedName TEXT,
+            finishes TEXT,
+            flavorName TEXT,
+            flavorText TEXT,
+            frameEffects TEXT,
+            frameVersion TEXT,
+            hand TEXT,
+            hasAlternativeDeckLimit INTEGER,
+            hasContentWarning INTEGER,
+            hasFoil INTEGER,
+            hasNonFoil INTEGER,
+            isAlternative INTEGER,
+            isFullArt INTEGER,
+            isFunny INTEGER,
+            isGameChanger INTEGER,
+            isOnlineOnly INTEGER,
+            isOversized INTEGER,
+            isPromo INTEGER,
+            isRebalanced INTEGER,
+            isReprint INTEGER,
+            isReserved INTEGER,
+            isStorySpotlight INTEGER,
+            isTextless INTEGER,
+            isTimeshifted INTEGER,
+            keywords TEXT,
+            language TEXT,
+            layout TEXT,
+            leadershipSkills TEXT,
+            life TEXT,
+            loyalty TEXT,
+            manaCost TEXT,
+            manaValue REAL,
+            name TEXT,
+            number TEXT,
+            originalPrintings TEXT,
+            originalReleaseDate TEXT,
+            originalText TEXT,
+            otherFaceIds TEXT,
+            power TEXT,
+            printedName TEXT,
+            printedText TEXT,
+            printedType TEXT,
+            printings TEXT,
+            producedMana TEXT,
+            promoTypes TEXT,
+            rarity TEXT,
+            rebalancedPrintings TEXT,
+            relatedCards TEXT,
+            securityStamp TEXT,
+            setCode TEXT,
+            side TEXT,
+            signature TEXT,
+            sourceProducts TEXT,
+            subsets TEXT,
+            subtypes TEXT,
+            supertypes TEXT,
+            text TEXT,
+            toughness TEXT,
+            type TEXT,
+            types TEXT,
+            uuid TEXT,
+            variations TEXT,
+            watermark TEXT
+        );
+    ";
             command.ExecuteNonQuery();
 
-            // CREATE TABLE IF NOT EXISTS: tokens
             command.CommandText = @"
-            CREATE TABLE IF NOT EXISTS tokens (
-	            artist TEXT, 
-	            artistIds TEXT, 
-	            asciiName TEXT, 
-	            attractionLights TEXT, 
-	            availability TEXT, 
-	            boosterTypes TEXT, 
-	            borderColor TEXT, 
-	            colorIdentity TEXT, 
-	            colorIndicator TEXT, 
-	            colors TEXT, 
-	            edhrecSaltiness REAL, 
-	            faceName TEXT, 
-	            finishes TEXT, 
-	            flavorName TEXT, 
-	            flavorText TEXT, 
-	            frameEffects TEXT, 
-	            frameVersion TEXT, 
-	            hasFoil INTEGER, 
-	            hasNonFoil INTEGER, 
-	            isFullArt INTEGER, 
-	            isFunny INTEGER, 
-	            isOversized INTEGER, 
-	            isPromo INTEGER, 
-	            isReprint INTEGER, 
-	            isTextless INTEGER, 
-	            keywords TEXT, 
-	            language TEXT, 
-	            layout TEXT, 
-	            manaCost TEXT, 
-	            name TEXT, 
-	            number TEXT, 
-	            orientation TEXT, 
-	            originalText TEXT, 
-	            otherFaceIds TEXT, 
-	            power TEXT, 
-	            printedType TEXT, 
-	            producedMana TEXT, 
-	            promoTypes TEXT, 
-	            relatedCards TEXT, 
-	            reverseRelated TEXT, 
-	            securityStamp TEXT, 
-	            setCode TEXT, 
-	            side TEXT, 
-	            signature TEXT, 
-	            sourceProducts TEXT, 
-	            subtypes TEXT, 
-	            supertypes TEXT, 
-	            text TEXT, 
-	            toughness TEXT, 
-	            type TEXT, 
-	            types TEXT, 
-	            uuid TEXT, 
-	            watermark TEXT);
-            ";
+        CREATE TABLE IF NOT EXISTS tokens (
+            artist TEXT,
+            artistIds TEXT,
+            asciiName TEXT,
+            attractionLights TEXT,
+            availability TEXT,
+            boosterTypes TEXT,
+            borderColor TEXT,
+            colorIdentity TEXT,
+            colorIndicator TEXT,
+            colors TEXT,
+            edhrecSaltiness REAL,
+            faceName TEXT,
+            finishes TEXT,
+            flavorName TEXT,
+            flavorText TEXT,
+            frameEffects TEXT,
+            frameVersion TEXT,
+            hasFoil INTEGER,
+            hasNonFoil INTEGER,
+            isFullArt INTEGER,
+            isFunny INTEGER,
+            isOversized INTEGER,
+            isPromo INTEGER,
+            isReprint INTEGER,
+            isTextless INTEGER,
+            keywords TEXT,
+            language TEXT,
+            layout TEXT,
+            manaCost TEXT,
+            name TEXT,
+            number TEXT,
+            orientation TEXT,
+            originalText TEXT,
+            otherFaceIds TEXT,
+            power TEXT,
+            printedType TEXT,
+            producedMana TEXT,
+            promoTypes TEXT,
+            relatedCards TEXT,
+            reverseRelated TEXT,
+            securityStamp TEXT,
+            setCode TEXT,
+            side TEXT,
+            signature TEXT,
+            sourceProducts TEXT,
+            subtypes TEXT,
+            supertypes TEXT,
+            text TEXT,
+            toughness TEXT,
+            type TEXT,
+            types TEXT,
+            uuid TEXT,
+            watermark TEXT
+        );
+    ";
             command.ExecuteNonQuery();
 
-            // CREATE TABLE IF NOT EXISTS: sets
             command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS sets (
-                    baseSetSize INTEGER,
-                    block TEXT,
-                    cardsphereSetId INTEGER,
-                    code VARCHAR(8) UNIQUE NOT NULL,
-                    isFoilOnly BOOLEAN,
-                    isForeignOnly BOOLEAN,
-                    isNonFoilOnly BOOLEAN,
-                    isOnlineOnly BOOLEAN,
-                    isPartialPreview BOOLEAN,
-                    keyruneCode TEXT,
-                    languages TEXT,
-                    mcmId INTEGER,
-                    mcmIdExtras INTEGER,
-                    mcmName TEXT,
-                    mtgoCode TEXT,
-                    name TEXT,
-                    parentCode TEXT,
-                    releaseDate TEXT,
-                    tcgplayerGroupId INTEGER,
-                    tokenSetCode TEXT,
-                    totalSetSize INTEGER,
-                    type TEXT
-                );
-            ";
+        CREATE TABLE IF NOT EXISTS sets (
+            baseSetSize INTEGER,
+            block TEXT,
+            cardsphereSetId INTEGER,
+            code VARCHAR(8) UNIQUE NOT NULL,
+            isFoilOnly BOOLEAN,
+            isForeignOnly BOOLEAN,
+            isNonFoilOnly BOOLEAN,
+            isOnlineOnly BOOLEAN,
+            isPartialPreview BOOLEAN,
+            keyruneCode TEXT,
+            languages TEXT,
+            mcmId INTEGER,
+            mcmIdExtras INTEGER,
+            mcmName TEXT,
+            mtgoCode TEXT,
+            name TEXT,
+            parentCode TEXT,
+            releaseDate TEXT,
+            tcgplayerGroupId INTEGER,
+            tokenSetCode TEXT,
+            totalSetSize INTEGER,
+            type TEXT
+        );
+    ";
             command.ExecuteNonQuery();
 
-            // CREATE TABLE IF NOT EXISTS: cardForeignData
             command.CommandText = @"
-            CREATE TABLE IF NOT EXISTS cardForeignData (
-	            faceName TEXT,
-	            flavorText TEXT,
-	            identifiers TEXT,
-	            language TEXT,
-	            multiverseId INTEGER,
-	            name TEXT,
-	            text TEXT,
-	            type TEXT,
-	            uuid TEXT)
-            ";
+        CREATE TABLE IF NOT EXISTS cardForeignData (
+            faceName TEXT,
+            flavorText TEXT,
+            identifiers TEXT,
+            language TEXT,
+            multiverseId INTEGER,
+            name TEXT,
+            text TEXT,
+            type TEXT,
+            uuid TEXT
+        );
+    ";
             command.ExecuteNonQuery();
 
-            // CREATE TABLE IF NOT EXISTS: cardIdentifiers
             command.CommandText = @"
-                CREATE TABLE cardIdentifiers (
-	                cardKingdomEtchedId TEXT,
-	                cardKingdomFoilId TEXT,
-	                cardKingdomId TEXT,
-	                cardsphereFoilId TEXT,
-	                cardsphereId TEXT,
-	                deckboxId TEXT,
-	                mcmId TEXT,
-	                mcmMetaId TEXT,
-	                mtgArenaId TEXT,
-	                mtgjsonFoilVersionId TEXT,
-	                mtgjsonNonFoilVersionId TEXT,
-	                mtgjsonV4Id TEXT,
-	                mtgoFoilId TEXT,
-	                mtgoId TEXT,
-	                multiverseId TEXT,
-	                scryfallCardBackId TEXT,
-	                scryfallId TEXT,
-	                scryfallIllustrationId TEXT,
-	                scryfallOracleId TEXT,
-	                tcgplayerEtchedProductId TEXT,
-	                tcgplayerProductId TEXT,
-	                uuid TEXT
-                )
-            ";
+        CREATE TABLE IF NOT EXISTS cardIdentifiers (
+            cardKingdomEtchedId TEXT,
+            cardKingdomFoilId TEXT,
+            cardKingdomId TEXT,
+            cardsphereFoilId TEXT,
+            cardsphereId TEXT,
+            deckboxId TEXT,
+            mcmId TEXT,
+            mcmMetaId TEXT,
+            mtgArenaId TEXT,
+            mtgjsonFoilVersionId TEXT,
+            mtgjsonNonFoilVersionId TEXT,
+            mtgjsonV4Id TEXT,
+            mtgoFoilId TEXT,
+            mtgoId TEXT,
+            multiverseId TEXT,
+            scryfallCardBackId TEXT,
+            scryfallId TEXT,
+            scryfallIllustrationId TEXT,
+            scryfallOracleId TEXT,
+            tcgplayerEtchedProductId TEXT,
+            tcgplayerProductId TEXT,
+            uuid TEXT
+        );
+    ";
             command.ExecuteNonQuery();
 
-            // CREATE TABLE IF NOT EXISTS: tokenIdentifiers
             command.CommandText = @"
-                CREATE TABLE tokenIdentifiers (
-	                cardKingdomEtchedId TEXT,
-	                cardKingdomFoilId TEXT,
-	                cardKingdomId TEXT,
-	                cardsphereFoilId TEXT,
-	                cardsphereId TEXT,
-	                deckboxId TEXT,
-	                mcmId TEXT,
-	                mcmMetaId TEXT,
-	                mtgArenaId TEXT,
-	                mtgjsonFoilVersionId TEXT,
-	                mtgjsonNonFoilVersionId TEXT,
-	                mtgjsonV4Id TEXT,
-	                mtgoFoilId TEXT,
-	                mtgoId TEXT,
-	                multiverseId TEXT,
-	                scryfallCardBackId TEXT,
-	                scryfallId TEXT,
-	                scryfallIllustrationId TEXT,
-	                scryfallOracleId TEXT,
-	                tcgplayerEtchedProductId TEXT,
-	                tcgplayerProductId TEXT,
-	                uuid TEXT
-                )
-            ";
+        CREATE TABLE IF NOT EXISTS tokenIdentifiers (
+            cardKingdomEtchedId TEXT,
+            cardKingdomFoilId TEXT,
+            cardKingdomId TEXT,
+            cardsphereFoilId TEXT,
+            cardsphereId TEXT,
+            deckboxId TEXT,
+            mcmId TEXT,
+            mcmMetaId TEXT,
+            mtgArenaId TEXT,
+            mtgjsonFoilVersionId TEXT,
+            mtgjsonNonFoilVersionId TEXT,
+            mtgjsonV4Id TEXT,
+            mtgoFoilId TEXT,
+            mtgoId TEXT,
+            multiverseId TEXT,
+            scryfallCardBackId TEXT,
+            scryfallId TEXT,
+            scryfallIllustrationId TEXT,
+            scryfallOracleId TEXT,
+            tcgplayerEtchedProductId TEXT,
+            tcgplayerProductId TEXT,
+            uuid TEXT
+        );
+    ";
             command.ExecuteNonQuery();
-
-
-            // Custom tables
-
-            // CREATE TABLE IF NOT EXISTS: keyruneImages
-            command.CommandText = @"CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB, defaultSvgUsed BOOLEAN);";
-            command.ExecuteNonQuery();
-
-            // CREATE TABLE IF NOT EXISTS: cardPrices
-            command.CommandText = @"CREATE TABLE cardPrices (uuid TEXT UNIQUE PRIMARY KEY, cardkingdomNormal DECIMAL(10, 2), cardkingdomFoil DECIMAL(10, 2), cardkingdomEtched DECIMAL(10, 2), cardmarketNormal DECIMAL(10, 2), cardmarketFoil DECIMAL(10, 2), cardmarketEtched DECIMAL(10, 2), cardsphereNormal DECIMAL(10, 2), cardsphereFoil DECIMAL(10, 2), cardsphereEtched DECIMAL(10, 2), tcgplayerNormal DECIMAL(10, 2), tcgplayerFoil DECIMAL(10, 2), tcgplayerEtched DECIMAL(10, 2), cardhoarderNormal DECIMAL(10, 2), cardhoarderFoil DECIMAL(10, 2), cardhoarderEtched DECIMAL(10, 2))";
-            command.ExecuteNonQuery();
-
-            // CREATE TABLE IF NOT EXISTS: myCollection
-            command.CommandText = @"CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY, uuid TEXT NOT NULL, condition TEXT NOT NULL, finish TEXT NOT NULL, language TEXT NOT NULL, locationId INTEGER NULL, comment TEXT NULL, cardsOwned INTEGER NOT NULL CHECK (cardsOwned >= 0), cardsForTrade INTEGER NOT NULL CHECK (cardsForTrade >= 0), FOREIGN KEY (locationId) REFERENCES cardLocations(id));";
-            command.ExecuteNonQuery();
-
-            // CREATE TABLE IF NOT EXISTS: cardLocations
-            command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS cardLocations (id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL COLLATE NOCASE UNIQUE, type TEXT NOT NULL CHECK (type IN ('Storage', 'Deck')));
-            ";
-            command.ExecuteNonQuery();
-
-            // CREATE TABLE IF NOT EXISTS: uniqueManaSymbols
-            command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB)
-            ";
-            command.ExecuteNonQuery();
-
-            // CREATE TABLE IF NOT EXISTS: uniqueManaCostImages
-            command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB)
-            ";
-            command.ExecuteNonQuery();
-
-            // CREATE VIEW IF NOT EXISTS: view_cardToken
-            command.CommandText = @"
-                CREATE VIEW view_cardToken AS
-                SELECT
-                    c.uuid,
-                    c.name,
-                    s.name AS setName,
-                    c.setCode,
-                    NULL AS tokenSetCode,
-                    NULL AS faceName
-                FROM
-                    cards c
-                JOIN
-                    sets s ON c.setCode = s.code
-                WHERE
-                    c.side IS NULL OR c.side = 'a'
-                UNION ALL
-                SELECT
-                    t.uuid,
-                    t.name,
-                    s.name AS setName,
-                    s.code AS setCode,
-                    s.tokenSetCode,
-                    t.faceName
-                FROM
-                    tokens t
-                JOIN
-                    sets s ON t.setCode = s.tokenSetCode
-                WHERE
-                    t.side IS NULL OR t.side = 'a'
-            ";
-            command.ExecuteNonQuery();
+        }
+        private static void CreateCustomTables(SQLiteCommand command)
+        {
+            foreach (var (_, sql) in DatabaseTableSql.GetAllStatements())
+            {
+                command.CommandText = sql;
+                command.ExecuteNonQuery();
+            }
+        }
+        private static void CreateViews(SQLiteCommand command)
+        {
+            foreach (var (_, sql) in DatabaseViewSql.Statements)
+            {
+                command.CommandText = sql;
+                command.ExecuteNonQuery();
+            }
         }
         private async Task CreateIndicesAsync()
         {

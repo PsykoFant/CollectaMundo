@@ -119,7 +119,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             Assert.Equal(OperationResultCode.Error, result.Code);
             Assert.Equal(3, createCalls); // max retries
-            ctx.SchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<string>()), Times.Never);
+            ctx.SchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>()), Times.Never);
         }
         [Fact]
         public async Task DownloadFails_ReturnsDownloadFailed_DoesNotRunSteps()

@@ -10,7 +10,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
     public class CardDatabaseManagementRepo : ICardDatabaseManagementRepo
     {
         // Create
-        private static readonly string[] first = ["uuid TEXT UNIQUE PRIMARY KEY"];
         public async Task CreateTablesAsync(SQLiteConnection conn)
         {
             var tables = DatabaseTableSql.GetAllStatements();
@@ -41,48 +40,19 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
             Debug.WriteLine("Indices created successfully.");
         }
-        public async Task CreateViewsAsync(SQLiteConnection conn, string retailer)
+        public async Task CreateViewsAsync(SQLiteConnection conn)
         {
-            string createCardTokenViewQuery = @"
-                CREATE VIEW IF NOT EXISTS view_cardToken AS
-                SELECT 
-                    c.uuid,
-                    c.name,
-                    s.name AS setName,
-                    c.setCode,
-                    NULL AS tokenSetCode,
-                    NULL AS faceName
-                FROM 
-                    cards c
-                JOIN 
-                    sets s ON c.setCode = s.code
-                WHERE 
-                    c.side IS NULL OR c.side = 'a'
-                UNION ALL
-                SELECT 
-                    t.uuid,
-                    t.name,
-                    s.name AS setName,
-                    s.code AS setCode,
-                    s.tokenSetCode,
-                    t.faceName
-                FROM 
-                    tokens t
-                JOIN 
-                    sets s ON t.setCode = s.tokenSetCode
-                WHERE 
-                    t.side IS NULL OR t.side = 'a';
-            ";
-
-            var viewSqls = new[]
+            foreach (var (name, sql) in DatabaseViewSql.Statements)
             {
-                createCardTokenViewQuery,
-            };
-
-            foreach (var sql in viewSqls)
-            {
-                using var cmd = new SQLiteCommand(sql, conn);
-                await cmd.ExecuteNonQueryAsync();
+                try
+                {
+                    using var cmd = new SQLiteCommand(sql, conn);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"Failed to create view '{name}'.", ex);
+                }
             }
 
             Debug.WriteLine("Views created successfully.");

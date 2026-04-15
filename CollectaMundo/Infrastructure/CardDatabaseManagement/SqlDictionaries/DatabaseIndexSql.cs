@@ -23,9 +23,6 @@
                 { "idx_cardforeigndata_uuid",
                     "CREATE INDEX IF NOT EXISTS idx_cardforeigndata_uuid ON cardForeignData(uuid);" },
 
-                { "idx_cardlegalities_uuid",
-                    "CREATE INDEX IF NOT EXISTS idx_cardlegalities_uuid ON cardLegalities(uuid);" },
-
                 { "idx_cards_uuid",
                     "CREATE INDEX IF NOT EXISTS idx_cards_uuid ON cards(uuid);" },
 
