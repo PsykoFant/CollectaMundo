@@ -563,7 +563,7 @@ namespace CollectaMundo.Infrastructure.Import
                                     VALUES
                                         (@uuid, @language, @finish, @condition, @locationId, @comment, @owned, @trade);
                                     """;
-            
+
             const string updateSql = """
                                     UPDATE myCollection
                                        SET cardsOwned    = cardsOwned + @owned,
@@ -575,70 +575,94 @@ namespace CollectaMundo.Infrastructure.Import
                                        AND COALESCE(locationId, -1) = COALESCE(@locationId, -1)
                                        AND COALESCE(comment, '') = COALESCE(@comment, '');
                                     """;
-            
+
             const string selectIdSql = """
-                                    SELECT id
-                                    FROM myCollection
-                                    WHERE uuid = @uuid
-                                      AND language = @language
-                                      AND finish = @finish
-                                      AND condition = @condition
-                                      AND COALESCE(locationId, -1) = COALESCE(@locationId, -1)
-                                      AND COALESCE(comment, '') = COALESCE(@comment, '');
-                                    LIMIT 1;
-                                    """;
-            
-            using var insertCmd = new SQLiteCommand(insertSql, conn, tx);
-            using var updateCmd = new SQLiteCommand(updateSql, conn, tx);
-            using var selectIdCmd = new SQLiteCommand(selectIdSql, conn, tx);
-            
-            AddParameters(insertCmd);
-            AddParameters(updateCmd);
-            AddParameters(selectIdCmd);
-            
+                                        SELECT id
+                                        FROM myCollection
+                                        WHERE uuid = @uuid
+                                          AND language = @language
+                                          AND finish = @finish
+                                          AND condition = @condition
+                                          AND COALESCE(locationId, -1) = COALESCE(@locationId, -1)
+                                          AND COALESCE(comment, '') = COALESCE(@comment, '')
+                                        LIMIT 1;
+                                        """;
+
             var result = new List<MyCollectionRow>(items.Count);
 
             for (int i = 0; i < items.Count; i++)
             {
                 token.ThrowIfCancellationRequested();
-                
+
                 var it = items[i];
                 var normalizedComment = NormalizeComment(it.Comment);
-                
-                BindIdentityParameters(insertCmd, it, normalizedComment);
-                BindIdentityParameters(updateCmd, it, normalizedComment);
-                BindIdentityParameters(selectIdCmd, it, normalizedComment);
-                
+
                 try
                 {
-                    await insertCmd.ExecuteNonQueryAsync(token);
-                }
+                    using (var insertCmd = new SQLiteCommand(insertSql, conn, tx))
+                    {
+                        AddIdentityParameters(insertCmd);
+                        AddQuantityParameters(insertCmd);
 
-                catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
+                        BindIdentityParameters(insertCmd, it, normalizedComment);
+                        BindQuantityParameters(insertCmd, it);
+
+                        await insertCmd.ExecuteNonQueryAsync(token);
+                    }
+                }
+                catch (SQLiteException ex) when (
+                    ex.ResultCode == SQLiteErrorCode.Constraint ||
+                    ex.ResultCode == SQLiteErrorCode.Constraint_Unique)
                 {
+                    using var updateCmd = new SQLiteCommand(updateSql, conn, tx);
+                    AddIdentityParameters(updateCmd);
+                    AddQuantityParameters(updateCmd);
+
+                    BindIdentityParameters(updateCmd, it, normalizedComment);
+                    BindQuantityParameters(updateCmd, it);
+
                     await updateCmd.ExecuteNonQueryAsync(token);
                 }
-                
-                var idObj = await selectIdCmd.ExecuteScalarAsync(token);
+
+                object? idObj;
+                using (var selectIdCmd = new SQLiteCommand(selectIdSql, conn, tx))
+                {
+                    AddIdentityParameters(selectIdCmd);
+                    BindIdentityParameters(selectIdCmd, it, normalizedComment);
+
+                    idObj = await selectIdCmd.ExecuteScalarAsync(token);
+                }
+
                 if (idObj is null || idObj == DBNull.Value)
                 {
-                    throw new InvalidOperationException($"Failed to resolve myCollection row id for identity: " + $"Uuid={it.Uuid}, Language={it.Language}, Finish={it.Finish}, Condition={it.Condition}, " + $"LocationId={(it.LocationId?.ToString() ?? "null")}, Comment={(normalizedComment ?? "null")}.");
+                    throw new InvalidOperationException(
+                        $"Failed to resolve myCollection row id for identity: " +
+                        $"Uuid={it.Uuid}, Language={it.Language}, Finish={it.Finish}, Condition={it.Condition}, " +
+                        $"LocationId={(it.LocationId?.ToString() ?? "null")}, Comment={(normalizedComment ?? "null")}.");
                 }
-                
+
                 var id = Convert.ToInt32(idObj);
-                
+
                 result.Add(new MyCollectionRow
                 {
                     CardId = id,
-                    Identity = CollectionIdentityFactory.Create(it.Uuid,it.Condition,it.Language,it.Finish,it.LocationId,normalizedComment), CardsOwned = it.CardsOwned, CardsForTrade = it.CardsForTrade});
+                    Identity = CollectionIdentityFactory.Create(
+                        it.Uuid,
+                        it.Condition,
+                        it.Language,
+                        it.Finish,
+                        it.LocationId,
+                        normalizedComment),
+                    CardsOwned = it.CardsOwned,
+                    CardsForTrade = it.CardsForTrade
+                });
 
-                    percent?.Report((int)(((i + 1) / (double)items.Count) * 100));
-                }
-
-                return result;
+                percent?.Report((int)(((i + 1) / (double)items.Count) * 100));
             }
-        
-        private static void AddParameters(SQLiteCommand cmd)
+
+            return result;
+        }
+        private static void AddIdentityParameters(SQLiteCommand cmd)
         {
             cmd.Parameters.Add("@uuid", DbType.String);
             cmd.Parameters.Add("@language", DbType.String);
@@ -646,11 +670,13 @@ namespace CollectaMundo.Infrastructure.Import
             cmd.Parameters.Add("@condition", DbType.String);
             cmd.Parameters.Add("@locationId", DbType.Int32);
             cmd.Parameters.Add("@comment", DbType.String);
+        }
+        private static void AddQuantityParameters(SQLiteCommand cmd)
+        {
             cmd.Parameters.Add("@owned", DbType.Int32);
             cmd.Parameters.Add("@trade", DbType.Int32);
         }
-        
-        private static void BindIdentityParameters(SQLiteCommand cmd,CollectionUpsertItem item,string? normalizedComment)
+        private static void BindIdentityParameters(SQLiteCommand cmd, CollectionUpsertItem item, string? normalizedComment)
         {
             cmd.Parameters["@uuid"].Value = item.Uuid;
             cmd.Parameters["@language"].Value = item.Language;
@@ -662,9 +688,12 @@ namespace CollectaMundo.Infrastructure.Import
             cmd.Parameters["@comment"].Value = normalizedComment is not null
                 ? normalizedComment
                 : DBNull.Value;
+        }
+        private static void BindQuantityParameters(SQLiteCommand cmd, CollectionUpsertItem item)
+        {
             cmd.Parameters["@owned"].Value = item.CardsOwned;
             cmd.Parameters["@trade"].Value = item.CardsForTrade;
-        }        
+        }
         private static string? NormalizeComment(string? comment)
         {
             var trimmed = comment?.Trim();

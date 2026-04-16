@@ -168,6 +168,12 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
 
             foreach (var card in cards)
             {
+                if (isEdit && card.CardsOwned == 0)
+                {
+                    PlanEditDelete(card, plan, removedIds, upsertsByIdentity, workingById, workingByIdentity);
+                    continue;
+                }
+
                 var identity = CollectionIdentityFactory.Create(
                     card.Uuid,
                     card.SelectedCondition,
@@ -264,19 +270,6 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
 
             var currentIdentity = currentRow.Identity;
 
-            if (card.CardsOwned == 0)
-            {
-                plan.DeleteIds.Add(currentId);
-                removedIds.Add(currentId);
-
-                workingById.Remove(currentId);
-                workingByIdentity.Remove(currentIdentity);
-                upsertsByIdentity.Remove(currentIdentity);
-                updatesByCardId.Remove(currentId);
-
-                return;
-            }
-
             if (targetIdentity.Equals(currentIdentity))
             {
                 SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
@@ -340,6 +333,31 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
 
             workingByIdentity[targetIdentity] = currentRow;
             upsertsByIdentity[targetIdentity] = card;
+        }
+
+        private static void PlanEditDelete(
+            CardSet card,
+            ModifyBatchPlan plan,
+            HashSet<int> removedIds,
+            Dictionary<CollectionIdentity, CardSet> upsertsByIdentity,
+            Dictionary<int, WorkingRow> workingById,
+            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+                {
+            var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
+
+            if (!workingById.TryGetValue(currentId, out var currentRow))
+            {
+                throw new InvalidOperationException($"CardId {currentId} not found in working state");
+            }
+
+            var currentIdentity = currentRow.Identity;
+
+            plan.DeleteIds.Add(currentId);
+            removedIds.Add(currentId);
+
+            workingById.Remove(currentId);
+            workingByIdentity.Remove(currentIdentity);
+            upsertsByIdentity.Remove(currentIdentity);
         }
         private static void SetUpdate(Dictionary<int, UpdateCommand> updatesByCardId, int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade)
         {

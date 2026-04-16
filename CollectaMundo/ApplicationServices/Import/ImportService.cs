@@ -272,7 +272,7 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             token.ThrowIfCancellationRequested();
 
-            // 1) Resolve (mapping/defaults) - same as today
+            // 1) Resolve (mapping/defaults)
             var resolved = _importLogic.ResolveImportItems(items,additionalMappings,conditionMappings,finishMappings,languageMappings);
 
             token.ThrowIfCancellationRequested();
@@ -491,6 +491,5 @@ namespace CollectaMundo.ApplicationServices.Import
                     Mutation: null);
             }
         }
-
     }
 }

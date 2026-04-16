@@ -431,13 +431,18 @@ namespace CollectaMundo.ViewModels.Import
 
             var importResult = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, Progress, token));
 
-            if (importResult.Mutation != null)
+            if (importResult.Result.Code != OperationResultCode.Success)
+            {
+                return importResult.Result;
+            }
+
+            if (importResult.Mutation is not null)
             {
                 CollectionMutationRequested?.Invoke(this, importResult.Mutation);
             }
 
             GoToStep(ImportStep.Finish);
-            return new OperationResult(OperationResultCode.Success, "Import completed succesfully");
+            return importResult.Result;
         }
         public Task<OperationResult> AfterStep10Action()
         {
