@@ -18,9 +18,9 @@
 
         <!--Cards to edit-->
         <ListView ItemsSource="{Binding ModifyCollectionViewModel.CardsToAddOrEdit}"
-                  Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                  behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding ModifyCollectionViewModel.RefreshColumnsTrigger, Mode=OneWay}"
-                  Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
+          Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding ModifyCollectionViewModel.RefreshColumnsTrigger, Mode=OneWay}"
+          Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -30,6 +30,7 @@
                 <GridView>
                     <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
                     <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}"/>
+
                     <GridViewColumn Header="Condition">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -37,6 +38,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+
                     <GridViewColumn Header="Finish">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -44,6 +46,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+
                     <GridViewColumn Header="Language">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -51,15 +54,39 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="+">
+
+                    <GridViewColumn Header="Location">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="+" 
-                                        Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.ModifyCollectionViewModel.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                <ComboBox ItemsSource="{Binding AvailableLocations}"
+                                  SelectedValue="{Binding SelectedLocationId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValuePath="Id"
+                                  DisplayMemberPath="Name"
+                                  MinWidth="120" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+
+                    <GridViewColumn Header="Comment">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding Comment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 MinWidth="140" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="+">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="+"
+                                Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
                     <GridViewColumn Header="Count">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -67,23 +94,29 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+
                     <GridViewColumn Header="-">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="-"
-                                        Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.ModifyCollectionViewModel.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="+" Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.ModifyCollectionViewModel.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                <Button Content="+"
+                                Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+
                     <GridViewColumn Header="Trade">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -91,11 +124,14 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+
                     <GridViewColumn Header="-">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="-" Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.ModifyCollectionViewModel.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                <Button Content="-"
+                                Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -182,6 +218,13 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Location" Width="*" SortMemberPath="SelectedLocationName">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding SelectedLocationName}" TextWrapping="Wrap" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>                
                 <DataGridTemplateColumn Header="Count" Width="*" SortMemberPath="CardsOwned">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
