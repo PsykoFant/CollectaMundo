@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Input;
@@ -14,14 +15,18 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     public ComboBindingViewModel FinishCombo { get; }
     public ComboBindingViewModel LanguageCombo { get; }
 
+    // Global location choices for direct ComboBox binding
+    public IReadOnlyList<CardLocation> AvailableLocations { get; }
+
     // Bindable properties for the numeric inputs
     public NumericBindingViewModel Owned { get; }
     public NumericBindingViewModel Trade { get; }
 
-    // Constructor
-    public CardSetEditRowViewModel(CardSet cardToAdd, ICommand refreshColumnsCommand)
+    public CardSetEditRowViewModel(CardSet cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand)
     {
         CardToAddOrEdit = cardToAdd;
+        AvailableLocations = availableLocations;
+        RefreshColumnsCommand = refreshColumnsCommand;
 
         ConditionCombo = new ComboBindingViewModel(
             items: cardToAdd.Conditions,
@@ -56,12 +61,9 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
             maxGetter: () => CardsOwned,
             delayMs: 0);
     }
-
-    // Dumb pass-through properties
     public string? Name => CardToAddOrEdit.Name;
     public string? SetName => CardToAddOrEdit.SetName;
 
-    // Passthrough properties that raise PropertyChanged when set
     public string? SelectedCondition
     {
         get => CardToAddOrEdit.SelectedCondition;
@@ -77,16 +79,32 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
         get => CardToAddOrEdit.Language;
         set => SetModelValue(CardToAddOrEdit.Language, value, v => CardToAddOrEdit.Language = v);
     }
-    private bool SetModelValue<T>(T currentValue, T newValue, Action<T> assign, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+    public int? SelectedLocationId
     {
-        if (EqualityComparer<T>.Default.Equals(currentValue, newValue))
+        get => CardToAddOrEdit.SelectedLocationId;
+        set
         {
-            return false;
-        }
+            if (!SetModelValue(CardToAddOrEdit.SelectedLocationId, value, v => CardToAddOrEdit.SelectedLocationId = v))
+            {
+                return;
+            }
 
-        assign(newValue);
-        OnPropertyChanged(propertyName);
-        return true;
+            OnPropertyChanged(nameof(SelectedLocationName));
+            OnPropertyChanged(nameof(SelectedLocationType));
+
+            // Keep layout refresh behavior aligned with the other editors
+            if (RefreshColumnsCommand.CanExecute(null))
+            {
+                RefreshColumnsCommand.Execute(null);
+            }
+        }
+    }
+    public string? SelectedLocationName => CardToAddOrEdit.SelectedLocationName;
+    public CardLocationType? SelectedLocationType => CardToAddOrEdit.SelectedLocationType;
+    public string? Comment
+    {
+        get => CardToAddOrEdit.Comment;
+        set => SetModelValue(CardToAddOrEdit.Comment, value, v => CardToAddOrEdit.Comment = v);
     }
     public int CardsOwned
     {
@@ -98,10 +116,8 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
                 return;
             }
 
-            // keep adapter in sync so UI updates when +/- changes the value
             Owned.NotifyValueChanged();
 
-            // optional: keep trade valid if owned decreases
             if (CardsForTrade > CardsOwned)
             {
                 CardsForTrade = CardsOwned;
@@ -122,5 +138,23 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
         }
     }
 
-}
+    // Command to trigger column refresh 
+    private ICommand RefreshColumnsCommand { get; }
 
+    // Helpers
+    private bool SetModelValue<T>(
+    T currentValue,
+    T newValue,
+    Action<T> assign,
+    [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(currentValue, newValue))
+        {
+            return false;
+        }
+
+        assign(newValue);
+        OnPropertyChanged(propertyName);
+        return true;
+    }
+}

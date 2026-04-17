@@ -10,11 +10,13 @@ using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
@@ -29,8 +31,6 @@ namespace CollectaMundo.ViewModels
     #endregion
     public partial class MainWindowViewModel : ObservableObject, ICardCollectionHost, IShellNavigationHost
     {
-        #region class: MainWindowViewModel (fields, ctor, factory)
-
         #region readonly dependencies
         // App settings
         private readonly IAppSettings _settings;
@@ -155,7 +155,7 @@ namespace CollectaMundo.ViewModels
             List<string> manaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
             ColorIconsViewModel = new CardListViewModel { Cards = [.. manaKeys.Select(CardSet.FromManaKey)] };
 
-            // edit collection viewmodels
+            // Modify collection viewmodels
             AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true);
             EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false);
 
@@ -224,11 +224,11 @@ namespace CollectaMundo.ViewModels
             };
 
             await vm.ReloadAllCardListsAndFiltersAsync();
+            await vm.ReloadAvailableLocationsAsync();
 
             vm.OnStartupComplete?.Invoke();
             return vm;
         }
-        #endregion
 
         #endregion
 
@@ -304,6 +304,28 @@ namespace CollectaMundo.ViewModels
             PricesVM.RefreshLatestPriceDate();
             sw.Stop();
             Debug.WriteLine($"[ReloadAllCardListsAsync] M1 finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
+        }
+        public async Task ReloadAvailableLocationsAsync()
+        {
+            var sw = Stopwatch.StartNew();
+
+            Debug.WriteLine("[ReloadAvailableLocationsAsync] Loading card locations");
+
+            var locations = await _cardLocationService.GetAllAsync();
+
+            var availableLocations = locations
+                .Select(x => new CardLocation
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToArray();
+
+            AddCardsVM.SetAvailableLocations(availableLocations);
+            EditCardsVM.SetAvailableLocations(availableLocations);
+
+            sw.Stop();
+            Debug.WriteLine($"[ReloadAvailableLocationsAsync] Finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
         }
 
         // When retailer is changed, refresh prices on all cards

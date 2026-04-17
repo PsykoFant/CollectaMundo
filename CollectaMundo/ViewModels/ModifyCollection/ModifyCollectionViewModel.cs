@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Shell;
@@ -12,22 +13,23 @@ namespace CollectaMundo.ViewModels
 {
     public partial class ModifyCollectionViewModel : ObservableObject
     {
+        private readonly IModifyCollectionService _service;
+        private readonly ICardCollectionHost _cardCollectionHost;
+        private IReadOnlyList<CardLocation> _availableLocations = [];
+        private readonly bool _removeCardWhenZero;
 
         public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
         public ObservableCollection<CardSetEditRowViewModel> CardsToAddOrEdit { get; } = [];
         public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
         public bool ShowCounts => !HasStatus;
         public bool IsCollectionEditVisible => CardsToAddOrEdit.Count != 0 && !HasStatus;
-
-        private readonly IModifyCollectionService _service;
-        private readonly ICardCollectionHost _cardCollectionHost;
-        private readonly bool _removeCardWhenZero;
-
+        public IReadOnlyList<CardLocation> AvailableLocations => _availableLocations;
         public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost cardCollectionHost, bool removeCardWhenZero)
         {
             _cardCollectionHost = cardCollectionHost;
             _service = service;
             _removeCardWhenZero = removeCardWhenZero;
+
 
             CardsToAddOrEdit.CollectionChanged += (_, _) =>
             {
@@ -44,6 +46,11 @@ namespace CollectaMundo.ViewModels
         public void ClearStatus()
         {
             StatusMessage = string.Empty;
+        }
+
+        public void SetAvailableLocations(IReadOnlyList<CardLocation> availableLocations)
+        {
+            _availableLocations = availableLocations;
         }
 
         [ObservableProperty]
@@ -75,7 +82,7 @@ namespace CollectaMundo.ViewModels
                     continue;
                 }
 
-                CardsToAddOrEdit.Add(new CardSetEditRowViewModel(editable, RefreshColumnsCommand));
+                CardsToAddOrEdit.Add(new CardSetEditRowViewModel(editable, _availableLocations, RefreshColumnsCommand));
             }
 
             ClearSelectionTrigger++;
@@ -100,7 +107,7 @@ namespace CollectaMundo.ViewModels
                     continue;
                 }
 
-                CardsToAddOrEdit.Add(new CardSetEditRowViewModel(editable, RefreshColumnsCommand));
+                CardsToAddOrEdit.Add(new CardSetEditRowViewModel(editable, _availableLocations, RefreshColumnsCommand));
             }
 
             ClearSelectionTrigger++;
