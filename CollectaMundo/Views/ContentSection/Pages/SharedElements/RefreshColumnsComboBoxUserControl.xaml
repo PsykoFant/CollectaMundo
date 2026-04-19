@@ -11,6 +11,7 @@
 
     <ComboBox ItemsSource="{Binding Items}"
               SelectedItem="{Binding Selected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              DisplayMemberPath="{Binding DisplayMemberPath}"
               MinWidth="60">
 
         <i:Interaction.Triggers>

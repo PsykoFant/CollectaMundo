@@ -10,13 +10,11 @@ using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Import;
-using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
@@ -41,7 +39,7 @@ namespace CollectaMundo.ViewModels
         // Card list / card collection management services
         private readonly IModifyCollectionService _modifyService;
         private readonly ICardListService _cardListService;
-        private readonly ICardLocationService _cardLocationService; 
+        private readonly ICardLocationService _cardLocationService;
 
         // Filtering infrastructure
         private readonly FilteringService _filteringService;
@@ -313,16 +311,8 @@ namespace CollectaMundo.ViewModels
 
             var locations = await _cardLocationService.GetAllAsync();
 
-            var availableLocations = locations
-                .Select(x => new CardLocation
-                {
-                    Id = x.Id,
-                    Name = x.Name
-                })
-                .ToArray();
-
-            AddCardsVM.SetAvailableLocations(availableLocations);
-            EditCardsVM.SetAvailableLocations(availableLocations);
+            AddCardsVM.SetAvailableLocations(locations);
+            EditCardsVM.SetAvailableLocations(locations);
 
             sw.Stop();
             Debug.WriteLine($"[ReloadAvailableLocationsAsync] Finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");

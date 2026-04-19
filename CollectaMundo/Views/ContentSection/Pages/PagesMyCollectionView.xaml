@@ -58,11 +58,7 @@
                     <GridViewColumn Header="Location">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding AvailableLocations}"
-                                  SelectedValue="{Binding SelectedLocationId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                  SelectedValuePath="Id"
-                                  DisplayMemberPath="Name"
-                                  MinWidth="120" />
+                                <sharedElements:RefreshColumnsComboBoxUserControl DataContext="{Binding LocationCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

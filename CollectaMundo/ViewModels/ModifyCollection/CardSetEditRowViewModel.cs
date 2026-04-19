@@ -14,6 +14,7 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     public ComboBindingViewModel ConditionCombo { get; }
     public ComboBindingViewModel FinishCombo { get; }
     public ComboBindingViewModel LanguageCombo { get; }
+    public ComboBindingViewModel LocationCombo { get; }
 
     // Global location choices for direct ComboBox binding
     public IReadOnlyList<CardLocation> AvailableLocations { get; }
@@ -21,7 +22,6 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     // Bindable properties for the numeric inputs
     public NumericBindingViewModel Owned { get; }
     public NumericBindingViewModel Trade { get; }
-
     public CardSetEditRowViewModel(CardSet cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand)
     {
         CardToAddOrEdit = cardToAdd;
@@ -45,6 +45,13 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
             getter: () => Language,
             setter: v => Language = (string?)v,
             refreshCommand: refreshColumnsCommand);
+
+        LocationCombo = new ComboBindingViewModel(
+            items: AvailableLocations,
+            getter: GetSelectedLocation,
+            setter: SetSelectedLocation,
+            refreshCommand: refreshColumnsCommand,
+            displayMemberPath: nameof(CardLocation.DisplayName));
 
         Owned = new NumericBindingViewModel(
             getter: () => CardsOwned,
@@ -84,23 +91,37 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
         get => CardToAddOrEdit.SelectedLocationId;
         set
         {
-            if (!SetModelValue(CardToAddOrEdit.SelectedLocationId, value, v => CardToAddOrEdit.SelectedLocationId = v))
+            if (CardToAddOrEdit.SelectedLocationId == value)
             {
                 return;
             }
 
+            CardToAddOrEdit.SelectedLocationId = value;
+
+            OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedLocationName));
             OnPropertyChanged(nameof(SelectedLocationType));
-
-            // Keep layout refresh behavior aligned with the other editors
-            if (RefreshColumnsCommand.CanExecute(null))
-            {
-                RefreshColumnsCommand.Execute(null);
-            }
         }
     }
     public string? SelectedLocationName => CardToAddOrEdit.SelectedLocationName;
     public CardLocationType? SelectedLocationType => CardToAddOrEdit.SelectedLocationType;
+
+    private CardLocation? GetSelectedLocation()
+    {
+        if (SelectedLocationId is not int id)
+        {
+            return null;
+        }
+
+        return AvailableLocations.FirstOrDefault(x => x.Id == id);
+    }
+
+    private void SetSelectedLocation(object? value)
+    {
+        SelectedLocationId = (value as CardLocation)?.Id;
+    }
+
+
     public string? Comment
     {
         get => CardToAddOrEdit.Comment;
@@ -142,11 +163,7 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     private ICommand RefreshColumnsCommand { get; }
 
     // Helpers
-    private bool SetModelValue<T>(
-    T currentValue,
-    T newValue,
-    Action<T> assign,
-    [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+    private bool SetModelValue<T>(T currentValue, T newValue, Action<T> assign, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(currentValue, newValue))
         {
