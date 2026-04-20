@@ -170,6 +170,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         [ObservableProperty]
         private int? selectedLocationId;
         public string? SelectedLocationName => SelectedLocationId is int id ? CardLocationProvider?.Get(id)?.Name : null;
+        public string? SelectedLocationDisplayName => SelectedLocationId is int id ? CardLocationProvider?.Get(id)?.DisplayName : null;
         public CardLocationType? SelectedLocationType => SelectedLocationId is int id ? CardLocationProvider?.Get(id)?.Type : null;
 
         // Comment
@@ -253,6 +254,12 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             OnPropertyChanged(nameof(FoilPrice));
             OnPropertyChanged(nameof(EtchedPrice));
             OnPropertyChanged(nameof(CardInCollectionPrice));
+        }
+        partial void OnSelectedLocationIdChanged(int? value)
+        {
+            OnPropertyChanged(nameof(SelectedLocationName));
+            OnPropertyChanged(nameof(SelectedLocationType));
+            OnPropertyChanged(nameof(SelectedLocationDisplayName));
         }
 
         // -------------------------------

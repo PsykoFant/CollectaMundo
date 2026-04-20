@@ -214,10 +214,10 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Location" Width="*" SortMemberPath="SelectedLocationName">
+                <DataGridTemplateColumn Header="Location" Width="*" SortMemberPath="SelectedLocationDisplayName">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding SelectedLocationName}" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding SelectedLocationDisplayName}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>                

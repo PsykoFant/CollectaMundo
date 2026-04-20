@@ -14,7 +14,7 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     public ComboBindingViewModel ConditionCombo { get; }
     public ComboBindingViewModel FinishCombo { get; }
     public ComboBindingViewModel LanguageCombo { get; }
-    public ComboBindingViewModel LocationCombo { get; }
+    public LocationBindingViewModel LocationCombo { get; }
 
     // Global location choices for direct ComboBox binding
     public IReadOnlyList<CardLocation> AvailableLocations { get; }
@@ -46,12 +46,11 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
             setter: v => Language = (string?)v,
             refreshCommand: refreshColumnsCommand);
 
-        LocationCombo = new ComboBindingViewModel(
-            items: AvailableLocations,
-            getter: GetSelectedLocation,
-            setter: SetSelectedLocation,
-            refreshCommand: refreshColumnsCommand,
-            displayMemberPath: nameof(CardLocation.DisplayName));
+        LocationCombo = new LocationBindingViewModel(
+            items: availableLocations,
+            getSelectedLocationId: () => SelectedLocationId,
+            setSelectedLocationId: v => SelectedLocationId = v,
+            refreshCommand: refreshColumnsCommand);
 
         Owned = new NumericBindingViewModel(
             getter: () => CardsOwned,
@@ -105,23 +104,6 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     }
     public string? SelectedLocationName => CardToAddOrEdit.SelectedLocationName;
     public CardLocationType? SelectedLocationType => CardToAddOrEdit.SelectedLocationType;
-
-    private CardLocation? GetSelectedLocation()
-    {
-        if (SelectedLocationId is not int id)
-        {
-            return null;
-        }
-
-        return AvailableLocations.FirstOrDefault(x => x.Id == id);
-    }
-
-    private void SetSelectedLocation(object? value)
-    {
-        SelectedLocationId = (value as CardLocation)?.Id;
-    }
-
-
     public string? Comment
     {
         get => CardToAddOrEdit.Comment;

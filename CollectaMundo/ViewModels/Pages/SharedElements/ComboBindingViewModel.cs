@@ -10,8 +10,6 @@ public sealed partial class ComboBindingViewModel(IEnumerable items, Func<object
     private readonly Func<object?> _getter = getter;
     private readonly Action<object?> _setter = setter;
     public ICommand RefreshCommand { get; } = refreshCommand;
-    public string? DisplayMemberPath { get; } = displayMemberPath;
-
     public object? Selected
     {
         get => _getter();
