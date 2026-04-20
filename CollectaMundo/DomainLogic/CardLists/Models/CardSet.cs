@@ -270,5 +270,4 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             OnPropertyChanged(nameof(CardInCollectionPrice));
         }
     }
-
 }
