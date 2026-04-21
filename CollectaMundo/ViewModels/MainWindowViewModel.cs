@@ -262,7 +262,6 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region event handlers (FilterChanged, CardChanged, CollectionChanged)
-
         private void OnImportCollectionMutationRequested(object? sender, CollectionMutation mutation)
         {
             var changeSet = _importService.BuildCollectionChangeSet(mutation, MyCollectionVM, AllCardsVM);

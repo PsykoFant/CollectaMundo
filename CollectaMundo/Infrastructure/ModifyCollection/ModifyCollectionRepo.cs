@@ -5,7 +5,6 @@ namespace CollectaMundo.Infrastructure.ModifyCollection
 {
     public class ModifyCollectionRepo() : IModifyCollectionRepo
     {
-
         // Lookups
         public async Task<List<string>> FetchLanguagesForCardAsync(string uuid, SQLiteConnection conn)
         {
