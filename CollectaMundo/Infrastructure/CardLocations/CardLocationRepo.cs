@@ -1,4 +1,6 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardLocations
 {
@@ -67,19 +69,6 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return await cmd.ExecuteNonQueryAsync();
         }
-        public async Task<int> ClearLocationFromCollectionAsync(SQLiteConnection conn, int locationId)
-        {
-            const string sql = """
-                                UPDATE myCollection
-                                SET locationId = NULL
-                                WHERE locationId = @locationId;
-                                """;
-
-            using var cmd = new SQLiteCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@locationId", locationId);
-
-            return await cmd.ExecuteNonQueryAsync();
-        }
         public async Task<int> DeleteAsync(SQLiteConnection conn, int id)
         {
             const string sql = """
@@ -91,6 +80,98 @@ namespace CollectaMundo.Infrastructure.CardLocations
             cmd.Parameters.AddWithValue("@id", id);
 
             return await cmd.ExecuteNonQueryAsync();
+        }
+        public async Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn)
+        {
+            const string sql = """
+                                SELECT id, uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade
+                                FROM myCollection;
+                                """;
+
+            var rows = new List<MyCollectionRow>();
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var id = reader.GetInt32(reader.GetOrdinal("id"));
+                var uuid = reader.GetString(reader.GetOrdinal("uuid"));
+                var language = reader.GetString(reader.GetOrdinal("language"));
+                var finish = reader.GetString(reader.GetOrdinal("finish"));
+                var condition = reader.GetString(reader.GetOrdinal("condition"));
+                var locationIdOrdinal = reader.GetOrdinal("locationId");
+                var commentOrdinal = reader.GetOrdinal("comment");
+
+                int? locationId = reader.IsDBNull(locationIdOrdinal)
+                    ? null
+                    : reader.GetInt32(locationIdOrdinal);
+
+                string? comment = reader.IsDBNull(commentOrdinal)
+                    ? null
+                    : reader.GetString(commentOrdinal);
+
+                rows.Add(new MyCollectionRow
+                {
+                    CardId = id,
+                    Identity = CollectionIdentityFactory.Create(
+                        uuid,
+                        condition,
+                        language,
+                        finish,
+                        locationId,
+                        comment),
+                    CardsOwned = reader.GetInt32(reader.GetOrdinal("cardsOwned")),
+                    CardsForTrade = reader.GetInt32(reader.GetOrdinal("cardsForTrade"))
+                });
+            }
+
+            return rows;
+        }
+        public async Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdAsync(SQLiteConnection conn, int locationId)
+        {
+            const string sql = """
+                                SELECT id, uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade
+                                FROM myCollection
+                                WHERE locationId = @locationId;
+                                """;
+
+            var rows = new List<MyCollectionRow>();
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@locationId", locationId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var id = reader.GetInt32(reader.GetOrdinal("id"));
+                var uuid = reader.GetString(reader.GetOrdinal("uuid"));
+                var language = reader.GetString(reader.GetOrdinal("language"));
+                var finish = reader.GetString(reader.GetOrdinal("finish"));
+                var condition = reader.GetString(reader.GetOrdinal("condition"));
+                var commentOrdinal = reader.GetOrdinal("comment");
+
+                string? comment = reader.IsDBNull(commentOrdinal)
+                    ? null
+                    : reader.GetString(commentOrdinal);
+
+                rows.Add(new MyCollectionRow
+                {
+                    CardId = id,
+                    Identity = CollectionIdentityFactory.Create(
+                        uuid,
+                        condition,
+                        language,
+                        finish,
+                        locationId,
+                        comment),
+                    CardsOwned = reader.GetInt32(reader.GetOrdinal("cardsOwned")),
+                    CardsForTrade = reader.GetInt32(reader.GetOrdinal("cardsForTrade"))
+                });
+            }
+
+            return rows;
         }
         public async Task<bool> ExistsByNameAsync(SQLiteConnection conn, string name, int? excludingId = null)
         {

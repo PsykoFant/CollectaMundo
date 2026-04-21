@@ -1,19 +1,26 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations.Models;
+using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.CollectionMutations;
+using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CardLocations
 {
-    public sealed class CardLocationService(IDbConnectionFactory dbFactory, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic, ICardLocationLookupStore cardLocationLookupStore) : ICardLocationService
+    public sealed class CardLocationService(IDbConnectionFactory dbFactory, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic, ICardLocationLookupStore cardLocationLookupStore, ICollectionMutationsLogic mutationsLogic, ICollectionMutationsService mutationsService) : ICardLocationService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardLocationRepo _cardLocationRepo = cardLocationRepo;
         private readonly ICardLocationLogic _cardLocationLogic = cardLocationLogic;
         private readonly ICardLocationLookupStore _cardLocationLookupStore = cardLocationLookupStore;
+        private readonly ICollectionMutationsLogic _muationsLogic = mutationsLogic;
+        private readonly ICollectionMutationsService _mutationsService = mutationsService;
         public async Task<IReadOnlyList<CardLocation>> GetAllAsync()
         {
             await using var uow = new UnitOfWork(_dbFactory);
@@ -179,13 +186,15 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     null);
             }
         }
-        public async Task<OperationResult> DeleteAsync(int id)
+        public async Task<CardLocationDeleteResult> DeleteAsync(int id)
         {
             var validation = _cardLocationLogic.ValidateId(id);
 
             if (validation.Code != OperationResultCode.Success)
             {
-                return validation;
+                return new CardLocationDeleteResult(
+                    validation,
+                    new CollectionChangeSet<CardSet>());
             }
 
             await using var uow = new UnitOfWork(_dbFactory);
@@ -193,31 +202,57 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             try
             {
-                // Delete cardlocations from mycollectioncards before deleting the location itself to avoid foreign key constraint violations
-                await _cardLocationRepo.ClearLocationFromCollectionAsync(uow.CurrentConnection,id);
+                var snapshotRows = await _cardLocationRepo.GetAllCollectionRowsAsync(uow.CurrentConnection);
+                var affectedRows = await _cardLocationRepo.GetCollectionRowsByLocationIdAsync(uow.CurrentConnection, id);
 
-                int rowsAffected = await _cardLocationRepo.DeleteAsync(uow.CurrentConnection,id);
+                var snapshot = new CollectionSnapshot
+                {
+                    Rows = [.. snapshotRows]
+                };
+
+                var editedCards = affectedRows
+                    .Select(CreateCardWithClearedLocation)
+                    .ToList();
+
+                var plan = _mutationsLogic.PlanIdentityRewriteBatch(
+                    editedCards,
+                    snapshot,
+                    isEdit: true);
+
+                await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
+
+                int rowsAffected = await _cardLocationRepo.DeleteAsync(uow.CurrentConnection, id);
 
                 if (rowsAffected == 0)
                 {
                     await uow.RollbackAsync();
-                    return new OperationResult(
-                        OperationResultCode.NotFound,
-                        $"No location with id {id} was found.");
+
+                    return new CardLocationDeleteResult(
+                        new OperationResult(
+                            OperationResultCode.NotFound,
+                            $"No location with id {id} was found."),
+                        new CollectionChangeSet<CardSet>());
                 }
 
                 await uow.CommitAsync();
 
                 _cardLocationLookupStore.Remove(id);
 
-                return new OperationResult(OperationResultCode.Success,"Location deleted successfully.");
+                return new CardLocationDeleteResult(
+                    new OperationResult(
+                        OperationResultCode.Success,
+                        "Location deleted successfully."),
+                    plan.ChangeSet);
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync();
-                return new OperationResult(
-                    OperationResultCode.Error,
-                    $"Failed to delete location: {ex.Message}");
+
+                return new CardLocationDeleteResult(
+                    new OperationResult(
+                        OperationResultCode.Error,
+                        $"Failed to delete location: {ex.Message}"),
+                    new CollectionChangeSet<CardSet>());
             }
         }
         private static CardLocation MapToDomain(CardLocationRecord record)
@@ -258,6 +293,22 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             return ex.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase)
                 && ex.Message.Contains("cardLocations", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static CardSet CreateCardWithClearedLocation(MyCollectionRow row)
+        {
+            return new CardSet
+            {
+                CardId = row.CardId,
+                Uuid = row.Identity.Uuid,
+                SelectedCondition = row.Identity.Condition,
+                Language = row.Identity.Language,
+                SelectedFinish = row.Identity.Finish,
+                SelectedLocationId = null,
+                Comment = row.Identity.Comment,
+                CardsOwned = row.CardsOwned,
+                CardsForTrade = row.CardsForTrade
+            };
         }
     }
 }
