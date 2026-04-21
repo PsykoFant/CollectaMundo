@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.ModifyCollection;
+using CollectaMundo.DomainLogic.CollectionMutations;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 
@@ -44,7 +44,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Arrange: snapshot contains nothing (no existing identity)
             var snapshot = new EmptySnapshot();
 
-            var logic = new ModifyCollectionLogic();
+            var logic = new CollectionMutationsLogic();
 
             var newCard = new CardSet
             {
@@ -57,7 +57,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanBatch([newCard], snapshot, isEdit: false);
+            var plan = logic.PlanIdentityRewriteBatch([newCard], snapshot, isEdit: false);
 
             // Assert: Insert scheduled
             Assert.Empty(plan.DeleteIds);
@@ -110,7 +110,7 @@ namespace CollectaMundo.Tests.UnitTests
             }
                 ]);
 
-            var logic = new ModifyCollectionLogic();
+            var logic = new CollectionMutationsLogic();
 
             var newCard = new CardSet
             {
@@ -123,7 +123,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanBatch(
+            var plan = logic.PlanIdentityRewriteBatch(
                 [newCard],
                 snapshot,
                 isEdit: false);
@@ -180,7 +180,7 @@ namespace CollectaMundo.Tests.UnitTests
             }
                 ]);
 
-            var logic = new ModifyCollectionLogic();
+            var logic = new CollectionMutationsLogic();
 
             var card = new CardSet
             {
@@ -196,7 +196,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanBatch(
+            var plan = logic.PlanIdentityRewriteBatch(
                 [card],
                 snapshot,
                 isEdit: true);
@@ -238,7 +238,7 @@ namespace CollectaMundo.Tests.UnitTests
                 }
                 ]);
 
-            var logic = new ModifyCollectionLogic();
+            var logic = new CollectionMutationsLogic();
 
             var card = new CardSet
             {
@@ -252,7 +252,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanBatch([card], snapshot, isEdit: true);
+            var plan = logic.PlanIdentityRewriteBatch([card], snapshot, isEdit: true);
 
             // Assert: no deletes, no inserts
             Assert.Empty(plan.DeleteIds);
@@ -321,7 +321,7 @@ namespace CollectaMundo.Tests.UnitTests
             }
                 ]);
 
-            var logic = new ModifyCollectionLogic();
+            var logic = new CollectionMutationsLogic();
 
             var editedCard = new CardSet
             {
@@ -338,7 +338,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanBatch([editedCard], snapshot, isEdit: true);
+            var plan = logic.PlanIdentityRewriteBatch([editedCard], snapshot, isEdit: true);
 
             // Assert: DELETE current row
             var deletedId = Assert.Single(plan.DeleteIds);
@@ -412,7 +412,7 @@ namespace CollectaMundo.Tests.UnitTests
             }
                 ]);
 
-            var logic = new ModifyCollectionLogic();
+            var logic = new CollectionMutationsLogic();
 
             var editedCard = new CardSet
             {
@@ -429,7 +429,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanBatch([editedCard], snapshot, isEdit: true);
+            var plan = logic.PlanIdentityRewriteBatch([editedCard], snapshot, isEdit: true);
 
             // Assert: current row deleted
             var deletedId = Assert.Single(plan.DeleteIds);
@@ -496,7 +496,7 @@ namespace CollectaMundo.Tests.UnitTests
                 }
                 ]);
 
-            var logic = new ModifyCollectionLogic();
+            var logic = new CollectionMutationsLogic();
 
             var editedA = new CardSet
             {
@@ -521,7 +521,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanBatch([editedA, editedB], snapshot, isEdit: true);
+            var plan = logic.PlanIdentityRewriteBatch([editedA, editedB], snapshot, isEdit: true);
 
             // Assert: one row survives, the other is deleted
             var deletedId = Assert.Single(plan.DeleteIds);

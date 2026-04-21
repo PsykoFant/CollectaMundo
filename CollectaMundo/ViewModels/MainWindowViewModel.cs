@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
+using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Import.Models;
@@ -42,6 +43,7 @@ namespace CollectaMundo.ViewModels
         // Card list / card collection management services
         private readonly IModifyCollectionService _modifyService;
         private readonly ICardListService _cardListService;
+        private readonly ICollectionChangeSetApplier _collectionChangeSetApplier;
         private readonly IImportService _importService;
         private readonly ICardLocationService _cardLocationService;
         private readonly ICardLocationLookupStore _cardLocationLookupStore;
@@ -134,6 +136,7 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
+            ICollectionChangeSetApplier collectionChangeSetApplier,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
             IAppSettings settings,
@@ -145,6 +148,7 @@ namespace CollectaMundo.ViewModels
             _operationOverlayController = operationOverlayController;
             _filteringService = new FilteringService();
             _cardListService = cardListService;
+            _collectionChangeSetApplier = collectionChangeSetApplier;
             _importService = importService;
             _cardLocationService = cardLocationService;
             _cardLocationLookupStore = cardLocationLookupStore;
@@ -218,6 +222,7 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
+            ICollectionChangeSetApplier collectionChangeSetApplier,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
             IAppSettings settings,
@@ -225,7 +230,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
@@ -281,7 +286,7 @@ namespace CollectaMundo.ViewModels
         private void OnCollectionChanged(object? sender, CollectionChangeSet<CardSet> changeSet)
         {
             // Apply add/update
-            _modifyService.ApplyMyCollectionChanges(MyCollectionVM.Cards, changeSet);
+            _collectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
 
             // Reapply filters
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);

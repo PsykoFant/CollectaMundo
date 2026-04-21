@@ -1,23 +1,23 @@
-﻿using CollectaMundo.ApplicationServices.EditCollection.Models;
-using CollectaMundo.ApplicationServices.Import.Models;
+﻿using CollectaMundo.ApplicationServices.CollectionMutations;
+using CollectaMundo.ApplicationServices.EditCollection.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CollectionMutations;
 using CollectaMundo.DomainLogic.ModifyCollection;
-using CollectaMundo.DomainLogic.ModifyCollection.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.Shared;
-using CollectaMundo.ViewModels;
-using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.ModifyCollection
 {
-    public class ModifyCollectionService(IDbConnectionFactory dbFactory, IModifyCollectionLogic logic, IModifyCollectionRepo repo) : IModifyCollectionService
+    public class ModifyCollectionService(IDbConnectionFactory dbFactory, IModifyCollectionLogic logic, IModifyCollectionRepo repo, ICollectionMutationsService mutationsService, ICollectionMutationsLogic mutationsLogic) : IModifyCollectionService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly IModifyCollectionLogic _logic = logic;
         private readonly IModifyCollectionRepo _repo = repo;
+        private readonly ICollectionMutationsLogic _mutationsLogic = mutationsLogic;
+        private readonly ICollectionMutationsService _mutationsService = mutationsService;
         public Task<CardSet> CreateCardForAddAsync(CardSet selectedCard) => CreateCardForListAsync(selectedCard, isEdit: false);
         public Task<CardSet> CreateCardForEditAsync(CardSet selectedCard) => CreateCardForListAsync(selectedCard, isEdit: true);
         private async Task<CardSet> CreateCardForListAsync(CardSet selectedCard, bool isEdit)
@@ -52,14 +52,14 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
         {
             var isEdit = cards.Any(c => c.CardId != null);
-            var plan = _logic.PlanBatch(cards, snapshot, isEdit);
+            var plan = _mutationsLogic.PlanIdentityRewriteBatch(cards, snapshot, isEdit);
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             try
             {
-                await ExecutePlanAsync(plan, uow.CurrentConnection);
+                await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
                 await uow.CommitAsync();
                 return plan.ChangeSet;
             }
@@ -92,9 +92,9 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                     prepared.Add(_logic.PrepareNewCardWithDefaults(raw, metadata));
                 }
 
-                var plan = _logic.PlanBatch(prepared, snapshot, isEdit: false);
+                var plan = _mutationsLogic.PlanIdentityRewriteBatch(prepared, snapshot, isEdit: false);
 
-                await ExecutePlanAsync(plan, uow.CurrentConnection);
+                await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
                 await uow.CommitAsync();
 
                 return plan.ChangeSet;
@@ -104,55 +104,6 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                 await uow.RollbackAsync();
                 throw;
             }
-        }
-        private async Task ExecutePlanAsync(ModifyBatchPlan plan, SQLiteConnection connection)
-        {
-            foreach (var deleteId in plan.DeleteIds)
-            {
-                await _repo.DeleteCardByIdAsync(deleteId, connection);
-            }
-
-            foreach (var update in plan.Updates)
-            {
-                await _repo.UpdateCardFieldsByIdAsync(
-                    update.CardId,
-                    update.CardsOwned,
-                    update.CardsForTrade,
-                    update.Identity.Condition,
-                    update.Identity.Language,
-                    update.Identity.Finish,
-                    update.Identity.LocationId,
-                    update.Identity.Comment,
-                    connection);
-            }
-
-            foreach (var insert in plan.Inserts)
-            {
-                var newId = await _repo.AddCardAndReturnIdAsync(
-                    insert.Identity.Uuid,
-                    insert.Identity.Condition,
-                    insert.Identity.Language,
-                    insert.Identity.Finish,
-                    insert.Identity.LocationId,
-                    insert.Identity.Comment,
-                    insert.CardsOwned,
-                    insert.CardsForTrade,
-                    connection);
-
-                insert.BindCardId(newId);
-            }
-
-            var unbound = plan.Inserts.Where(i => i.AssignedCardId is null).ToList();
-            if (unbound.Count > 0)
-            {
-                throw new InvalidOperationException($"Unbound insert ids: {unbound.Count}");
-            }
-        }
-
-        // Update in-memory collection after batch submission
-        public void ApplyMyCollectionChanges(IList<CardSet> collection, CollectionChangeSet<CardSet> changes)
-        {
-            _logic.ApplyMyCollectionChanges(collection, changes);
         }
     }
 }
