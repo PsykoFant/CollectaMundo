@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -47,10 +48,16 @@ namespace CollectaMundo.ViewModels
         {
             StatusMessage = string.Empty;
         }
-
         public void SetAvailableLocations(IReadOnlyList<CardLocation> availableLocations)
         {
             _availableLocations = availableLocations;
+
+            foreach (var row in CardsToAddOrEdit)
+            {
+                row.UpdateAvailableLocations(availableLocations);
+            }
+
+            RefreshColumnsTrigger++;
         }
 
         [ObservableProperty]

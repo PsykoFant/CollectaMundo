@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Shared;
+﻿using CollectaMundo.DomainLogic.Shared.Models;
 
 namespace CollectaMundo.ApplicationServices.Import.Models
 {

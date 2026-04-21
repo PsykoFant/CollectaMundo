@@ -1,18 +1,20 @@
-﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.SharedElements.RefreshColumnsComboBoxUserControl"
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.SharedElements.RefreshColumnsLocationComboBoxUserControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:bindingviewmodels="clr-namespace:CollectaMundo.ViewModels.ModifyCollection.BindinViewModels"
-             mc:Ignorable="d" 
-             d:DataContext="{d:DesignInstance Type=bindingviewmodels:ComboBindingViewModel}"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=bindingviewmodels:LocationBindingViewModel}"
              d:DesignHeight="24"
-             d:DesignWidth="120">
+             d:DesignWidth="140">
 
     <ComboBox ItemsSource="{Binding Items}"
-              SelectedItem="{Binding Selected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-              MinWidth="60">
+          SelectedValue="{Binding SelectedLocationId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+          SelectedValuePath="Id"
+          DisplayMemberPath="{Binding DisplayMemberPath}"
+          MinWidth="60">
 
         <i:Interaction.Triggers>
             <i:EventTrigger EventName="SelectionChanged">

@@ -8,12 +8,12 @@ using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CardLocations
 {
-    public sealed class CardLocationService(IDbConnectionFactory dbFactory, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic) : ICardLocationService
+    public sealed class CardLocationService(IDbConnectionFactory dbFactory, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic, ICardLocationLookupStore cardLocationLookupStore) : ICardLocationService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardLocationRepo _cardLocationRepo = cardLocationRepo;
         private readonly ICardLocationLogic _cardLocationLogic = cardLocationLogic;
-
+        private readonly ICardLocationLookupStore _cardLocationLookupStore = cardLocationLookupStore;
         public async Task<IReadOnlyList<CardLocation>> GetAllAsync()
         {
             await using var uow = new UnitOfWork(_dbFactory);
@@ -67,6 +67,8 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     Name = normalizedName,
                     Type = type
                 };
+
+                _cardLocationLookupStore.Upsert(createdLocation);
 
                 return new CardLocationMutationResult(
                     new OperationResult(
@@ -150,6 +152,8 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     Type = type
                 };
 
+                _cardLocationLookupStore.Upsert(updatedLocation);
+
                 return new CardLocationMutationResult(
                     new OperationResult(
                         OperationResultCode.Success,
@@ -189,9 +193,10 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             try
             {
-                int rowsAffected = await _cardLocationRepo.DeleteAsync(
-                    uow.CurrentConnection,
-                    id);
+                // Delete cardlocations from mycollectioncards before deleting the location itself to avoid foreign key constraint violations
+                await _cardLocationRepo.ClearLocationFromCollectionAsync(uow.CurrentConnection,id);
+
+                int rowsAffected = await _cardLocationRepo.DeleteAsync(uow.CurrentConnection,id);
 
                 if (rowsAffected == 0)
                 {
@@ -203,9 +208,9 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                 await uow.CommitAsync();
 
-                return new OperationResult(
-                    OperationResultCode.Success,
-                    "Location deleted successfully.");
+                _cardLocationLookupStore.Remove(id);
+
+                return new OperationResult(OperationResultCode.Success,"Location deleted successfully.");
             }
             catch (Exception ex)
             {

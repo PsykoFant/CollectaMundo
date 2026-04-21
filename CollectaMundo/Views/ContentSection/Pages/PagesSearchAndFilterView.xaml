@@ -50,6 +50,21 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+                    <GridViewColumn Header="Location">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <sharedElements:RefreshColumnsLocationComboBoxUserControl DataContext="{Binding LocationCombo}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Comment">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding Comment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 MinWidth="140" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>                    
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

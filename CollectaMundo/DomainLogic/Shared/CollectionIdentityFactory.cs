@@ -1,4 +1,6 @@
-﻿namespace CollectaMundo.DomainLogic.Shared
+﻿using CollectaMundo.DomainLogic.Shared.Models;
+
+namespace CollectaMundo.DomainLogic.Shared
 {
     public static class CollectionIdentityFactory
     {

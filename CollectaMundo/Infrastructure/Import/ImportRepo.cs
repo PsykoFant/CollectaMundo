@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 using System.Data;
 using System.Data.SQLite;
 using System.Text;

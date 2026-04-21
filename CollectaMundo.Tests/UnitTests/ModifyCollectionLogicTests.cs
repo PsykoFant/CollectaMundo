@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 
 namespace CollectaMundo.Tests.UnitTests
 {

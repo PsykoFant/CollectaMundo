@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Input;
 
-namespace CollectaMundo.ViewModels.Pages.SharedElements;
+namespace CollectaMundo.ViewModels.ModifyCollection.BindinViewModels;
 public sealed partial class NumericBindingViewModel(Func<int> getter, Action<int> setter, ICommand? changedCommand = null, int? min = null, int? max = null, Func<int?>? maxGetter = null, int delayMs = 0) : ObservableObject
 {
     private readonly Func<int> _getter = getter;

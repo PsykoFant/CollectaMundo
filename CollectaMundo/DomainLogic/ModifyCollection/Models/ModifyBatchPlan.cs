@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 
 namespace CollectaMundo.DomainLogic.ModifyCollection.Models
 {

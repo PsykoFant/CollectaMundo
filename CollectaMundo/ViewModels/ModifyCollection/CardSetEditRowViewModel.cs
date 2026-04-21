@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
-using CollectaMundo.ViewModels.Pages.SharedElements;
+using CollectaMundo.ViewModels.ModifyCollection.BindinViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Input;
 
@@ -16,16 +16,12 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     public ComboBindingViewModel LanguageCombo { get; }
     public LocationBindingViewModel LocationCombo { get; }
 
-    // Global location choices for direct ComboBox binding
-    public IReadOnlyList<CardLocation> AvailableLocations { get; }
-
     // Bindable properties for the numeric inputs
     public NumericBindingViewModel Owned { get; }
     public NumericBindingViewModel Trade { get; }
     public CardSetEditRowViewModel(CardSet cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand)
     {
         CardToAddOrEdit = cardToAdd;
-        AvailableLocations = availableLocations;
         RefreshColumnsCommand = refreshColumnsCommand;
 
         ConditionCombo = new ComboBindingViewModel(
@@ -102,7 +98,7 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
             OnPropertyChanged(nameof(SelectedLocationType));
         }
     }
-    public string? SelectedLocationName => CardToAddOrEdit.SelectedLocationName;
+    public string? SelectedLocationName => CardToAddOrEdit.SelectedLocationDisplayName;
     public CardLocationType? SelectedLocationType => CardToAddOrEdit.SelectedLocationType;
     public string? Comment
     {
@@ -138,6 +134,16 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
             }
 
             Trade.NotifyValueChanged();
+        }
+    }
+
+    public void UpdateAvailableLocations(IReadOnlyList<CardLocation> availableLocations)
+    {
+        LocationCombo.ReplaceItems(availableLocations);
+
+        if (SelectedLocationId is int selectedId && availableLocations.All(x => x.Id != selectedId))
+        {
+            SelectedLocationId = null;
         }
     }
 

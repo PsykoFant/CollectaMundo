@@ -19,7 +19,7 @@ using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.ModifyCollection;
-using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
@@ -88,7 +88,8 @@ public static class TestAppBuilder
             keyedDataProviderService,
             new CardCoreAggregator());
 
-        var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic());
+        var cardLocationLookupStore = new CardLocationLookupStore();
+        var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore);
 
         var modifyService = new ModifyCollectionService(
             dbFactory,
@@ -122,6 +123,7 @@ public static class TestAppBuilder
             picker,
             cardListService,
             cardLocationService,
+            cardLocationLookupStore,
             settings,
             scheduler);
 

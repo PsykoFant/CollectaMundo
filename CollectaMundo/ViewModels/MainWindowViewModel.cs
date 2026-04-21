@@ -6,11 +6,14 @@ using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Import.Models;
+using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
 using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Filtering;
@@ -39,7 +42,9 @@ namespace CollectaMundo.ViewModels
         // Card list / card collection management services
         private readonly IModifyCollectionService _modifyService;
         private readonly ICardListService _cardListService;
+        private readonly IImportService _importService;
         private readonly ICardLocationService _cardLocationService;
+        private readonly ICardLocationLookupStore _cardLocationLookupStore;
 
         // Filtering infrastructure
         private readonly FilteringService _filteringService;
@@ -130,6 +135,7 @@ namespace CollectaMundo.ViewModels
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
             ICardLocationService cardLocationService,
+            ICardLocationLookupStore cardLocationLookupStore,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null)
@@ -139,7 +145,9 @@ namespace CollectaMundo.ViewModels
             _operationOverlayController = operationOverlayController;
             _filteringService = new FilteringService();
             _cardListService = cardListService;
+            _importService = importService;
             _cardLocationService = cardLocationService;
+            _cardLocationLookupStore = cardLocationLookupStore;
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
             _userPromptService = userPromptService;
@@ -170,7 +178,7 @@ namespace CollectaMundo.ViewModels
 
             // Utility viewmodels
             UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
-            ImportVM = new ImportViewModel(importService, shellUiState, utilitiesNavigator, _userPromptService);
+            ImportVM = new ImportViewModel(_importService, shellUiState, utilitiesNavigator, _userPromptService);
             CardLocationVM = new CardLocationViewModel(_cardLocationService);
 
             // prices viewmodel
@@ -211,12 +219,13 @@ namespace CollectaMundo.ViewModels
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
             ICardLocationService cardLocationService,
+            ICardLocationLookupStore cardLocationLookupStore,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
@@ -238,6 +247,7 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.CollectionChanged += OnCollectionChanged;
             EditCardsVM.CollectionChanged += OnCollectionChanged;
             FilterVM.FilterChanged += OnFilterChanged;
+            _cardLocationLookupStore.LocationsChanged += OnLocationsChanged;
         }
         private void UnsubscribeChildVmEvents()
         {
@@ -246,6 +256,7 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.CollectionChanged -= OnCollectionChanged;
             EditCardsVM.CollectionChanged -= OnCollectionChanged;
             FilterVM.FilterChanged -= OnFilterChanged;
+            _cardLocationLookupStore.LocationsChanged -= OnLocationsChanged;
         }
 
         #endregion
@@ -254,7 +265,7 @@ namespace CollectaMundo.ViewModels
 
         private void OnImportCollectionMutationRequested(object? sender, CollectionMutation mutation)
         {
-            var changeSet = _modifyService.BuildCollectionChangeSet(mutation, MyCollectionVM, AllCardsVM);
+            var changeSet = _importService.BuildCollectionChangeSet(mutation, MyCollectionVM, AllCardsVM);
             OnCollectionChanged(sender, changeSet);
         }
         private void OnCardImageSelectionRequested(object? sender, string? uuid)
@@ -286,6 +297,25 @@ namespace CollectaMundo.ViewModels
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
+        private void OnLocationsChanged(object? sender, EventArgs e)
+        {
+            var locations = _cardLocationLookupStore.GetAll();
+
+            AddCardsVM.SetAvailableLocations(locations);
+            EditCardsVM.SetAvailableLocations(locations);
+
+            CardSet.CardLocationProvider = new ValueProvider<int, CardLocation>(locations.ToDictionary(x => x.Id));
+
+            foreach (var c in MyCollectionVM.Cards)
+            {
+                c.RefreshLocationsFromProvider();
+            }
+
+            foreach (var c in AllCardsVM.Cards)
+            {
+                c.RefreshLocationsFromProvider();
+            }
+        }
 
         #endregion
 
@@ -311,8 +341,7 @@ namespace CollectaMundo.ViewModels
 
             var locations = await _cardLocationService.GetAllAsync();
 
-            AddCardsVM.SetAvailableLocations(locations);
-            EditCardsVM.SetAvailableLocations(locations);
+            _cardLocationLookupStore.ReplaceAll(locations);
 
             sw.Stop();
             Debug.WriteLine($"[ReloadAvailableLocationsAsync] Finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");

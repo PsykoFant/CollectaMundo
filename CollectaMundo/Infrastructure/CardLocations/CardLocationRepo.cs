@@ -67,6 +67,19 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return await cmd.ExecuteNonQueryAsync();
         }
+        public async Task<int> ClearLocationFromCollectionAsync(SQLiteConnection conn, int locationId)
+        {
+            const string sql = """
+                                UPDATE myCollection
+                                SET locationId = NULL
+                                WHERE locationId = @locationId;
+                                """;
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@locationId", locationId);
+
+            return await cmd.ExecuteNonQueryAsync();
+        }
         public async Task<int> DeleteAsync(SQLiteConnection conn, int id)
         {
             const string sql = """

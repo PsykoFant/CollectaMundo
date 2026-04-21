@@ -1,0 +1,27 @@
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections;
+using System.Windows.Input;
+
+namespace CollectaMundo.ViewModels.ModifyCollection.BindinViewModels
+{
+    public sealed partial class ComboBindingViewModel(IEnumerable items,Func<object?> getter,Action<object?> setter,ICommand refreshCommand) : ObservableObject
+    {
+        public IEnumerable Items { get; } = items;
+
+        private readonly Func<object?> _getter = getter;
+        private readonly Action<object?> _setter = setter;
+        public ICommand RefreshCommand { get; } = refreshCommand;
+        public object? Selected
+        {
+            get => _getter();
+            set
+            {
+                if (!Equals(_getter(), value))
+                {
+                    _setter(value);
+                    OnPropertyChanged();
+                }
+            }
+        }
+    }
+}

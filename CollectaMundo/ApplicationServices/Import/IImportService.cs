@@ -1,7 +1,10 @@
 ﻿using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
 
@@ -28,6 +31,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
         // Step 9
         Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, CancellationToken token);
+        CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardListViewModel myCollection, CardListViewModel allCards);
         ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings);
         Task<OperationResult> SaveUnimportableItemsAsync(ImportSummary summary, IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems);
         Task<ImportExecutionResult> ImportResolvedItems(IReadOnlyList<ResolvedImportItem> resolvedItems, ProgressSinks progress, CancellationToken token);

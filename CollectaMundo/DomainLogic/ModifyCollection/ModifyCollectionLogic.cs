@@ -4,6 +4,7 @@ using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.ModifyCollection.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
 
@@ -174,13 +175,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                     continue;
                 }
 
-                var identity = CollectionIdentityFactory.Create(
-                    card.Uuid,
-                    card.SelectedCondition,
-                    card.Language,
-                    card.SelectedFinish,
-                    card.SelectedLocationId,
-                    card.Comment);
+                var identity = CollectionIdentityFactory.Create(card.Uuid,card.SelectedCondition,card.Language,card.SelectedFinish,card.SelectedLocationId,card.Comment);
 
                 if (!isEdit)
                 {
@@ -200,8 +195,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 AddedOrUpdated = [.. upsertsByIdentity.Values]
             };
 
-            Debug.WriteLine(
-                $"[PlanBatch] END Deletes={plan.DeleteIds.Count} Updates={plan.Updates.Count} Inserts={plan.Inserts.Count}");
+            Debug.WriteLine($"[PlanBatch] END Deletes={plan.DeleteIds.Count} Updates={plan.Updates.Count} Inserts={plan.Inserts.Count}");
 
             return plan;
         }
@@ -222,13 +216,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 workingByIdentity[working.Identity] = working;
             }
         }
-        private static void PlanAdd(
-            CardSet card,
-            CollectionIdentity identity,
-            Dictionary<int, UpdateCommand> updatesByCardId,
-            ModifyBatchPlan plan,
-            Dictionary<CollectionIdentity, CardSet> upsertsByIdentity,
-            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        private static void PlanAdd(CardSet card,CollectionIdentity identity,Dictionary<int, UpdateCommand> updatesByCardId,ModifyBatchPlan plan,Dictionary<CollectionIdentity, CardSet> upsertsByIdentity,Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
         {
             if (!workingByIdentity.TryGetValue(identity, out var existing))
             {
@@ -251,15 +239,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
 
             upsertsByIdentity[identity] = card;
         }
-        private static void PlanEdit(
-            CardSet card,
-            CollectionIdentity targetIdentity,
-            Dictionary<int, UpdateCommand> updatesByCardId,
-            ModifyBatchPlan plan,
-            HashSet<int> removedIds,
-            Dictionary<CollectionIdentity, CardSet> upsertsByIdentity,
-            Dictionary<int, WorkingRow> workingById,
-            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        private static void PlanEdit(CardSet card,CollectionIdentity targetIdentity,Dictionary<int, UpdateCommand> updatesByCardId,ModifyBatchPlan plan,HashSet<int> removedIds,Dictionary<CollectionIdentity, CardSet> upsertsByIdentity,Dictionary<int, WorkingRow> workingById,Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
         {
             var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
 
@@ -334,15 +314,8 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
             workingByIdentity[targetIdentity] = currentRow;
             upsertsByIdentity[targetIdentity] = card;
         }
-
-        private static void PlanEditDelete(
-            CardSet card,
-            ModifyBatchPlan plan,
-            HashSet<int> removedIds,
-            Dictionary<CollectionIdentity, CardSet> upsertsByIdentity,
-            Dictionary<int, WorkingRow> workingById,
-            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
-                {
+        private static void PlanEditDelete(CardSet card,ModifyBatchPlan plan,HashSet<int> removedIds,Dictionary<CollectionIdentity, CardSet> upsertsByIdentity,Dictionary<int, WorkingRow> workingById,Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        {
             var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
 
             if (!workingById.TryGetValue(currentId, out var currentRow))
@@ -365,66 +338,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
         }
 
 
-        public CollectionChangeSet<CardSet> BuildChangeSet(CollectionMutation mutation, CardListViewModel myCollection, CardListViewModel allCards)
-        {
-            var addedOrUpdated = new List<CardSet>();
 
-            // Snapshot is used to decide whether an upsert row already exists in memory
-            var snapshot = CollectionSnapshot.From(myCollection.Cards);
-
-            // Fast lookup for in-memory collection rows by CardId
-            var cardById = myCollection.Cards.Where(c => c.CardId.HasValue).ToDictionary(c => c.CardId!.Value);
-
-            // Fast lookup for card core data by UUID
-            var coreByUuid = allCards.Cards.Select(c => c.Core!).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var row in mutation.UpsertedRows)
-            {
-                var identity = row.Identity;
-
-                // Existing row contract: same CardId means same identity, so only quantities change
-                if (snapshot.TryGetById(row.CardId, out _))
-                {
-                    cardById.TryGetValue(row.CardId, out var existingCard);
-                    if (existingCard is not null)
-                    {
-                        existingCard.CardsOwned = row.CardsOwned + existingCard.CardsOwned;
-                        existingCard.CardsForTrade = row.CardsForTrade + existingCard.CardsForTrade;
-
-                        addedOrUpdated.Add(existingCard);
-                        continue;
-                    }
-                }
-
-                var uuid = identity.Uuid
-                    ?? throw new InvalidOperationException("Import identity must have a UUID.");
-
-                if (!coreByUuid.TryGetValue(uuid, out var core))
-                {
-                    Debug.WriteLine($"[ERROR] Core not found for UUID: {uuid}");
-                    throw new InvalidOperationException($"[ERROR] Core not found for UUID: {uuid}");
-                }
-
-                var card = CardSet.FromCoreWithCollection(
-                    core,
-                    cardId: row.CardId,
-                    cardsOwned: row.CardsOwned,
-                    cardsForTrade: row.CardsForTrade,
-                    condition: identity.Condition,
-                    language: identity.Language,
-                    finish: identity.Finish,
-                    locationId: identity.LocationId,
-                    comment: identity.Comment);
-
-                addedOrUpdated.Add(card);
-            }
-
-            return new CollectionChangeSet<CardSet>
-            {
-                RemovedIds = mutation.RemovedIds,
-                AddedOrUpdated = addedOrUpdated
-            };
-        }
         public void ApplyMyCollectionChanges(IList<CardSet> collection, CollectionChangeSet<CardSet> changes)
         {
             if (collection == null || changes == null)

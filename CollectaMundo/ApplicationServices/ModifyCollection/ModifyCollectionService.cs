@@ -5,6 +5,7 @@ using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.DomainLogic.ModifyCollection.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
@@ -141,20 +142,14 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                 insert.BindCardId(newId);
             }
 
-#if DEBUG
             var unbound = plan.Inserts.Where(i => i.AssignedCardId is null).ToList();
             if (unbound.Count > 0)
             {
                 throw new InvalidOperationException($"Unbound insert ids: {unbound.Count}");
             }
-#endif
         }
 
         // Update in-memory collection after batch submission
-        public CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardListViewModel myCollection, CardListViewModel allCards)
-        {
-            return _logic.BuildChangeSet(mutation, myCollection, allCards);
-        }
         public void ApplyMyCollectionChanges(IList<CardSet> collection, CollectionChangeSet<CardSet> changes)
         {
             _logic.ApplyMyCollectionChanges(collection, changes);

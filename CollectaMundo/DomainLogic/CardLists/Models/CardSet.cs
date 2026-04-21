@@ -255,6 +255,12 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             OnPropertyChanged(nameof(EtchedPrice));
             OnPropertyChanged(nameof(CardInCollectionPrice));
         }
+        public void RefreshLocationsFromProvider()
+        {
+            OnPropertyChanged(nameof(SelectedLocationName));
+            OnPropertyChanged(nameof(SelectedLocationType));
+            OnPropertyChanged(nameof(SelectedLocationDisplayName));
+        }
         partial void OnSelectedLocationIdChanged(int? value)
         {
             OnPropertyChanged(nameof(SelectedLocationName));

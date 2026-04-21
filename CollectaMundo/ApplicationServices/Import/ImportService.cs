@@ -1,11 +1,15 @@
 ﻿using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Models;
+using ServiceStack;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -336,56 +340,10 @@ namespace CollectaMundo.ApplicationServices.Import
                 throw;
             }
         }
-
-        // ----------------------------------------------------
-        // Helpers
-        // ----------------------------------------------------
-
-        private static HashSet<string> CollectUuidsToValidate(IReadOnlyList<ResolvedImportItem> resolved)
+        public CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardListViewModel myCollection, CardListViewModel allCards)
         {
-            // Capacity hint: worst-case all are importable with UUID
-            var set = new HashSet<string>(capacity: resolved.Count, comparer: StringComparer.OrdinalIgnoreCase);
-
-            foreach (var r in resolved)
-            {
-                if (!r.IsImportable)
-                    continue;
-
-                var uuid = r.Uuid;
-                if (!string.IsNullOrWhiteSpace(uuid))
-                {
-                    set.Add(uuid);
-                }
-            }
-
-            return set;
+            return _importLogic.BuildChangeSet(mutation, myCollection, allCards);
         }
-        private static HashSet<string> CollectUuidsNeedingForeignLanguageLookup(IReadOnlyList<ResolvedImportItem> resolved)
-        {
-            // Only uuids for importable rows requesting non-English.
-            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var r in resolved)
-            {
-                if (!r.IsImportable)
-                    continue;
-
-                var uuid = r.Uuid;
-                if (string.IsNullOrWhiteSpace(uuid))
-                    continue;
-
-                var lang = r.Language;
-
-                // Tier 2 only when requested language != English
-                if (!string.Equals(lang, "English", StringComparison.OrdinalIgnoreCase))
-                {
-                    set.Add(uuid);
-                }
-            }
-
-            return set;
-        }
-
         public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {
             return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings, additionalFieldMappings, conditionMappings, finishMappings, languageMappings);
@@ -491,5 +449,58 @@ namespace CollectaMundo.ApplicationServices.Import
                     Mutation: null);
             }
         }
+
+
+
+        // ----------------------------------------------------
+        // Helpers
+        // ----------------------------------------------------
+
+        private static HashSet<string> CollectUuidsToValidate(IReadOnlyList<ResolvedImportItem> resolved)
+        {
+            // Capacity hint: worst-case all are importable with UUID
+            var set = new HashSet<string>(capacity: resolved.Count, comparer: StringComparer.OrdinalIgnoreCase);
+
+            foreach (var r in resolved)
+            {
+                if (!r.IsImportable)
+                    continue;
+
+                var uuid = r.Uuid;
+                if (!string.IsNullOrWhiteSpace(uuid))
+                {
+                    set.Add(uuid);
+                }
+            }
+
+            return set;
+        }
+        private static HashSet<string> CollectUuidsNeedingForeignLanguageLookup(IReadOnlyList<ResolvedImportItem> resolved)
+        {
+            // Only uuids for importable rows requesting non-English.
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var r in resolved)
+            {
+                if (!r.IsImportable)
+                    continue;
+
+                var uuid = r.Uuid;
+                if (string.IsNullOrWhiteSpace(uuid))
+                    continue;
+
+                var lang = r.Language;
+
+                // Tier 2 only when requested language != English
+                if (!string.Equals(lang, "English", StringComparison.OrdinalIgnoreCase))
+                {
+                    set.Add(uuid);
+                }
+            }
+
+            return set;
+        }
+
+
     }
 }

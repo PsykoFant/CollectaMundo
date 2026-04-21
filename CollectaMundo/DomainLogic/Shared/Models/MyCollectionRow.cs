@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.DomainLogic.Shared
+﻿namespace CollectaMundo.DomainLogic.Shared.Models
 {
     public sealed class MyCollectionRow
     {

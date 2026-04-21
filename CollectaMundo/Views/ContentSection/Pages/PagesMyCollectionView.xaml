@@ -38,7 +38,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="Finish">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -46,7 +45,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="Language">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -54,15 +52,13 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="Location">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <sharedElements:RefreshColumnsComboBoxUserControl DataContext="{Binding LocationCombo}" />
+                                <sharedElements:RefreshColumnsLocationComboBoxUserControl DataContext="{Binding LocationCombo}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="Comment">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -71,7 +67,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -82,7 +77,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="Count">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -90,7 +84,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="-">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -101,7 +94,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -112,7 +104,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="Trade">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -120,7 +111,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
                     <GridViewColumn Header="-">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -220,7 +210,14 @@
                             <TextBlock Text="{Binding SelectedLocationDisplayName}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>                
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Comment" Width="*" SortMemberPath="Comment">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Comment}" TextWrapping="Wrap" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Count" Width="*" SortMemberPath="CardsOwned">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
