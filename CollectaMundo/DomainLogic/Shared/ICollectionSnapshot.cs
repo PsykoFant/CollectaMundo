@@ -8,5 +8,4 @@ namespace CollectaMundo.DomainLogic.Shared
         bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row);
         IReadOnlyCollection<MyCollectionRow> Rows { get; }
     }
-
 }

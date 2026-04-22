@@ -101,7 +101,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var keyedDataProviderService = new KeyedDataProviderService(dbFactory, new KeyedDataProviderRepo(), getRetailer);
                 var cardListService = new CardListService(dbFactory, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, new CardCoreAggregator());
                 var cardLocationLookupStore = new CardLocationLookupStore();
-                var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore);
+                var cardLocationService = new CardLocationService(dbFactory,new CardLocationRepo(),new CardLocationLogic(),cardLocationLookupStore,collectionMutationsLogic,collectionMutationsService);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
                 var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, settings));

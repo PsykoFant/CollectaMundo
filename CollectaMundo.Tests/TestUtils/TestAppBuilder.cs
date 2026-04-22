@@ -91,13 +91,14 @@ public static class TestAppBuilder
             keyedDataProviderService,
             new CardCoreAggregator());
 
-        var cardLocationLookupStore = new CardLocationLookupStore();
-        var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore);
-
         var collectionMutationsLogic = new CollectionMutationsLogic();
         var collectionMutationsRepo = new CollectionMutationsRepo();
         var collectionMutationsService = new CollectionMutationsService(collectionMutationsRepo);
         var collectionChangeSetApplier = new CollectionChangeSetApplier(collectionMutationsLogic);
+
+        var cardLocationLookupStore = new CardLocationLookupStore();
+        var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
+
 
         var modifyService = new ModifyCollectionService(
             dbFactory,

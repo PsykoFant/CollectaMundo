@@ -253,6 +253,7 @@ namespace CollectaMundo.ViewModels
             EditCardsVM.CollectionChanged += OnCollectionChanged;
             FilterVM.FilterChanged += OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged += OnLocationsChanged;
+            CardLocationVM.CollectionChanged += OnCollectionChanged;
         }
         private void UnsubscribeChildVmEvents()
         {
@@ -262,6 +263,7 @@ namespace CollectaMundo.ViewModels
             EditCardsVM.CollectionChanged -= OnCollectionChanged;
             FilterVM.FilterChanged -= OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged -= OnLocationsChanged;
+            CardLocationVM.CollectionChanged -= OnCollectionChanged;
         }
 
         #endregion

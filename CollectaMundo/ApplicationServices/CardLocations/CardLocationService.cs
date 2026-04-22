@@ -19,7 +19,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         private readonly ICardLocationRepo _cardLocationRepo = cardLocationRepo;
         private readonly ICardLocationLogic _cardLocationLogic = cardLocationLogic;
         private readonly ICardLocationLookupStore _cardLocationLookupStore = cardLocationLookupStore;
-        private readonly ICollectionMutationsLogic _muationsLogic = mutationsLogic;
+        private readonly ICollectionMutationsLogic _mutationsLogic = mutationsLogic;
         private readonly ICollectionMutationsService _mutationsService = mutationsService;
         public async Task<IReadOnlyList<CardLocation>> GetAllAsync()
         {
@@ -205,10 +205,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 var snapshotRows = await _cardLocationRepo.GetAllCollectionRowsAsync(uow.CurrentConnection);
                 var affectedRows = await _cardLocationRepo.GetCollectionRowsByLocationIdAsync(uow.CurrentConnection, id);
 
-                var snapshot = new CollectionSnapshot
-                {
-                    Rows = [.. snapshotRows]
-                };
+                var snapshot = CollectionSnapshot.FromRows(snapshotRows);
 
                 var editedCards = affectedRows
                     .Select(CreateCardWithClearedLocation)

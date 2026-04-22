@@ -12,7 +12,6 @@ namespace CollectaMundo.DomainLogic.Shared
             _byId = byId;
             _byIdentity = byIdentity;
         }
-
         public IReadOnlyCollection<MyCollectionRow> Rows => _byId.Values;
         public bool TryGetById(int cardId, out MyCollectionRow row) => _byId.TryGetValue(cardId, out row!);
         public bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row) => _byIdentity.TryGetValue(identity, out row!);
@@ -40,6 +39,19 @@ namespace CollectaMundo.DomainLogic.Shared
 
                 byId[cardId] = row;
                 byIdentity[identity] = row;
+            }
+
+            return new CollectionSnapshot(byId, byIdentity);
+        }
+        public static CollectionSnapshot FromRows(IEnumerable<MyCollectionRow> rows)
+        {
+            var byId = new Dictionary<int, MyCollectionRow>(capacity: 1024);
+            var byIdentity = new Dictionary<CollectionIdentity, MyCollectionRow>(capacity: 1024);
+
+            foreach (var row in rows)
+            {
+                byId[row.CardId] = row;
+                byIdentity[row.Identity] = row;
             }
 
             return new CollectionSnapshot(byId, byIdentity);

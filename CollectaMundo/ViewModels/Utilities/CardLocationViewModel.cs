@@ -1,6 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -10,6 +12,8 @@ namespace CollectaMundo.ViewModels.Utilities
     public partial class CardLocationViewModel : ObservableObject
     {
         private readonly ICardLocationService _cardLocationService;
+
+        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
         public CardLocationViewModel(ICardLocationService cardLocationService)
         {
             _cardLocationService = cardLocationService;
@@ -209,14 +213,15 @@ namespace CollectaMundo.ViewModels.Utilities
                 {
                     var result = await _cardLocationService.DeleteAsync(id);
 
-                    if (result.Code == OperationResultCode.Success)
+                    if (result.Result.Code == OperationResultCode.Success)
                     {
                         RemoveLocationFromCollection(id);
+                        CollectionChanged?.Invoke(this, result.CollectionChangeSet);
                         deletedCount++;
                     }
                     else
                     {
-                        failedMessages.Add(result.Message);
+                        failedMessages.Add(result.Result.Message);
                     }
                 }
 
