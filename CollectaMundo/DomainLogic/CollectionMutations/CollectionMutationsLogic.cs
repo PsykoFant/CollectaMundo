@@ -233,7 +233,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
                     if (index >= 0)
                     {
-                        collection[index] = incoming;
+                        collection[index] = MergeIntoExistingCard(collection[index], incoming);
                         continue;
                     }
                 }
@@ -242,6 +242,26 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             }
         }
 
+        private static CardSet MergeIntoExistingCard(CardSet existing, CardSet incoming)
+        {
+            // If incoming is already fully hydrated, use it directly. 
+            if (!string.IsNullOrWhiteSpace(incoming.Name) && incoming.Core is not null)
+            {
+                return incoming;
+            }
+
+            // Otherwise preserve existing rich/card-core fields and apply collection fields from incoming.
+            existing.CardId = incoming.CardId;
+            existing.CardsOwned = incoming.CardsOwned;
+            existing.CardsForTrade = incoming.CardsForTrade;
+            existing.SelectedCondition = incoming.SelectedCondition;
+            existing.Language = incoming.Language;
+            existing.SelectedFinish = incoming.SelectedFinish;
+            existing.SelectedLocationId = incoming.SelectedLocationId;
+            existing.Comment = incoming.Comment;
+
+            return existing;
+        }
 
         // Internal class used to track working state during PlanIdentityRewriteBatch
         private sealed class WorkingRow

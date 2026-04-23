@@ -235,21 +235,12 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                 _cardLocationLookupStore.Remove(id);
 
-                return new CardLocationDeleteResult(
-                    new OperationResult(
-                        OperationResultCode.Success,
-                        "Location deleted successfully."),
-                    plan.ChangeSet);
+                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Success,"Location deleted successfully."),plan.ChangeSet);
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync();
-
-                return new CardLocationDeleteResult(
-                    new OperationResult(
-                        OperationResultCode.Error,
-                        $"Failed to delete location: {ex.Message}"),
-                    new CollectionChangeSet<CardSet>());
+                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Error,$"Failed to delete location: {ex.Message}"),new CollectionChangeSet<CardSet>());
             }
         }
         private static CardLocation MapToDomain(CardLocationRecord record)
