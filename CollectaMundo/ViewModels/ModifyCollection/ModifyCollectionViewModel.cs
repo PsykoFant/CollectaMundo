@@ -59,8 +59,12 @@ namespace CollectaMundo.ViewModels
 
             RefreshColumnsTrigger++;
         }
-        public void ReconcileOpenRowsWithSnapshot(ICollectionSnapshot snapshot)
+        public void ReconcileOpenRowsWithCollection(IReadOnlyList<CardSet> collection)
         {
+            var currentById = collection
+                .Where(c => c.CardId.HasValue)
+                .ToDictionary(c => c.CardId!.Value);
+
             for (int i = CardsToAddOrEdit.Count - 1; i >= 0; i--)
             {
                 var row = CardsToAddOrEdit[i];
@@ -71,7 +75,7 @@ namespace CollectaMundo.ViewModels
                     continue;
                 }
 
-                if (!snapshot.TryGetById(cardId, out var current))
+                if (!currentById.TryGetValue(cardId, out var current))
                 {
                     CardsToAddOrEdit.RemoveAt(i);
                     continue;
@@ -79,11 +83,11 @@ namespace CollectaMundo.ViewModels
 
                 card.CardsOwned = current.CardsOwned;
                 card.CardsForTrade = current.CardsForTrade;
-                card.SelectedCondition = current.Identity.Condition;
-                card.Language = current.Identity.Language;
-                card.SelectedFinish = current.Identity.Finish;
-                card.SelectedLocationId = current.Identity.LocationId;
-                card.Comment = current.Identity.Comment;
+                card.SelectedCondition = current.SelectedCondition;
+                card.Language = current.Language;
+                card.SelectedFinish = current.SelectedFinish;
+                card.SelectedLocationId = current.SelectedLocationId;
+                card.Comment = current.Comment;
             }
 
             RefreshColumnsTrigger++;

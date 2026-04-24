@@ -324,12 +324,11 @@ namespace CollectaMundo.ViewModels
             // Apply add/update
             _collectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
 
-            // External collection mutations can make open add/edit rows stale. Reconcile existing draft rows against the updated collection snapshot:
+            // External collection mutations can make open add/edit rows stale. Reconcile draft rows against the updated in-memory collection:
             // - remove rows whose source CardId no longer exists
             // - refresh rows whose source CardId still exists
-            var snapshot = CollectionSnapshot.From(MyCollectionVM.Cards);
-            AddCardsVM.ReconcileOpenRowsWithSnapshot(snapshot);
-            EditCardsVM.ReconcileOpenRowsWithSnapshot(snapshot);
+            AddCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
+            EditCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
 
             // Reapply filters
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
