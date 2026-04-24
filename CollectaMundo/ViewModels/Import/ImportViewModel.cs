@@ -35,7 +35,7 @@ namespace CollectaMundo.ViewModels.Import
             Detail = new Progress<string>(v => ProgressDetailMessage = v),
             CancelEnabled = new Progress<bool>(_ => { })
         };
-        public event EventHandler<CollectionMutation>? CollectionMutationRequested; // To notify parent VM of collection changes
+        public event EventHandler<ImportCollectionUpsertResult>? CollectionMutationRequested; // To notify parent VM of collection changes
         public event EventHandler<string?>? CardImageSelectionRequested; // To notify parent VM to show card image for given UUID
 
         [ObservableProperty]

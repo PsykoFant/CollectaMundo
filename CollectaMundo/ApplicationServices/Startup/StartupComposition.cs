@@ -4,6 +4,7 @@ using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.CollectionMaterialization;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
@@ -88,8 +89,10 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var collectionMutationsLogic = new CollectionMutationsLogic();
                 var collectionMutationsRepo = new CollectionMutationsRepo();
-                var collectionMutationsService = new CollectionMutationsService(collectionMutationsRepo);
-                var collectionChangeSetApplier = new CollectionChangeSetApplier(collectionMutationsLogic);
+                var collectionMaterializer = new CollectionMaterializer();
+
+                var collectionMutationsService = new CollectionMutationsService(collectionMutationsRepo);                                
+                var collectionChangeSetApplier = new CollectionChangeSetApplier(collectionMaterializer);
 
                 var modifyService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService, collectionMutationsLogic);
                 var fileSystemPicker = new FileSystemPicker();
@@ -99,12 +102,12 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
 
                 var keyedDataProviderService = new KeyedDataProviderService(dbFactory, new KeyedDataProviderRepo(), getRetailer);
-                var cardListService = new CardListService(dbFactory, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, new CardCoreAggregator());
+                var cardListService = new CardListService(dbFactory, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, new CardCoreAggregator(), collectionMaterializer);
                 var cardLocationLookupStore = new CardLocationLookupStore();
                 var cardLocationService = new CardLocationService(dbFactory,new CardLocationRepo(),new CardLocationLogic(),cardLocationLookupStore,collectionMutationsLogic,collectionMutationsService);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 operationOverlayController.Hide();

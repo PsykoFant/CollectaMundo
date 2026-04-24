@@ -223,23 +223,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 
             return c;
         }
-        public static CardSet FromCoreWithCollection(CardCore core,int cardId,int cardsOwned,int cardsForTrade,string? condition,string? language,string? finish,int? locationId,string? comment)
-        {
-            var c = FromCore(core);
-
-            c.CardId = cardId;
-            c.CardsOwned = cardsOwned;
-            c.CardsForTrade = cardsForTrade;
-            c.SelectedCondition = condition;
-            c.Language = language ?? core.Language;
-            c.SelectedFinish = finish;
-            c.SelectedLocationId = locationId;
-            c.Comment = comment;
-
-            c.RecomputeCollectionPrice();
-
-            return c;
-        }
         public static CardSet FromManaKey(string key)
         {
             return new CardSet { ManaCostRaw = key };

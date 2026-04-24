@@ -59,6 +59,37 @@ namespace CollectaMundo.ViewModels
 
             RefreshColumnsTrigger++;
         }
+        public void ReconcileOpenRowsWithSnapshot(ICollectionSnapshot snapshot)
+        {
+            for (int i = CardsToAddOrEdit.Count - 1; i >= 0; i--)
+            {
+                var row = CardsToAddOrEdit[i];
+                var card = row.CardToAddOrEdit;
+
+                if (card.CardId is not int cardId)
+                {
+                    continue;
+                }
+
+                if (!snapshot.TryGetById(cardId, out var current))
+                {
+                    CardsToAddOrEdit.RemoveAt(i);
+                    continue;
+                }
+
+                card.CardsOwned = current.CardsOwned;
+                card.CardsForTrade = current.CardsForTrade;
+                card.SelectedCondition = current.Identity.Condition;
+                card.Language = current.Identity.Language;
+                card.SelectedFinish = current.Identity.Finish;
+                card.SelectedLocationId = current.Identity.LocationId;
+                card.Comment = current.Identity.Comment;
+            }
+
+            RefreshColumnsTrigger++;
+            OnPropertyChanged(nameof(IsCollectionEditVisible));
+            OnPropertyChanged(nameof(ShowCounts));
+        }
 
         [ObservableProperty]
         private string statusMessage = string.Empty;

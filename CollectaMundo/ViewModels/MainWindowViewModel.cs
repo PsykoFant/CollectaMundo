@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
+using CollectaMundo.ApplicationServices.CollectionMaterialization;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
@@ -43,6 +44,7 @@ namespace CollectaMundo.ViewModels
         // Card list / card collection management services
         private readonly IModifyCollectionService _modifyService;
         private readonly ICardListService _cardListService;
+        private readonly ICollectionMaterializer _collectionMaterializer;
         private readonly ICollectionChangeSetApplier _collectionChangeSetApplier;
         private readonly IImportService _importService;
         private readonly ICardLocationService _cardLocationService;
@@ -136,6 +138,7 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
+            ICollectionMaterializer collectionMaterializer,
             ICollectionChangeSetApplier collectionChangeSetApplier,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
@@ -148,6 +151,7 @@ namespace CollectaMundo.ViewModels
             _operationOverlayController = operationOverlayController;
             _filteringService = new FilteringService();
             _cardListService = cardListService;
+            _collectionMaterializer = collectionMaterializer;
             _collectionChangeSetApplier = collectionChangeSetApplier;
             _importService = importService;
             _cardLocationService = cardLocationService;
@@ -222,6 +226,7 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
+            ICollectionMaterializer collectionMaterializer,
             ICollectionChangeSetApplier collectionChangeSetApplier,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
@@ -230,7 +235,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
@@ -269,10 +274,39 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region event handlers (FilterChanged, CardChanged, CollectionChanged)
-        private void OnImportCollectionMutationRequested(object? sender, CollectionMutation mutation)
+        private void OnImportCollectionMutationRequested(object? sender, ImportCollectionUpsertResult mutation)
         {
-            var changeSet = _importService.BuildCollectionChangeSet(mutation, MyCollectionVM, AllCardsVM);
+            var changeSet = BuildCollectionChangeSetFromMutation(mutation);
             OnCollectionChanged(sender, changeSet);
+        }
+        private CollectionChangeSet<CardSet> BuildCollectionChangeSetFromMutation(ImportCollectionUpsertResult mutation)
+        {
+            var addedOrUpdated = new List<CardSet>();
+
+            var cardById = MyCollectionVM.Cards.Where(c => c.CardId.HasValue).ToDictionary(c => c.CardId!.Value);
+            var coreByUuid = AllCardsVM.Cards.Where(c => c.Core is not null).Select(c => c.Core!).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var row in mutation.UpsertedRows)
+            {
+                if (cardById.TryGetValue(row.CardId, out var existingCard))
+                {
+                    existingCard.CardsOwned += row.CardsOwned;
+                    existingCard.CardsForTrade += row.CardsForTrade;
+                    existingCard.RecomputeCollectionPrice();
+
+                    addedOrUpdated.Add(existingCard);
+                    continue;
+                }
+
+                var card = _collectionMaterializer.MaterializeFromRow(row, coreByUuid);
+                addedOrUpdated.Add(card);
+            }
+
+            return new CollectionChangeSet<CardSet>
+            {
+                RemovedIds = [],
+                AddedOrUpdated = addedOrUpdated
+            };
         }
         private void OnCardImageSelectionRequested(object? sender, string? uuid)
         {
@@ -289,6 +323,13 @@ namespace CollectaMundo.ViewModels
         {
             // Apply add/update
             _collectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
+
+            // External collection mutations can make open add/edit rows stale. Reconcile existing draft rows against the updated collection snapshot:
+            // - remove rows whose source CardId no longer exists
+            // - refresh rows whose source CardId still exists
+            var snapshot = CollectionSnapshot.From(MyCollectionVM.Cards);
+            AddCardsVM.ReconcileOpenRowsWithSnapshot(snapshot);
+            EditCardsVM.ReconcileOpenRowsWithSnapshot(snapshot);
 
             // Reapply filters
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);

@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.CollectionMaterialization;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
@@ -84,17 +85,20 @@ public static class TestAppBuilder
             new KeyedDataProviderRepo(),
             getRetailer);
 
+        var collectionMaterializer = new CollectionMaterializer();
+
         var cardListService = new CardListService(
             dbFactory,
             new CardListRepo(),
             new FilterDefaultsLogic(),
             keyedDataProviderService,
-            new CardCoreAggregator());
+            new CardCoreAggregator(),
+            collectionMaterializer);
 
         var collectionMutationsLogic = new CollectionMutationsLogic();
         var collectionMutationsRepo = new CollectionMutationsRepo();
         var collectionMutationsService = new CollectionMutationsService(collectionMutationsRepo);
-        var collectionChangeSetApplier = new CollectionChangeSetApplier(collectionMutationsLogic);
+        var collectionChangeSetApplier = new CollectionChangeSetApplier(collectionMaterializer);
 
         var cardLocationLookupStore = new CardLocationLookupStore();
         var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
@@ -133,6 +137,7 @@ public static class TestAppBuilder
             userPromptService,
             picker,
             cardListService,
+            collectionMaterializer,
             collectionChangeSetApplier,
             cardLocationService,
             cardLocationLookupStore,

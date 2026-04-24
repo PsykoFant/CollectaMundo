@@ -8,6 +8,7 @@ using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.Shared;
+using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.ModifyCollection
 {
@@ -49,23 +50,32 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         }
 
         // Submitting new cards or card edits
-        public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
+        public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards,ICollectionSnapshot snapshot)
         {
-            var isEdit = cards.Any(c => c.CardId != null);
-            var plan = _mutationsLogic.PlanIdentityRewriteBatch(cards, snapshot, isEdit);
-
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
             try
             {
-                await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
-                await uow.CommitAsync();
-                return plan.ChangeSet;
+                var cardList = cards.ToList();
+                var isEdit = cardList.Any(c => c.CardId != null);
+                var plan = _mutationsLogic.PlanIdentityRewriteBatch(cardList, snapshot, isEdit);
+
+                await using var uow = new UnitOfWork(_dbFactory);
+                await uow.BeginAsync();
+
+                try
+                {
+                    await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
+                    await uow.CommitAsync();
+                    return plan.ChangeSet;
+                }
+                catch
+                {
+                    await uow.RollbackAsync();
+                    throw;
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                await uow.RollbackAsync();
+                Debug.WriteLine($"[ModifyCollectionService.SubmitCardBatchAsync] {ex}");
                 throw;
             }
         }

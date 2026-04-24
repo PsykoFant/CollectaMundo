@@ -340,10 +340,6 @@ namespace CollectaMundo.ApplicationServices.Import
                 throw;
             }
         }
-        public CollectionChangeSet<CardSet> BuildCollectionChangeSet(CollectionMutation mutation, CardListViewModel myCollection, CardListViewModel allCards)
-        {
-            return _importLogic.BuildChangeSet(mutation, myCollection, allCards);
-        }
         public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {
             return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings, additionalFieldMappings, conditionMappings, finishMappings, languageMappings);
@@ -419,16 +415,12 @@ namespace CollectaMundo.ApplicationServices.Import
 
                 progress.Detail.Report("Import completed.");
 
-                // uild mutation from REAL rows
-                var mutation = new CollectionMutation
+                // build mutation from REAL rows
+                var mutation = new ImportCollectionUpsertResult
                 {
-                    // Import never deletes
-                    RemovedIds = [],
-
                     // Fully resolved rows (CardId + Identity + totals)
                     UpsertedRows = upsertedRows
                 };
-
 
                 Debug.WriteLine("[ImportResolvedItems] Finished upserting collapsed items ... ");
 
@@ -437,20 +429,14 @@ namespace CollectaMundo.ApplicationServices.Import
             catch (OperationCanceledException)
             {
                 await uow.RollbackAsync();
-                return new ImportExecutionResult(
-                    new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."),
-                    Mutation: null);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."),Mutation: null);
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync();
-                return new ImportExecutionResult(
-                    new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"),
-                    Mutation: null);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"),Mutation: null);
             }
         }
-
-
 
         // ----------------------------------------------------
         // Helpers

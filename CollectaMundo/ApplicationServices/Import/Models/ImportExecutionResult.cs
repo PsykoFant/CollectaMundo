@@ -2,5 +2,5 @@
 
 namespace CollectaMundo.ApplicationServices.Import.Models
 {
-    public sealed record ImportExecutionResult(OperationResult Result, CollectionMutation? Mutation);
+    public sealed record ImportExecutionResult(OperationResult Result, ImportCollectionUpsertResult? Mutation);
 }

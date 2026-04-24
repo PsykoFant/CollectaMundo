@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.KeyedDataProvider;
+﻿using CollectaMundo.ApplicationServices.CollectionMaterialization;
+using CollectaMundo.ApplicationServices.KeyedDataProvider;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -14,13 +15,14 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, IKeyedDataProviderService keyedDataProviderService, ICardCoreAggregator aggregator) : ICardListService
+    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, IKeyedDataProviderService keyedDataProviderService, ICardCoreAggregator aggregator, ICollectionMaterializer collectionMaterializer) : ICardListService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
+        private readonly ICollectionMaterializer _collectionMaterializer = collectionMaterializer;
         public async Task InitializeCardListsAsync(CardListViewModel allCardsVM, CardListViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork(_dbFactory);
@@ -87,23 +89,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
                 var myCollectionTask = Task.Run(() =>
                 {
-                    var myCollection = collectionRows
-                        .AsParallel()
-                        .Select(r => byUuid.TryGetValue(r.Identity.Uuid, out var core)
-                            ? CardSet.FromCoreWithCollection(
-                                core,
-                                r.CardId,
-                                r.CardsOwned,
-                                r.CardsForTrade,
-                                r.Identity.Condition,
-                                r.Identity.Language,
-                                r.Identity.Finish,
-                                r.Identity.LocationId,
-                                r.Identity.Comment)
-                            : null)
-                        .Where(c => c is not null)
-                        .Cast<CardSet>()
-                        .ToList();
+                    var myCollection = _collectionMaterializer.MaterializeRows(collectionRows, byUuid).ToList();
 
                     myCollectionVM.Cards = SortCards(myCollection);
                     myCollectionVM.FilteredCards = myCollectionVM.Cards;
