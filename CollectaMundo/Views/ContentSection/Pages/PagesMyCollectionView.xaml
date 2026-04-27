@@ -121,6 +121,15 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+                    <GridViewColumn Header="Split">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Split"
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.SplitOneRowOutCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                        CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>

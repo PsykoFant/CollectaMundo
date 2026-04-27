@@ -207,14 +207,9 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                 var snapshot = CollectionSnapshot.FromRows(snapshotRows);
 
-                var editedCards = affectedRows
-                    .Select(CreateCardWithClearedLocation)
-                    .ToList();
+                var editedCards = affectedRows.Select(CreateCardWithClearedLocation).ToList();
 
-                var plan = _mutationsLogic.PlanIdentityRewriteBatch(
-                    editedCards,
-                    snapshot,
-                    isEdit: true);
+                var plan = _mutationsLogic.PlanIdentityRewriteBatch(editedCards,snapshot);
 
                 await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
 
@@ -225,9 +220,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     await uow.RollbackAsync();
 
                     return new CardLocationDeleteResult(
-                        new OperationResult(
-                            OperationResultCode.NotFound,
-                            $"No location with id {id} was found."),
+                        new OperationResult(OperationResultCode.NotFound,$"No location with id {id} was found."),
                         new CollectionChangeSet<CardSet>());
                 }
 

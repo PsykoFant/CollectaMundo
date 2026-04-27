@@ -7,6 +7,6 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 {
     public interface ICollectionMutationsLogic
     {
-        CollectionMutationPlan PlanIdentityRewriteBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot, bool isEdit);
+        CollectionMutationPlan PlanIdentityRewriteBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot);
     }
 }

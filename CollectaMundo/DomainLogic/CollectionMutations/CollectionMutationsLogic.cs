@@ -8,10 +8,8 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 {
     public class CollectionMutationsLogic : ICollectionMutationsLogic
     {
-        public CollectionMutationPlan PlanIdentityRewriteBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot, bool isEdit)
+        public CollectionMutationPlan PlanIdentityRewriteBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
         {
-            Debug.WriteLine($"[PlanBatch] START isEdit={isEdit}");
-
             var plan = new CollectionMutationPlan();
             var removedIds = new HashSet<int>();
             var upsertsByIdentity = new Dictionary<CollectionIdentity, CardSet>();
@@ -24,21 +22,35 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
             foreach (var card in cards)
             {
-                if (isEdit && card.CardsOwned == 0)
+                var isExistingRow = card.CardId is not null;
+
+                if (isExistingRow && card.CardsOwned == 0)
                 {
                     PlanEditDelete(card, plan, removedIds, upsertsByIdentity, workingById, workingByIdentity);
                     continue;
                 }
 
-                var identity = CollectionIdentityFactory.Create(card.Uuid, card.SelectedCondition, card.Language, card.SelectedFinish, card.SelectedLocationId, card.Comment);
+                if (!isExistingRow && card.CardsOwned == 0)
+                {
+                    continue;
+                }
 
-                if (!isEdit)
+                var identity = CollectionIdentityFactory.Create(
+                    card.Uuid,
+                    card.SelectedCondition,
+                    card.Language,
+                    card.SelectedFinish,
+                    card.SelectedLocationId,
+                    card.Comment);
+
+                if (!isExistingRow)
                 {
                     PlanAdd(card, identity, updatesByCardId, plan, upsertsByIdentity, workingByIdentity);
                     continue;
                 }
 
                 PlanEdit(card, identity, updatesByCardId, plan, removedIds, upsertsByIdentity, workingById, workingByIdentity);
+
             }
 
             plan.Updates.Clear();

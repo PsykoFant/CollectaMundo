@@ -56,7 +56,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
             {
                 var cardList = cards.ToList();
                 var isEdit = cardList.Any(c => c.CardId != null);
-                var plan = _mutationsLogic.PlanIdentityRewriteBatch(cardList, snapshot, isEdit);
+                var plan = _mutationsLogic.PlanIdentityRewriteBatch(cardList, snapshot);
 
                 await using var uow = new UnitOfWork(_dbFactory);
                 await uow.BeginAsync();
@@ -102,7 +102,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                     prepared.Add(_logic.PrepareNewCardWithDefaults(raw, metadata));
                 }
 
-                var plan = _mutationsLogic.PlanIdentityRewriteBatch(prepared, snapshot, isEdit: false);
+                var plan = _mutationsLogic.PlanIdentityRewriteBatch(prepared, snapshot);
 
                 await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
                 await uow.CommitAsync();

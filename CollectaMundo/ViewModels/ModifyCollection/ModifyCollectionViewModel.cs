@@ -8,6 +8,7 @@ using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Text;
 
 namespace CollectaMundo.ViewModels
@@ -220,6 +221,23 @@ namespace CollectaMundo.ViewModels
             }
         }
 
+        [RelayCommand]
+        private void SplitOneRowOut(CardSetEditRowViewModel? row)
+        {
+            if (row is null || row.CardsOwned <= 1)
+            {
+                return;
+            }
+
+            row.CardsOwned--;
+
+            var splitCard = CreateSplitCard(row.CardToAddOrEdit);
+
+            CardsToAddOrEdit.Add(new CardSetEditRowViewModel(splitCard, _availableLocations, RefreshColumnsCommand));
+
+            RefreshColumnsTrigger++;
+        }
+
         // Submit cards from listview
         [RelayCommand]
         private async Task SubmitNewCardsAsync()
@@ -386,6 +404,34 @@ namespace CollectaMundo.ViewModels
             }
 
             return sb.ToString().TrimEnd();
+        }
+        private static CardSet CreateSplitCard(CardSet source)
+        {
+            if (source.Core is null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot split card '{source.Name}' because it has no hydrated Core.");
+            }
+
+            var split = CardSet.FromCore(source.Core);
+
+            split.CardId = null;
+            split.CardsOwned = 1;
+            split.CardsForTrade = 0;
+
+            // Copy edit metadata used by combo boxes
+            split.OtherLanguages = [.. source.OtherLanguages];
+            split.AvailableFinishes = [.. source.AvailableFinishes];
+
+            split.SelectedCondition = source.SelectedCondition;
+            split.Language = source.Language;
+            split.SelectedFinish = source.SelectedFinish;
+            split.SelectedLocationId = source.SelectedLocationId;
+            split.Comment = source.Comment;
+
+            split.RecomputeCollectionPrice();
+
+            return split;
         }
     }
 }
