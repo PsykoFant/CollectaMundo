@@ -224,17 +224,39 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private void SplitOneRowOut(CardSetEditRowViewModel? row)
         {
-            if (row is null || row.CardsOwned <= 1)
+            if (row is null)
             {
                 return;
             }
 
-            if (row.CardsOwned == row.CardsForTrade) 
+            SplitOneRowOutInternal(row);
+        }
+
+        [RelayCommand]
+        private void SplitAllRowsOut(CardSetEditRowViewModel? row)
+        {
+            if (row is null)
+            {
+                return;
+            }
+
+            while (row.CardsOwned > 1)
+            {
+                SplitOneRowOutInternal(row);
+            }
+        }
+        private void SplitOneRowOutInternal(CardSetEditRowViewModel row)
+        {
+            if (row.CardsOwned <= 1)
+            {
+                return;
+            }
+
+            if (row.CardsOwned == row.CardsForTrade)
             {
                 row.CardsForTrade--;
             }
 
-            // Decrease owned after split
             row.CardsOwned--;
 
             var splitCard = CreateSplitCard(row.CardToAddOrEdit);

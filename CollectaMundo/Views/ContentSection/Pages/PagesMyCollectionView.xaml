@@ -131,6 +131,16 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+                    <GridViewColumn Header="Split all">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="  Split all rows out  "
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.SplitAllRowsOutCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding CanSplit}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>
