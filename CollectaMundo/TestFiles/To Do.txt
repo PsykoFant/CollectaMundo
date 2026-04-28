@@ -1,9 +1,10 @@
 TO DO 
-- MVVM refactor
-    - xaml oprydning
-     - BUG: Resume når man sletter kort ved at sætte dem til nul
-     - BUG: Adding with default values doesn't clear/hide cards to add list view
-    - CardCoreDto skal ud af infrastruktur laget
+Kolonne-bredde i my collection bug
+Tilføj sæt ingen locaton
+Højre-klik tilføj location
+Tilføj kommentar/location til scenarie-test
+Tilføj kommentar/location til import
+Tilføj kommentar/location til import scenarie-test
 
 Deck editor!
     

@@ -806,5 +806,74 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Empty(plan.ChangeSet.RemovedIds);
             Assert.Equal(2, plan.ChangeSet.AddedOrUpdated.Count);
         }
+        [Fact]
+        public void PlanIdentityRewriteBatch_NewRowThenExistingRowEditedToSameIdentity_MergesIntoExistingRow()
+        {
+            var originalIdentity = new CollectionIdentity(
+                "foo-uuid",
+                "Excellent",
+                "English",
+                "nonfoil",
+                null,
+                null);
+
+            var targetIdentity = new CollectionIdentity(
+                "foo-uuid",
+                "Near Mint",
+                "English",
+                "nonfoil",
+                null,
+                null);
+
+            var snapshot = new TestSnapshot(
+                rows:
+                [
+                    new MyCollectionRow
+            {
+                CardId = 100,
+                Identity = originalIdentity,
+                CardsOwned = 2,
+                CardsForTrade = 0
+            }
+                ]);
+
+            var logic = new CollectionMutationsLogic();
+
+            var newRow = new CardSet
+            {
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                CardsOwned = 1,
+                CardsForTrade = 0
+            };
+
+            var editedExisting = new CardSet
+            {
+                CardId = 100,
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                CardsOwned = 2,
+                CardsForTrade = 0
+            };
+
+            var plan = logic.PlanIdentityRewriteBatch([newRow, editedExisting], snapshot);
+
+            Assert.Empty(plan.DeleteIds);
+            Assert.Empty(plan.Inserts);
+
+            var update = Assert.Single(plan.Updates);
+            Assert.Equal(100, update.CardId);
+            Assert.Equal(targetIdentity, update.Identity);
+            Assert.Equal(3, update.CardsOwned);
+            Assert.Equal(0, update.CardsForTrade);
+
+            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
+            Assert.Equal(100, survivor.CardId);
+            Assert.Equal(3, survivor.CardsOwned);
+        }
     }
 }
