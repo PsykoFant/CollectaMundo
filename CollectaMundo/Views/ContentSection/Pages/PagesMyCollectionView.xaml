@@ -124,9 +124,10 @@
                     <GridViewColumn Header="Split">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Split"
+                                <Button Content="  Split 1 row out  "
                                         Command="{Binding DataContext.ModifyCollectionViewModel.SplitOneRowOutCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                        CommandParameter="{Binding}" />
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding CanSplit}" Margin="5,0,5,0" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

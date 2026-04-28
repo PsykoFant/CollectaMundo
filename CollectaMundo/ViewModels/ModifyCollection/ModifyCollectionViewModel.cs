@@ -229,6 +229,12 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
+            if (row.CardsOwned == row.CardsForTrade) 
+            {
+                row.CardsForTrade--;
+            }
+
+            // Decrease owned after split
             row.CardsOwned--;
 
             var splitCard = CreateSplitCard(row.CardToAddOrEdit);
@@ -409,15 +415,15 @@ namespace CollectaMundo.ViewModels
         {
             if (source.Core is null)
             {
-                throw new InvalidOperationException(
-                    $"Cannot split card '{source.Name}' because it has no hydrated Core.");
+                throw new InvalidOperationException($"Cannot split card '{source.Name}' because it has no hydrated Core.");
             }
 
             var split = CardSet.FromCore(source.Core);
 
             split.CardId = null;
             split.CardsOwned = 1;
-            split.CardsForTrade = 0;
+
+            split.CardsForTrade = source.CardsOwned > source.CardsForTrade ? 0 : 1;
 
             // Copy edit metadata used by combo boxes
             split.OtherLanguages = [.. source.OtherLanguages];

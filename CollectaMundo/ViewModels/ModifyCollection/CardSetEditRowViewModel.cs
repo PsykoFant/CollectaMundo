@@ -9,6 +9,7 @@ namespace CollectaMundo.ViewModels.ModifyCollection;
 public sealed partial class CardSetEditRowViewModel : ObservableObject
 {
     public CardSet CardToAddOrEdit { get; }
+    public bool CanSplit => CardsOwned > 1;
 
     // Bindable properties for the combo boxes
     public ComboBindingViewModel ConditionCombo { get; }
@@ -116,6 +117,7 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
             }
 
             Owned.NotifyValueChanged();
+            OnPropertyChanged(nameof(CanSplit));
 
             if (CardsForTrade > CardsOwned)
             {
