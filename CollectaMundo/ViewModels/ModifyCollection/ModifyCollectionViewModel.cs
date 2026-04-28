@@ -8,7 +8,6 @@ using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Text;
 
 namespace CollectaMundo.ViewModels
@@ -109,31 +108,15 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task AddSelectedCards(object param)
         {
-            if (param is not IEnumerable<object> selectedItems)
-            {
-                return;
-            }
-
-            StatusMessage = string.Empty;
-
-            foreach (var selected in selectedItems.OfType<CardSet>())
-            {
-                // service now returns a CardSet ready for editing (clone/defaults applied)
-                var editable = await _service.CreateCardForAddAsync(selected);
-                if (editable is null)
-                {
-                    continue;
-                }
-
-                CardsToAddOrEdit.Add(new CardSetEditRowViewModel(editable, _availableLocations, RefreshColumnsCommand));
-            }
-
-            ClearSelectionTrigger++;
-            RefreshColumnsTrigger++;
+            await AddSelectedCardToListViewInternal(param, isEdit: false);
         }
 
         [RelayCommand]
         private async Task EditSelectedCards(object param)
+        {
+            await AddSelectedCardToListViewInternal(param, isEdit: true);
+        }
+        private async Task AddSelectedCardToListViewInternal(object param, bool isEdit)
         {
             if (param is not IEnumerable<object> selectedItems)
             {
@@ -142,9 +125,16 @@ namespace CollectaMundo.ViewModels
 
             StatusMessage = string.Empty;
 
+            var existingEditCardIds = CardsToAddOrEdit.Select(r => r.CardToAddOrEdit.CardId).Where(id => id.HasValue).Select(id => id!.Value).ToHashSet();
+
             foreach (var selected in selectedItems.OfType<CardSet>())
             {
-                var editable = await _service.CreateCardForEditAsync(selected);
+                if (isEdit && selected.CardId is int cardId && existingEditCardIds.Contains(cardId))
+                {
+                    continue;
+                }
+
+                var editable = await _service.CreateCardForListAsync(selected, isEdit);
                 if (editable is null)
                 {
                     continue;

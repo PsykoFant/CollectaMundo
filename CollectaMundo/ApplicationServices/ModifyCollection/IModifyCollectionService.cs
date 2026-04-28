@@ -6,8 +6,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
 {
     public interface IModifyCollectionService
     {
-        Task<CardSet> CreateCardForAddAsync(CardSet selectedCard);
-        Task<CardSet> CreateCardForEditAsync(CardSet selectedCard);
+        Task<CardSet> CreateCardForListAsync(CardSet selectedCard, bool isEdit);
         Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot);
         Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot);
     }

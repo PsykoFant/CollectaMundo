@@ -5,7 +5,7 @@ using CollectaMundo.DomainLogic.Shared.Models;
 
 namespace CollectaMundo.Tests.UnitTests
 {
-    public class ModifyCollectionLogicTests
+    public class CollectionMutationsLogicTests
     {
         // Snapshot stub for unit tests: represents an empty in-memory collection.
         private sealed class EmptySnapshot : ICollectionSnapshot
@@ -39,7 +39,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public void PlanBatch_AddNewCard_WhenNotExisting_SchedulesInsert()
+        public void PlanIdentityRewriteBatch_NewRow_WhenIdentityMissing_SchedulesInsert()
         {
             // Arrange: snapshot contains nothing (no existing identity)
             var snapshot = new EmptySnapshot();
@@ -57,7 +57,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanIdentityRewriteBatch([newCard], snapshot, isEdit: false);
+            var plan = logic.PlanIdentityRewriteBatch([newCard], snapshot);
 
             // Assert: Insert scheduled
             Assert.Empty(plan.DeleteIds);
@@ -87,7 +87,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public void PlanBatch_AddNewCard_AddsToExisting()
+        public void PlanIdentityRewriteBatch_AddNewCard_AddsToExisting()
         {
             // Arrange: snapshot contains an existing matching identity
             var existingIdentity = new CollectionIdentity(
@@ -125,8 +125,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Act
             var plan = logic.PlanIdentityRewriteBatch(
                 [newCard],
-                snapshot,
-                isEdit: false);
+                snapshot);
 
             // Assert: no deletes, no inserts
             Assert.Empty(plan.DeleteIds);
@@ -157,7 +156,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public void PlanBatch_EditCard_DeleteByZero()
+        public void PlanIdentityRewriteBatch_EditCard_DeleteByZero()
         {
             // Arrange: snapshot contains the existing card
             var existingIdentity = new CollectionIdentity(
@@ -198,8 +197,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Act
             var plan = logic.PlanIdentityRewriteBatch(
                 [card],
-                snapshot,
-                isEdit: true);
+                snapshot);
 
             // Assert: delete scheduled
             var deletedId = Assert.Single(plan.DeleteIds);
@@ -217,7 +215,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public void PlanBatch_EditCard_Update_NoMerge()
+        public void PlanIdentityRewriteBatch_EditCard_Update_NoMerge()
         {
             // Arrange: snapshot contains the original row with the same identity
             var identity = new CollectionIdentity(
@@ -252,7 +250,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanIdentityRewriteBatch([card], snapshot, isEdit: true);
+            var plan = logic.PlanIdentityRewriteBatch([card], snapshot);
 
             // Assert: no deletes, no inserts
             Assert.Empty(plan.DeleteIds);
@@ -282,7 +280,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public void PlanBatch_EditCard_Update_Merge()
+        public void PlanIdentityRewriteBatch_EditCard_Update_Merge()
         {
             // Arrange
             var survivorIdentity = new CollectionIdentity(
@@ -338,7 +336,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanIdentityRewriteBatch([editedCard], snapshot, isEdit: true);
+            var plan = logic.PlanIdentityRewriteBatch([editedCard], snapshot);
 
             // Assert: DELETE current row
             var deletedId = Assert.Single(plan.DeleteIds);
@@ -373,7 +371,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public void PlanBatch_EditCard_Merge_UsesOnlySurvivorTotals()
+        public void PlanIdentityRewriteBatch_EditCard_Merge_UsesOnlySurvivorTotals()
         {
             // Arrange
             var identity = new CollectionIdentity(
@@ -429,7 +427,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanIdentityRewriteBatch([editedCard], snapshot, isEdit: true);
+            var plan = logic.PlanIdentityRewriteBatch([editedCard], snapshot);
 
             // Assert: current row deleted
             var deletedId = Assert.Single(plan.DeleteIds);
@@ -456,7 +454,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public void PlanBatch_EditTwoCards_ToSameTargetIdentity_MergesIntoSingleSurvivor()
+        public void PlanIdentityRewriteBatch_EditTwoCards_ToSameTargetIdentity_MergesIntoSingleSurvivor()
         {
             // Arrange
             var targetIdentity = new CollectionIdentity(
@@ -521,7 +519,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanIdentityRewriteBatch([editedA, editedB], snapshot, isEdit: true);
+            var plan = logic.PlanIdentityRewriteBatch([editedA, editedB], snapshot);
 
             // Assert: one row survives, the other is deleted
             var deletedId = Assert.Single(plan.DeleteIds);
@@ -547,6 +545,266 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal("nonfoil", survivor.SelectedFinish);
             Assert.Equal(5, survivor.CardsOwned);
             Assert.Equal(2, survivor.CardsForTrade);
+        }
+
+        [Fact]
+        public void PlanIdentityRewriteBatch_TwoNewRowsSameIdentity_CollapsesToSingleInsert()
+        {
+            var snapshot = new EmptySnapshot();
+            var logic = new CollectionMutationsLogic();
+
+            var cardA = new CardSet
+            {
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                CardsOwned = 1,
+                CardsForTrade = 0
+            };
+
+            var cardB = new CardSet
+            {
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                CardsOwned = 2,
+                CardsForTrade = 1
+            };
+
+            var plan = logic.PlanIdentityRewriteBatch([cardA, cardB], snapshot);
+
+            Assert.Empty(plan.DeleteIds);
+            Assert.Empty(plan.Updates);
+
+            var insert = Assert.Single(plan.Inserts);
+            Assert.Equal("foo-uuid", insert.Identity.Uuid);
+            Assert.Equal("Near Mint", insert.Identity.Condition);
+            Assert.Equal("English", insert.Identity.Language);
+            Assert.Equal("nonfoil", insert.Identity.Finish);
+            Assert.Null(insert.Identity.LocationId);
+            Assert.Null(insert.Identity.Comment);
+
+            Assert.Equal(3, insert.CardsOwned);
+            Assert.Equal(1, insert.CardsForTrade);
+
+            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
+            Assert.Equal(3, survivor.CardsOwned);
+            Assert.Equal(1, survivor.CardsForTrade);
+        }
+        [Fact]
+        public void PlanIdentityRewriteBatch_NewRowsSameCardDifferentComment_CreatesSeparateInserts()
+        {
+            var snapshot = new EmptySnapshot();
+            var logic = new CollectionMutationsLogic();
+
+            var cardA = new CardSet
+            {
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                Comment = "signed",
+                CardsOwned = 1,
+                CardsForTrade = 0
+            };
+
+            var cardB = new CardSet
+            {
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                Comment = "altered",
+                CardsOwned = 1,
+                CardsForTrade = 0
+            };
+
+            var plan = logic.PlanIdentityRewriteBatch([cardA, cardB], snapshot);
+
+            Assert.Empty(plan.DeleteIds);
+            Assert.Empty(plan.Updates);
+            Assert.Equal(2, plan.Inserts.Count);
+
+            Assert.Contains(plan.Inserts, x => x.Identity.Comment == "signed");
+            Assert.Contains(plan.Inserts, x => x.Identity.Comment == "altered");
+
+            Assert.Equal(2, plan.ChangeSet.AddedOrUpdated.Count);
+        }
+        [Fact]
+        public void PlanIdentityRewriteBatch_NewRowsSameCardDifferentLocation_CreatesSeparateInserts()
+        {
+            var snapshot = new EmptySnapshot();
+            var logic = new CollectionMutationsLogic();
+
+            var cardA = new CardSet
+            {
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                SelectedLocationId = 10,
+                CardsOwned = 1,
+                CardsForTrade = 0
+            };
+
+            var cardB = new CardSet
+            {
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                SelectedLocationId = 20,
+                CardsOwned = 1,
+                CardsForTrade = 0
+            };
+
+            var plan = logic.PlanIdentityRewriteBatch([cardA, cardB], snapshot);
+
+            Assert.Empty(plan.DeleteIds);
+            Assert.Empty(plan.Updates);
+            Assert.Equal(2, plan.Inserts.Count);
+
+            Assert.Contains(plan.Inserts, x => x.Identity.LocationId == 10);
+            Assert.Contains(plan.Inserts, x => x.Identity.LocationId == 20);
+
+            Assert.Equal(2, plan.ChangeSet.AddedOrUpdated.Count);
+        }
+        [Fact]
+        public void PlanIdentityRewriteBatch_ExistingRowLocationClearedToNull_WhenNullIdentityExists_Merges()
+        {
+            var nullLocationIdentity = new CollectionIdentity(
+                "foo-uuid",
+                "Near Mint",
+                "English",
+                "nonfoil",
+                null,
+                null);
+
+            var locatedIdentity = new CollectionIdentity(
+                "foo-uuid",
+                "Near Mint",
+                "English",
+                "nonfoil",
+                10,
+                null);
+
+            var snapshot = new TestSnapshot(
+                rows:
+                [
+                    new MyCollectionRow
+            {
+                CardId = 100,
+                Identity = nullLocationIdentity,
+                CardsOwned = 2,
+                CardsForTrade = 1
+            },
+            new MyCollectionRow
+            {
+                CardId = 200,
+                Identity = locatedIdentity,
+                CardsOwned = 3,
+                CardsForTrade = 1
+            }
+                ]);
+
+            var logic = new CollectionMutationsLogic();
+
+            var editedCard = new CardSet
+            {
+                CardId = 200,
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                SelectedLocationId = null,
+                CardsOwned = 3,
+                CardsForTrade = 1
+            };
+
+            var plan = logic.PlanIdentityRewriteBatch([editedCard], snapshot);
+
+            Assert.Equal([200], plan.DeleteIds);
+            Assert.Empty(plan.Inserts);
+
+            var update = Assert.Single(plan.Updates);
+            Assert.Equal(100, update.CardId);
+            Assert.Equal(nullLocationIdentity, update.Identity);
+            Assert.Equal(5, update.CardsOwned);
+            Assert.Equal(2, update.CardsForTrade);
+
+            Assert.Equal([200], plan.ChangeSet.RemovedIds);
+
+            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
+            Assert.Equal(100, survivor.CardId);
+            Assert.Null(survivor.SelectedLocationId);
+            Assert.Equal(5, survivor.CardsOwned);
+            Assert.Equal(2, survivor.CardsForTrade);
+        }
+        [Fact]
+        public void PlanIdentityRewriteBatch_MixedExistingAndNewRows_CanUpdateAndInsertInSameBatch()
+        {
+            var existingIdentity = new CollectionIdentity(
+                "existing-uuid",
+                "Near Mint",
+                "English",
+                "nonfoil",
+                null,
+                null);
+
+            var snapshot = new TestSnapshot(
+                rows:
+                [
+                    new MyCollectionRow
+            {
+                CardId = 100,
+                Identity = existingIdentity,
+                CardsOwned = 2,
+                CardsForTrade = 0
+            }
+                ]);
+
+            var logic = new CollectionMutationsLogic();
+
+            var existingEdit = new CardSet
+            {
+                CardId = 100,
+                Uuid = "existing-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                CardsOwned = 3,
+                CardsForTrade = 1
+            };
+
+            var newSplitRow = new CardSet
+            {
+                CardId = null,
+                Uuid = "new-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "English",
+                CardsOwned = 1,
+                CardsForTrade = 0
+            };
+
+            var plan = logic.PlanIdentityRewriteBatch([existingEdit, newSplitRow], snapshot);
+
+            Assert.Empty(plan.DeleteIds);
+
+            var update = Assert.Single(plan.Updates);
+            Assert.Equal(100, update.CardId);
+            Assert.Equal(3, update.CardsOwned);
+            Assert.Equal(1, update.CardsForTrade);
+
+            var insert = Assert.Single(plan.Inserts);
+            Assert.Equal("new-uuid", insert.Identity.Uuid);
+            Assert.Equal(1, insert.CardsOwned);
+            Assert.Equal(0, insert.CardsForTrade);
+
+            Assert.Empty(plan.ChangeSet.RemovedIds);
+            Assert.Equal(2, plan.ChangeSet.AddedOrUpdated.Count);
         }
     }
 }

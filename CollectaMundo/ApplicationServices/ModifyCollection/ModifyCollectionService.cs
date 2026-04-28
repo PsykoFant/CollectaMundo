@@ -19,9 +19,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         private readonly IModifyCollectionRepo _repo = repo;
         private readonly ICollectionMutationsLogic _mutationsLogic = mutationsLogic;
         private readonly ICollectionMutationsService _mutationsService = mutationsService;
-        public Task<CardSet> CreateCardForAddAsync(CardSet selectedCard) => CreateCardForListAsync(selectedCard, isEdit: false);
-        public Task<CardSet> CreateCardForEditAsync(CardSet selectedCard) => CreateCardForListAsync(selectedCard, isEdit: true);
-        private async Task<CardSet> CreateCardForListAsync(CardSet selectedCard, bool isEdit)
+        public async Task<CardSet> CreateCardForListAsync(CardSet selectedCard, bool isEdit)
         {
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
@@ -50,7 +48,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         }
 
         // Submitting new cards or card edits
-        public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards,ICollectionSnapshot snapshot)
+        public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
         {
             try
             {

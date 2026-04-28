@@ -274,7 +274,7 @@
             <DataGrid.ContextMenu>
                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                     <MenuItem Header="Edit selected card(s)" Style="{StaticResource BelerenBold}"
-                                          Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
+                                          Command="{Binding ModifyCollectionViewModel.EditSelectedCardsCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                     <MenuItem Header="UPDATE selected card(s) - put ALL for TRADE" Style="{StaticResource BelerenBold}"
                                           Command="{Binding ModifyCollectionViewModel.PutAllForTradeCommand}"

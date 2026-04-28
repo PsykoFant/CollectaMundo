@@ -17,6 +17,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
             var workingById = new Dictionary<int, WorkingRow>();
             var workingByIdentity = new Dictionary<CollectionIdentity, WorkingRow>();
+            var insertsByIdentity = new Dictionary<CollectionIdentity, InsertCommand>();
 
             SeedWorkingState(snapshot, workingById, workingByIdentity);
 
@@ -35,17 +36,11 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                     continue;
                 }
 
-                var identity = CollectionIdentityFactory.Create(
-                    card.Uuid,
-                    card.SelectedCondition,
-                    card.Language,
-                    card.SelectedFinish,
-                    card.SelectedLocationId,
-                    card.Comment);
+                var identity = CollectionIdentityFactory.Create(card.Uuid, card.SelectedCondition, card.Language, card.SelectedFinish, card.SelectedLocationId, card.Comment);
 
                 if (!isExistingRow)
                 {
-                    PlanAdd(card, identity, updatesByCardId, plan, upsertsByIdentity, workingByIdentity);
+                    PlanAdd(card, identity, updatesByCardId, plan, upsertsByIdentity, workingByIdentity, insertsByIdentity);
                     continue;
                 }
 
@@ -84,26 +79,62 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 workingByIdentity[working.Identity] = working;
             }
         }
-        private static void PlanAdd(CardSet card, CollectionIdentity identity, Dictionary<int, UpdateCommand> updatesByCardId, CollectionMutationPlan plan, Dictionary<CollectionIdentity, CardSet> upsertsByIdentity, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        private static void PlanAdd(CardSet card, CollectionIdentity identity, Dictionary<int, UpdateCommand> updatesByCardId, CollectionMutationPlan plan, Dictionary<CollectionIdentity, CardSet> upsertsByIdentity, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity, Dictionary<CollectionIdentity, InsertCommand> insertsByIdentity)
         {
-            if (!workingByIdentity.TryGetValue(identity, out var existing))
+            if (insertsByIdentity.TryGetValue(identity, out var existingInsert))
             {
-                plan.Inserts.Add(new InsertCommand(identity, card.CardsOwned, card.CardsForTrade, card));
+                var mergedOwned = existingInsert.CardsOwned + card.CardsOwned;
+                var mergedTrade = existingInsert.CardsForTrade + card.CardsForTrade;
+
+                var replacement = new InsertCommand(
+                    identity,
+                    mergedOwned,
+                    mergedTrade,
+                    card);
+
+                var index = plan.Inserts.IndexOf(existingInsert);
+                if (index < 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Planned insert for identity '{identity}' was tracked but not found in plan.");
+                }
+
+                plan.Inserts[index] = replacement;
+                insertsByIdentity[identity] = replacement;
+
+                card.CardsOwned = mergedOwned;
+                card.CardsForTrade = mergedTrade;
+
                 upsertsByIdentity[identity] = card;
                 return;
             }
 
-            var mergedOwned = existing.CardsOwned + card.CardsOwned;
-            var mergedTrade = existing.CardsForTrade + card.CardsForTrade;
+            if (workingByIdentity.TryGetValue(identity, out var existing))
+            {
+                var mergedOwned = existing.CardsOwned + card.CardsOwned;
+                var mergedTrade = existing.CardsForTrade + card.CardsForTrade;
 
-            SetUpdate(updatesByCardId, existing.CardId, identity, mergedOwned, mergedTrade);
+                SetUpdate(updatesByCardId, existing.CardId, identity, mergedOwned, mergedTrade);
 
-            existing.CardsOwned = mergedOwned;
-            existing.CardsForTrade = mergedTrade;
+                existing.CardsOwned = mergedOwned;
+                existing.CardsForTrade = mergedTrade;
 
-            card.CardId = existing.CardId;
-            card.CardsOwned = mergedOwned;
-            card.CardsForTrade = mergedTrade;
+                card.CardId = existing.CardId;
+                card.CardsOwned = mergedOwned;
+                card.CardsForTrade = mergedTrade;
+
+                upsertsByIdentity[identity] = card;
+                return;
+            }
+
+            var insert = new InsertCommand(
+                identity,
+                card.CardsOwned,
+                card.CardsForTrade,
+                card);
+
+            plan.Inserts.Add(insert);
+            insertsByIdentity[identity] = insert;
 
             upsertsByIdentity[identity] = card;
         }
