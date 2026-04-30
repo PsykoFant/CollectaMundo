@@ -25,18 +25,21 @@ namespace CollectaMundo.ViewModels
         public bool ShowCounts => !HasStatus;
         public bool IsCollectionEditVisible => CardsToAddOrEdit.Count != 0 && !HasStatus;
         public IReadOnlyList<CardLocation> AvailableLocations => _availableLocations;
+
+        // Contstructor
         public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost cardCollectionHost, bool removeCardWhenZero)
         {
             _cardCollectionHost = cardCollectionHost;
             _service = service;
             _removeCardWhenZero = removeCardWhenZero;
 
-
             CardsToAddOrEdit.CollectionChanged += (_, _) =>
             {
                 OnPropertyChanged(nameof(IsCollectionEditVisible));
                 OnPropertyChanged(nameof(ShowCounts));
             };
+
+            RefreshColumnsTrigger++;
         }
         partial void OnStatusMessageChanged(string? oldValue, string newValue)
         {

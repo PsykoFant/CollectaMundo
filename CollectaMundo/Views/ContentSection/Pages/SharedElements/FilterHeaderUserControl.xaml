@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:vm="clr-namespace:CollectaMundo.ViewModels"
+             xmlns:vm="clr-namespace:CollectaMundo.ViewModels.Filtering"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              mc:Ignorable="d"
@@ -21,7 +21,6 @@
 
         <ComboBox Grid.Column="1"
                   Margin="4,0,4,0"
-                  MinWidth="60"
                   ItemsSource="{Binding FilteredOptions}"
                   Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                   DisplayMemberPath="OptionName"
