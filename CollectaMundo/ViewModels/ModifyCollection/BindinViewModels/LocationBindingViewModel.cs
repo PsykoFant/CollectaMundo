@@ -12,31 +12,19 @@ namespace CollectaMundo.ViewModels.ModifyCollection.BindinViewModels
 {
     public sealed class LocationBindingViewModel(IReadOnlyList<CardLocation> items, Func<int?> getSelectedLocationId, Action<int?> setSelectedLocationId, ICommand refreshCommand) : ObservableObject
     {
-        private IReadOnlyList<CardLocation> _items = items;
+        private IReadOnlyList<LocationOption> _items = BuildOptions(items);
         private readonly Func<int?> _getSelectedLocationId = getSelectedLocationId;
         private readonly Action<int?> _setSelectedLocationId = setSelectedLocationId;
         private bool _isReplacingItems;
-        public IReadOnlyList<CardLocation> Items
-        {
-            get => _items;
-            private set
-            {
-                if (ReferenceEquals(_items, value))
-                {
-                    return;
-                }
-
-                _items = value;
-                OnPropertyChanged();
-            }
-        }
+        public IReadOnlyList<LocationOption> Items => _items; // Bound to xaml ComboBox
         public ICommand RefreshCommand { get; } = refreshCommand;
-        public string DisplayMemberPath => nameof(CardLocation.DisplayName);
         public int? SelectedLocationId
         {
             get => _getSelectedLocationId();
             set
             {
+                // During ItemsSource replacement, WPF may briefly push null.
+                // Ignore that transient write unless null is explicitly selected by the user.
                 if (_isReplacingItems && value is null)
                 {
                     return;
@@ -57,13 +45,18 @@ namespace CollectaMundo.ViewModels.ModifyCollection.BindinViewModels
 
             try
             {
-                Items = items;
+                _items = BuildOptions(items);
+                OnPropertyChanged(nameof(Items));
                 OnPropertyChanged(nameof(SelectedLocationId));
             }
             finally
             {
                 _isReplacingItems = false;
             }
+        }
+        private static IReadOnlyList<LocationOption> BuildOptions(IReadOnlyList<CardLocation> locations)
+        {
+            return [LocationOption.None, .. locations.Select(LocationOption.From)];
         }
     }
 }

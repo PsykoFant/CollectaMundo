@@ -1,6 +1,5 @@
 TO DO 
-Kolonne-bredde i my collection bug
-Tilføj sæt ingen locaton
+
 Højre-klik tilføj location
 Tilføj kommentar/location til scenarie-test
 Filter på kommentar/location

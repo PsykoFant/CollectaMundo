@@ -13,7 +13,7 @@
     <ComboBox ItemsSource="{Binding Items}"
           SelectedValue="{Binding SelectedLocationId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
           SelectedValuePath="Id"
-          DisplayMemberPath="{Binding DisplayMemberPath}"
+          DisplayMemberPath="DisplayName"
           MinWidth="60">
 
         <i:Interaction.Triggers>
