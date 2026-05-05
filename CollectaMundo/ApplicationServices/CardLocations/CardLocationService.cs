@@ -61,19 +61,11 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                 string dbType = MapTypeToDb(type);
 
-                int newId = await _cardLocationRepo.InsertAsync(
-                    uow.CurrentConnection,
-                    normalizedName,
-                    dbType);
+                int newId = await _cardLocationRepo.InsertAsync(uow.CurrentConnection, normalizedName, dbType);
 
                 await uow.CommitAsync();
 
-                var createdLocation = new CardLocation
-                {
-                    Id = newId,
-                    Name = normalizedName,
-                    Type = type
-                };
+                var createdLocation = new CardLocation { Id = newId, Name = normalizedName, Type = type };
 
                 _cardLocationLookupStore.Upsert(createdLocation);
 
@@ -209,7 +201,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                 var editedCards = affectedRows.Select(CreateCardWithClearedLocation).ToList();
 
-                var plan = _mutationsLogic.PlanIdentityRewriteBatch(editedCards,snapshot);
+                var plan = _mutationsLogic.PlanIdentityRewriteBatch(editedCards, snapshot);
 
                 await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
 
@@ -220,7 +212,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     await uow.RollbackAsync();
 
                     return new CardLocationDeleteResult(
-                        new OperationResult(OperationResultCode.NotFound,$"No location with id {id} was found."),
+                        new OperationResult(OperationResultCode.NotFound, $"No location with id {id} was found."),
                         new CollectionChangeSet<CardSet>());
                 }
 
@@ -228,12 +220,12 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                 _cardLocationLookupStore.Remove(id);
 
-                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Success,"Location deleted successfully."),plan.ChangeSet);
+                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Success, "Location deleted successfully."), plan.ChangeSet);
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync();
-                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Error,$"Failed to delete location: {ex.Message}"),new CollectionChangeSet<CardSet>());
+                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Error, $"Failed to delete location: {ex.Message}"), new CollectionChangeSet<CardSet>());
             }
         }
         private static CardLocation MapToDomain(CardLocationRecord record)

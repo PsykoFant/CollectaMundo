@@ -142,10 +142,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
                 if (IsEditing && SelectedLocation is not null)
                 {
-                    var mutation = await _cardLocationService.UpdateAsync(
-                        SelectedLocation.Id,
-                        LocationName,
-                        SelectedLocationType);
+                    var mutation = await _cardLocationService.UpdateAsync(SelectedLocation.Id, LocationName, SelectedLocationType);
 
                     ShowStatus(mutation.Result.Message);
 

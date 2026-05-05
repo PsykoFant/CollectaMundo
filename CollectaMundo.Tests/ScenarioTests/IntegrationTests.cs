@@ -1,10 +1,12 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.ModifyCollection;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows.Input;
@@ -925,8 +927,6 @@ namespace CollectaMundo.Tests.ScenarioTests
             _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { sokrates });
 
             // Assert: staged
-
-
             Assert.Single(_mainVM.AddCardsVM.CardsToAddOrEdit, c => c.CardToAddOrEdit.Uuid == uuidSokrates);
 
             // Arrange: modify before submit
@@ -1020,37 +1020,39 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             Assert.Equal(ownedVm, survivor.CardsOwned);
 
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-
-            const string sql = @"
-            SELECT SUM(cardsOwned) AS SumOwned, SUM(cardsForTrade) AS SumTrade
-            FROM myCollection
-            WHERE uuid = @uuid
-              AND condition = @cond
-              AND language = @lang
-              AND finish = @finish;
-            ";
-
-            using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
-
-            cmd.Parameters.AddWithValue("@uuid", uuidMerge);
-            cmd.Parameters.AddWithValue("@cond", cond);
-            cmd.Parameters.AddWithValue("@lang", lang);
-            cmd.Parameters.AddWithValue("@finish", finish);
-
-            using var reader = await cmd.ExecuteReaderAsync();
             int sumOwnedDb = 0;
             int sumTradeDb = 0;
 
-            if (await reader.ReadAsync())
+            await using (var uow = new UnitOfWork(_dbFactory))
             {
-                // SQLite SUM can return null if no rows match
-                sumOwnedDb = reader["SumOwned"] is DBNull ? 0 : Convert.ToInt32(reader["SumOwned"]);
-                sumTradeDb = reader["SumTrade"] is DBNull ? 0 : Convert.ToInt32(reader["SumTrade"]);
-            }
+                await uow.BeginReadOnlyAsync();
 
-            await uow.CommitAsync();
+                const string sql = """
+                    SELECT SUM(cardsOwned) AS SumOwned, SUM(cardsForTrade) AS SumTrade
+                    FROM myCollection
+                    WHERE uuid = @uuid
+                      AND condition = @cond
+                      AND language = @lang
+                      AND finish = @finish;
+                    """;
+
+                using (var cmd = new SQLiteCommand(sql, uow.CurrentConnection))
+                {
+                    cmd.Parameters.AddWithValue("@uuid", uuidMerge);
+                    cmd.Parameters.AddWithValue("@cond", cond);
+                    cmd.Parameters.AddWithValue("@lang", lang);
+                    cmd.Parameters.AddWithValue("@finish", finish);
+
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    if (await reader.ReadAsync())
+                    {
+                        sumOwnedDb = reader["SumOwned"] is DBNull ? 0 : Convert.ToInt32(reader["SumOwned"]);
+                        sumTradeDb = reader["SumTrade"] is DBNull ? 0 : Convert.ToInt32(reader["SumTrade"]);
+                    }
+                }
+
+                await uow.CommitAsync();
+            }
 
             Assert.Equal(ownedVm, sumOwnedDb);
 
@@ -1070,6 +1072,445 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
             Assert.Equal(2, _mainVM.AllCardsVM.FilteredCards.Count);
 
+            // ===== Section J: location CRUD + assign/remove location through collection mutation flow =====
+
+            // Arrange
+            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+            AssertFiltersCleared();
+
+            var locationVm = _mainVM.CardLocationVM;
+
+            // Act: create location
+            locationVm.LocationName = "Scenario Test Deck";
+            locationVm.SelectedLocationType = CardLocationType.Deck;
+            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+
+            // Assert: location exists in utility VM
+            var scenarioLocation = locationVm.Locations.Single(l => l.Name == "Scenario Test Deck");
+            Assert.Equal(CardLocationType.Deck, scenarioLocation.Type);
+
+            // Arrange: choose a stable existing collection card
+            var targetCard = _mainVM.MyCollectionVM.Cards.First(c => c.CardId.HasValue);
+            var targetCardId = targetCard.CardId!.Value;
+
+            // Act: set location through existing collection mutation pipeline
+            var param = new SetLocationForSelectedCardsParameter(new object[] { targetCard }, scenarioLocation.Id);
+
+            _mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SetLocationForSelectedCardsCommand.Execute(param);
+
+            // Assert: VM card has location
+            var updatedTarget = _mainVM.MyCollectionVM.Cards.Single(c => c.CardId == targetCardId);
+            Assert.Equal(scenarioLocation.Id, updatedTarget.SelectedLocationId);
+            Assert.Equal("Scenario Test Deck", updatedTarget.SelectedLocationName);
+            Assert.Equal("Deck: Scenario Test Deck", updatedTarget.SelectedLocationDisplayName);
+
+            // Assert: DB card has location
+            await using var locationCheckUow = new UnitOfWork(_dbFactory);
+            await locationCheckUow.BeginReadOnlyAsync();
+
+            using var locationCheckCmd = new SQLiteCommand(
+                """
+                    SELECT locationId
+                    FROM myCollection
+                    WHERE id = @id;
+                    """,
+                locationCheckUow.CurrentConnection);
+
+            locationCheckCmd.Parameters.AddWithValue("@id", targetCardId);
+
+            var locationIdObj = await locationCheckCmd.ExecuteScalarAsync();
+
+            await locationCheckUow.CommitAsync();
+
+            Assert.NotNull(locationIdObj);
+            Assert.NotEqual(DBNull.Value, locationIdObj);
+            Assert.Equal(scenarioLocation.Id, Convert.ToInt32(locationIdObj));
+
+            // Act: delete location
+            locationVm.SelectedLocations.Clear();
+            locationVm.SelectedLocations.Add(scenarioLocation);
+
+            locationVm.DeleteSelectedLocationsCommand.Execute(null); // first click activates confirmation
+            locationVm.DeleteSelectedLocationsCommand.Execute(null); // second click confirms
+
+            // Assert: location removed from utility VM
+            Assert.DoesNotContain(locationVm.Locations, l => l.Id == scenarioLocation.Id);
+
+            // Assert: VM card location is cleared after delete
+            var clearedTarget = _mainVM.MyCollectionVM.Cards.Single(c => c.CardId == targetCardId);
+            Assert.Null(clearedTarget.SelectedLocationId);
+            Assert.Null(clearedTarget.SelectedLocationName);
+            Assert.Null(clearedTarget.SelectedLocationDisplayName);
+
+            // Assert: DB card location is cleared
+            await using var clearCheckUow = new UnitOfWork(_dbFactory);
+            await clearCheckUow.BeginReadOnlyAsync();
+
+            using var clearCheckCmd = new SQLiteCommand(
+                """
+                    SELECT locationId
+                    FROM myCollection
+                    WHERE id = @id;
+                    """, clearCheckUow.CurrentConnection);
+
+            clearCheckCmd.Parameters.AddWithValue("@id", targetCardId);
+
+            var clearedLocationObj = await clearCheckCmd.ExecuteScalarAsync();
+
+            await clearCheckUow.CommitAsync();
+
+            Assert.True(clearedLocationObj is null or DBNull);
+
+            // ===== Section K: add multiple otters with different location/comment identities =====
+
+            // Act: create scenario locations
+            locationVm.LocationName = "Box 1";
+            locationVm.SelectedLocationType = CardLocationType.Storage;
+            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+
+            locationVm.LocationName = "Box 2";
+            locationVm.SelectedLocationType = CardLocationType.Storage;
+            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+
+            locationVm.LocationName = "Deck Awesome!";
+            locationVm.SelectedLocationType = CardLocationType.Deck;
+            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+
+            // Assert: locations exist
+            var box1 = locationVm.Locations.Single(l => l.Name == "Box 1");
+            var box2 = locationVm.Locations.Single(l => l.Name == "Box 2");
+            var deckAwesome = locationVm.Locations.Single(l => l.Name == "Deck Awesome!");
+
+            Assert.Equal(CardLocationType.Storage, box1.Type);
+            Assert.Equal(CardLocationType.Storage, box2.Type);
+            Assert.Equal(CardLocationType.Deck, deckAwesome.Type);
+
+            // Arrange: add five otters with different collection identities
+            const string uuidOtter = "49481296-5e87-500b-9d95-8011f432466a";
+            var otter = FindCard(_mainVM.AllCardsVM.Cards, uuidOtter);
+
+            _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { otter, otter, otter, otter, otter });
+
+            var pendingOtters = _mainVM.AddCardsVM.CardsToAddOrEdit
+                .Where(r => r.CardToAddOrEdit.Uuid == uuidOtter)
+                .ToList();
+
+            Assert.Equal(5, pendingOtters.Count);
+
+            // Otter 1: Box 1
+            pendingOtters[0].SelectedLocationId = box1.Id;
+
+            // Otter 2: Box 2
+            pendingOtters[1].SelectedLocationId = box2.Id;
+
+            // Otter 3: Box 2 + comment
+            pendingOtters[2].SelectedLocationId = box2.Id;
+            pendingOtters[2].Comment = "smudgemark";
+
+            // Otter 4: Deck Awesome!
+            pendingOtters[3].SelectedLocationId = deckAwesome.Id;
+
+            // Otter 5: no location, no comment
+            pendingOtters[4].SelectedLocationId = null;
+            pendingOtters[4].Comment = null;
+
+            // Act: submit otters
+            _mainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
+
+            // Assert: five distinct otter rows were added
+            Assert.Equal(27, _mainVM.MyCollectionVM.Cards.Count);
+
+            var ottersInCollection = _mainVM.MyCollectionVM.Cards.Where(c => c.Uuid == uuidOtter).ToList();
+
+            Assert.Equal(5, ottersInCollection.Count);
+
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box1.Id && string.IsNullOrWhiteSpace(c.Comment));
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box2.Id && string.IsNullOrWhiteSpace(c.Comment));
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box2.Id && c.Comment == "smudgemark");
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == deckAwesome.Id && string.IsNullOrWhiteSpace(c.Comment));
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment));
+
+            // ===== Section L: edit otter location to none and merge with existing no-location otter =====
+
+            // Arrange: find Otter 1 with Box 1 and the existing no-location/no-comment otter
+            var otterBox1 = _mainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId == box1.Id && string.IsNullOrWhiteSpace(c.Comment));
+
+            var otterNoLocationBefore = _mainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment));
+
+            var otterBox1Id = otterBox1.CardId!.Value;
+            var otterNoLocationId = otterNoLocationBefore.CardId!.Value;
+            var expectedMergedOwned = otterBox1.CardsOwned + otterNoLocationBefore.CardsOwned;
+            var expectedMergedTrade = otterBox1.CardsForTrade + otterNoLocationBefore.CardsForTrade;
+
+            // Act: stage Otter 1 for edit
+            _mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.EditSelectedCardsCommand.Execute(new object[] { otterBox1 });
+
+            var pendingOtterEdit = _mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.CardsToAddOrEdit.Single(r => r.CardToAddOrEdit.CardId == otterBox1Id);
+
+            // Act: clear location in edit row
+            pendingOtterEdit.SelectedLocationId = null;
+
+            // Act: submit edit
+            _mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SubmitCardEditsCommand.Execute(null);
+
+            // Assert: collection row count decreased by one due to merge
+            Assert.Equal(26, _mainVM.MyCollectionVM.Cards.Count);
+
+            // Assert: Box 1 otter row was removed
+            Assert.DoesNotContain(_mainVM.MyCollectionVM.Cards, c => c.CardId == otterBox1Id);
+
+            // Assert: no-location otter survivor remains and has merged quantities
+            var otterNoLocationAfter = _mainVM.MyCollectionVM.Cards.Single(c => c.CardId == otterNoLocationId);
+
+            Assert.Equal(uuidOtter, otterNoLocationAfter.Uuid);
+            Assert.Null(otterNoLocationAfter.SelectedLocationId);
+            Assert.True(string.IsNullOrWhiteSpace(otterNoLocationAfter.Comment));
+            Assert.Equal(expectedMergedOwned, otterNoLocationAfter.CardsOwned);
+            Assert.Equal(expectedMergedTrade, otterNoLocationAfter.CardsForTrade);
+
+            // Refresh otters list
+            ottersInCollection = [.. _mainVM.MyCollectionVM.Cards.Where(c => c.Uuid == uuidOtter)];
+            Assert.Equal(4, ottersInCollection.Count); // One has been merged away, so now 4 distinct otter rows instead of 5
+
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box2.Id && string.IsNullOrWhiteSpace(c.Comment));
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box2.Id && c.Comment == "smudgemark");
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == deckAwesome.Id && string.IsNullOrWhiteSpace(c.Comment));
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment) && c.CardsOwned == 2);
+
+            // ===== Section M: edit two Box 2 otters into same new Box 1 identity =====
+
+            // Arrange: find the two Box 2 otters
+            var otterBox2NoComment = _mainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId == box2.Id && string.IsNullOrWhiteSpace(c.Comment));
+
+            var otterBox2Smudge = _mainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId == box2.Id && c.Comment == "smudgemark");
+
+            var otterBox2NoCommentId = otterBox2NoComment.CardId!.Value;
+            var otterBox2SmudgeId = otterBox2Smudge.CardId!.Value;
+
+            var expectedBox1Owned = otterBox2NoComment.CardsOwned + otterBox2Smudge.CardsOwned;
+            var expectedBox1Trade = otterBox2NoComment.CardsForTrade + otterBox2Smudge.CardsForTrade;
+
+            // Act: stage both Box 2 otters for edit
+            _mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.EditSelectedCardsCommand.Execute(new object[] { otterBox2NoComment, otterBox2Smudge });
+
+            var pendingBox2Edits = _mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.CardsToAddOrEdit.Where(r => r.CardToAddOrEdit.CardId == otterBox2NoCommentId || r.CardToAddOrEdit.CardId == otterBox2SmudgeId).ToList();
+
+            Assert.Equal(2, pendingBox2Edits.Count);
+
+            // Act: change both to Box 1 and no comment
+            foreach (var pendingEdit in pendingBox2Edits)
+            {
+                pendingEdit.SelectedLocationId = box1.Id;
+                pendingEdit.Comment = null;
+            }
+
+            // Act: submit edits
+            _mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SubmitCardEditsCommand.Execute(null);
+
+            // Assert: collection count decreased by one due to merge
+            Assert.Equal(25, _mainVM.MyCollectionVM.Cards.Count);
+
+            // Refresh otters list
+            ottersInCollection = [.. _mainVM.MyCollectionVM.Cards.Where(c => c.Uuid == uuidOtter)];
+            Assert.Equal(3, ottersInCollection.Count);
+
+            // Assert: one Box 1/no-comment otter identity remains with merged quantities
+            var otterBox1Merged = ottersInCollection.Single(c => c.SelectedLocationId == box1.Id && string.IsNullOrWhiteSpace(c.Comment));
+
+            Assert.Equal(expectedBox1Owned, otterBox1Merged.CardsOwned);
+            Assert.Equal(expectedBox1Trade, otterBox1Merged.CardsForTrade);
+
+            // Assert: old Box 2 identities are gone
+            Assert.DoesNotContain(ottersInCollection, c => c.SelectedLocationId == box2.Id && string.IsNullOrWhiteSpace(c.Comment));
+            Assert.DoesNotContain(ottersInCollection, c => c.SelectedLocationId == box2.Id && c.Comment == "smudgemark");
+
+            // Assert: remaining otter identities are the expected ones
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box1.Id && string.IsNullOrWhiteSpace(c.Comment) && c.CardsOwned == 2);
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == deckAwesome.Id && string.IsNullOrWhiteSpace(c.Comment));
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment) && c.CardsOwned == 2);
+
+            // Assert: DB matches VM truth for otter rows
+            await using var otterDbCheckUow = new UnitOfWork(_dbFactory);
+            await otterDbCheckUow.BeginReadOnlyAsync();
+
+            using var otterDbCheckCmd = new SQLiteCommand(
+                """
+                    SELECT id, uuid, locationId, comment, cardsOwned, cardsForTrade
+                    FROM myCollection
+                    WHERE uuid = @uuid
+                    ORDER BY id;
+                    """,
+                otterDbCheckUow.CurrentConnection);
+
+            otterDbCheckCmd.Parameters.AddWithValue("@uuid", uuidOtter);
+
+            var dbRows = new List<(int Id, int? LocationId, string? Comment, int Owned, int Trade)>();
+
+            using (var reader = await otterDbCheckCmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    var locationOrdinal = reader.GetOrdinal("locationId");
+                    var commentOrdinal = reader.GetOrdinal("comment");
+
+                    dbRows.Add((
+                        Id: reader.GetInt32(reader.GetOrdinal("id")),
+                        LocationId: reader.IsDBNull(locationOrdinal)
+                            ? null
+                            : reader.GetInt32(locationOrdinal),
+                        Comment: reader.IsDBNull(commentOrdinal)
+                            ? null
+                            : reader.GetString(commentOrdinal),
+                        Owned: reader.GetInt32(reader.GetOrdinal("cardsOwned")),
+                        Trade: reader.GetInt32(reader.GetOrdinal("cardsForTrade"))
+                    ));
+                }
+            }
+
+            await otterDbCheckUow.CommitAsync();
+
+            Assert.Equal(3, dbRows.Count);
+            Assert.Contains(dbRows, r => r.LocationId == box1.Id && string.IsNullOrWhiteSpace(r.Comment) && r.Owned == expectedBox1Owned && r.Trade == expectedBox1Trade);
+            Assert.Contains(dbRows, r => r.LocationId == deckAwesome.Id && string.IsNullOrWhiteSpace(r.Comment));
+            Assert.Contains(dbRows, r => r.LocationId is null && string.IsNullOrWhiteSpace(r.Comment) && r.Owned == 2);
+            Assert.DoesNotContain(dbRows, r => r.LocationId == box2.Id);
+
+            // ===== Section N: deleting location merges staged row and reconciles edit list =====
+
+            // Arrange: stage Deck Awesome otter for edit
+            var otterDeckAwesome = _mainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId == deckAwesome.Id && string.IsNullOrWhiteSpace(c.Comment));
+
+            var otterDeckAwesomeId = otterDeckAwesome.CardId!.Value;
+
+            var otterNoLocationBeforeDelete = _mainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment));
+
+            otterNoLocationId = otterNoLocationBeforeDelete.CardId!.Value;
+            var expectedNoLocationOwnedAfterDelete = otterNoLocationBeforeDelete.CardsOwned + otterDeckAwesome.CardsOwned;
+            var expectedNoLocationTradeAfterDelete = otterNoLocationBeforeDelete.CardsForTrade + otterDeckAwesome.CardsForTrade;
+
+            _mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.EditSelectedCardsCommand.Execute(new object[] { otterDeckAwesome });
+
+            // Assert: staged before location delete
+            Assert.Contains(_mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.CardsToAddOrEdit, r => r.CardToAddOrEdit.CardId == otterDeckAwesomeId);
+
+            // Act: delete Deck Awesome location
+            locationVm.SelectedLocations.Clear();
+            locationVm.SelectedLocations.Add(deckAwesome);
+
+            await locationVm.DeleteSelectedLocationsCommand.ExecuteAsync(null); // activate confirmation
+            await locationVm.DeleteSelectedLocationsCommand.ExecuteAsync(null); // confirm delete
+
+            // Assert: staged Deck Awesome otter was removed because its source row was merged away
+            Assert.DoesNotContain(_mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.CardsToAddOrEdit, r => r.CardToAddOrEdit.CardId == otterDeckAwesomeId);
+
+            // Assert: collection count decreased by one due to merge
+            Assert.Equal(24, _mainVM.MyCollectionVM.Cards.Count);
+
+            // Refresh otters list
+            ottersInCollection = [.. _mainVM.MyCollectionVM.Cards.Where(c => c.Uuid == uuidOtter)];
+
+            // Assert: now only two otter collection rows remain
+            Assert.Equal(2, ottersInCollection.Count);
+
+            // Assert: Deck Awesome otter row was removed
+            Assert.DoesNotContain(ottersInCollection, c => c.CardId == otterDeckAwesomeId);
+            Assert.DoesNotContain(ottersInCollection, c => c.SelectedLocationId == deckAwesome.Id);
+
+            // Assert: no-location/no-comment survivor absorbed Deck Awesome otter
+            var otterNoLocationAfterDelete = ottersInCollection.Single(c => c.CardId == otterNoLocationId);
+
+            Assert.Null(otterNoLocationAfterDelete.SelectedLocationId);
+            Assert.True(string.IsNullOrWhiteSpace(otterNoLocationAfterDelete.Comment));
+            Assert.Equal(expectedNoLocationOwnedAfterDelete, otterNoLocationAfterDelete.CardsOwned);
+            Assert.Equal(expectedNoLocationTradeAfterDelete, otterNoLocationAfterDelete.CardsForTrade);
+
+            // Assert: Box 1 otter still exists
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box1.Id && string.IsNullOrWhiteSpace(c.Comment) && c.CardsOwned == 2);
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment) && c.CardsOwned == 3);
+
+            // ===== Section O: simulated right-click set location merges remaining otters into Deck Awesome identity =====
+
+            // Arrange: recreate Deck Awesome because it was deleted in previous section
+            locationVm.LocationName = "Deck Awesome!";
+            locationVm.SelectedLocationType = CardLocationType.Deck;
+            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+
+            deckAwesome = locationVm.Locations.Single(l => l.Name == "Deck Awesome!");
+
+            ottersInCollection = [.. _mainVM.MyCollectionVM.Cards.Where(c => c.Uuid == uuidOtter)];
+
+            Assert.Equal(2, ottersInCollection.Count);
+
+            var expectedDeckOwned = ottersInCollection.Sum(c => c.CardsOwned);
+            var expectedDeckTrade = ottersInCollection.Sum(c => c.CardsForTrade);
+
+            // Act: simulate right-click command on the two remaining otters
+            var setDeckParam = new SetLocationForSelectedCardsParameter(ottersInCollection.Cast<object>().ToArray(), deckAwesome.Id);
+
+            _mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SetLocationForSelectedCardsCommand.Execute(setDeckParam);
+
+            // Assert: collection count decreased by one due to merge
+            Assert.Equal(23, _mainVM.MyCollectionVM.Cards.Count);
+
+            // Assert: all otters merged into one Deck Awesome identity
+            ottersInCollection = [.. _mainVM.MyCollectionVM.Cards.Where(c => c.Uuid == uuidOtter)];
+
+            var finalOtter = Assert.Single(ottersInCollection);
+
+            Assert.Equal(deckAwesome.Id, finalOtter.SelectedLocationId);
+            Assert.True(string.IsNullOrWhiteSpace(finalOtter.Comment));
+            Assert.Equal(5, finalOtter.CardsOwned);
+            Assert.Equal(expectedDeckOwned, finalOtter.CardsOwned);
+            Assert.Equal(expectedDeckTrade, finalOtter.CardsForTrade);
+            Assert.Equal("Deck: Deck Awesome!", finalOtter.SelectedLocationDisplayName);
+
+            // Assert: DB truth matches VM after right-click location merge
+            await using (var finalOtterDbCheckUow = new UnitOfWork(_dbFactory))
+            {
+                await finalOtterDbCheckUow.BeginReadOnlyAsync();
+
+                using var cmd = new SQLiteCommand(
+                    """
+                    SELECT id, locationId, comment, cardsOwned, cardsForTrade
+                    FROM myCollection
+                    WHERE uuid = @uuid;
+                    """,
+                    finalOtterDbCheckUow.CurrentConnection);
+
+                cmd.Parameters.AddWithValue("@uuid", uuidOtter);
+
+                dbRows = [];
+
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var locationOrdinal = reader.GetOrdinal("locationId");
+                        var commentOrdinal = reader.GetOrdinal("comment");
+
+                        dbRows.Add((
+                            Id: reader.GetInt32(reader.GetOrdinal("id")),
+                            LocationId: reader.IsDBNull(locationOrdinal)
+                                ? null
+                                : reader.GetInt32(locationOrdinal),
+                            Comment: reader.IsDBNull(commentOrdinal)
+                                ? null
+                                : reader.GetString(commentOrdinal),
+                            Owned: reader.GetInt32(reader.GetOrdinal("cardsOwned")),
+                            Trade: reader.GetInt32(reader.GetOrdinal("cardsForTrade"))
+                        ));
+                    }
+                }
+
+                await finalOtterDbCheckUow.CommitAsync();
+
+                var (Id, LocationId, Comment, Owned, Trade) = Assert.Single(dbRows);
+
+                Assert.Equal(deckAwesome.Id, LocationId);
+                Assert.True(string.IsNullOrWhiteSpace(Comment));
+                Assert.Equal(5, Owned);
+                Assert.Equal(expectedDeckTrade, Trade);
+            }
         }
     }
 }
