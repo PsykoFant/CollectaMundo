@@ -11,5 +11,6 @@
                                           VisibleVisibility="Visible"
                                           HiddenVisibility="Collapsed" />
     <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+    <converters:SetLocationCommandParameterConverter x:Key="SetLocationCommandParameterConverter" />
     <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 </ResourceDictionary>

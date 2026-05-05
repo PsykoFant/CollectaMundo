@@ -1,6 +1,5 @@
 TO DO 
 
-Højre-klik tilføj location
 Tilføj kommentar/location til scenarie-test
 Filter på kommentar/location
 Tilføj kommentar/location til import

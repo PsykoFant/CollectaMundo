@@ -285,6 +285,23 @@
                     <MenuItem Header="DELETE card(s) from collection" Style="{StaticResource BelerenBold}"
                                           Command="{Binding ModifyCollectionViewModel.DeleteSelectedCardsCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                    <MenuItem Header="Set location" Style="{StaticResource BelerenBold}" ItemsSource="{Binding ModifyCollectionViewModel.LocationMenuItems}">
+                        <MenuItem.ItemContainerStyle>
+                            <Style TargetType="MenuItem">
+                                <Setter Property="Header" Value="{Binding Header}" />
+                                <Setter Property="ItemsSource" Value="{Binding Children}" />
+                                <Setter Property="Command" Value="{Binding DataContext.ModifyCollectionViewModel.SetLocationForSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                <Setter Property="CommandParameter">
+                                    <Setter.Value>
+                                        <MultiBinding Converter="{StaticResource SetLocationCommandParameterConverter}">
+                                            <Binding Path="PlacementTarget.SelectedItems" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                            <Binding Path="LocationId" />
+                                        </MultiBinding>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </MenuItem.ItemContainerStyle>
+                    </MenuItem>
                 </ContextMenu>
             </DataGrid.ContextMenu>
         </DataGrid>

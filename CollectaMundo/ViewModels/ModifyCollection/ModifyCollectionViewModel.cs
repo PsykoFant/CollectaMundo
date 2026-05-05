@@ -25,6 +25,7 @@ namespace CollectaMundo.ViewModels
         public bool ShowCounts => !HasStatus;
         public bool IsCollectionEditVisible => CardsToAddOrEdit.Count != 0 && !HasStatus;
         public IReadOnlyList<CardLocation> AvailableLocations => _availableLocations;
+        public IReadOnlyList<LocationMenuItemViewModel> LocationMenuItems { get; private set; } = [];
 
         // Contstructor
         public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost cardCollectionHost, bool removeCardWhenZero)
@@ -54,6 +55,9 @@ namespace CollectaMundo.ViewModels
         public void SetAvailableLocations(IReadOnlyList<CardLocation> availableLocations)
         {
             _availableLocations = availableLocations;
+
+            LocationMenuItems = BuildLocationMenuItems(availableLocations);
+            OnPropertyChanged(nameof(LocationMenuItems));
 
             foreach (var row in CardsToAddOrEdit)
             {
@@ -361,6 +365,45 @@ namespace CollectaMundo.ViewModels
 
             await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
         }
+        [RelayCommand]
+        private async Task SetLocationForSelectedCardsAsync(SetLocationForSelectedCardsParameter? parameter)
+        {
+            if (parameter is null)
+            {
+                return;
+            }
+
+            var selectedCards = parameter.SelectedItems.OfType<CardSet>().ToList();
+
+            if (selectedCards.Count == 0)
+            {
+                return;
+            }
+
+            var edits = selectedCards.Where(c => c.CardId is not null).Select(c => new CardSet
+                {
+                    CardId = c.CardId,
+                    Uuid = c.Uuid,
+                    SelectedCondition = c.SelectedCondition,
+                    Language = c.Language,
+                    SelectedFinish = c.SelectedFinish,
+                    SelectedLocationId = parameter.LocationId,
+                    Comment = c.Comment,
+                    CardsOwned = c.CardsOwned,
+                    CardsForTrade = c.CardsForTrade
+                }).ToList();
+
+            if (edits.Count == 0)
+            {
+                return;
+            }
+
+            await SubmitBatchAsync(edits,(cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot),
+                clearAfter: false,
+                summaryTitle: parameter.LocationId is null
+                    ? "Removed location from the following cards:"
+                    : "Updated location for the following cards:");
+        }
 
         // Shared helpers 
         private async Task SubmitBatchAsync(IEnumerable<CardSet> cards, Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit, bool clearAfter, string summaryTitle)
@@ -453,6 +496,29 @@ namespace CollectaMundo.ViewModels
             split.RecomputeCollectionPrice();
 
             return split;
+        }
+        private static IReadOnlyList<LocationMenuItemViewModel> BuildLocationMenuItems(IReadOnlyList<CardLocation> locations)
+        {
+            var decks =
+                locations
+                    .Where(x => x.Type == CardLocationType.Deck)
+                    .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                    .Select(LocationMenuItemViewModel.FromLocation)
+                    .ToList();
+
+            var storage =
+                locations
+                    .Where(x => x.Type == CardLocationType.Storage)
+                    .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                    .Select(LocationMenuItemViewModel.FromLocation)
+                    .ToList();
+
+            return
+            [
+                new LocationMenuItemViewModel{ Header = "No location", LocationId = null},
+                new LocationMenuItemViewModel{ Header = "Decks", Children = decks},
+                new LocationMenuItemViewModel{ Header = "Storage", Children = storage}
+            ];
         }
     }
 }
