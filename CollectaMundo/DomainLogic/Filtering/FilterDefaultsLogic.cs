@@ -33,6 +33,14 @@ namespace CollectaMundo.Data.Filtering
                 {
                     switch (criteriaKey)
                     {
+                        case "ManaValue":
+                            foreach (var c in allCards)
+                            {
+                                rawValues.Add(c.ManaValue.ToString());
+                            }
+
+                            break;
+
                         case "Name":
                             foreach (var c in allCards)
                             {
@@ -154,13 +162,7 @@ namespace CollectaMundo.Data.Filtering
 
                             break;
 
-                        case "ManaValue":
-                            foreach (var c in allCards)
-                            {
-                                rawValues.Add(c.ManaValue.ToString());
-                            }
 
-                            break;
 
                         default:
                             throw new Exception($"Unhandled criteria key: {criteriaKey}");

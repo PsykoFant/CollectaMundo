@@ -15,11 +15,11 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, IKeyedDataProviderService keyedDataProviderService, ICardCoreAggregator aggregator, ICollectionMaterializer collectionMaterializer) : ICardListService
+    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService, ICardCoreAggregator aggregator, ICollectionMaterializer collectionMaterializer) : ICardListService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
-        private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
+        private readonly IFilterDefaultsLogic _filterDefaultsLogic = filterDefaultsLogic;
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
         private readonly ICollectionMaterializer _collectionMaterializer = collectionMaterializer;
@@ -78,10 +78,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                         .Select(CardSet.FromCore)
                         .ToList();
 
-                    var sortSw = Stopwatch.StartNew();
                     allCardsVM.Cards = SortCards(allCards);
-                    sortSw.Stop();
-                    Debug.WriteLine($"[InitializeCardListsAsync]   - sorting AllCards: {sortSw.ElapsedMilliseconds} ms");
 
                     allCardsVM.FilteredCards = allCardsVM.Cards;
                     return allCards;
@@ -103,7 +100,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
                 var phase3cSw = Stopwatch.StartNew();
 
-                var defs = _filterLogic.Build(allCardsTask.Result, myCollectionTask.Result);
+                var defs = _filterDefaultsLogic.Build(allCardsTask.Result, myCollectionTask.Result);
                 filters.Clear();
 
                 foreach (var def in defs)

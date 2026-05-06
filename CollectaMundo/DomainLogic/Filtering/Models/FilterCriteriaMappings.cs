@@ -24,7 +24,6 @@ namespace CollectaMundo.DomainLogic.Filtering.Models
 
             // === Collection-backed facets (live updates at runtime) ===
             { "SelectedFinish",    new("Chosen finish", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.SelectedFinish) },
-
             { "Language",          new("", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.Language) },
             { "SelectedCondition", new("Condition", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.SelectedCondition) },
 
@@ -34,3 +33,4 @@ namespace CollectaMundo.DomainLogic.Filtering.Models
         };
     }
 }
+
