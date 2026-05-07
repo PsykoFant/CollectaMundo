@@ -162,7 +162,16 @@ namespace CollectaMundo.Data.Filtering
 
                             break;
 
+                        case "SelectedLocationDisplayName":
+                            foreach (var c in myCollection)
+                            {
+                                if (!string.IsNullOrWhiteSpace(c.SelectedLocationDisplayName))
+                                {
+                                    rawValues.Add(c.SelectedLocationDisplayName);
+                                }
+                            }
 
+                            break;
 
                         default:
                             throw new Exception($"Unhandled criteria key: {criteriaKey}");

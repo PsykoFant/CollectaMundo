@@ -113,7 +113,6 @@ namespace CollectaMundo.ViewModels.Filtering
 
             ApplyTradeFilter();
         }
-
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<FilterOption> FilteredOptions { get; private set; }
         public ObservableCollection<string> SelectedOptions { get; } = [];
@@ -221,7 +220,14 @@ namespace CollectaMundo.ViewModels.Filtering
         }
         private void ApplyTextFilter()
         {
-            FilteredOptions = new ObservableCollection<FilterOption>(_filterItemSearchLogic.ApplyTextFilter(FilterOptions, FilterText));
+            var effectiveFilterText =
+                string.Equals(FilterText, DefaultText, StringComparison.Ordinal)
+                    ? string.Empty
+                    : FilterText;
+
+            FilteredOptions = new ObservableCollection<FilterOption>(
+                _filterItemSearchLogic.ApplyTextFilter(FilterOptions, effectiveFilterText));
+
             OnPropertyChanged(nameof(FilteredOptions));
         }
         private void ApplyTradeFilter()

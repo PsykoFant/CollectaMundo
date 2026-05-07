@@ -118,20 +118,21 @@
             </i:Interaction.Triggers>
         </TextBox>
 
-        <StackPanel Margin="10,480,0,0" Visibility="{Binding IsMyCollectionPageActive, Converter={StaticResource BoolToVisibilityConverter}}">
-            <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Language]}" />
+        <StackPanel Margin="10,480,0,0" Visibility="{Binding IsMyCollectionPageActive, Converter={StaticResource BoolToVisibilityConverter}}">            
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedCondition]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedFinish]}" />
+            <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Language]}" />
+            <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedLocationDisplayName]}" />
+            <CheckBox  Content="Filter on cards for trade"
+                       IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"
+                   HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <CheckBox Content="Filter on cards NOT for trade"
+                      IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"
+                      HorizontalAlignment="Left" VerticalAlignment="Top"/>
         </StackPanel>
         
-        <CheckBox  Content="Filter on cards for trade"
-                   Visibility="{Binding IsMyCollectionPageActive, Converter={StaticResource BoolToVisibilityConverter}}"
-                   IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"
-                   HorizontalAlignment="Left" Margin="10,570,0,0" VerticalAlignment="Top"/>
-        <CheckBox Content="Filter on cards NOT for trade"
-                  Visibility="{Binding IsMyCollectionPageActive, Converter={StaticResource BoolToVisibilityConverter}}"
-                  IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"
-                  HorizontalAlignment="Left" Margin="10,590,0,0" VerticalAlignment="Top"/>
+
+        
 
     </Grid>
 </UserControl>

@@ -361,6 +361,12 @@ namespace CollectaMundo.ViewModels
             {
                 c.RefreshLocationsFromProvider();
             }
+
+            // Rebuild collection-backed filter options after location display names changed
+            _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters);
+
+            // Reapply active filters because selected/display values may have changed
+            OnFilterChanged(this, EventArgs.Empty);
         }
 
         #endregion

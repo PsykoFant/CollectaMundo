@@ -26,6 +26,7 @@ namespace CollectaMundo.DomainLogic.Filtering.Models
             { "SelectedFinish",    new("Chosen finish", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.SelectedFinish) },
             { "Language",          new("", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.Language) },
             { "SelectedCondition", new("Condition", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.SelectedCondition) },
+            { "SelectedLocationDisplayName", new("Location", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.SelectedLocationDisplayName) },
 
             // === Numeric filters ===
             { "ManaValue",         new("", FilterType.Numeric,[ OperatorType.GREATER_THAN,OperatorType.LESS_THAN,OperatorType.EQUALS,OperatorType.GREATER_THAN_OR_EQUALS,OperatorType.LESS_THAN_OR_EQUALS ],false) },
