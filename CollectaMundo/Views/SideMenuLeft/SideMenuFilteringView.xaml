@@ -89,18 +89,42 @@
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SubTypes]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Keywords]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Finishes]}" />
+            
+            <!--Rulestext filtering-->
+            <TextBox DataContext="{Binding FilterVM.Filters[Text]}"
+                 Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                 HorizontalAlignment="Left" 
+                 TextWrapping="Wrap" 
+                 Foreground="{Binding TextForeground, Mode=TwoWay}" 
+                 VerticalAlignment="Top" 
+                 Width="240" Height="45">
+                <i:Interaction.Triggers>
+                    <!-- Enter + Escape key binding -->
+                    <i:EventTrigger EventName="PreviewKeyDown">
+                        <i:InvokeCommandAction Command="{Binding KeyPressedCommand}"
+                           PassEventArgsToCommand="True"/>
+                    </i:EventTrigger>
+
+                    <!-- Focus behavior (unchanged) -->
+                    <i:EventTrigger EventName="GotFocus">
+                        <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                    </i:EventTrigger>
+                    <i:EventTrigger EventName="LostFocus">
+                        <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </TextBox>
         </StackPanel>
         
         <!--Rulestext filtering-->
-        <TextBox x:Name="FilterTextTextBox"
-                         DataContext="{Binding FilterVM.Filters[Text]}"
-                         Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                         HorizontalAlignment="Left" 
-                         Margin="10,425,0,0" 
-                         TextWrapping="Wrap" 
-                         Foreground="{Binding TextForeground, Mode=TwoWay}" 
-                         VerticalAlignment="Top" 
-                         Width="240" Height="45">
+        <TextBox DataContext="{Binding FilterVM.Filters[Text]}"
+                 Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                 HorizontalAlignment="Left" 
+                 Margin="10,425,0,0" 
+                 TextWrapping="Wrap" 
+                 Foreground="{Binding TextForeground, Mode=TwoWay}" 
+                 VerticalAlignment="Top" 
+                 Width="240" Height="45">
             <i:Interaction.Triggers>
                 <!-- Enter + Escape key binding -->
                 <i:EventTrigger EventName="PreviewKeyDown">
@@ -110,10 +134,10 @@
 
                 <!-- Focus behavior (unchanged) -->
                 <i:EventTrigger EventName="GotFocus">
-                    <i:InvokeCommandAction Command="{Binding RulesTextBoxGotFocusCommand}" />
+                    <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
                 </i:EventTrigger>
                 <i:EventTrigger EventName="LostFocus">
-                    <i:InvokeCommandAction Command="{Binding RulesTextBoxLostFocusCommand}" />
+                    <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
                 </i:EventTrigger>
             </i:Interaction.Triggers>
         </TextBox>
@@ -129,10 +153,29 @@
             <CheckBox Content="Filter on cards NOT for trade"
                       IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"
                       HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <TextBox DataContext="{Binding FilterVM.Filters[Comment]}"
+                     Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                     HorizontalAlignment="Left" 
+                     TextWrapping="Wrap" 
+                     Foreground="{Binding TextForeground, Mode=TwoWay}" 
+                     VerticalAlignment="Top" 
+                     Width="240" Height="20">
+                <i:Interaction.Triggers>
+                    <!-- Enter + Escape key binding -->
+                    <i:EventTrigger EventName="PreviewKeyDown">
+                        <i:InvokeCommandAction Command="{Binding KeyPressedCommand}"
+                           PassEventArgsToCommand="True"/>
+                    </i:EventTrigger>
+
+                    <!-- Focus behavior (unchanged) -->
+                    <i:EventTrigger EventName="GotFocus">
+                        <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                    </i:EventTrigger>
+                    <i:EventTrigger EventName="LostFocus">
+                        <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </TextBox>
         </StackPanel>
-        
-
-        
-
     </Grid>
 </UserControl>

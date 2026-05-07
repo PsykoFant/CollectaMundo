@@ -25,7 +25,7 @@ namespace CollectaMundo.Data.Filtering
                 {
                     rawValues = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
                 }
-                else if (criteriaKey.Equals("Text", StringComparison.OrdinalIgnoreCase) || criteriaKey.Equals("CardsForTrade", StringComparison.OrdinalIgnoreCase))
+                else if (criteriaKey.Equals("Text", StringComparison.OrdinalIgnoreCase) || criteriaKey.Equals("CardsForTrade", StringComparison.OrdinalIgnoreCase) || criteriaKey.Equals("Comment", StringComparison.OrdinalIgnoreCase))
                 {
                     rawValues = [];
                 }
@@ -205,7 +205,7 @@ namespace CollectaMundo.Data.Filtering
                 var filterOptions = cleanedValues.Select(v => new FilterOption(v)).ToList();
 
                 string defaultText = string.Empty;
-                if (mapping.Type == FilterType.Multi || criteriaKey == "Text")
+                if (mapping.Type == FilterType.Multi || criteriaKey == "Text" || criteriaKey == "Comment")
                 {
                     defaultText = string.IsNullOrWhiteSpace(mapping.ReadableLabel)
                         ? $"{criteriaKey} ..."

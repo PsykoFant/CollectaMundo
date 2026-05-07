@@ -330,7 +330,7 @@ namespace CollectaMundo.ViewModels.Filtering
         }
 
         [RelayCommand]
-        public void RulesTextBoxGotFocus(object? _)
+        public void TextBoxGotFocus(object? _)
         {
             FreetextSearch = "";
             TextForeground = Brushes.Black;
@@ -338,7 +338,7 @@ namespace CollectaMundo.ViewModels.Filtering
         }
 
         [RelayCommand]
-        public void RulesTextBoxLostFocus(object? _)
+        public void TextBoxLostFocus(object? _)
         {
             if (string.IsNullOrWhiteSpace(FreetextSearch))
             {

@@ -1,6 +1,5 @@
 TO DO 
 
-Filter på kommentar/location
 Tilføj kommentar/location til import
 Tilføj kommentar/location til import scenarie-test
 
