@@ -4,20 +4,10 @@ Tilføj kommentar/location til import
 Tilføj kommentar/location til import scenarie-test
 
 Deck editor!
-    
 
+Db optimering
 
-
-
-
-
-
-
-
-
- - Deck manager brug MVVM (unit test)
-
- - Hvorfor er der ingen kort fra Mystery Booster
+Merge og release
 
 
 

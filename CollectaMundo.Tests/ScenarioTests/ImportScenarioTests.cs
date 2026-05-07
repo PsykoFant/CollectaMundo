@@ -301,8 +301,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
             // Step 9 - Summary and confirmation
             // =====================================================
-            var step9 = (ImportStep09_SummaryViewModel)importVM.CurrentStepViewModel;
-            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep09_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
+            var step9 = (ImportStep10_SummaryViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 9 should be active and progress label updated");
             step9.PrimaryActionButtonText.Should().Contain("Start the import...");
@@ -499,8 +499,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
             // Step 10 - Final
             // =====================================================
-            var step10 = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
-            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "",
+            var step10 = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep11_FinishViewModel && importVM.ProgressStep == "",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 10 should be active and progress label updated");
             step10.PrimaryActionButtonText.Should().Contain("OK");
@@ -616,8 +616,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Cancel the import to test that cancel works at this step (and doesn't cause any issues if we restart the import afterwards)
             importVM.CancelCommand.Execute(null);
 
-            var step10AfterCancel = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
-            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "",
+            var step10AfterCancel = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep11_FinishViewModel && importVM.ProgressStep == "",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 10 should be active and progress label updated");
 
@@ -716,8 +716,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
             // Step 9 - Summary and confirmation
             // =====================================================
-            var step9 = (ImportStep09_SummaryViewModel)importVM.CurrentStepViewModel;
-            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep09_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
+            var step9 = (ImportStep10_SummaryViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 9 should be active and progress label updated");
             step9.PrimaryActionButtonText.Should().Contain("Start the import...");
@@ -884,8 +884,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             // =====================================================
             // Step 10 - Final
             // =====================================================
-            var step10 = (ImportStep10_FinishViewModel)importVM.CurrentStepViewModel;
-            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_FinishViewModel && importVM.ProgressStep == "",
+            var step10 = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep11_FinishViewModel && importVM.ProgressStep == "",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 10 should be active and progress label updated");
             step10.PrimaryActionButtonText.Should().Contain("OK");

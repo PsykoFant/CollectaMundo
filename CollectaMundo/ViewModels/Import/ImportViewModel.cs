@@ -224,8 +224,8 @@ namespace CollectaMundo.ViewModels.Import
                 ImportStep.ConditionMapping => CreateStep(new ImportStep06_ConditionsMappingViewModel(this), "Condition value mapping"),
                 ImportStep.FinishMapping => CreateStep(new ImportStep07_FinishMappingViewModel(this), "Finish value mapping"),
                 ImportStep.LanguageMapping => CreateStep(new ImportStep08_LanguageMappingViewModel(this), "Language value mapping"),
-                ImportStep.Summary => CreateStep(new ImportStep09_SummaryViewModel(this), "Summary and confirmation"),
-                ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), ""),
+                ImportStep.Summary => CreateStep(new ImportStep10_SummaryViewModel(this), "Summary and confirmation"),
+                ImportStep.Finish => CreateStep(new ImportStep11_FinishViewModel(this), ""),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };
         }
@@ -422,7 +422,7 @@ namespace CollectaMundo.ViewModels.Import
             GoToStep(ImportStep.Summary);
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Language mappings processed."));
         }
-        public async Task<OperationResult> AfterStep9Action()
+        public async Task<OperationResult> AfterStep10Action()
         {
             Progress.ProgressBarVisible.Report(true);
             Progress.Detail.Report("Importing cards…");
@@ -444,7 +444,7 @@ namespace CollectaMundo.ViewModels.Import
             GoToStep(ImportStep.Finish);
             return importResult.Result;
         }
-        public Task<OperationResult> AfterStep10Action()
+        public Task<OperationResult> AfterStep11Action()
         {
             EndImport();
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Cleanup completed"));
@@ -564,8 +564,6 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report("User cancellation - no cards imported to collection.");
             GoToStep(ImportStep.Finish);
         }
-
-
         private void ClearProgress()
         {
             Progress.Headline.Report(string.Empty);
@@ -573,7 +571,6 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Percent.Report(0);
             Progress.ProgressBarVisible.Report(false);
         }
-
         public void EndImport()
         {
             ImportCardList.Clear();

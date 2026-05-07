@@ -4,7 +4,7 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
-    public partial class ImportStep10_FinishViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
+    public partial class ImportStep11_FinishViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent = parent;
 
@@ -33,7 +33,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         // Actions
         // --------------------------------------------
-        public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep10Action();
+        public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep11Action();
 
     }
 }

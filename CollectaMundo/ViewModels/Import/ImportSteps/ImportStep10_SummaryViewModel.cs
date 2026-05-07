@@ -5,14 +5,14 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
-    public partial class ImportStep09_SummaryViewModel : ObservableObject, IImportStepViewModel
+    public partial class ImportStep10_SummaryViewModel : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent;
 
         // --------------------------------------------
         // Constructor
         // --------------------------------------------
-        public ImportStep09_SummaryViewModel(ImportViewModel parent)
+        public ImportStep10_SummaryViewModel(ImportViewModel parent)
         {
             _parent = parent;
             Initialize();
@@ -55,7 +55,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         {
             // Proceed with import
             StepContentVisibility = Visibility.Collapsed;
-            return await _parent.AfterStep9Action();
+            return await _parent.AfterStep10Action();
         }
         public Task<OperationResult> OnSecondaryAction()
         {

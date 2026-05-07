@@ -3,11 +3,11 @@
 namespace CollectaMundo.Views.ContentSection.Import
 {
     /// <summary>
-    /// Interaction logic for ImportStep09_SummaryView.xaml
+    /// Interaction logic for ImportStep11_FinishView.xaml
     /// </summary>
-    public partial class ImportStep09_SummaryView : UserControl
+    public partial class ImportStep11_FinishView : UserControl
     {
-        public ImportStep09_SummaryView()
+        public ImportStep11_FinishView()
         {
             InitializeComponent();
         }
