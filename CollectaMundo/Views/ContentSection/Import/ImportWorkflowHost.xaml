@@ -55,6 +55,7 @@
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep06_ConditionsMappingViewModel}"><stepViews:ImportStep06_ConditionsMappingView /></DataTemplate>
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep07_FinishMappingViewModel}"><stepViews:ImportStep07_FinishesMappingView /></DataTemplate>
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep08_LanguageMappingViewModel}"><stepViews:ImportStep08_LanguagesMappingView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep09_LocationMappingViewModel}"><stepViews:ImportStep09_LocationMappingView /></DataTemplate>
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep10_SummaryViewModel}"><stepViews:ImportStep10_SummaryView /></DataTemplate>
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep11_FinishViewModel}"><stepViews:ImportStep11_FinishView /></DataTemplate>
             </ContentControl.Resources>

@@ -1,12 +1,7 @@
-﻿using CollectaMundo.ApplicationServices.Import.Models;
-using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Import.Models;
+﻿using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
-using CollectaMundo.DomainLogic.Shared.Models;
-using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -426,7 +421,7 @@ namespace CollectaMundo.DomainLogic.Import
 
         #endregion
 
-        #region Step 9
+        #region Step 10
         // ----------------------
         // Strict validation of mapped values against availability
         // ----------------------

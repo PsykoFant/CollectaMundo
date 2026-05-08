@@ -45,6 +45,16 @@
                         <Paragraph>
                             Language: "English"
                         </Paragraph>
+                    </ListItem>
+                    <ListItem>
+                        <Paragraph>
+                            Location: blank (no location)
+                        </Paragraph>
+                    </ListItem>
+                    <ListItem>
+                        <Paragraph>
+                            Comment: blank (no comments)
+                        </Paragraph>
                     </ListItem>                    
                 </List>
             </FlowDocument>

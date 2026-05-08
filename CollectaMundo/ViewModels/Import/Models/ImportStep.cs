@@ -10,6 +10,7 @@
         ConditionMapping,
         FinishMapping,
         LanguageMapping,
+        LocationMapping,
         Summary,
         Finish
     }

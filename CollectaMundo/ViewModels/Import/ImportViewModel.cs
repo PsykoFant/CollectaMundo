@@ -129,9 +129,8 @@ namespace CollectaMundo.ViewModels.Import
         public ObservableCollection<CsvValueMapping> ConditionMappings { get; } = [];
         public ObservableCollection<CsvValueMapping> FinishMappings { get; } = [];
 
-        private IReadOnlyList<string>? _availableFinishes;
-
         // Fetch available finishes from child VM lazily
+        private IReadOnlyList<string>? _availableFinishes;
         public async Task<IReadOnlyList<string>> GetAvailableFinishesAsync()
         {
             _availableFinishes ??= await _importService.GetAvailableFinishesAsync();
@@ -141,14 +140,23 @@ namespace CollectaMundo.ViewModels.Import
 
         public ObservableCollection<CsvValueMapping> LanguageMappings { get; } = [];
 
-        private IReadOnlyList<string>? _availableLanguages;
-
         // Fetch available languages from child VM lazily
+        private IReadOnlyList<string>? _availableLanguages;
         public async Task<IReadOnlyList<string>> GetAvailableLanguagesAsync()
         {
             _availableLanguages ??= await _importService.GetAvailableLanguagesAsync();
 
             return _availableLanguages;
+        }
+        public ObservableCollection<CsvValueMapping> LocationMappings { get; } = [];
+
+        // Fetch available locations from child VM lazily
+        private IReadOnlyList<string>? _availableLocations;
+        public async Task<IReadOnlyList<string>> GetAvailableLocationsAsync()
+        {
+            _availableLocations ??= await _importService.GetAvailableLocationsAsync();
+
+            return _availableLocations;
         }
 
         // Objects to hold final resolved an summary data
@@ -189,6 +197,7 @@ namespace CollectaMundo.ViewModels.Import
                 ImportField.Condition => ImportStep.ConditionMapping,
                 ImportField.CardFinish => ImportStep.FinishMapping,
                 ImportField.Language => ImportStep.LanguageMapping,
+                ImportField.Location => ImportStep.LocationMapping,
                 _ => throw new ArgumentOutOfRangeException(nameof(field), field, null)
             };
 
@@ -224,6 +233,7 @@ namespace CollectaMundo.ViewModels.Import
                 ImportStep.ConditionMapping => CreateStep(new ImportStep06_ConditionsMappingViewModel(this), "Condition value mapping"),
                 ImportStep.FinishMapping => CreateStep(new ImportStep07_FinishMappingViewModel(this), "Finish value mapping"),
                 ImportStep.LanguageMapping => CreateStep(new ImportStep08_LanguageMappingViewModel(this), "Language value mapping"),
+                ImportStep.LocationMapping => CreateStep(new ImportStep09_LocationMappingViewModel(this), "Location value mapping"),
                 ImportStep.Summary => CreateStep(new ImportStep10_SummaryViewModel(this), "Summary and confirmation"),
                 ImportStep.Finish => CreateStep(new ImportStep11_FinishViewModel(this), ""),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")

@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -8,14 +9,14 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
-    public partial class ImportStep05_AdditionalFieldsMappingViewModel : ObservableObject, IImportStepViewModel
+    public partial class ImportStep09_LocationMappingViewModel : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent;
 
         // --------------------------------------------
         // Constructor
         // --------------------------------------------
-        public ImportStep05_AdditionalFieldsMappingViewModel(ImportViewModel parent)
+        public ImportStep09_LocationMappingViewModel(ImportViewModel parent)
         {
             _parent = parent;
             Initialize();
@@ -26,21 +27,35 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
-            if (AdditionalMappings.Any())
-            {
-                return;
-            }
+            _ = InitializeAsync();
+        }
+        private async Task InitializeAsync()
+        {
+            var csvHeader = _parent.AdditionalMappings.First(m => m.FieldToMap == ImportField.Location).SelectedCsvHeader!;
+            var csvValues = _parent.ImportCardList.Select(item => item.CsvFields.TryGetValue(csvHeader, out var val)
+            ? val?.Trim()
+            : null)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
-            foreach (var field in new[] { ImportField.Condition, ImportField.CardFinish, ImportField.Language, ImportField.Location, ImportField.Comment, ImportField.CardsOwned, ImportField.CardsForTrade })
+            // Lazy, cached, parent-owned async call
+            var availableLocations = await _parent.GetAvailableLocationsAsync();
+            var defaultLocation = CollectionCardItemDefaults.GetDefaultString(ImportField.Location);
+
+            // Ensure default location is present
+            var locationOptions = availableLocations.Append(defaultLocation).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(l => l).ToList();
+
+            foreach (var csvValue in csvValues)
             {
-                AdditionalMappings.Add(new CsvFieldMapping
+                var guessed = ImportValueMatcher.MapImportValue(csvValue!, ImportField.Location, locationOptions) ?? defaultLocation; // Default to "Unknown" if no match found
+                LanguageMappings.Add(new CsvValueMapping
                 {
-                    FieldToMap = field,
-                    CsvHeaders = [.. _parent.CsvHeaders],
-                    SelectedCsvHeader = ImportValueMatcher.GuessCsvHeader(field, _parent.CsvHeaders)
+                    CsvValue = csvValue!,
+                    CardSetValues = [.. locationOptions],
+                    SelectedCardSetValue = guessed
                 });
             }
-
         }
 
         // --------------------------------------------
@@ -66,22 +81,22 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         public async Task<OperationResult> OnPrimaryAction()
         {
             StepContentVisibility = Visibility.Collapsed;
-            return await _parent.AfterStep5Action();
+            return await _parent.AfterStep9Action();
         }
 
         // --------------------------------------------
-        // Commands (none for this step)
+        // Commands
         // --------------------------------------------
         [RelayCommand]
-        private static void ClearSelectedMapping(CsvFieldMapping mapping)
+        private static void ClearSelectedMapping(CsvValueMapping mapping)
         {
-            mapping.SelectedCsvHeader = null;
+            mapping.SelectedCardSetValue = null;
         }
 
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
-        public ObservableCollection<CsvFieldMapping> AdditionalMappings => _parent.AdditionalMappings;
+        public ObservableCollection<CsvValueMapping> LocationMappings => _parent.LocationMappings;
 
     }
 }

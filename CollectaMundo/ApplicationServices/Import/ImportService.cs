@@ -1,13 +1,10 @@
 ﻿using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.Shared;
-using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Models;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -233,10 +230,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
             try
             {
-                var rawValues = await DbHelpers.GetUniqueValuesAsync(
-                    uow.CurrentConnection,
-                    "cards",
-                    "finishes");
+                var rawValues = await DbHelpers.GetUniqueValuesAsync(uow.CurrentConnection, "cards", "finishes");
 
                 await uow.CommitAsync();
 
@@ -255,10 +249,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
             try
             {
-                var rawValues = await DbHelpers.GetUniqueValuesAsync(
-                    uow.CurrentConnection,
-                    "cardForeignData",
-                    "language");
+                var rawValues = await DbHelpers.GetUniqueValuesAsync(uow.CurrentConnection, "cardForeignData", "language");
 
                 await uow.CommitAsync();
 
@@ -271,13 +262,13 @@ namespace CollectaMundo.ApplicationServices.Import
             }
         }
 
-        // Step 9: resolve + strict validate via DB
-        public async Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items,IReadOnlyList<CsvFieldMapping> additionalMappings,IReadOnlyList<CsvValueMapping> conditionMappings,IReadOnlyList<CsvValueMapping> finishMappings,IReadOnlyList<CsvValueMapping> languageMappings,CancellationToken token)
+        // Step 10: resolve + strict validate via DB
+        public async Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
             // 1) Resolve (mapping/defaults)
-            var resolved = _importLogic.ResolveImportItems(items,additionalMappings,conditionMappings,finishMappings,languageMappings);
+            var resolved = _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings);
 
             token.ThrowIfCancellationRequested();
 
@@ -286,7 +277,9 @@ namespace CollectaMundo.ApplicationServices.Import
 
             // No UUIDs => nothing to validate; return as-is
             if (uuidsToValidate.Count == 0)
+            {
                 return resolved;
+            }
 
             // 3) Determine whether we need foreign languages (Tier 2)
             // Only needed when any importable item requests non-English language.
@@ -304,12 +297,12 @@ namespace CollectaMundo.ApplicationServices.Import
                 token.ThrowIfCancellationRequested();
 
                 // 4) Tier 1: base availability for ALL uuids (cards/tokens)
-                var baseByUuid = await _importRepo.FetchBaseAvailabilityAsync(uuidsToValidate,uow.CurrentConnection,uow.CurrentTransaction,token);
+                var baseByUuid = await _importRepo.FetchBaseAvailabilityAsync(uuidsToValidate, uow.CurrentConnection, uow.CurrentTransaction, token);
 
                 token.ThrowIfCancellationRequested();
 
                 // 5) Tier 2: foreign languages only for non-English requested uuids
-                IReadOnlyDictionary<string, HashSet<string>> foreignByUuid =new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+                IReadOnlyDictionary<string, HashSet<string>> foreignByUuid = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
                 if (needsForeign.Count > 0)
                 {
@@ -429,19 +422,19 @@ namespace CollectaMundo.ApplicationServices.Import
             catch (OperationCanceledException)
             {
                 await uow.RollbackAsync();
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."),Mutation: null);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."), Mutation: null);
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync();
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"),Mutation: null);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"), Mutation: null);
             }
         }
+
 
         // ----------------------------------------------------
         // Helpers
         // ----------------------------------------------------
-
         private static HashSet<string> CollectUuidsToValidate(IReadOnlyList<ResolvedImportItem> resolved)
         {
             // Capacity hint: worst-case all are importable with UUID
@@ -450,7 +443,9 @@ namespace CollectaMundo.ApplicationServices.Import
             foreach (var r in resolved)
             {
                 if (!r.IsImportable)
+                {
                     continue;
+                }
 
                 var uuid = r.Uuid;
                 if (!string.IsNullOrWhiteSpace(uuid))
@@ -469,11 +464,15 @@ namespace CollectaMundo.ApplicationServices.Import
             foreach (var r in resolved)
             {
                 if (!r.IsImportable)
+                {
                     continue;
+                }
 
                 var uuid = r.Uuid;
                 if (string.IsNullOrWhiteSpace(uuid))
+                {
                     continue;
+                }
 
                 var lang = r.Language;
 
