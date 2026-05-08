@@ -35,6 +35,14 @@
             init => _language = value;
         }
 
+        private string? _location;
+        public string? Location
+        {
+            get => _location;
+            init => _location = value;
+        }
+        public string? Comment { get; init; }
+
         // Warnings generated while resolving this item
         private readonly List<string> _warnings = [];
         public IReadOnlyList<string> Warnings => _warnings;

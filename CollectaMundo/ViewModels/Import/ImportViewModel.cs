@@ -249,10 +249,10 @@ namespace CollectaMundo.ViewModels.Import
                 Progress.Percent.Report(0);
 
                 var token = _userPromptService.CreateOperationCancellationToken();
-                ResolvedImportItems = await _importService.ResolveImportItemsStrictAsync(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings, token);
+                ResolvedImportItems = await _importService.ResolveImportItemsStrictAsync(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings, LocationMappings, token);
 
                 Progress.Detail.Report("Building summary...");
-                Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
+                Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings, LocationMappings);
                 Progress.ProgressBarVisible.Report(false);
             }
             catch (OperationCanceledException)
@@ -434,6 +434,7 @@ namespace CollectaMundo.ViewModels.Import
         public Task<OperationResult> AfterStep9Action()
         {
             GoToStep(ImportStep.Summary);
+            DebugResolvedImportItems();
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Location mappings processed."));
         }
         public async Task<OperationResult> AfterStep10Action()
@@ -647,6 +648,7 @@ namespace CollectaMundo.ViewModels.Import
                 Debug.WriteLine($"Condition         : {item.Condition ?? "<null>"}");
                 Debug.WriteLine($"Finish            : {item.Finish ?? "<null>"}");
                 Debug.WriteLine($"Language          : {item.Language ?? "<null>"}");
+                Debug.WriteLine($"Location          : {item.Location ?? "<null>"}");
                 Debug.WriteLine($"CardsOwned        : {item.CardsOwned}");
                 Debug.WriteLine($"CardsForTrade     : {item.CardsForTrade}");
 
