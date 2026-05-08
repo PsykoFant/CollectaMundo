@@ -155,7 +155,6 @@ namespace CollectaMundo.ViewModels.Import
         public async Task<IReadOnlyList<string>> GetAvailableLocationsAsync()
         {
             _availableLocations ??= await _importService.GetAvailableLocationsAsync();
-
             return _availableLocations;
         }
 
@@ -165,7 +164,7 @@ namespace CollectaMundo.ViewModels.Import
 
         #endregion
 
-        private static readonly ImportField[] _additionalFieldOrder = [ImportField.Condition, ImportField.CardFinish, ImportField.Language];
+        private static readonly ImportField[] _additionalFieldOrder = [ImportField.Condition, ImportField.CardFinish, ImportField.Language, ImportField.Location];
         private ImportStep? GetNextAdditionalFieldStep(ImportField? after = null)
         {
             var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
@@ -431,6 +430,11 @@ namespace CollectaMundo.ViewModels.Import
         {
             GoToStep(ImportStep.Summary);
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Language mappings processed."));
+        }
+        public Task<OperationResult> AfterStep9Action()
+        {
+            GoToStep(ImportStep.Summary);
+            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Location mappings processed."));
         }
         public async Task<OperationResult> AfterStep10Action()
         {

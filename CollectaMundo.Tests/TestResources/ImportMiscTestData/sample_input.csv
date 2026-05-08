@@ -1,8 +1,7 @@
-CardName;Finish;Language;uuid;Note
-"Sokrates, Athenian Teacher";nonfoil;Gobligook;3c389f9c-e459-5b16-87b5-d51644f05b25;Test 1: Card, default to English, but English not available (assign with comment)
-Thopter;foil;Gobligook;158c1dbe-1ad6-553a-af66-fb2a910dd9f2;Test 2: Token, default to English, but English not available (assign with comment)
-Grave Titan;nonfoil;Korean;0005283f-d113-5937-ba52-a30570bfb334;Test 3: Card, valid language chosen, but not available for card. Multiple options availabe (unimportable)
-Merfolk;nonfoil;Gobligook;9154c1a6-f4a9-5fed-aa11-1259abf90209;Test 4: Token, invalid finish, but only 1 finish available (assign with comment)
-Talisman of Conviction;skinnerbørge;English;33297447-4dea-5edf-a521-8b00ff24e562;Test 5: Cards, invalid finish, default to nonfoil, but nonfoil not available, multiple finishes available (unimportable)
-Swamp;foil;English;b2f29b41-d5bf-5d45-bc9f-0b209229659d;Test 6: Cards, valid finish chosen, but not available for card.  Multiple options availabe (unimportable)
-
+CardName;Finish;Language;uuid;Note;Location
+Sokrates, Athenian Teacher;nonfoil;Gobligook;3c389f9c-e459-5b16-87b5-d51644f05b25;Test 1: Card, default to English, but English not available (assign with comment);Deck 1
+Thopter;foil;Gobligook;158c1dbe-1ad6-553a-af66-fb2a910dd9f2;Test 2: Token, default to English, but English not available (assign with comment);Binder 1
+Grave Titan;nonfoil;Korean;0005283f-d113-5937-ba52-a30570bfb334;Test 3: Card, valid language chosen, but not available for card. Multiple options availabe (unimportable);Deck 2
+Merfolk;nonfoil;Gobligook;9154c1a6-f4a9-5fed-aa11-1259abf90209;Test 4: Token, invalid finish, but only 1 finish available (assign with comment);Binder 2
+Talisman of Conviction;skinnerbørge;English;33297447-4dea-5edf-a521-8b00ff24e562;Test 5: Cards, invalid finish, default to nonfoil, but nonfoil not available, multiple finishes available (unimportable);
+Swamp;foil;English;b2f29b41-d5bf-5d45-bc9f-0b209229659d;Test 6: Cards, valid finish chosen, but not available for card.  Multiple options availabe (unimportable);

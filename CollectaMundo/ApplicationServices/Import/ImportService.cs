@@ -1,6 +1,9 @@
-﻿using CollectaMundo.ApplicationServices.Import.Models;
+﻿using CollectaMundo.ApplicationServices.CardLocations;
+using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.DomainLogic.CardLocations;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
@@ -14,13 +17,13 @@ using System.Text;
 
 namespace CollectaMundo.ApplicationServices.Import
 {
-    public class ImportService(IDbConnectionFactory dbFactory, IImportRepo importRepo, IFileSystemPicker fileSystemPicker, IImportLogic importLogic) : IImportService
+    public class ImportService(IDbConnectionFactory dbFactory, IImportRepo importRepo, IFileSystemPicker fileSystemPicker, IImportLogic importLogic, ICardLocationService cardLocationService) : IImportService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly IImportRepo _importRepo = importRepo;
         private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
         private readonly IImportLogic _importLogic = importLogic;
-
+        private readonly ICardLocationService _cardLocationService = cardLocationService;
         public string? PromptForCsvFile()
         {
             var file = _fileSystemPicker.PickFile("Select your CSV file to import");
@@ -260,6 +263,16 @@ namespace CollectaMundo.ApplicationServices.Import
                 await uow.RollbackAsync();
                 throw;
             }
+        }
+        public async Task<List<string>> GetAvailableLocationsAsync()
+        {
+            var locations = await _cardLocationService.GetAllAsync();
+
+            return
+            [
+                .. locations
+                .Select(x => x.DisplayName)
+            ];
         }
 
         // Step 10: resolve + strict validate via DB

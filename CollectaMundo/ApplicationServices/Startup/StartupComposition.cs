@@ -96,7 +96,6 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var modifyService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService, collectionMutationsLogic);
                 var fileSystemPicker = new FileSystemPicker();
-                var importService = new ImportService(dbFactory, new ImportRepo(), fileSystemPicker, new ImportLogic());
 
                 var cardImageDownloader = new CardImageDownloader(settings);
                 var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
@@ -105,6 +104,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(dbFactory, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, new CardCoreAggregator(), collectionMaterializer);
                 var cardLocationLookupStore = new CardLocationLookupStore();
                 var cardLocationService = new CardLocationService(dbFactory,new CardLocationRepo(),new CardLocationLogic(),cardLocationLookupStore,collectionMutationsLogic,collectionMutationsService);
+
+                var importService = new ImportService(dbFactory, new ImportRepo(), fileSystemPicker, new ImportLogic(), cardLocationService);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
                 var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, settings));

@@ -28,6 +28,7 @@ namespace CollectaMundo.ApplicationServices.Import
         // Step 5
         Task<List<string>> GetAvailableFinishesAsync();
         Task<List<string>> GetAvailableLanguagesAsync();
+        Task<List<string>> GetAvailableLocationsAsync();
 
         // Step 9
         Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, CancellationToken token);

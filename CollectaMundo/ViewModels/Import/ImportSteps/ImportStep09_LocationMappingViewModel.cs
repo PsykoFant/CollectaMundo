@@ -49,7 +49,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
             foreach (var csvValue in csvValues)
             {
                 var guessed = ImportValueMatcher.MapImportValue(csvValue!, ImportField.Location, locationOptions) ?? defaultLocation; // Default to "Unknown" if no match found
-                LanguageMappings.Add(new CsvValueMapping
+                LocationMappings.Add(new CsvValueMapping
                 {
                     CsvValue = csvValue!,
                     CardSetValues = [.. locationOptions],
