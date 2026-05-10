@@ -34,14 +34,13 @@
             get => _language;
             init => _language = value;
         }
-
-        private string? _location;
-        public string? Location
+        private int? _locationId;
+        public int? LocationId
         {
-            get => _location;
-            init => _location = value;
+            get => _locationId;
+            init => _locationId = value;
         }
-        public string? Comment { get; init; }
+        public string? Comment { get; set; }
 
         // Warnings generated while resolving this item
         private readonly List<string> _warnings = [];

@@ -2,8 +2,6 @@
 using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
-using CollectaMundo.DomainLogic.CardLocations;
-using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
@@ -280,8 +278,10 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             token.ThrowIfCancellationRequested();
 
+            var availableLocations = await _cardLocationService.GetAllAsync();
+
             // 1) Resolve (mapping/defaults)
-            var resolved = _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings, locationMappings);
+            var resolved = _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings, locationMappings, availableLocations);
 
             token.ThrowIfCancellationRequested();
 
@@ -348,7 +348,7 @@ namespace CollectaMundo.ApplicationServices.Import
         }
         public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings)
         {
-            return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings, additionalFieldMappings, conditionMappings, finishMappings, languageMappings);
+            return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings, additionalFieldMappings, conditionMappings, finishMappings, languageMappings, locationMappings);
         }
         public async Task<OperationResult> SaveUnimportableItemsAsync(ImportSummary summary, IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems)
         {

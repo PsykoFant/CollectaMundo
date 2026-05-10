@@ -648,7 +648,7 @@ namespace CollectaMundo.ViewModels.Import
                 Debug.WriteLine($"Condition         : {item.Condition ?? "<null>"}");
                 Debug.WriteLine($"Finish            : {item.Finish ?? "<null>"}");
                 Debug.WriteLine($"Language          : {item.Language ?? "<null>"}");
-                Debug.WriteLine($"Location          : {item.Location ?? "<null>"}");
+                Debug.WriteLine($"Location          : {item.LocationId?.ToString() ?? "<null>"}");
                 Debug.WriteLine($"CardsOwned        : {item.CardsOwned}");
                 Debug.WriteLine($"CardsForTrade     : {item.CardsForTrade}");
 

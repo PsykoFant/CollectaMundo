@@ -1,8 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.Import.Models;
-using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Shared.Models;
-using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
 
@@ -26,8 +23,8 @@ namespace CollectaMundo.DomainLogic.Import
         // Step 4
         ImportMatchSummaryDto ApplySelectedUuids(ObservableCollection<TempCardItem> importCandidates, List<MultipleUuidsItem> userSelections);
 
-        // Step 9
-        IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings);
+        // Step 10
+        IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations);
         void ApplyStrictVariantValidation(IReadOnlyList<ResolvedImportItem> resolved, AvailabilityIndex availability);
         ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings);
         string BuildUnimportableItemsCsv(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems);

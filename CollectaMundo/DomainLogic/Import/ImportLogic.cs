@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Import.Models;
+﻿using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
@@ -425,7 +426,7 @@ namespace CollectaMundo.DomainLogic.Import
         // ----------------------
         // Strict validation of mapped values against availability
         // ----------------------
-        public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
+        public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations)
         {
             var uuidHeader = "collectaMundoUuidImportField";
             var ownedHeader = GetMappedHeader(fieldMappings, ImportField.CardsOwned);
@@ -433,6 +434,8 @@ namespace CollectaMundo.DomainLogic.Import
             var conditionHeader = GetMappedHeader(fieldMappings, ImportField.Condition);
             var finishHeader = GetMappedHeader(fieldMappings, ImportField.CardFinish);
             var languageHeader = GetMappedHeader(fieldMappings, ImportField.Language);
+            var locationHeader = GetMappedHeader(fieldMappings, ImportField.Location);
+            var commentHeader = GetMappedHeader(fieldMappings, ImportField.Comment);
 
             var resolved = new List<ResolvedImportItem>(items.Count);
 
@@ -461,6 +464,12 @@ namespace CollectaMundo.DomainLogic.Import
 
                 var language = ResolveMappedValue(item, languageHeader, languageMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
 
+                var locationDisplayName = ResolveMappedValue(item, locationHeader, locationMappings);
+
+                var locationId = ResolveLocationId(locationDisplayName, availableLocations, warnings);
+
+                var comment = ResolveRawValue(item, commentHeader) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Comment);
+
                 var resolvedItem = new ResolvedImportItem
                 {
                     TempItemImportKey = item.TempItemImportKey,
@@ -470,7 +479,9 @@ namespace CollectaMundo.DomainLogic.Import
                     CardsForTrade = trade,
                     Condition = condition,
                     Finish = finish,
-                    Language = language
+                    Language = language,
+                    LocationId = locationId,
+                    Comment = comment
                 };
 
                 resolvedItem.AddWarnings(warnings);
@@ -676,11 +687,50 @@ namespace CollectaMundo.DomainLogic.Import
             item.AddWarning(warning);
             item.IsImportable = false;
         }
+        private static int? ResolveLocationId(string? displayName, IReadOnlyList<CardLocation> availableLocations, List<string> warnings)
+        {
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                return null;
+            }
+
+            var matches = availableLocations
+                .Where(x => string.Equals(x.DisplayName, displayName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (matches.Count == 1)
+            {
+                return matches[0].Id;
+            }
+
+            if (matches.Count == 0)
+            {
+                warnings.Add($"Location '{displayName}' was not found.");
+                return null;
+            }
+
+            warnings.Add($"Location '{displayName}' matched multiple locations.");
+            return null;
+        }
+        private static string? ResolveRawValue(TempCardItem item, string? csvHeader)
+        {
+            if (string.IsNullOrWhiteSpace(csvHeader))
+            {
+                return null;
+            }
+
+            if (!item.CsvFields.TryGetValue(csvHeader, out var raw))
+            {
+                return null;
+            }
+
+            return string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+        }
 
         // ----------------------
         // Summary construction
         // ----------------------
-        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
+        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings)
         {
             var summary = new ImportSummary();
 
@@ -749,14 +799,16 @@ namespace CollectaMundo.DomainLogic.Import
             AddValueMappingsIfFieldMapped(ImportField.Condition, conditionMappings);
             AddValueMappingsIfFieldMapped(ImportField.CardFinish, finishMappings);
             AddValueMappingsIfFieldMapped(ImportField.Language, languageMappings);
+            AddValueMappingsIfFieldMapped(ImportField.Location, locationMappings);
 
             // If NONE of the value-mapped fields are mapped to a CSV column, show a single explanatory row so the grid isn't empty.
             var anyValueFieldMapped =
                 additionalFieldMappings.Any(m =>
-                    (m.FieldToMap == ImportField.Condition ||
-                     m.FieldToMap == ImportField.CardFinish ||
-                     m.FieldToMap == ImportField.Language) &&
-                    !string.IsNullOrWhiteSpace(m.SelectedCsvHeader));
+                (m.FieldToMap == ImportField.Condition ||
+                m.FieldToMap == ImportField.CardFinish ||
+                m.FieldToMap == ImportField.Language ||
+                m.FieldToMap == ImportField.Location) &&
+                !string.IsNullOrWhiteSpace(m.SelectedCsvHeader));
 
             if (!anyValueFieldMapped)
             {
@@ -923,8 +975,8 @@ namespace CollectaMundo.DomainLogic.Import
                     r.Condition ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition),
                     r.Language ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language),
                     r.Finish ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish),
-                    locationId: null,
-                    comment: CollectionCardItemDefaults.GetDefaultString(ImportField.Comment)),
+                    locationId: r.LocationId,
+                    comment: r.Comment ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Comment)),
                 r.CardsOwned,
                 r.CardsForTrade
             })
