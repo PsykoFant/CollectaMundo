@@ -419,13 +419,14 @@ namespace CollectaMundo.DomainLogic.Import
             };
         }
 
-
         #endregion
 
         #region Step 10
+
         // ----------------------
-        // Strict validation of mapped values against availability
+        // Resolve all mapped values, applying defaults where needed and collecting warnings (e.g. parsing issues, missing mappings)
         // ----------------------
+
         public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations)
         {
             var uuidHeader = "collectaMundoUuidImportField";
@@ -490,6 +491,115 @@ namespace CollectaMundo.DomainLogic.Import
 
             return resolved;
         }
+
+        // Helpers
+        private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
+        {
+            if (string.IsNullOrWhiteSpace(csvHeader))
+            {
+                return null;
+            }
+
+            if (!item.CsvFields.TryGetValue(csvHeader, out var raw))
+            {
+                return null;
+            }
+
+            var mapping = mappings.FirstOrDefault(m =>
+                string.Equals(m.CsvValue, raw, StringComparison.OrdinalIgnoreCase));
+
+            return mapping?.SelectedCardSetValue;
+        }
+        private static string? GetMappedHeader(IReadOnlyList<CsvFieldMapping> mappings, ImportField field)
+        {
+            return mappings.FirstOrDefault(m => m.FieldToMap == field)?.SelectedCsvHeader;
+        }
+        private static int ParseNonNegativeWholeNumberOrDefault(TempCardItem item, string? header, int defaultValue, List<string> warnings, string warningContext)
+        {
+            if (string.IsNullOrWhiteSpace(header))
+            {
+                return defaultValue;
+            }
+
+            if (!item.CsvFields.TryGetValue(header, out var raw) ||
+                string.IsNullOrWhiteSpace(raw))
+            {
+                return defaultValue;
+            }
+
+            var trimmed = raw.Trim();
+
+            // Reject multiple separators
+            if (trimmed.Count(c => c == '.' || c == ',') > 1)
+            {
+                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
+                return defaultValue;
+            }
+
+            var normalized = trimmed.Replace(',', '.');
+
+            if (!decimal.TryParse(
+                    normalized,
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out var value))
+            {
+                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
+                return defaultValue;
+            }
+
+            if (value < 0 || value != decimal.Truncate(value))
+            {
+                warnings.Add($"{warningContext}: non-whole number '{raw}', defaulted to {defaultValue}");
+                return defaultValue;
+            }
+
+            return (int)value;
+        }
+        private static int? ResolveLocationId(string? displayName, IReadOnlyList<CardLocation> availableLocations, List<string> warnings)
+        {
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                return null;
+            }
+
+            var matches = availableLocations
+                .Where(x => string.Equals(x.DisplayName, displayName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (matches.Count == 1)
+            {
+                return matches[0].Id;
+            }
+
+            if (matches.Count == 0)
+            {
+                warnings.Add($"Location '{displayName}' was not found.");
+                return null;
+            }
+
+            warnings.Add($"Location '{displayName}' matched multiple locations.");
+            return null;
+        }
+        private static string? ResolveRawValue(TempCardItem item, string? csvHeader)
+        {
+            if (string.IsNullOrWhiteSpace(csvHeader))
+            {
+                return null;
+            }
+
+            if (!item.CsvFields.TryGetValue(csvHeader, out var raw))
+            {
+                return null;
+            }
+
+            return string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+        }
+
+
+        // ----------------------
+        // Strict validation of mapped values against availability. E.g. we don't want to import a card in foil if the uuid hasn't foil available.
+        // ----------------------
         public void ApplyStrictVariantValidation(IReadOnlyList<ResolvedImportItem> resolved, AvailabilityIndex availability)
         {
             foreach (var r in resolved)
@@ -586,70 +696,7 @@ namespace CollectaMundo.DomainLogic.Import
             }
 
             return set;
-        }
-        private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
-        {
-            if (string.IsNullOrWhiteSpace(csvHeader))
-            {
-                return null;
-            }
-
-            if (!item.CsvFields.TryGetValue(csvHeader, out var raw))
-            {
-                return null;
-            }
-
-            var mapping = mappings.FirstOrDefault(m =>
-                string.Equals(m.CsvValue, raw, StringComparison.OrdinalIgnoreCase));
-
-            return mapping?.SelectedCardSetValue;
-        }
-        private static string? GetMappedHeader(IReadOnlyList<CsvFieldMapping> mappings, ImportField field)
-        {
-            return mappings.FirstOrDefault(m => m.FieldToMap == field)?.SelectedCsvHeader;
-        }
-        private static int ParseNonNegativeWholeNumberOrDefault(TempCardItem item, string? header, int defaultValue, List<string> warnings, string warningContext)
-        {
-            if (string.IsNullOrWhiteSpace(header))
-            {
-                return defaultValue;
-            }
-
-            if (!item.CsvFields.TryGetValue(header, out var raw) ||
-                string.IsNullOrWhiteSpace(raw))
-            {
-                return defaultValue;
-            }
-
-            var trimmed = raw.Trim();
-
-            // Reject multiple separators
-            if (trimmed.Count(c => c == '.' || c == ',') > 1)
-            {
-                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
-                return defaultValue;
-            }
-
-            var normalized = trimmed.Replace(',', '.');
-
-            if (!decimal.TryParse(
-                    normalized,
-                    NumberStyles.Number,
-                    CultureInfo.InvariantCulture,
-                    out var value))
-            {
-                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
-                return defaultValue;
-            }
-
-            if (value < 0 || value != decimal.Truncate(value))
-            {
-                warnings.Add($"{warningContext}: non-whole number '{raw}', defaulted to {defaultValue}");
-                return defaultValue;
-            }
-
-            return (int)value;
-        }
+        }     
         private static bool IsFinishAvailable(string? finishesCsv, string? finish)
         {
             if (string.IsNullOrWhiteSpace(finish) || string.IsNullOrWhiteSpace(finishesCsv))
@@ -681,50 +728,11 @@ namespace CollectaMundo.DomainLogic.Import
             }
 
             return foreignByUuid.TryGetValue(uuid, out var langs) && langs.Contains(language);
-        }
+        }        
         private static void MarkUnimportable(ResolvedImportItem item, string warning)
         {
             item.AddWarning(warning);
             item.IsImportable = false;
-        }
-        private static int? ResolveLocationId(string? displayName, IReadOnlyList<CardLocation> availableLocations, List<string> warnings)
-        {
-            if (string.IsNullOrWhiteSpace(displayName))
-            {
-                return null;
-            }
-
-            var matches = availableLocations
-                .Where(x => string.Equals(x.DisplayName, displayName, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (matches.Count == 1)
-            {
-                return matches[0].Id;
-            }
-
-            if (matches.Count == 0)
-            {
-                warnings.Add($"Location '{displayName}' was not found.");
-                return null;
-            }
-
-            warnings.Add($"Location '{displayName}' matched multiple locations.");
-            return null;
-        }
-        private static string? ResolveRawValue(TempCardItem item, string? csvHeader)
-        {
-            if (string.IsNullOrWhiteSpace(csvHeader))
-            {
-                return null;
-            }
-
-            if (!item.CsvFields.TryGetValue(csvHeader, out var raw))
-            {
-                return null;
-            }
-
-            return string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
         }
 
         // ----------------------

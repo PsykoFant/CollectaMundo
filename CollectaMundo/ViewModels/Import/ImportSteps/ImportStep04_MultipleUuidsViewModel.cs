@@ -9,6 +9,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
     public partial class ImportStep04_MultipleUuidsViewModel : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent;
+        private bool _suppressSelectionImageRequests; // Flag to prevent image requests when programmatically setting SelectedUuid
         public ObservableCollection<MultipleUuidsItem> MultipleUuidItems { get; } = [];
 
         // --------------------------------------------
@@ -52,7 +53,12 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                         SelectedUuid = null,
                         OnSelectionChangedCallback = uuid =>
                         {
-                            // Show image in shared CardImageVM
+                            // If we are not auto-selecting ... 
+                            if (_suppressSelectionImageRequests)
+                            {
+                                return;
+                            }
+                            // ... show image in shared CardImageVM
                             _parent.RequestCardImage(uuid);
                         }
                     };
@@ -98,9 +104,9 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // UI Text & Visibility
         // --------------------------------------------
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
-        public string SecondaryActionButtonText => string.Empty;
+        public string SecondaryActionButtonText => "Don't care - choose a random version";
         public Visibility PrimaryActionVisibility => Visibility.Visible;
-        public Visibility SecondaryActionVisibility => Visibility.Collapsed;
+        public Visibility SecondaryActionVisibility => Visibility.Visible;
 
         [ObservableProperty]
         private Visibility stepContentVisibility = Visibility.Visible;
@@ -109,7 +115,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // Step-level button enablement
         // --------------------------------------------
         public bool CanExecutePrimaryAction => MultipleUuidItems.All(c => !string.IsNullOrWhiteSpace(c.SelectedUuid));
-        public bool CanExecuteSecondaryAction => false;
+        public bool CanExecuteSecondaryAction => MultipleUuidItems.Any();
 
         // --------------------------------------------
         // Actions
@@ -117,6 +123,37 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         public async Task<OperationResult> OnPrimaryAction()
         {
             StepContentVisibility = Visibility.Collapsed;
+            return await _parent.AfterStep4Action();
+        }
+        public async Task<OperationResult> OnSecondaryAction()
+        {
+            _suppressSelectionImageRequests = true;
+
+            try
+            {
+                foreach (var item in MultipleUuidItems)
+                {
+                    if (!string.IsNullOrWhiteSpace(item.SelectedUuid))
+                    {
+                        continue;
+                    }
+
+                    if (item.VersionedUuids.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var randomIndex = Random.Shared.Next(item.VersionedUuids.Count);
+                    item.SelectedUuid = item.VersionedUuids[randomIndex].Uuid;
+                }
+            }
+            finally
+            {
+                _suppressSelectionImageRequests = false;
+            }
+
+            StepContentVisibility = Visibility.Collapsed;
+
             return await _parent.AfterStep4Action();
         }
 

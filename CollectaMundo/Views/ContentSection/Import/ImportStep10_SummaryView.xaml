@@ -100,6 +100,7 @@
                   ItemsSource="{Binding Summary.UnimportableItems}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
+                  IsReadOnly="True"
                   HeadersVisibility="Column"
                   Visibility="{Binding Summary.UnableToImportCount, Converter={StaticResource CountToVisibilityConverter}}"
                   Margin="0,10,0,0"
@@ -112,7 +113,16 @@
                 <DataGridTextColumn Header="Card Name" Binding="{Binding CardName}" Width="*"/>
                 <DataGridTextColumn Header="Set Name" Binding="{Binding SetName}" Width="*"/>
                 <DataGridTextColumn Header="Set Code" Binding="{Binding SetCode}" Width="*"/>
-                <DataGridTextColumn Header="Warning" Binding="{Binding WarningText}" Width="*"/>
+                <DataGridTemplateColumn Header="Warning" Width="2*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding WarningText}"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center"
+                           Margin="4,2"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

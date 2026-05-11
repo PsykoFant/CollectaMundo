@@ -434,7 +434,6 @@ namespace CollectaMundo.ViewModels.Import
         public Task<OperationResult> AfterStep9Action()
         {
             GoToStep(ImportStep.Summary);
-            DebugResolvedImportItems();
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Location mappings processed."));
         }
         public async Task<OperationResult> AfterStep10Action()
@@ -595,6 +594,7 @@ namespace CollectaMundo.ViewModels.Import
             ConditionMappings.Clear();
             FinishMappings.Clear();
             LanguageMappings.Clear();
+            LocationMappings.Clear();
 
             // Reset progress
             _progress = null;

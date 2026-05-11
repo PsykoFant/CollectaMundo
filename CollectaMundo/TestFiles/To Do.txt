@@ -1,6 +1,11 @@
 TO DO 
 
-Tilføj kommentar/location til import
+- Vælg indenfor serie
+- Vælg valid version
+- Auto-opret locations
+
+
+
 Tilføj kommentar/location til import scenarie-test
 
 Deck editor!
