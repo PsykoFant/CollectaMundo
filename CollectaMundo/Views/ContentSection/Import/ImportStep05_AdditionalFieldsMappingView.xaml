@@ -8,7 +8,7 @@
              d:DataContext="{d:DesignInstance vmsteps:ImportStep05_AdditionalFieldsMappingViewModel}"
              d:Style="{StaticResource {x:Type UserControl}}"
              d:DesignHeight="600" d:DesignWidth="800">
-    <Grid Visibility="{Binding StepContentVisibility}" HorizontalAlignment="Center">
+    <Grid Visibility="{Binding IsStepContentVisible, Converter={StaticResource BoolToVisibilityConverter}}" HorizontalAlignment="Center">
         <Grid.RowDefinitions>
             <!-- Explainer -->
             <RowDefinition Height="Auto"/>

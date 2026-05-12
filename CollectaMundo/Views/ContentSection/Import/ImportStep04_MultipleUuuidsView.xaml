@@ -24,8 +24,11 @@
                     So The Import Wizard needs a bit more help. Choose in the right column the specific version of the card(s) you are trying to import. Check the image reference on the right for help.
                 </Paragraph>
                 <Paragraph>
-                    You must select a SPECIFIC version for all cards for the import to continue.
+                    Select a SPECIFIC version for all cards for the import to continue.
                 </Paragraph>
+                <Paragraph>
+                    You CAN also choose to not care. E.g. if you try to import Flooded Strand from Modern Horizons 3 The Import Wizard will then just pick the first of four versions.
+                </Paragraph>                
             </FlowDocument>
         </FlowDocumentScrollViewer>
         <DataGrid Grid.Row="1" ItemsSource="{Binding MultipleUuidItems}"

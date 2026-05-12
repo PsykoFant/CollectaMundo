@@ -30,7 +30,7 @@
         <!-- Fail image -->
         <Image Grid.Row="1"
            Source="/Resources/Images/counterspell_fail.png"
-           Visibility="{Binding ImportFailVisibility}"
+           Visibility="{Binding IsImportFailVisible, Converter={StaticResource BoolToVisibilityConverter}}" 
            Stretch="None"
            HorizontalAlignment="Center"
            Margin="0,10,0,10"/>
@@ -38,7 +38,7 @@
         <!-- Success image -->
         <Image Grid.Row="1"
            Source="/Resources/Images/IxidorsWill.jpg"
-           Visibility="{Binding ImportSuccessVisibility}"
+           Visibility="{Binding IsImportSuccessVisible, Converter={StaticResource BoolToVisibilityConverter}}" 
            Stretch="None"
            HorizontalAlignment="Center"
            Margin="0,10,0,10"/>
@@ -64,7 +64,7 @@
 
         <!-- Progress bar + message -->
         <StackPanel Grid.Row="3" HorizontalAlignment="Center">
-            <ProgressBar Value="{Binding ProgressValue}" Style="{StaticResource CollectaMundoProgressBarStyle}" Visibility="{Binding ProgressVisibility}"/>
+            <ProgressBar Value="{Binding ProgressValue}" Style="{StaticResource CollectaMundoProgressBarStyle}" Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
             <Label Content="{Binding ProgressDetailMessage}" HorizontalAlignment="Center"/>
         </StackPanel>
             
@@ -80,7 +80,7 @@
             <Button Grid.Column="0"
                     Content="  Cancel import &#x274C;  " 
                     Command="{Binding CancelCommand}" 
-                    Visibility="{Binding CancelVisibility}" 
+                    Visibility="{Binding IsCancelVisible, Converter={StaticResource BoolToVisibilityConverter}}" 
                     HorizontalAlignment="Left"/>
 
             <!-- Primary Action -->
@@ -88,7 +88,7 @@
                     Content="{Binding CurrentStepViewModel.PrimaryActionButtonText}"
                     Command="{Binding PrimaryActionCommand}"
                     IsEnabled="{Binding IsPrimaryActionButtonEnabled}"
-                    Visibility="{Binding CurrentStepViewModel.PrimaryActionVisibility}"
+                    Visibility="{Binding CurrentStepViewModel.IsPrimaryActionVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                     HorizontalAlignment="Center"/>
 
             <!-- Secondary Action -->
@@ -96,7 +96,7 @@
                     Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
                     Command="{Binding SecondaryActionCommand}"
                     IsEnabled="{Binding IsSecondaryActionButtonEnabled}"
-                    Visibility="{Binding CurrentStepViewModel.SecondaryActionVisibility}"
+                    Visibility="{Binding CurrentStepViewModel.IsSecondaryActionVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                     HorizontalAlignment="Right"/>
         </Grid>
     </Grid>

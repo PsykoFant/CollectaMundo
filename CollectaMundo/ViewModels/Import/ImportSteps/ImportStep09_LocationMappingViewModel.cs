@@ -63,11 +63,11 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => string.Empty;
-        public Visibility PrimaryActionVisibility => Visibility.Visible;
-        public Visibility SecondaryActionVisibility => Visibility.Collapsed;
+        public bool IsPrimaryActionVisible => true;
+        public bool IsSecondaryActionVisible => false;
 
         [ObservableProperty]
-        private Visibility stepContentVisibility = Visibility.Visible;
+        private bool isStepContentVisible = true;
 
         // --------------------------------------------
         // Step-level button enablement
@@ -80,7 +80,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         public async Task<OperationResult> OnPrimaryAction()
         {
-            StepContentVisibility = Visibility.Collapsed;
+            IsStepContentVisible = false;
             return await _parent.AfterStep9Action();
         }
 

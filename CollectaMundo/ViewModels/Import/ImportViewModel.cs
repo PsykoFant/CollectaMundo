@@ -29,7 +29,7 @@ namespace CollectaMundo.ViewModels.Import
         private ProgressSinks CreateProgressSinks() => new()
         {
             Percent = new Progress<int>(v => ProgressValue = v),
-            ProgressBarVisible = new Progress<bool>(v => ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed),
+            ProgressBarVisible = new Progress<bool>(v => IsProgressVisible = v),
             Headline = new Progress<string>(v => ProgressHeadline = v),
             Step = new Progress<string>(v => ProgressStep = v),
             Detail = new Progress<string>(v => ProgressDetailMessage = v),
@@ -103,16 +103,16 @@ namespace CollectaMundo.ViewModels.Import
         #region Visibility properties
 
         [ObservableProperty]
-        private Visibility progressVisibility = Visibility.Collapsed;
+        private bool isProgressVisible = false;
 
         [ObservableProperty]
-        private Visibility importFailVisibility = Visibility.Collapsed;
+        private bool isImportFailVisible = false;
 
         [ObservableProperty]
-        private Visibility importSuccessVisibility = Visibility.Collapsed;
+        private bool isImportSuccessVisible = false;
 
         [ObservableProperty]
-        private Visibility cancelVisibility = Visibility.Collapsed;
+        private bool isCancelVisible = false;
 
         #endregion
 
@@ -260,12 +260,12 @@ namespace CollectaMundo.ViewModels.Import
                 // Decide your policy: stay on Summary but show cancelled,
                 // or navigate to Finish.
                 Progress.Detail.Report("Cancelled.");
-                ImportFailVisibility = Visibility.Visible;
+                IsImportFailVisible = true;
             }
             catch (Exception ex)
             {
                 Progress.Detail.Report($"Failed: {ex.Message}");
-                ImportFailVisibility = Visibility.Visible;
+                IsImportFailVisible = true;
                 Debug.WriteLine($"[PrepareSummaryAsync] {ex}");
             }
             finally
@@ -305,7 +305,7 @@ namespace CollectaMundo.ViewModels.Import
                 Progress.Detail.Report("Parsing CSV file...");
 
                 // Prepare cancel
-                CancelVisibility = Visibility.Visible;
+                IsCancelVisible = true;
                 var cancelToken = _userPromptService.CreateOperationCancellationToken();
 
                 // Perform parsing 
@@ -509,8 +509,8 @@ namespace CollectaMundo.ViewModels.Import
 
                 if (result.Code != OperationResultCode.Success)
                 {
-                    ImportFailVisibility = Visibility.Visible;
-                    CancelVisibility = Visibility.Collapsed;
+                    IsImportFailVisible = true;
+                    IsCancelVisible = false;
                 }
 
                 ClearProgress();
@@ -519,12 +519,12 @@ namespace CollectaMundo.ViewModels.Import
                     case OperationResultCode.Success:
                         if (_currentStep == ImportStep.Finish)
                         {
-                            ImportSuccessVisibility = Visibility.Visible;
+                            IsImportSuccessVisible = true;
                             Progress.Headline.Report("Import complete!");
                             Progress.Step.Report("Success!");
                             Progress.Detail.Report($"Added {Summary.TotalImportItems} individual cards and {Summary.TotalCardsToAdd} total cards to your collection.");
 
-                            CancelVisibility = Visibility.Collapsed;
+                            IsCancelVisible = false;
                         }
                         Debug.WriteLine($"{stepName} completed successfully: {result.Message}");
                         break;
@@ -570,10 +570,10 @@ namespace CollectaMundo.ViewModels.Import
         private void CancelImport()
         {
             Debug.WriteLine("ImportViewModel: Cancelling import operation as per user request.");
-            CancelVisibility = Visibility.Collapsed;
+            IsCancelVisible = false;
             _shellUiState.IsSideMenuRightVisible = false;
             _userPromptService.CancelActiveOperation();
-            ImportFailVisibility = Visibility.Visible;
+            IsImportFailVisible = true;
             Progress.Headline.Report("Import cancelled");
             Progress.Detail.Report("User cancellation - no cards imported to collection.");
             GoToStep(ImportStep.Finish);
@@ -617,8 +617,9 @@ namespace CollectaMundo.ViewModels.Import
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
 
-            ImportFailVisibility = Visibility.Collapsed;
-            ImportSuccessVisibility = Visibility.Collapsed;
+            IsImportFailVisible = false;
+            IsImportSuccessVisible = false;
+            IsCancelVisible = false;
 
             _utilitiesNavigator.ShowHome();
             _shellUiState.SetUiBusy(false);

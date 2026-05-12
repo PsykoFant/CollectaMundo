@@ -18,11 +18,11 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         bool CanExecuteSecondaryAction { get; }
 
         // Visibilites of action buttons
-        Visibility PrimaryActionVisibility { get; }
-        Visibility SecondaryActionVisibility { get; }
+        bool IsPrimaryActionVisible { get; }
+        bool IsSecondaryActionVisible { get; }
 
-        // NEW: Visibility of main interactive UI for the step
-        Visibility StepContentVisibility { get; set; }
+        // Visibility of main interactive UI for the step
+        bool IsStepContentVisible { get; set; }
     }
 
 }

@@ -36,12 +36,11 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         public string PrimaryActionButtonText => "  Start the import...  \u27A1";
         public string SecondaryActionButtonText => "  Save unrecognized items  \U0001F4BE";
 
-        public Visibility PrimaryActionVisibility => Visibility.Visible;
-        public Visibility SecondaryActionVisibility => _parent.Summary.UnableToImportCount == 0 ? Visibility.Collapsed : Visibility.Visible;
+        public bool IsPrimaryActionVisible => true;
+        public bool IsSecondaryActionVisible => _parent.Summary.UnableToImportCount == 0 ? false : true;
 
         [ObservableProperty]
-        private Visibility stepContentVisibility = Visibility.Visible;
-
+        private bool isStepContentVisible = true;
         // --------------------------------------------
         // Step-level button enablement
         // --------------------------------------------
@@ -54,7 +53,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         public async Task<OperationResult> OnPrimaryAction()
         {
             // Proceed with import
-            StepContentVisibility = Visibility.Collapsed;
+            IsStepContentVisible = false;
             return await _parent.AfterStep10Action();
         }
         public Task<OperationResult> OnSecondaryAction()

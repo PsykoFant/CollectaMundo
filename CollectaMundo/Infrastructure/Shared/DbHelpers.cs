@@ -27,6 +27,25 @@ namespace CollectaMundo.Infrastructure.Shared
 
             return uniqueValues;
         }
+        public static object ToDbNullableInt(int? value){
+            return value.HasValue
+                ? value.Value
+                : DBNull.Value;
+        }
+        public static object ToDbNullableString(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? DBNull.Value
+                : value.Trim();
+        }
+        public static string? NormalizeNullableString(string? value)
+        {
+            var trimmed = value?.Trim();
+
+            return string.IsNullOrWhiteSpace(trimmed)
+                ? null
+                : trimmed;
+        }
 
     }
 }

@@ -1,7 +1,5 @@
 TO DO 
 
-- Vælg indenfor serie
-- Vælg valid version
 - Auto-opret locations
 
 

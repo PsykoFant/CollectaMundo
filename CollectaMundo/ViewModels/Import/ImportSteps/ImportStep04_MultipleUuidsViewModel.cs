@@ -104,12 +104,12 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // UI Text & Visibility
         // --------------------------------------------
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
-        public string SecondaryActionButtonText => "Don't care - choose a random version";
-        public Visibility PrimaryActionVisibility => Visibility.Visible;
-        public Visibility SecondaryActionVisibility => Visibility.Visible;
+        public string SecondaryActionButtonText => "  Don't care - choose a random version  ";
+        public bool IsPrimaryActionVisible => true;
+        public bool IsSecondaryActionVisible => true;
 
         [ObservableProperty]
-        private Visibility stepContentVisibility = Visibility.Visible;
+        private bool isStepContentVisible = true;
 
         // --------------------------------------------
         // Step-level button enablement
@@ -122,7 +122,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         public async Task<OperationResult> OnPrimaryAction()
         {
-            StepContentVisibility = Visibility.Collapsed;
+            IsStepContentVisible = false;
             return await _parent.AfterStep4Action();
         }
         public async Task<OperationResult> OnSecondaryAction()
@@ -152,7 +152,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                 _suppressSelectionImageRequests = false;
             }
 
-            StepContentVisibility = Visibility.Collapsed;
+            IsStepContentVisible = false;
 
             return await _parent.AfterStep4Action();
         }

@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.Infrastructure.Shared;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CollectionMutations
 {
@@ -22,8 +23,8 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
                 insertCmd.Parameters.AddWithValue("@condition", condition);
                 insertCmd.Parameters.AddWithValue("@language", language);
                 insertCmd.Parameters.AddWithValue("@finish", finish);
-                insertCmd.Parameters.AddWithValue("@locationId", locationId.HasValue ? locationId.Value : DBNull.Value);
-                insertCmd.Parameters.AddWithValue("@comment", string.IsNullOrWhiteSpace(comment) ? DBNull.Value : comment.Trim());
+                insertCmd.Parameters.AddWithValue("@locationId", DbHelpers.ToDbNullableInt(locationId));
+                insertCmd.Parameters.AddWithValue("@comment", DbHelpers.ToDbNullableString(comment));
 
                 await insertCmd.ExecuteNonQueryAsync();
 
@@ -37,7 +38,7 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
                 throw new InvalidOperationException(
                     "Duplicate CollectionIdentity detected. " +
                     $"Uuid={uuid}, Language={language}, Finish={finish}, Condition={condition}, " +
-                    $"LocationId={(locationId?.ToString() ?? "null")}, Comment={(string.IsNullOrWhiteSpace(comment) ? "null" : comment.Trim())}.",
+                    $"LocationId={(locationId?.ToString() ?? "null")}, Comment={(DbHelpers.NormalizeNullableString(comment) ?? "null")}.",
                     ex);
             }
         }
@@ -70,8 +71,8 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
             cmd.Parameters.AddWithValue("@cond", condition);
             cmd.Parameters.AddWithValue("@lang", language);
             cmd.Parameters.AddWithValue("@fin", finish);
-            cmd.Parameters.AddWithValue("@locationId", locationId.HasValue ? locationId.Value : DBNull.Value);
-            cmd.Parameters.AddWithValue("@comment", string.IsNullOrWhiteSpace(comment) ? DBNull.Value : comment.Trim());
+            cmd.Parameters.AddWithValue("@locationId", DbHelpers.ToDbNullableInt(locationId));
+            cmd.Parameters.AddWithValue("@comment", DbHelpers.ToDbNullableString(comment));
             cmd.Parameters.AddWithValue("@id", id);
 
             await cmd.ExecuteNonQueryAsync();
