@@ -45,9 +45,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             try
             {
-                bool alreadyExists = await _cardLocationRepo.ExistsByNameAsync(
-                    uow.CurrentConnection,
-                    normalizedName);
+                bool alreadyExists = await _cardLocationRepo.ExistsByNameAsync(uow.CurrentConnection,normalizedName);
 
                 if (alreadyExists)
                 {
@@ -75,6 +73,88 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             {
                 await uow.RollbackAsync();
                 return new CardLocationMutationResult(new OperationResult( OperationResultCode.Error, $"Failed to create location: {ex.Message}"), null);
+            }
+        }
+        public async Task<IReadOnlyList<CardLocation>> CreateMissingAsync(IReadOnlyList<string> names, CardLocationType type, CancellationToken token)
+        {
+            var normalizedNames = names
+                .Select(_cardLocationLogic.NormalizeName)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (normalizedNames.Count == 0)
+            {
+                return [];
+            }
+
+            var validNames = new List<string>();
+
+            foreach (var name in normalizedNames)
+            {
+                var validation = _cardLocationLogic.ValidateForCreate(name, type);
+
+                if (validation.Code == OperationResultCode.Success)
+                {
+                    validNames.Add(name);
+                }
+            }
+
+            if (validNames.Count == 0)
+            {
+                return [];
+            }
+
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginAsync();
+
+            try
+            {
+                var existingLocations = await _cardLocationRepo.GetAllAsync(uow.CurrentConnection);
+
+                var existingNames = existingLocations
+                    .Select(x => x.Name)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                var namesToCreate = validNames
+                    .Where(name => !existingNames.Contains(name))
+                    .ToList();
+
+                if (namesToCreate.Count == 0)
+                {
+                    await uow.CommitAsync();
+                    return [];
+                }
+
+                string dbType = MapTypeToDb(type);
+
+                var recordsToInsert = namesToCreate
+                    .Select(name => (Name: name, Type: dbType))
+                    .ToList();
+
+                var createdRecords = await _cardLocationRepo.InsertManyAsync(
+                    uow.CurrentConnection,
+                    uow.CurrentTransaction,
+                    recordsToInsert,
+                    token);
+
+                await uow.CommitAsync();
+
+                var createdLocations = createdRecords
+                    .Select(MapToDomain)
+                    .ToList();
+
+                foreach (var location in createdLocations)
+                {
+                    _cardLocationLookupStore.Upsert(location);
+                }
+
+                return createdLocations;
+            }
+            catch
+            {
+                await uow.RollbackAsync();
+                throw;
             }
         }
         public async Task<CardLocationMutationResult> UpdateAsync(int id, string name, CardLocationType type)

@@ -53,6 +53,46 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return Convert.ToInt32(scalar);
         }
+        public async Task<IReadOnlyList<CardLocationRecord>> InsertManyAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token)
+        {
+            const string sql = """
+                                INSERT INTO cardLocations (name, type)
+                                VALUES (@name, @type);
+
+                                SELECT last_insert_rowid();
+                                """;
+
+            var created = new List<CardLocationRecord>(locations.Count);
+
+            using var cmd = new SQLiteCommand(sql, conn, tx);
+            cmd.Parameters.Add("@name", System.Data.DbType.String);
+            cmd.Parameters.Add("@type", System.Data.DbType.String);
+
+            foreach (var location in locations)
+            {
+                token.ThrowIfCancellationRequested();
+
+                cmd.Parameters["@name"].Value = location.Name;
+                cmd.Parameters["@type"].Value = location.Type;
+
+                object? scalar = await cmd.ExecuteScalarAsync(token);
+
+                if (scalar is null || scalar == DBNull.Value)
+                {
+                    throw new InvalidOperationException(
+                        $"InsertManyAsync failed to return a new card location id for '{location.Name}'.");
+                }
+
+                created.Add(new CardLocationRecord
+                {
+                    Id = Convert.ToInt32(scalar),
+                    Name = location.Name,
+                    Type = location.Type
+                });
+            }
+
+            return created;
+        }
         public async Task<int> UpdateAsync(SQLiteConnection conn, int id, string name, string type)
         {
             const string sql = """

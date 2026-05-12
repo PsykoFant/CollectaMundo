@@ -24,98 +24,6 @@ namespace CollectaMundo.ViewModels.Import
         private readonly IUtilitiesNavigator _utilitiesNavigator = utilitiesNavigator;
         private readonly IUserPromptService _userPromptService = userPromptService;
 
-        private ProgressSinks? _progress;
-        private ProgressSinks Progress => _progress ??= CreateProgressSinks();
-        private ProgressSinks CreateProgressSinks() => new()
-        {
-            Percent = new Progress<int>(v => ProgressValue = v),
-            ProgressBarVisible = new Progress<bool>(v => IsProgressVisible = v),
-            Headline = new Progress<string>(v => ProgressHeadline = v),
-            Step = new Progress<string>(v => ProgressStep = v),
-            Detail = new Progress<string>(v => ProgressDetailMessage = v),
-            CancelEnabled = new Progress<bool>(_ => { })
-        };
-        public event EventHandler<ImportCollectionUpsertResult>? CollectionMutationRequested; // To notify parent VM of collection changes
-        public event EventHandler<string?>? CardImageSelectionRequested; // To notify parent VM to show card image for given UUID
-
-        [ObservableProperty]
-        private string? progressHeadline;
-
-        [ObservableProperty]
-        private string? progressStep;
-
-        [ObservableProperty]
-        private string? progressDetailMessage;
-
-        // Button Enablement
-        // When either of these two change, the computed button properties must refresh
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(IsPrimaryActionButtonEnabled))]
-        [NotifyPropertyChangedFor(nameof(IsSecondaryActionButtonEnabled))]
-        private bool isProcessing;
-
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(IsPrimaryActionButtonEnabled))]
-        [NotifyPropertyChangedFor(nameof(IsSecondaryActionButtonEnabled))]
-        private IImportStepViewModel? currentStepViewModel;
-
-        // Computed button states (unchanged logic)
-        public bool IsPrimaryActionButtonEnabled => !IsProcessing && (CurrentStepViewModel?.CanExecutePrimaryAction ?? false);
-        public bool IsSecondaryActionButtonEnabled => !IsProcessing && (CurrentStepViewModel?.CanExecuteSecondaryAction ?? false);
-
-        // Handle subscriptions for child VM PropertyChanged events
-        partial void OnCurrentStepViewModelChanged(IImportStepViewModel? oldValue, IImportStepViewModel? newValue)
-        {
-            if (oldValue is INotifyPropertyChanged oldNotify)
-            {
-                oldNotify.PropertyChanged -= CurrentStep_PropertyChanged;
-            }
-
-            if (newValue is INotifyPropertyChanged newNotify)
-            {
-                newNotify.PropertyChanged += CurrentStep_PropertyChanged;
-            }
-        }
-
-        // Method to request card image display for given UUID
-        public void RequestCardImage(string uuid)
-        {
-            CardImageSelectionRequested?.Invoke(this, uuid);
-        }
-
-        // Forward relevant child property changes to parent computed properties
-        private void CurrentStep_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(IImportStepViewModel.CanExecutePrimaryAction))
-            {
-                OnPropertyChanged(nameof(IsPrimaryActionButtonEnabled));
-            }
-
-            if (e.PropertyName == nameof(IImportStepViewModel.CanExecuteSecondaryAction))
-            {
-                OnPropertyChanged(nameof(IsSecondaryActionButtonEnabled));
-            }
-        }
-
-        [ObservableProperty]
-        private int progressValue;
-
-        #region Visibility properties
-
-        [ObservableProperty]
-        private bool isProgressVisible = false;
-
-        [ObservableProperty]
-        private bool isImportFailVisible = false;
-
-        [ObservableProperty]
-        private bool isImportSuccessVisible = false;
-
-        [ObservableProperty]
-        private bool isCancelVisible = false;
-
-        #endregion
-
         #region Data collections for import process
         public ObservableCollection<TempCardItem> ImportCardList { get; } = []; // The master list of items being imported, generated from CSV
 
@@ -163,6 +71,148 @@ namespace CollectaMundo.ViewModels.Import
         public ImportSummary Summary { get; private set; } = new();
 
         #endregion
+
+        #region Progress properties and events
+        private ProgressSinks? _progress;
+        private ProgressSinks Progress => _progress ??= CreateProgressSinks();
+        private ProgressSinks CreateProgressSinks() => new()
+        {
+            Percent = new Progress<int>(v => ProgressValue = v),
+            ProgressBarVisible = new Progress<bool>(v => IsProgressVisible = v),
+            Headline = new Progress<string>(v => ProgressHeadline = v),
+            Step = new Progress<string>(v => ProgressStep = v),
+            Detail = new Progress<string>(v => ProgressDetailMessage = v),
+            CancelEnabled = new Progress<bool>(_ => { })
+        };
+        public event EventHandler<ImportCollectionUpsertResult>? CollectionMutationRequested; // To notify parent VM of collection changes
+        public event EventHandler<string?>? CardImageSelectionRequested; // To notify parent VM to show card image for given UUID
+
+        [ObservableProperty]
+        private string? progressHeadline;
+
+        [ObservableProperty]
+        private string? progressStep;
+
+        [ObservableProperty]
+        private string? progressDetailMessage;
+
+        [ObservableProperty]
+        private int progressValue;
+
+        #endregion
+
+        #region Visibility properties
+
+        [ObservableProperty]
+        private bool isProgressVisible = false;
+
+        [ObservableProperty]
+        private bool isImportFailVisible = false;
+
+        [ObservableProperty]
+        private bool isImportSuccessVisible = false;
+
+        [ObservableProperty]
+        private bool isCancelVisible = false;
+
+        #endregion
+
+        #region Button Enablement
+        // When either of these two change, the computed button properties must refresh
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsPrimaryActionButtonEnabled))]
+        [NotifyPropertyChangedFor(nameof(IsSecondaryActionButtonEnabled))]
+        private bool isProcessing;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsPrimaryActionButtonEnabled))]
+        [NotifyPropertyChangedFor(nameof(IsSecondaryActionButtonEnabled))]
+        private IImportStepViewModel? currentStepViewModel;
+
+        // Computed button states (unchanged logic)
+        public bool IsPrimaryActionButtonEnabled => !IsProcessing && (CurrentStepViewModel?.CanExecutePrimaryAction ?? false);
+        public bool IsSecondaryActionButtonEnabled => !IsProcessing && (CurrentStepViewModel?.CanExecuteSecondaryAction ?? false);
+
+        #endregion
+
+        #region Step specific properties and methods
+        // Method to request card image display for given UUID
+        public void RequestCardImage(string uuid)
+        {
+            CardImageSelectionRequested?.Invoke(this, uuid);
+        }
+        public async Task PrepareSummaryAsync()
+        {
+            try
+            {
+                IsProcessing = true;
+
+                Progress.ProgressBarVisible.Report(true);
+                Progress.Detail.Report("Resolving import items...");
+                Progress.Percent.Report(0);
+
+                var token = _userPromptService.CreateOperationCancellationToken();
+                ResolvedImportItems = await _importService.ResolveImportItemsStrictAsync(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings, LocationMappings, ShouldCreateMissingLocationsDuringImport, token);
+
+                Progress.Detail.Report("Building summary...");
+                Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings, LocationMappings);
+                Progress.ProgressBarVisible.Report(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Decide your policy: stay on Summary but show cancelled,
+                // or navigate to Finish.
+                Progress.Detail.Report("Cancelled.");
+                IsImportFailVisible = true;
+            }
+            catch (Exception ex)
+            {
+                Progress.Detail.Report($"Failed: {ex.Message}");
+                IsImportFailVisible = true;
+                Debug.WriteLine($"[PrepareSummaryAsync] {ex}");
+            }
+            finally
+            {
+                IsProcessing = false;
+                _userPromptService.DisposeOperationCancellationToken();
+            }
+        }
+        public Task<OperationResult> SaveUnimportableItemsAsync()
+        {
+            return _importService.SaveUnimportableItemsAsync(Summary, ResolvedImportItems, ImportCardList);
+        }
+        public bool ShouldCreateMissingLocationsDuringImport { get; set; }
+
+        #endregion
+
+        #region Current step management
+        // Handle subscriptions for child VM PropertyChanged events
+        partial void OnCurrentStepViewModelChanged(IImportStepViewModel? oldValue, IImportStepViewModel? newValue)
+        {
+            if (oldValue is INotifyPropertyChanged oldNotify)
+            {
+                oldNotify.PropertyChanged -= CurrentStep_PropertyChanged;
+            }
+
+            if (newValue is INotifyPropertyChanged newNotify)
+            {
+                newNotify.PropertyChanged += CurrentStep_PropertyChanged;
+            }
+        }
+
+        // Forward relevant child property changes to parent computed properties
+        private void CurrentStep_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(IImportStepViewModel.CanExecutePrimaryAction))
+            {
+                OnPropertyChanged(nameof(IsPrimaryActionButtonEnabled));
+            }
+
+            if (e.PropertyName == nameof(IImportStepViewModel.CanExecuteSecondaryAction))
+            {
+                OnPropertyChanged(nameof(IsSecondaryActionButtonEnabled));
+            }
+        }
 
         private static readonly ImportField[] _additionalFieldOrder = [ImportField.Condition, ImportField.CardFinish, ImportField.Language, ImportField.Location];
         private ImportStep? GetNextAdditionalFieldStep(ImportField? after = null)
@@ -238,42 +288,6 @@ namespace CollectaMundo.ViewModels.Import
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };
         }
-        public async Task PrepareSummaryAsync()
-        {
-            try
-            {
-                IsProcessing = true;
-
-                Progress.ProgressBarVisible.Report(true);
-                Progress.Detail.Report("Resolving import items...");
-                Progress.Percent.Report(0);
-
-                var token = _userPromptService.CreateOperationCancellationToken();
-                ResolvedImportItems = await _importService.ResolveImportItemsStrictAsync(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings, LocationMappings, token);
-
-                Progress.Detail.Report("Building summary...");
-                Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings, LocationMappings);
-                Progress.ProgressBarVisible.Report(false);
-            }
-            catch (OperationCanceledException)
-            {
-                // Decide your policy: stay on Summary but show cancelled,
-                // or navigate to Finish.
-                Progress.Detail.Report("Cancelled.");
-                IsImportFailVisible = true;
-            }
-            catch (Exception ex)
-            {
-                Progress.Detail.Report($"Failed: {ex.Message}");
-                IsImportFailVisible = true;
-                Debug.WriteLine($"[PrepareSummaryAsync] {ex}");
-            }
-            finally
-            {
-                IsProcessing = false;
-                _userPromptService.DisposeOperationCancellationToken();
-            }
-        }
 
         // GoToStep helper that also sets progress step text
         private IImportStepViewModel CreateStep(IImportStepViewModel vm, string progressStepText)
@@ -282,6 +296,8 @@ namespace CollectaMundo.ViewModels.Import
             Debug.WriteLine($"Reported this string for Step.Report: {progressStepText}.");
             return vm;
         }
+
+        #endregion
 
         #region Step action methods - called by child VMs when primary/secondary actions are executed.
         public void Begin()
@@ -428,7 +444,8 @@ namespace CollectaMundo.ViewModels.Import
         }
         public Task<OperationResult> AfterStep8Action()
         {
-            GoToStep(ImportStep.Summary);
+            var next = GetNextAdditionalFieldStep(ImportField.Language);
+            GoToStep(next ?? ImportStep.Summary);
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Language mappings processed."));
         }
         public Task<OperationResult> AfterStep9Action()
@@ -443,7 +460,7 @@ namespace CollectaMundo.ViewModels.Import
 
             var token = _userPromptService.CreateOperationCancellationToken();
 
-            var importResult = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, Progress, token));
+            var importResult = await Task.Run(() => _importService.FinalImportResolvedItems(ResolvedImportItems, Progress, token));
 
             if (importResult.Result.Code != OperationResultCode.Success)
             {
@@ -464,10 +481,6 @@ namespace CollectaMundo.ViewModels.Import
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Cleanup completed"));
         }
         #endregion
-        public Task<OperationResult> SaveUnimportableItemsAsync()
-        {
-            return _importService.SaveUnimportableItemsAsync(Summary, ResolvedImportItems, ImportCardList);
-        }
 
         #region Commmands for step actions and cancel
         [RelayCommand]
@@ -611,6 +624,7 @@ namespace CollectaMundo.ViewModels.Import
             Summary.Reset();
             _availableFinishes = null;
             _availableLanguages = null;
+            _availableLocations = null;
 
             _userPromptService.DisposeOperationCancellationToken();
 

@@ -48,12 +48,10 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
 
             foreach (var csvValue in csvValues)
             {
-                var guessed = ImportValueMatcher.MapImportValue(csvValue!, ImportField.Location, locationOptions) ?? defaultLocation; // Default to "Unknown" if no match found
+                var guessed = ImportValueMatcher.MapImportValue(csvValue!, ImportField.Location, locationOptions);
                 LocationMappings.Add(new CsvValueMapping
                 {
-                    CsvValue = csvValue!,
-                    CardSetValues = [.. locationOptions],
-                    SelectedCardSetValue = guessed
+                    CsvValue = csvValue!, CardSetValues = [.. locationOptions], SelectedCardSetValue = guessed
                 });
             }
         }
@@ -62,9 +60,9 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // UI Text & Visibility
         // --------------------------------------------
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
-        public string SecondaryActionButtonText => string.Empty;
+        public string SecondaryActionButtonText => "  Create missing locations  ";
         public bool IsPrimaryActionVisible => true;
-        public bool IsSecondaryActionVisible => false;
+        public bool IsSecondaryActionVisible => true;
 
         [ObservableProperty]
         private bool isStepContentVisible = true;
@@ -73,13 +71,22 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // Step-level button enablement
         // --------------------------------------------
         public bool CanExecutePrimaryAction => true;
-        public bool CanExecuteSecondaryAction => false;
+        public bool CanExecuteSecondaryAction => true;
 
         // --------------------------------------------
         // Actions
         // --------------------------------------------
         public async Task<OperationResult> OnPrimaryAction()
         {
+            _parent.ShouldCreateMissingLocationsDuringImport = false;
+
+            IsStepContentVisible = false;
+            return await _parent.AfterStep9Action();
+        }
+        public async Task<OperationResult> OnSecondaryAction()
+        {
+            _parent.ShouldCreateMissingLocationsDuringImport = true;
+
             IsStepContentVisible = false;
             return await _parent.AfterStep9Action();
         }

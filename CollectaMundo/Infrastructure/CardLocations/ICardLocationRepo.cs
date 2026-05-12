@@ -7,6 +7,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
     {
         Task<IReadOnlyList<CardLocationRecord>> GetAllAsync(SQLiteConnection conn);
         Task<int> InsertAsync(SQLiteConnection conn, string name, string type);
+        Task<IReadOnlyList<CardLocationRecord>> InsertManyAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token);
         Task<int> UpdateAsync(SQLiteConnection conn, int id, string name, string type);
         Task<int> DeleteAsync(SQLiteConnection conn, int id);
         Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn);

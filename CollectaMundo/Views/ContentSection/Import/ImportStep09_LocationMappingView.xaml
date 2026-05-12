@@ -21,7 +21,10 @@
                     Left column are the locations found in the import file. Please map them to available locations in the database.
                 </Paragraph>
                 <Paragraph>
-                    Blank Locations will be imported as blank (no location);
+                    Click "Proceed" to import any blank locations as blank (no location).
+                </Paragraph>
+                <Paragraph>
+                    Click "Create missing locations" to create any missing locations as new locations during the import process. All new locations will be created with the same name as the location found in the import file and be of the type "storage". Location type (e.g. to "Deck") can be changed in Utilities section.
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>

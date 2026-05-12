@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
@@ -274,14 +275,40 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 10: resolve + strict validate via DB
-        public async Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, CancellationToken token)
+        public async Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, bool createMissingLocationsAsStorage, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
             var availableLocations = await _cardLocationService.GetAllAsync();
 
-            // 1) Resolve (mapping/defaults)
-            var resolved = _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings, locationMappings, availableLocations);
+            if (createMissingLocationsAsStorage)
+            {
+                try
+                {
+                    await CreateMissingLocationsAsStorageAsync(locationMappings, token);
+
+                    token.ThrowIfCancellationRequested();
+
+                    availableLocations = await _cardLocationService.GetAllAsync();
+
+                    AutoMapNewlyCreatedLocations(locationMappings, availableLocations);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to create missing card locations during import.",
+                        ex);
+                }
+            }
+
+            var resolved = _importLogic.ResolveImportItems(
+                items,
+                additionalMappings,
+                conditionMappings,
+                finishMappings,
+                languageMappings,
+                locationMappings,
+                availableLocations);
 
             token.ThrowIfCancellationRequested();
 
@@ -319,11 +346,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
                 if (needsForeign.Count > 0)
                 {
-                    foreignByUuid = await _importRepo.FetchForeignLanguagesAsync(
-                        needsForeign,
-                        uow.CurrentConnection,
-                        uow.CurrentTransaction,
-                        token);
+                    foreignByUuid = await _importRepo.FetchForeignLanguagesAsync(needsForeign, uow.CurrentConnection, uow.CurrentTransaction, token);
 
                     token.ThrowIfCancellationRequested();
                 }
@@ -346,108 +369,41 @@ namespace CollectaMundo.ApplicationServices.Import
                 throw;
             }
         }
-        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings)
+
+        // Helpers for ResolveImportItemsStrictAsync
+        private async Task CreateMissingLocationsAsStorageAsync(IReadOnlyList<CsvValueMapping> locationMappings, CancellationToken token)
         {
-            return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings, additionalFieldMappings, conditionMappings, finishMappings, languageMappings, locationMappings);
+            var missingLocationNames = locationMappings
+                .Where(m => string.IsNullOrWhiteSpace(m.SelectedCardSetValue))
+                .Select(m => m.CsvValue?.Trim())
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (missingLocationNames.Count == 0)
+            {
+                return;
+            }
+
+            await _cardLocationService.CreateMissingAsync(missingLocationNames!, CardLocationType.Storage, token);
         }
-        public async Task<OperationResult> SaveUnimportableItemsAsync(ImportSummary summary, IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems)
+        private static void AutoMapNewlyCreatedLocations(IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations)
         {
-            // Guard: nothing to save
-            if (summary.UnableToImportCount == 0)
+            foreach (var mapping in locationMappings)
             {
-                return new OperationResult(
-                    OperationResultCode.Success,
-                    "No unimportable items to save.");
-            }
-
-            // Suggest a default filename (user can change both name and location)
-            var defaultFileName = $"unimportable-items-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
-
-            // Ask user where and under what name to save
-            var filePath = _fileSystemPicker.PickSaveFile(title: "Save unimportable items", defaultFileName: defaultFileName, filter: "CSV Files (*.csv)|*.csv");
-
-            if (string.IsNullOrWhiteSpace(filePath))
-            {
-                return new OperationResult(
-                    OperationResultCode.NoOp,
-                    "User cancelled save dialog.");
-            }
-
-            // CreateCollectionChangeSetFromEdits CSV contents using FINAL importability result
-            var content = _importLogic.BuildUnimportableItemsCsv(
-                resolvedItems,
-                importItems);
-
-            // Write file using UTF-8 with BOM (Excel-compatible)
-            var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
-            await File.WriteAllTextAsync(filePath, content, utf8WithBom);
-
-            return new OperationResult(
-                OperationResultCode.Success,
-                $"Saved unimportable items to {filePath}");
-        }
-        public async Task<ImportExecutionResult> ImportResolvedItems(IReadOnlyList<ResolvedImportItem> resolvedItems, ProgressSinks progress, CancellationToken token)
-        {
-            if (resolvedItems == null || resolvedItems.Count == 0)
-            {
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.Empty, "No resolved items to import."), Mutation: null);
-            }
-
-            progress.Detail.Report("Preparing import items...");
-
-            var collapsed = _importLogic.CollapseResolvedItemsForCollection(resolvedItems);
-
-            if (collapsed.Count == 0)
-            {
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, "No importable items found."), Mutation: null);
-            }
-
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
-            try
-            {
-                token.ThrowIfCancellationRequested();
-
-                progress.Detail.Report("Importing cards to collection...");
-                progress.Percent.Report(0);
-
-                Debug.WriteLine("[ImportResolvedItems] Upserting collapsed items ... ");
-
-                // Capture returned rows WITH CardId
-                var upsertedRows = await _importRepo.UpsertMyCollectionAsync(collapsed, uow.CurrentConnection, uow.CurrentTransaction, progress.Percent, token);
-
-                await uow.CommitAsync();
-
-                progress.Detail.Report("Import completed.");
-
-                // build mutation from REAL rows
-                var mutation = new ImportCollectionUpsertResult
+                if (!string.IsNullOrWhiteSpace(mapping.SelectedCardSetValue))
                 {
-                    // Fully resolved rows (CardId + Identity + totals)
-                    UpsertedRows = upsertedRows
-                };
+                    continue;
+                }
 
-                Debug.WriteLine("[ImportResolvedItems] Finished upserting collapsed items ... ");
+                var match = availableLocations.FirstOrDefault(x => string.Equals(x.Name, mapping.CsvValue, StringComparison.OrdinalIgnoreCase));
 
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, $"Finished importing {upsertedRows.Count} unique collection rows."), Mutation: mutation);
-            }
-            catch (OperationCanceledException)
-            {
-                await uow.RollbackAsync();
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."), Mutation: null);
-            }
-            catch (Exception ex)
-            {
-                await uow.RollbackAsync();
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"), Mutation: null);
+                if (match is not null)
+                {
+                    mapping.SelectedCardSetValue = match.DisplayName;
+                }
             }
         }
-
-
-        // ----------------------------------------------------
-        // Helpers
-        // ----------------------------------------------------
         private static HashSet<string> CollectUuidsToValidate(IReadOnlyList<ResolvedImportItem> resolved)
         {
             // Capacity hint: worst-case all are importable with UUID
@@ -499,6 +455,106 @@ namespace CollectaMundo.ApplicationServices.Import
             return set;
         }
 
+        // Step 10b: build summary + offer to export unimportable items
+        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings)
+        {
+            return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings, additionalFieldMappings, conditionMappings, finishMappings, languageMappings, locationMappings);
+        }
+        public async Task<OperationResult> SaveUnimportableItemsAsync(ImportSummary summary, IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems)
+        {
+            // Guard: nothing to save
+            if (summary.UnableToImportCount == 0)
+            {
+                return new OperationResult(
+                    OperationResultCode.Success,
+                    "No unimportable items to save.");
+            }
+
+            // Suggest a default filename (user can change both name and location)
+            var defaultFileName = $"unimportable-items-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+
+            // Ask user where and under what name to save
+            var filePath = _fileSystemPicker.PickSaveFile(title: "Save unimportable items", defaultFileName: defaultFileName, filter: "CSV Files (*.csv)|*.csv");
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return new OperationResult(
+                    OperationResultCode.NoOp,
+                    "User cancelled save dialog.");
+            }
+
+            // CreateCollectionChangeSetFromEdits CSV contents using FINAL importability result
+            var content = _importLogic.BuildUnimportableItemsCsv(
+                resolvedItems,
+                importItems);
+
+            // Write file using UTF-8 with BOM (Excel-compatible)
+            var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+            await File.WriteAllTextAsync(filePath, content, utf8WithBom);
+
+            return new OperationResult(
+                OperationResultCode.Success,
+                $"Saved unimportable items to {filePath}");
+        }
+
+        // Step 10 --> 11: final import of strictly validated items
+        public async Task<ImportExecutionResult> FinalImportResolvedItems(IReadOnlyList<ResolvedImportItem> resolvedItems, ProgressSinks progress, CancellationToken token)
+        {
+            if (resolvedItems == null || resolvedItems.Count == 0)
+            {
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Empty, "No resolved items to import."), Mutation: null);
+            }
+
+            progress.Detail.Report("Preparing import items...");
+
+            var collapsed = _importLogic.CollapseResolvedItemsForCollection(resolvedItems);
+
+            if (collapsed.Count == 0)
+            {
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, "No importable items found."), Mutation: null);
+            }
+
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginAsync();
+
+            try
+            {
+                token.ThrowIfCancellationRequested();
+
+                progress.Detail.Report("Importing cards to collection...");
+                progress.Percent.Report(0);
+
+                Debug.WriteLine("[FinalImportResolvedItems] Upserting collapsed items ... ");
+
+                // Capture returned rows WITH CardId
+                var upsertedRows = await _importRepo.UpsertMyCollectionAsync(collapsed, uow.CurrentConnection, uow.CurrentTransaction, progress.Percent, token);
+
+                await uow.CommitAsync();
+
+                progress.Detail.Report("Import completed.");
+
+                // build mutation from REAL rows
+                var mutation = new ImportCollectionUpsertResult
+                {
+                    // Fully resolved rows (CardId + Identity + totals)
+                    UpsertedRows = upsertedRows
+                };
+
+                Debug.WriteLine("[FinalImportResolvedItems] Finished upserting collapsed items ... ");
+
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, $"Finished importing {upsertedRows.Count} unique collection rows."), Mutation: mutation);
+            }
+            catch (OperationCanceledException)
+            {
+                await uow.RollbackAsync();
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."), Mutation: null);
+            }
+            catch (Exception ex)
+            {
+                await uow.RollbackAsync();
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"), Mutation: null);
+            }
+        }
 
     }
 }

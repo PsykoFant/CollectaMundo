@@ -67,25 +67,11 @@ namespace CollectaMundo.DomainLogic.Import
         }
         public static string? MapImportValue(string importValue, ImportField field, IReadOnlyList<string> canonicalValues)
         {
-            // Guard: empty or whitespace input
             if (string.IsNullOrWhiteSpace(importValue))
             {
                 return null;
             }
 
-            // Guard: no aliases defined for this field
-            if (!_aliases.TryGetValue(field, out var aliasesForField))
-            {
-                return null;
-            }
-
-            // Normalize once
-            var normalizedImport = importValue.Trim().ToLowerInvariant();
-
-            // -------------------------------------------------
-            // 1) Exact match against canonical values
-            // -------------------------------------------------
-            // Example: "Near Mint" -> "Near Mint"
             foreach (var canonical in canonicalValues)
             {
                 if (string.Equals(canonical, importValue, StringComparison.OrdinalIgnoreCase))
@@ -94,27 +80,17 @@ namespace CollectaMundo.DomainLogic.Import
                 }
             }
 
-            // -------------------------------------------------
-            // Tokenize import value
-            // -------------------------------------------------
-            // Supports:
-            //   "nm/m"        -> ["nm", "m"]
-            //   "near-mint"   -> ["near", "mint"]
-            //   "light played"-> ["light", "played"]
-            var tokens = normalizedImport.Split([' ', '-', '/', '\\', '_'], StringSplitOptions.RemoveEmptyEntries);
+            if (!_aliases.TryGetValue(field, out var aliasesForField))
+            {
+                return null;
+            }
 
-            // NOTE:
-            // Alias dictionary order defines precedence
-            // (first matching canonical value wins)
+            var normalizedImport = importValue.Trim().ToLowerInvariant();
 
-            // -------------------------------------------------
-            // 2) Alias token match (safe, no substring bugs)
-            // -------------------------------------------------
-            // Examples:
-            //   "m"       -> Mint
-            //   "nm"      -> Near Mint
-            //   "nm/m"    -> Near Mint (wins by order)
-            //   "normal"  -> NO MATCH 
+            var tokens = normalizedImport.Split(
+                [' ', '-', '/', '\\', '_'],
+                StringSplitOptions.RemoveEmptyEntries);
+
             foreach (var (canonical, knownAliases) in aliasesForField)
             {
                 if (knownAliases.Any(alias => tokens.Contains(alias)))
@@ -123,9 +99,6 @@ namespace CollectaMundo.DomainLogic.Import
                 }
             }
 
-            // -------------------------------------------------
-            // No match found
-            // -------------------------------------------------
             return null;
         }
 

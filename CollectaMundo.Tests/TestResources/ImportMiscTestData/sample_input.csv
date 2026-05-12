@@ -1,3 +1,3 @@
 CardName;Finish;Language;uuid;Note;Location
-Sokrates, Athenian Teacher;nonfoil;Gobligook;3c389f9c-e459-5b16-87b5-d51644f05b25;Test 1: Card, default to English, but English not available (assign with comment);Deck 1
-Grave Titan;nonfoil;Korean;0005283f-d113-5937-ba52-a30570bfb334;Test 3: Card, valid language chosen, but not available for card. Multiple options availabe (unimportable);Deck 2
+Sokrates, Athenian Teacher;nonfoil;Gobligook;3c389f9c-e459-5b16-87b5-d51644f05b25;Test 1: Card, default to English, but English not available (assign with comment);Box 1
+Grave Titan;nonfoil;Korean;0005283f-d113-5937-ba52-a30570bfb334;Test 3: Card, valid language chosen, but not available for card. Multiple options availabe (unimportable);Box 3
