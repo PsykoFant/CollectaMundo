@@ -301,14 +301,7 @@ namespace CollectaMundo.ApplicationServices.Import
                 }
             }
 
-            var resolved = _importLogic.ResolveImportItems(
-                items,
-                additionalMappings,
-                conditionMappings,
-                finishMappings,
-                languageMappings,
-                locationMappings,
-                availableLocations);
+            var resolved = _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings, locationMappings, availableLocations);
 
             token.ThrowIfCancellationRequested();
 
@@ -385,7 +378,7 @@ namespace CollectaMundo.ApplicationServices.Import
                 return;
             }
 
-            await _cardLocationService.CreateMissingAsync(missingLocationNames!, CardLocationType.Storage, token);
+            await _cardLocationService.CreateMissingLocationsAsStorageAsync(missingLocationNames!, CardLocationType.Storage, token);
         }
         private static void AutoMapNewlyCreatedLocations(IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations)
         {

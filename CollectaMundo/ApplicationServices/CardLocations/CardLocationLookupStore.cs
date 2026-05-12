@@ -1,9 +1,4 @@
 ﻿using CollectaMundo.DomainLogic.CardLocations.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CollectaMundo.ApplicationServices.CardLocations
 {
@@ -40,6 +35,15 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         public void Upsert(CardLocation location)
         {
             _byId[location.Id] = location;
+            LocationsChanged?.Invoke(this, EventArgs.Empty);
+        }
+        public void UpsertMany(IReadOnlyList<CardLocation> locations)
+        {
+            foreach (var location in locations)
+            {
+                _byId[location.Id] = location;
+            }
+
             LocationsChanged?.Invoke(this, EventArgs.Empty);
         }
         public bool Remove(int id)

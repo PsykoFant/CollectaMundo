@@ -1,9 +1,4 @@
 ﻿using CollectaMundo.DomainLogic.CardLocations.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CollectaMundo.ApplicationServices.CardLocations
 {
@@ -14,6 +9,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
         void ReplaceAll(IReadOnlyList<CardLocation> locations);
         void Upsert(CardLocation location);
+        void UpsertMany(IReadOnlyList<CardLocation> locations);
         bool Remove(int id);
 
         event EventHandler? LocationsChanged;
