@@ -1,9 +1,5 @@
 TO DO 
 
-- Auto-opret locations
-
-
-
 Tilføj kommentar/location til import scenarie-test
 
 Deck editor!

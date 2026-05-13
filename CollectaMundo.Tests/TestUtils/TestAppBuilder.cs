@@ -124,7 +124,8 @@ public static class TestAppBuilder
             dbFactory,
             new ImportRepo(),
             picker,
-            new ImportLogic());
+            new ImportLogic(),
+            cardLocationService);
 
         var scheduler = new ImmediateScheduler();
 
