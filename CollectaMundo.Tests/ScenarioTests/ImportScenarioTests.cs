@@ -347,10 +347,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.UnimportableItems[2].Warnings.Should().Contain("Language 'Spanish' is not available for UUID 7be5b8a9-0d68-5125-b729-ff1063dd3ed0.");
 
             // Proceed with the import
-            var step9Result = await step10.OnPrimaryAction();
+            var step10Result = await step10.OnPrimaryAction();
 
             // Assert that the final import completed successfully
-            step9Result.Code.Should().Be(OperationResultCode.Success);
+            step10Result.Code.Should().Be(OperationResultCode.Success);
 
             var myCollectionInMemory = _mainVM.MyCollectionVM.Cards;
             //myCollectionInMemory.Should().HaveCount(25);

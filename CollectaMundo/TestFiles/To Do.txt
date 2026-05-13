@@ -1,6 +1,7 @@
 TO DO 
 
 Tilføj kommentar/location til import scenarie-test
+CHECK NOTE i importtest 1!
 
 Deck editor!
 
