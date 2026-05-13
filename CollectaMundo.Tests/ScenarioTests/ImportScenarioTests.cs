@@ -188,11 +188,16 @@ namespace CollectaMundo.Tests.ScenarioTests
             addtionalMappings[0].CsvHeaders.Should().HaveCount(18);
 
             // Assert CSV headers pre-selected
-            addtionalMappings[0].SelectedCsvHeader.Should().Be("Condition");
-            addtionalMappings[1].SelectedCsvHeader.Should().Be("Printing");
-            addtionalMappings[2].SelectedCsvHeader.Should().Be("Language");
-            addtionalMappings[5].SelectedCsvHeader.Should().Be("Quantity");
-            addtionalMappings[6].SelectedCsvHeader.Should().Be("For sale");
+            addtionalMappings[0].SelectedCsvHeader.Should().Be("Condition"); // Condition
+            addtionalMappings[1].SelectedCsvHeader.Should().Be("Printing"); // Finish
+            addtionalMappings[2].SelectedCsvHeader.Should().Be("Language"); // Language
+            addtionalMappings[3].SelectedCsvHeader.Should().Be(null); // Location
+            addtionalMappings[4].SelectedCsvHeader.Should().Be("Note"); // Comment
+            addtionalMappings[5].SelectedCsvHeader.Should().Be("Quantity"); // CardsOwned
+            addtionalMappings[6].SelectedCsvHeader.Should().Be("For sale"); // CardsForTrade
+
+            // Simulate clearing a mapping (should update the underlying ImportCardItem's AdditionalFieldsMapping for that field to null, but not affect the other fields)
+            addtionalMappings[4].SelectedCsvHeader = null; // Clear Comment mapping
 
             // Proceed to next step
             var step5Result = await step5.OnPrimaryAction();
@@ -353,7 +358,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             step10Result.Code.Should().Be(OperationResultCode.Success);
 
             var myCollectionInMemory = _mainVM.MyCollectionVM.Cards;
-            //myCollectionInMemory.Should().HaveCount(25);
+            myCollectionInMemory.Should().HaveCount(25);
 
             // Spotcheck individual cards
             var prismaticEndingUuid = "bafac74c-f4f8-5c71-8a6b-0bd02c536c47";
@@ -727,9 +732,9 @@ namespace CollectaMundo.Tests.ScenarioTests
             var summary = step9.Summary;
 
             // Check totals
-            summary.ReadyToImportCount.Should().Be(5); // 7 cards should be ready to import with UUIDs
+            summary.ReadyToImportCount.Should().Be(5); // 5 cards should be ready to import with UUIDs
             summary.TotalCardsToAdd.Should().Be(5); // Sum of quantities of all cards to import
-            summary.UnableToImportCount.Should().Be(1); // 3 cards should not be able to import
+            summary.UnableToImportCount.Should().Be(1); // 1 card should not be able to import
 
             // Check field mappings are correctly displayed in summary
             summary.FieldMappings[0].CsvHeader.Should().Be("Near Mint (default value)");
