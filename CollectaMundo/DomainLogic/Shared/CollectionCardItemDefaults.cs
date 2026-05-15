@@ -29,8 +29,8 @@ namespace CollectaMundo.DomainLogic.Shared
             ImportField.Condition => GetDefaultString(ImportField.Condition),
             ImportField.CardFinish => GetDefaultString(ImportField.CardFinish),
             ImportField.Language => GetDefaultString(ImportField.Language),
-            ImportField.Location => GetDefaultString(ImportField.Location),
-            ImportField.Comment => GetDefaultString(ImportField.Comment),
+            ImportField.Location => "blank",
+            ImportField.Comment => "blank",
 
             ImportField.CardsOwned => GetDefaultInt(ImportField.CardsOwned).ToString(CultureInfo.InvariantCulture),
             ImportField.CardsForTrade => GetDefaultInt(ImportField.CardsForTrade).ToString(CultureInfo.InvariantCulture),

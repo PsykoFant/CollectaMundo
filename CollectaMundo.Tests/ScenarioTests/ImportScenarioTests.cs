@@ -691,12 +691,12 @@ namespace CollectaMundo.Tests.ScenarioTests
                 because: "step 5 should be active and progress label updated");
             step5.PrimaryActionButtonText.Should().Contain("Proceed");
 
-            step5.AdditionalMappings.Should().HaveCount(5);
+            step5.AdditionalMappings.Should().HaveCount(7);
             var addtionalMappings = step5.AdditionalMappings;
 
             // Check CsvFieldsMappings object is correctly initialized with expected fields to map
             addtionalMappings[0].FieldToMap.Should().Be(ImportField.Condition);
-            addtionalMappings[4].FieldToMap.Should().Be(ImportField.CardsForTrade);
+            addtionalMappings[6].FieldToMap.Should().Be(ImportField.CardsForTrade);
             addtionalMappings[0].CsvHeaders.Should().HaveCount(11);
 
             // Assert CSV headers pre-selected
@@ -705,6 +705,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             addtionalMappings[2].SelectedCsvHeader.Should().Be(null);
             addtionalMappings[3].SelectedCsvHeader.Should().Be(null);
             addtionalMappings[4].SelectedCsvHeader.Should().Be(null);
+            addtionalMappings[5].SelectedCsvHeader.Should().Be(null);
+            addtionalMappings[6].SelectedCsvHeader.Should().Be(null);
 
             // Select a value for cards for trade
             addtionalMappings[4].SelectedCsvHeader = "TilSalg";
@@ -740,8 +742,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.FieldMappings[0].CsvHeader.Should().Be("Near Mint (default value)");
             summary.FieldMappings[1].CsvHeader.Should().Be("nonfoil (default value)");
             summary.FieldMappings[2].CsvHeader.Should().Be("English (default value)");
-            summary.FieldMappings[3].CsvHeader.Should().Be("1 (default value)");
-            summary.FieldMappings[4].CsvHeader.Should().Be("TilSalg");
+            summary.FieldMappings[3].CsvHeader.Should().Be("English (default value)");
+            summary.FieldMappings[4].CsvHeader.Should().Be("English (default value)");
+            summary.FieldMappings[5].CsvHeader.Should().Be("1 (default value)");
+            summary.FieldMappings[6].CsvHeader.Should().Be("TilSalg");
 
             // Check value mappings 
             summary.ValueMappings[0].Field.Should().Be(ImportField.None);

@@ -792,10 +792,12 @@ namespace CollectaMundo.DomainLogic.Import
             [
                 .. additionalFieldMappings.Select(m =>
                     !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)
-                        ? new FieldMappingSummary(m.FieldToMap, m.SelectedCsvHeader!)
-                        : new FieldMappingSummary(
+                        ? new FieldMappingSummary( // Value is selected
+                            m.FieldToMap, 
+                            $"Mapped to field: {m.SelectedCsvHeader!}")
+                        : new FieldMappingSummary( // No value selected"
                             m.FieldToMap,
-                            $"{CollectionCardItemDefaults.GetDefaultDisplayValue(m.FieldToMap)} (default value)")
+                            $"No value chosen for field {m.FieldToMap} - using default value: \"{CollectionCardItemDefaults.GetDefaultDisplayValue(m.FieldToMap)}\" for all imports")
                 )
             ];
 
@@ -828,8 +830,7 @@ namespace CollectaMundo.DomainLogic.Import
 
             void AddValueMappingsIfFieldMapped(ImportField field, IReadOnlyList<CsvValueMapping> mappings)
             {
-                var fieldMapping = additionalFieldMappings
-                    .FirstOrDefault(m => m.FieldToMap == field && !string.IsNullOrWhiteSpace(m.SelectedCsvHeader));
+                var fieldMapping = additionalFieldMappings.FirstOrDefault(m => m.FieldToMap == field && !string.IsNullOrWhiteSpace(m.SelectedCsvHeader));
 
                 if (fieldMapping is null)
                 {
