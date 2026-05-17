@@ -60,6 +60,9 @@
     <None Update="TestResources\CsvSeedTables\cardIdentifiers.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestResources\CsvSeedTables\cardLocations.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestResources\CsvSeedTables\cardPrices.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
