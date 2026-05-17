@@ -696,7 +696,7 @@ namespace CollectaMundo.DomainLogic.Import
             }
 
             return set;
-        }     
+        }
         private static bool IsFinishAvailable(string? finishesCsv, string? finish)
         {
             if (string.IsNullOrWhiteSpace(finish) || string.IsNullOrWhiteSpace(finishesCsv))
@@ -728,7 +728,7 @@ namespace CollectaMundo.DomainLogic.Import
             }
 
             return foreignByUuid.TryGetValue(uuid, out var langs) && langs.Contains(language);
-        }        
+        }
         private static void MarkUnimportable(ResolvedImportItem item, string warning)
         {
             item.AddWarning(warning);
@@ -793,7 +793,7 @@ namespace CollectaMundo.DomainLogic.Import
                 .. additionalFieldMappings.Select(m =>
                     !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)
                         ? new FieldMappingSummary( // Value is selected
-                            m.FieldToMap, 
+                            m.FieldToMap,
                             $"Mapped to field: {m.SelectedCsvHeader!}")
                         : new FieldMappingSummary( // No value selected"
                             m.FieldToMap,
@@ -802,7 +802,7 @@ namespace CollectaMundo.DomainLogic.Import
             ];
 
             // -----------------------------
-            // Value mappings (Steps 6–8)
+            // Value mappings (Steps 6–9)
             // -----------------------------
             var valueMappings = new List<ValueMappingSummary>();
 
