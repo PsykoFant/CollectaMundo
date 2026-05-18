@@ -93,6 +93,9 @@
     <None Update="TestResources\ImportTestCsvFiles\ImportTest2.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestResources\ImportTestCsvFiles\ImportTest3.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestResources\keyruneImages.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
