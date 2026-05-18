@@ -362,6 +362,7 @@ namespace CollectaMundo.Tests.TestUtils
                 await SeedTableAsync("tokenIdentifiers", Path.Combine(basePath, "tokenIdentifiers.csv"));
                 await SeedTableAsync("cardPrices", Path.Combine(basePath, "cardPrices.csv"));
                 await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
+                await SeedTableAsync("cardLocations", Path.Combine(basePath, "cardLocations.csv"));
             }
             catch (Exception ex)
             {

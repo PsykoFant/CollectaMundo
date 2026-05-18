@@ -322,11 +322,11 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.UnableToImportCount.Should().Be(3); // 3 cards should not be able to import
 
             //// Check field mappings are correctly displayed in summary
-            summary.FieldMappings[0].CsvHeader.Should().Be("Condition");
-            summary.FieldMappings[1].CsvHeader.Should().Be("Printing");
-            summary.FieldMappings[2].CsvHeader.Should().Be("Language");
-            summary.FieldMappings[5].CsvHeader.Should().Be("Quantity");
-            summary.FieldMappings[6].CsvHeader.Should().Be("For sale");
+            summary.FieldMappings[0].CsvHeader.Should().Be("Mapped to field: Condition");
+            summary.FieldMappings[1].CsvHeader.Should().Be("Mapped to field: Printing");
+            summary.FieldMappings[2].CsvHeader.Should().Be("Mapped to field: Language");
+            summary.FieldMappings[5].CsvHeader.Should().Be("Mapped to field: Quantity");
+            summary.FieldMappings[6].CsvHeader.Should().Be("Mapped to field: For sale");
 
             //// Spot check value mappings 
             summary.ValueMappings[0].Field.Should().Be(ImportField.Condition);
@@ -709,7 +709,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             addtionalMappings[6].SelectedCsvHeader.Should().Be(null);
 
             // Select a value for cards for trade
-            addtionalMappings[4].SelectedCsvHeader = "TilSalg";
+            addtionalMappings[6].SelectedCsvHeader = "TilSalg";
 
             // Clear CardFinish mapping so we use defaults for everything except cards for trade
             addtionalMappings[1].SelectedCsvHeader = null;
@@ -721,17 +721,17 @@ namespace CollectaMundo.Tests.ScenarioTests
             step5Result.Code.Should().Be(OperationResultCode.Success);
 
             // =====================================================
-            // Step 9 - Summary and confirmation
+            // Step 10 - Summary and confirmation
             // =====================================================
-            var step9 = (ImportStep10_SummaryViewModel)importVM.CurrentStepViewModel;
+            var step10 = (ImportStep10_SummaryViewModel)importVM.CurrentStepViewModel;
             await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 9 should be active and progress label updated");
-            step9.PrimaryActionButtonText.Should().Contain("Start the import...");
-            step9.CanExecuteSecondaryAction.Should().BeTrue();
-            step9.SecondaryActionButtonText.Should().Contain("Save unrecognized items");
+            step10.PrimaryActionButtonText.Should().Contain("Start the import...");
+            step10.CanExecuteSecondaryAction.Should().BeTrue();
+            step10.SecondaryActionButtonText.Should().Contain("Save unrecognized items");
 
-            var summary = step9.Summary;
+            var summary = step10.Summary;
 
             // Check totals
             summary.ReadyToImportCount.Should().Be(5); // 5 cards should be ready to import with UUIDs
@@ -739,13 +739,13 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.UnableToImportCount.Should().Be(1); // 1 card should not be able to import
 
             // Check field mappings are correctly displayed in summary
-            summary.FieldMappings[0].CsvHeader.Should().Be("Near Mint (default value)");
-            summary.FieldMappings[1].CsvHeader.Should().Be("nonfoil (default value)");
-            summary.FieldMappings[2].CsvHeader.Should().Be("English (default value)");
-            summary.FieldMappings[3].CsvHeader.Should().Be("English (default value)");
-            summary.FieldMappings[4].CsvHeader.Should().Be("English (default value)");
-            summary.FieldMappings[5].CsvHeader.Should().Be("1 (default value)");
-            summary.FieldMappings[6].CsvHeader.Should().Be("TilSalg");
+            summary.FieldMappings[0].CsvHeader.Should().Be("No value chosen for field Condition - using default value: \"Near Mint\" for all imports");
+            summary.FieldMappings[1].CsvHeader.Should().Be("No value chosen for field CardFinish - using default value: \"nonfoil\" for all imports");
+            summary.FieldMappings[2].CsvHeader.Should().Be("No value chosen for field Language - using default value: \"English\" for all imports");
+            summary.FieldMappings[3].CsvHeader.Should().Be("No value chosen for field Location - using default value: \"blank\" for all imports"); ;
+            summary.FieldMappings[4].CsvHeader.Should().Be("No value chosen for field Comment - using default value: \"blank\" for all imports"); ;
+            summary.FieldMappings[5].CsvHeader.Should().Be("No value chosen for field CardsOwned - using default value: \"1\" for all imports"); ;
+            summary.FieldMappings[6].CsvHeader.Should().Be("Mapped to field: TilSalg");
 
             // Check value mappings 
             summary.ValueMappings[0].Field.Should().Be(ImportField.None);
@@ -757,10 +757,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.UnimportableItems[0].Warnings.Should().Contain("No UUID resolved for this row (cannot import). Check ID / Name+Set mapping steps.");
 
             // Proceed with the import
-            var step9Result = await step9.OnPrimaryAction();
+            var step10Result = await step10.OnPrimaryAction();
 
             // Assert that the final import completed successfully
-            step9Result.Code.Should().Be(OperationResultCode.Success);
+            step10Result.Code.Should().Be(OperationResultCode.Success);
 
             var myCollectionInMemory = _mainVM.MyCollectionVM.Cards;
             myCollectionInMemory.Should().HaveCount(26);
@@ -891,13 +891,13 @@ namespace CollectaMundo.Tests.ScenarioTests
             neverReturn.CardsForTrade.Should().Be(neverReturnDb.CardsForTrade);
 
             // =====================================================
-            // Step 10 - Final
+            // Step 11 - Final
             // =====================================================
-            var step10 = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
+            var step11 = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
             await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep11_FinishViewModel && importVM.ProgressStep == "",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 10 should be active and progress label updated");
-            step10.PrimaryActionButtonText.Should().Contain("OK");
+            step11.PrimaryActionButtonText.Should().Contain("OK");
         }
         public ValueTask DisposeAsync()
         {
