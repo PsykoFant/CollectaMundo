@@ -507,7 +507,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             var step11 = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
             await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep11_FinishViewModel && importVM.ProgressStep == "",
                 timeout: TimeSpan.FromSeconds(3),
-                because: "step 10 should be active and progress label updated");
+                because: "step 11 should be active and progress label updated");
             step11.PrimaryActionButtonText.Should().Contain("OK");
         }
 
@@ -627,7 +627,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             var step10AfterCancel = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
             await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep11_FinishViewModel && importVM.ProgressStep == "",
                 timeout: TimeSpan.FromSeconds(3),
-                because: "step 10 should be active and progress label updated");
+                because: "step 11 should be active and progress label updated");
 
             importVM.ProgressHeadline.Should().Be("Import cancelled");
             importVM.ProgressDetailMessage.Should().Contain("User cancellation - no cards imported to collection.");
@@ -899,7 +899,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             var step11 = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
             await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep11_FinishViewModel && importVM.ProgressStep == "",
                 timeout: TimeSpan.FromSeconds(3),
-                because: "step 10 should be active and progress label updated");
+                because: "step 11 should be active and progress label updated");
             step11.PrimaryActionButtonText.Should().Contain("OK");
         }
         public ValueTask DisposeAsync()
@@ -1178,54 +1178,35 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             myCollectionInMemory.Should().HaveCount(myCollectionDB.Count);
 
-            var angel1Db = myCollectionDB.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationId == angel1.SelectedLocationId);
+            var angel1Db = myCollectionDB.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationDisplayName == angel1.SelectedLocationDisplayName);
             angel1.SelectedCondition.Should().Be(angel1Db.SelectedCondition);
             angel1.SelectedFinish.Should().Be(angel1Db.SelectedFinish);
             angel1.Language.Should().Be(angel1Db.Language);
             angel1.CardsOwned.Should().Be(angel1Db.CardsOwned);
             angel1.CardsForTrade.Should().Be(angel1Db.CardsForTrade);
 
-            //var realmWalkerDb = myCollectionDB.Single(c =>
-            //    c.Uuid == realmwalkerUuid &&
-            //    c.SelectedCondition == realmwalker.SelectedCondition &&
-            //    c.SelectedFinish == realmwalker.SelectedFinish &&
-            //    c.Language == realmwalker.Language);
-            //realmwalker.SelectedCondition.Should().Be(realmWalkerDb.SelectedCondition);
-            //realmwalker.SelectedFinish.Should().Be(realmWalkerDb.SelectedFinish);
-            //realmwalker.Language.Should().Be(realmWalkerDb.Language);
-            //realmwalker.CardsOwned.Should().Be(realmWalkerDb.CardsOwned);
-            //realmwalker.CardsForTrade.Should().Be(realmWalkerDb.CardsForTrade);
+            var angel2Db = myCollectionDB.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationDisplayName == angel2.SelectedLocationDisplayName);
+            angel2.SelectedCondition.Should().Be(angel2Db.SelectedCondition);
+            angel2.SelectedFinish.Should().Be(angel2Db.SelectedFinish);
+            angel2.Language.Should().Be(angel2Db.Language);
+            angel2.CardsOwned.Should().Be(angel2Db.CardsOwned);
+            angel2.CardsForTrade.Should().Be(angel2Db.CardsForTrade);
 
-            //var zombieDb = myCollectionDB.Single(c =>
-            //    c.Uuid == zombieUuid &&
-            //    c.SelectedCondition == zombie.SelectedCondition &&
-            //    c.SelectedFinish == zombie.SelectedFinish &&
-            //    c.Language == zombie.Language);
-            //zombie.SelectedCondition.Should().Be(zombieDb.SelectedCondition);
-            //zombie.SelectedFinish.Should().Be(zombieDb.SelectedFinish);
-            //zombie.Language.Should().Be(zombieDb.Language);
-            //zombie.CardsOwned.Should().Be(zombieDb.CardsOwned);
-            //zombie.CardsForTrade.Should().Be(zombieDb.CardsForTrade);
+            var angel3Db = myCollectionDB.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationDisplayName == angel3.SelectedLocationDisplayName);
+            angel3.SelectedCondition.Should().Be(angel3Db.SelectedCondition);
+            angel3.SelectedFinish.Should().Be(angel3Db.SelectedFinish);
+            angel3.Language.Should().Be(angel3Db.Language);
+            angel3.CardsOwned.Should().Be(angel3Db.CardsOwned);
+            angel3.CardsForTrade.Should().Be(angel3Db.CardsForTrade);
 
-            //var neverReturnDb = myCollectionDB.Single(c =>
-            //    c.Uuid == neverReturnUuid &&
-            //    c.SelectedCondition == neverReturn.SelectedCondition &&
-            //    c.SelectedFinish == neverReturn.SelectedFinish &&
-            //    c.Language == neverReturn.Language);
-            //neverReturn.SelectedCondition.Should().Be(neverReturnDb.SelectedCondition);
-            //neverReturn.SelectedFinish.Should().Be(neverReturnDb.SelectedFinish);
-            //neverReturn.Language.Should().Be(neverReturnDb.Language);
-            //neverReturn.CardsOwned.Should().Be(neverReturnDb.CardsOwned);
-            //neverReturn.CardsForTrade.Should().Be(neverReturnDb.CardsForTrade);
-
-            //// =====================================================
-            //// Step 11 - Final
-            //// =====================================================
-            //var step11 = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
-            //await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep11_FinishViewModel && importVM.ProgressStep == "",
-            //    timeout: TimeSpan.FromSeconds(3),
-            //    because: "step 10 should be active and progress label updated");
-            //step11.PrimaryActionButtonText.Should().Contain("OK");
+            // =====================================================
+            // Step 11 - Final
+            // =====================================================
+            var step11 = (ImportStep11_FinishViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep11_FinishViewModel && importVM.ProgressStep == "",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 11 should be active and progress label updated");
+            step11.PrimaryActionButtonText.Should().Contain("OK");
         }
         public ValueTask DisposeAsync()
         {
