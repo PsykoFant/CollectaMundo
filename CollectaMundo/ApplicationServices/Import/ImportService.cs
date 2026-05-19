@@ -270,7 +270,7 @@ namespace CollectaMundo.ApplicationServices.Import
             return
             [
                 .. locations
-                .Select(x => x.DisplayName)
+                .Select(x => x.Name)
             ];
         }
 

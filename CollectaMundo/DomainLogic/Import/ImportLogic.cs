@@ -556,16 +556,14 @@ namespace CollectaMundo.DomainLogic.Import
 
             return (int)value;
         }
-        private static int? ResolveLocationId(string? displayName, IReadOnlyList<CardLocation> availableLocations, List<string> warnings)
+        private static int? ResolveLocationId(string? name, IReadOnlyList<CardLocation> availableLocations, List<string> warnings)
         {
-            if (string.IsNullOrWhiteSpace(displayName))
+            if (string.IsNullOrWhiteSpace(name))
             {
                 return null;
             }
 
-            var matches = availableLocations
-                .Where(x => string.Equals(x.DisplayName, displayName, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            var matches = availableLocations.Where(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
 
             if (matches.Count == 1)
             {
@@ -574,11 +572,11 @@ namespace CollectaMundo.DomainLogic.Import
 
             if (matches.Count == 0)
             {
-                warnings.Add($"Location '{displayName}' was not found.");
+                warnings.Add($"Location '{name}' was not found.");
                 return null;
             }
 
-            warnings.Add($"Location '{displayName}' matched multiple locations.");
+            warnings.Add($"Location '{name}' matched multiple locations.");
             return null;
         }
         private static string? ResolveRawValue(TempCardItem item, string? csvHeader)

@@ -12,7 +12,7 @@ using System.IO;
 
 namespace CollectaMundo.Tests.ScenarioTests
 {
-
+    #region Ímport Scenario 1
     public sealed class ImportScenarioTests1(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         readonly static string csvPath = Path.Combine(AppContext.BaseDirectory, "TestResources/ImportTestCsvFiles", "ImportTest1.csv");
@@ -29,7 +29,7 @@ namespace CollectaMundo.Tests.ScenarioTests
         }
 
         [Fact]
-        public async Task Import_full_flow_happy_path()
+        public async Task Import_scenario_1()
         {
             File.Exists(csvPath).Should().BeTrue();
 
@@ -518,6 +518,9 @@ namespace CollectaMundo.Tests.ScenarioTests
         }
 
     }
+    #endregion
+
+    #region Import Scenario 2
     public sealed class ImportScenarioTests2(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         readonly static string csvPath = Path.Combine(AppContext.BaseDirectory, "TestResources/ImportTestCsvFiles", "ImportTest2.csv");
@@ -534,7 +537,7 @@ namespace CollectaMundo.Tests.ScenarioTests
         }
 
         [Fact]
-        public async Task Import_full_flow_happy_path()
+        public async Task Import_scenario_2()
         {
             File.Exists(csvPath).Should().BeTrue();
 
@@ -726,7 +729,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             var step10 = (ImportStep10_SummaryViewModel)importVM.CurrentStepViewModel;
             await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
                 timeout: TimeSpan.FromSeconds(3),
-                because: "step 9 should be active and progress label updated");
+                because: "step 10 should be active and progress label updated");
             step10.PrimaryActionButtonText.Should().Contain("Start the import...");
             step10.CanExecuteSecondaryAction.Should().BeTrue();
             step10.SecondaryActionButtonText.Should().Contain("Save unrecognized items");
@@ -905,6 +908,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             return ValueTask.CompletedTask;
         }
     }
+
+    #endregion
+
+    #region Import Scenario 3
     public sealed class ImportScenarioTests3(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         readonly static string csvPath = Path.Combine(AppContext.BaseDirectory, "TestResources/ImportTestCsvFiles", "ImportTest3.csv");
@@ -921,7 +928,7 @@ namespace CollectaMundo.Tests.ScenarioTests
         }
 
         [Fact]
-        public async Task Import_full_flow_happy_path()
+        public async Task Import_scenario_3()
         {
             File.Exists(csvPath).Should().BeTrue();
 
@@ -1021,7 +1028,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Step 9 - Location mapping
             // =====================================================
             var step9 = (ImportStep09_LocationMappingViewModel)importVM.CurrentStepViewModel;
-            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep09_LocationMappingViewModel && importVM.ProgressStep == "Location mapping",
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep09_LocationMappingViewModel && importVM.ProgressStep == "Location value mapping",
                 timeout: TimeSpan.FromSeconds(3),
                 because: "step 9 should be active and progress label updated");
             step9.PrimaryActionButtonText.Should().Contain("Proceed");
@@ -1030,17 +1037,14 @@ namespace CollectaMundo.Tests.ScenarioTests
             var locationMappings = step9.LocationMappings;
 
             // Check LocationMappingItem object is correctly initialized with guesses
-            locationMappings[0].CsvValue.Should().Be("Normal");
-            locationMappings[0].SelectedCardSetValue.Should().Be("nonfoil");
-            locationMappings[1].CsvValue.Should().Be("nonfoil");
-            locationMappings[1].SelectedCardSetValue.Should().Be("nonfoil");
-            locationMappings[2].CsvValue.Should().Be("Shiny");
-            locationMappings[2].SelectedCardSetValue.Should().Be("foil");
-            locationMappings[3].CsvValue.Should().Be("nothing");
-            locationMappings[3].SelectedCardSetValue.Should().Be("nonfoil");
-
-            // Simulate clearing a mapping (should use default value for that location, which is "nonfoil")
-            locationMappings[3].SelectedCardSetValue = null;
+            locationMappings[0].CsvValue.Should().Be("Binder 1");
+            locationMappings[0].SelectedCardSetValue.Should().Be("Binder 1");
+            locationMappings[1].CsvValue.Should().Be("Binder 2");
+            locationMappings[1].SelectedCardSetValue.Should().Be(null);
+            locationMappings[2].CsvValue.Should().Be("Aggro Fish");
+            locationMappings[2].SelectedCardSetValue.Should().Be("Aggro Fish");
+            locationMappings[3].CsvValue.Should().Be("Flameout Fortune");
+            locationMappings[3].SelectedCardSetValue.Should().Be(null);
 
             // Proceed to next step
             var step9Result = await step9.OnPrimaryAction();
@@ -1049,142 +1053,137 @@ namespace CollectaMundo.Tests.ScenarioTests
             step9Result.Code.Should().Be(OperationResultCode.Success);
 
 
-            //// =====================================================
-            //// Step 10 - Summary and confirmation
-            //// =====================================================
-            //var step10 = (ImportStep10_SummaryViewModel)importVM.CurrentStepViewModel;
-            //await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
-            //    timeout: TimeSpan.FromSeconds(3),
-            //    because: "step 9 should be active and progress label updated");
-            //step10.PrimaryActionButtonText.Should().Contain("Start the import...");
-            //step10.CanExecuteSecondaryAction.Should().BeTrue();
-            //step10.SecondaryActionButtonText.Should().Contain("Save unrecognized items");
+            // =====================================================
+            // Step 10 - Summary and confirmation
+            // =====================================================
+            var step10 = (ImportStep10_SummaryViewModel)importVM.CurrentStepViewModel;
+            await ImportScenarioTestsHelpers.EventuallyAsync(() => importVM.CurrentStepViewModel is ImportStep10_SummaryViewModel && importVM.ProgressStep == "Summary and confirmation",
+                timeout: TimeSpan.FromSeconds(3),
+                because: "step 10 should be active and progress label updated");
+            step10.PrimaryActionButtonText.Should().Contain("Start the import...");
+            step10.CanExecuteSecondaryAction.Should().BeTrue();
+            step10.SecondaryActionButtonText.Should().Contain("Save unrecognized items");
 
-            //var summary = step10.Summary;
+            var summary = step10.Summary;
 
-            //// Check totals
-            //summary.ReadyToImportCount.Should().Be(5); // 5 cards should be ready to import with UUIDs
-            //summary.TotalCardsToAdd.Should().Be(5); // Sum of quantities of all cards to import
-            //summary.UnableToImportCount.Should().Be(1); // 1 card should not be able to import
+            // Check totals
+            summary.ReadyToImportCount.Should().Be(4); // 5 cards should be ready to import with UUIDs
+            summary.TotalCardsToAdd.Should().Be(4); // Sum of quantities of all cards to import
+            summary.UnableToImportCount.Should().Be(0); // 1 card should not be able to import
 
-            //// Check field mappings are correctly displayed in summary
-            //summary.FieldMappings[0].CsvHeader.Should().Be("No value chosen for field Condition - using default value: \"Near Mint\" for all imports");
-            //summary.FieldMappings[1].CsvHeader.Should().Be("No value chosen for field CardFinish - using default value: \"nonfoil\" for all imports");
-            //summary.FieldMappings[2].CsvHeader.Should().Be("No value chosen for field Language - using default value: \"English\" for all imports");
-            //summary.FieldMappings[3].CsvHeader.Should().Be("No value chosen for field Location - using default value: \"blank\" for all imports"); ;
-            //summary.FieldMappings[4].CsvHeader.Should().Be("No value chosen for field Comment - using default value: \"blank\" for all imports"); ;
-            //summary.FieldMappings[5].CsvHeader.Should().Be("No value chosen for field CardsOwned - using default value: \"1\" for all imports"); ;
-            //summary.FieldMappings[6].CsvHeader.Should().Be("Mapped to field: TilSalg");
+            // Check field mappings are correctly displayed in summary
+            summary.FieldMappings[0].CsvHeader.Should().Be("No value chosen for field Condition - using default value: \"Near Mint\" for all imports");
+            summary.FieldMappings[1].CsvHeader.Should().Be("No value chosen for field CardFinish - using default value: \"nonfoil\" for all imports");
+            summary.FieldMappings[2].CsvHeader.Should().Be("No value chosen for field Language - using default value: \"English\" for all imports");
+            summary.FieldMappings[3].CsvHeader.Should().Be("Mapped to field: Location");
+            summary.FieldMappings[4].CsvHeader.Should().Be("No value chosen for field Comment - using default value: \"blank\" for all imports");
+            summary.FieldMappings[5].CsvHeader.Should().Be("No value chosen for field CardsOwned - using default value: \"1\" for all imports"); 
+            summary.FieldMappings[6].CsvHeader.Should().Be("No value chosen for field CardsForTrade - using default value: \"0\" for all imports");
 
-            //// Check value mappings 
-            //summary.ValueMappings[0].Field.Should().Be(ImportField.None);
-            //summary.ValueMappings[0].CsvValue.Should().Be("—");
-            //summary.ValueMappings[0].MappedValue.Should().Be("All values use defaults");
+            // Check value mappings 
+            summary.ValueMappings[0].Field.Should().Be(ImportField.Location);
+            summary.ValueMappings[0].CsvValue.Should().Be("Binder 1");
+            summary.ValueMappings[0].MappedValue.Should().Be("Binder 1");
+            summary.ValueMappings[1].Field.Should().Be(ImportField.Location);
+            summary.ValueMappings[1].CsvValue.Should().Be("Binder 2");
+            summary.ValueMappings[1].MappedValue.Should().Be("(blank -> blank)");
+            summary.ValueMappings[2].Field.Should().Be(ImportField.Location);
+            summary.ValueMappings[2].CsvValue.Should().Be("Aggro Fish");
+            summary.ValueMappings[2].MappedValue.Should().Be("Aggro Fish");
+            summary.ValueMappings[3].Field.Should().Be(ImportField.Location);
+            summary.ValueMappings[3].CsvValue.Should().Be("Flameout Fortune");
+            summary.ValueMappings[3].MappedValue.Should().Be("(blank -> blank)");
 
-            //summary.UnimportableItems.Should().HaveCount(1);
-            //summary.UnimportableItems[0].CardName.Should().Contain("Brisela, Voice of Nightmares");
-            //summary.UnimportableItems[0].Warnings.Should().Contain("No UUID resolved for this row (cannot import). Check ID / Name+Set mapping steps.");
 
-            //// Proceed with the import
-            //var step10Result = await step10.OnPrimaryAction();
+            // Proceed with the import
+            var step10Result = await step10.OnPrimaryAction();
 
-            //// Assert that the final import completed successfully
-            //step10Result.Code.Should().Be(OperationResultCode.Success);
+            // Assert that the final import completed successfully
+            step10Result.Code.Should().Be(OperationResultCode.Success);
 
-            //var myCollectionInMemory = _mainVM.MyCollectionVM.Cards;
-            //myCollectionInMemory.Should().HaveCount(26);
+            var myCollectionInMemory = _mainVM.MyCollectionVM.Cards;
+            myCollectionInMemory.Should().HaveCount(25);
 
-            ////// Spotcheck individual cards
-            //var chillarpillarUuid = "d4588e8f-e5a0-53e5-ac90-0a5183f0d118";
-            //var chillarpillar = myCollectionInMemory.Single(c => c.Uuid == chillarpillarUuid && c.SelectedCondition == "Near Mint");
+            //// Spotcheck individual cards
+            var angelOfGlorysRiseUuid = "aff7557c-2e85-5bda-8231-d8f1e46b43c8";
 
-            //chillarpillar.Name.Should().Be("Chillerpillar // Chillerpillar");
-            //chillarpillar.SelectedFinish.Should().Be("nonfoil");
-            //chillarpillar.Language.Should().Be("English");
-            //chillarpillar.CardsOwned.Should().Be(2);
-            //chillarpillar.CardsForTrade.Should().Be(2);
+            // Angel collection identity 1 - should be imported with location mapped to "Binder 1" and other fields using defaults
+            var angel1 = myCollectionInMemory.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationDisplayName == "Storage: Binder 1");
+            angel1.Name.Should().Be("Angel of Glory's Rise");
+            angel1.SelectedFinish.Should().Be("foil");
+            angel1.Language.Should().Be("English");
+            angel1.CardsOwned.Should().Be(1);
+            angel1.CardsForTrade.Should().Be(0);
 
-            //var realmwalkerUuid = "66124810-2a79-5c4f-a43f-181400aa8c4f";
-            //var realmwalker = myCollectionInMemory.Single(c => c.Uuid == realmwalkerUuid);
-            //realmwalker.Name.Should().Be("Realmwalker");
-            //realmwalker.SelectedCondition.Should().Be("Near Mint");
-            //realmwalker.SelectedFinish.Should().Be("foil");
-            //realmwalker.Language.Should().Be("English");
-            //realmwalker.CardsOwned.Should().Be(1);
-            //realmwalker.CardsForTrade.Should().Be(1);
+            // Angel collection identity 2 - should be imported with blank location and other fields using defaults
+            var angel2 = myCollectionInMemory.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationDisplayName == null);
+            angel2.Name.Should().Be("Angel of Glory's Rise");
+            angel2.SelectedFinish.Should().Be("foil");
+            angel2.Language.Should().Be("English");
+            angel2.CardsOwned.Should().Be(2);
+            angel2.CardsForTrade.Should().Be(0);
 
-            //var zombieUuid = "011a9246-7f7c-50c7-ab99-3fc13469c13b";
-            //var zombie = myCollectionInMemory.Single(c => c.Uuid == zombieUuid);
-            //zombie.Name.Should().Be("Zombie");
-            //zombie.SelectedCondition.Should().Be("Near Mint");
-            //zombie.SelectedFinish.Should().Be("nonfoil");
-            //zombie.Language.Should().Be("English");
-            //zombie.CardsOwned.Should().Be(1); // defaults to 1 because CardsOwned mapping was not set
-            //zombie.CardsForTrade.Should().Be(0);
+            // Angel collection identity 3 - should be imported with location mapped to "Aggro Fish" and other fields using defaults
+            var angel3 = myCollectionInMemory.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationDisplayName == "Deck: Aggro Fish");
+            angel3.Name.Should().Be("Angel of Glory's Rise");
+            angel3.SelectedFinish.Should().Be("foil");
+            angel3.Language.Should().Be("English");
+            angel3.CardsOwned.Should().Be(1);
+            angel3.CardsForTrade.Should().Be(0);
 
-            //var neverReturnUuid = "875ba98c-721c-537b-b326-22d803fab7c0"; // uuid of the 'a' side
-            //var neverReturn = myCollectionInMemory.Single(c => c.Uuid == neverReturnUuid);
-            //neverReturn.Name.Should().Be("Never // Return");
-            //neverReturn.SelectedCondition.Should().Be("Near Mint");
-            //neverReturn.SelectedFinish.Should().Be("nonfoil");
-            //neverReturn.Language.Should().Be("English");
-            //neverReturn.CardsOwned.Should().Be(1);
-            //neverReturn.CardsForTrade.Should().Be(0);
+            // Compare with database state to ensure it was correctly saved (spot check the same cards we checked in memory, and that the total count matches)
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
 
-            //// Compare with database state to ensure it was correctly saved (spot check the same cards we checked in memory, and that the total count matches)
-            //await using var uow = new UnitOfWork(_dbFactory);
-            //await uow.BeginReadOnlyAsync();
+            const string sql = @"
+            SELECT uuid AS Uuids,
+                   condition AS Conditions,
+                   finish AS Finishes,
+                   language AS Languages,
+                   locationId AS LocationIds,
+                   cardsOwned AS CardsOwned,
+                   cardsForTrade AS CardsForTrade
+            FROM myCollection;
+            ";
 
-            //const string sql = @"
-            //SELECT uuid AS Uuids,
-            //       condition AS Conditions,
-            //       finish AS Finishes,
-            //       language AS Languages,
-            //       cardsOwned AS CardsOwned,
-            //       cardsForTrade AS CardsForTrade
-            //FROM myCollection;
-            //";
+            using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
 
-            //using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
+            using var reader = await cmd.ExecuteReaderAsync();
 
-            //using var reader = await cmd.ExecuteReaderAsync();
+            var myCollectionDB = new List<CardSet>();
 
-            //var myCollectionDB = new List<CardSet>();
+            var dbUuids = new List<string>();
+            var dbConditions = new List<string>();
+            var dbFinishes = new List<string>();
+            var dbLanguages = new List<string>();
+            var dbLocationIds = new List<int>();
+            var cardsOwnedDb = new List<int>();
+            var sumTradeDb = new List<int>();
 
-            //var dbUuids = new List<string>();
-            //var dbConditions = new List<string>();
-            //var dbFinishes = new List<string>();
-            //var dbLanguages = new List<string>();
-            //var cardsOwnedDb = new List<int>();
-            //var sumTradeDb = new List<int>();
+            while (await reader.ReadAsync())
+            {
+                myCollectionDB.Add(new CardSet
+                {
+                    Uuid = reader.GetString(0),
+                    SelectedCondition = reader.GetString(1),
+                    SelectedFinish = reader.GetString(2),
+                    Language = reader.GetString(3),
+                    SelectedLocationId = reader.IsDBNull(4) ? null : reader.GetInt32(4),
+                    CardsOwned = reader.GetInt32(5),
+                    CardsForTrade = reader.GetInt32(6)
+                });
+            }
 
-            //while (await reader.ReadAsync())
-            //{
-            //    myCollectionDB.Add(new CardSet
-            //    {
-            //        Uuid = reader.GetString(0),
-            //        SelectedCondition = reader.GetString(1),
-            //        SelectedFinish = reader.GetString(2),
-            //        Language = reader.GetString(3),
-            //        CardsOwned = reader.GetInt32(4),
-            //        CardsForTrade = reader.GetInt32(5)
-            //    });
-            //}
+            await uow.CommitAsync();
 
-            //await uow.CommitAsync();
+            myCollectionInMemory.Should().HaveCount(myCollectionDB.Count);
 
-            //myCollectionInMemory.Should().HaveCount(myCollectionDB.Count);
-
-            //var chillarpillarDb = myCollectionDB.Single(c =>
-            //    c.Uuid == chillarpillarUuid &&
-            //    c.SelectedCondition == chillarpillar.SelectedCondition &&
-            //    c.SelectedFinish == chillarpillar.SelectedFinish &&
-            //    c.Language == chillarpillar.Language);
-            //chillarpillar.SelectedCondition.Should().Be(chillarpillarDb.SelectedCondition);
-            //chillarpillar.SelectedFinish.Should().Be(chillarpillarDb.SelectedFinish);
-            //chillarpillar.Language.Should().Be(chillarpillarDb.Language);
-            //chillarpillar.CardsOwned.Should().Be(chillarpillarDb.CardsOwned);
-            //chillarpillar.CardsForTrade.Should().Be(chillarpillarDb.CardsForTrade);
+            var angel1Db = myCollectionDB.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationId == angel1.SelectedLocationId);
+            angel1.SelectedCondition.Should().Be(angel1Db.SelectedCondition);
+            angel1.SelectedFinish.Should().Be(angel1Db.SelectedFinish);
+            angel1.Language.Should().Be(angel1Db.Language);
+            angel1.CardsOwned.Should().Be(angel1Db.CardsOwned);
+            angel1.CardsForTrade.Should().Be(angel1Db.CardsForTrade);
 
             //var realmWalkerDb = myCollectionDB.Single(c =>
             //    c.Uuid == realmwalkerUuid &&
@@ -1234,17 +1233,17 @@ namespace CollectaMundo.Tests.ScenarioTests
             return ValueTask.CompletedTask;
         }
     }
+
+    #endregion
     public static class ImportScenarioTestsHelpers
     {
         public static bool HasUuid(TempCardItem item)
         {
-            return item.CsvFields.TryGetValue("collectaMundoUuidImportField", out var uuid)
-                   && !string.IsNullOrWhiteSpace(uuid);
+            return item.CsvFields.TryGetValue("collectaMundoUuidImportField", out var uuid) && !string.IsNullOrWhiteSpace(uuid);
         }
         public static bool HasUuids(TempCardItem item)
         {
-            return item.CsvFields.TryGetValue("collectaMundoUuidsImportField", out var uuid)
-                   && !string.IsNullOrWhiteSpace(uuid);
+            return item.CsvFields.TryGetValue("collectaMundoUuidsImportField", out var uuid) && !string.IsNullOrWhiteSpace(uuid);
         }
         public static async Task EventuallyAsync(Func<bool> condition, TimeSpan timeout, string? because = null)
         {
