@@ -393,7 +393,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
                 if (match is not null)
                 {
-                    mapping.SelectedCardSetValue = match.DisplayName;
+                    mapping.SelectedCardSetValue = match.Name;
                 }
             }
         }

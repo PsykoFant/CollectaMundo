@@ -767,8 +767,7 @@ namespace CollectaMundo.DomainLogic.Import
                 summary.UnableToImportCount++;
 
                 // Try to find original temp item
-                var temp = tempItems.FirstOrDefault(t =>
-                    t.TempItemImportKey == item.TempItemImportKey);
+                var temp = tempItems.FirstOrDefault(t => t.TempItemImportKey == item.TempItemImportKey);
 
                 summary.UnimportableItems.Add(new UnimportableItem
                 {
@@ -837,7 +836,7 @@ namespace CollectaMundo.DomainLogic.Import
 
                 var defaultValue = CollectionCardItemDefaults.GetDefaultDisplayValue(field);
 
-                // Case 4: mapped field, but CSV column contained no values
+                // Mapped field, but CSV column contained no values
                 if (mappings.Count == 0)
                 {
                     valueMappings.Add(new ValueMappingSummary(field, $"(no values in '{fieldMapping.SelectedCsvHeader}')", $"(default -> {defaultValue})"));
@@ -846,17 +845,12 @@ namespace CollectaMundo.DomainLogic.Import
                 }
 
                 // Cases 2 & 3
-                valueMappings.AddRange(
-                    mappings.Select(m =>
+                valueMappings.AddRange(mappings.Select(m =>
                     {
                         var isBlank = string.IsNullOrWhiteSpace(m.SelectedCardSetValue);
 
-                        return new ValueMappingSummary(
-                            field,
-                            m.CsvValue,
-                            isBlank
-                                ? $"(blank -> {defaultValue})"
-                                : m.SelectedCardSetValue!);
+                        return new ValueMappingSummary(field, m.CsvValue,
+                            isBlank ? $"(blank -> {defaultValue})" : m.SelectedCardSetValue!);
                     }));
             }
 
