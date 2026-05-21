@@ -40,10 +40,16 @@
             </Button.Style>
         </Button>
 
-        <Button Content="Decks" Margin="170,5,0,5">
+        <Button Content="Decks" Command="{Binding ShowDecksPageCommand}" Margin="170,5,0,5">
             <Button.Style>
                 <Style TargetType="Button" BasedOn="{StaticResource TopMenuButtonStyle}">
                     <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsDecksPageActive}" Value="True">
+                            <Setter Property="Background" Value="#5cb9ca"/>
+                            <Setter Property="BorderBrush" Value="#2f6f7a"/>
+                            <Setter Property="Foreground" Value="#2f6f7a"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Button.Style>

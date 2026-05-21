@@ -15,6 +15,7 @@
             <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type vmPages:PagesSearchAndFilterViewModel}"><pageViews:PagesSearchAndFilterView /></DataTemplate>
                 <DataTemplate DataType="{x:Type vmPages:PagesMyCollectionViewModel}"><pageViews:PagesMyCollectionView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmPages:PagesDecksHostViewModel}"><pageViews:PagesDecksHost /></DataTemplate>
                 <DataTemplate DataType="{x:Type vmPages:PagesUtilitiesHostViewModel}"><pageViews:PagesUtilitiesHost /></DataTemplate>
             </ContentControl.Resources>
         </ContentControl>

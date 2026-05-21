@@ -12,14 +12,14 @@ public sealed partial class TopMenuViewModel : ObservableObject
     // Page viewmodels
     public object AllCardsPageViewModel { get; }
     public object MyCollectionPageViewModel { get; }
-    public object? DecksPageViewModel { get; }
+    public object? PagesDecksHostViewModel { get; }
     public object? PagesUtilitiesHostViewModel { get; }
 
     // Sidemenu viewmodels
     public object FilteringSideMenuViewModel { get; }
     public object UtilitiesSideMenuViewModel { get; }
 
-    public TopMenuViewModel(IShellNavigationHost shellNavigationHost, INavigationCleanupService navigationCleanupService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object? decksPageViewModel = null, object? pagesUtilitiesHostVM = null)
+    public TopMenuViewModel(IShellNavigationHost shellNavigationHost, INavigationCleanupService navigationCleanupService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object pagesDecksHostViewModel, object pagesUtilitiesHostVM)
     {
         _shellNavigationHost = shellNavigationHost;
         _navigationCleanupService = navigationCleanupService;
@@ -27,7 +27,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
         UtilitiesSideMenuViewModel = utilitiesSideMenuViewModel;
         AllCardsPageViewModel = allCardsPageViewModel;
         MyCollectionPageViewModel = myCollectionPageViewModel;
-        DecksPageViewModel = decksPageViewModel;
+        PagesDecksHostViewModel = pagesDecksHostViewModel;
         PagesUtilitiesHostViewModel = pagesUtilitiesHostVM;
 
         _shellNavigationHost.PropertyChanged += Host_PropertyChanged;
@@ -46,7 +46,7 @@ public sealed partial class TopMenuViewModel : ObservableObject
     private void ShowMyCollectionPage() => NavigateTo(MyCollectionPageViewModel, ShellPageEnum.MyCollection);
 
     [RelayCommand]
-    private void ShowDecksPage() => NavigateTo(DecksPageViewModel, ShellPageEnum.Decks);
+    private void ShowDecksPage() => NavigateTo(PagesDecksHostViewModel, ShellPageEnum.Decks);
 
     [RelayCommand]
     private void ShowUtilitiesPage() => NavigateTo(PagesUtilitiesHostViewModel, ShellPageEnum.Utilities);

@@ -18,6 +18,7 @@ using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
+using CollectaMundo.ViewModels.Decks;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Pages;
@@ -72,7 +73,9 @@ namespace CollectaMundo.ViewModels
         // Pages
         public CardListPageViewModel SearchAndFilterPageVM { get; }
         public CardListPageViewModel MyCollectionPageVM { get; }
+        public PagesDecksHostViewModel PagesDecksHostVM { get; }
         public PagesUtilitiesHostViewModel PagesUtilitiesHostVM { get; }
+
 
         // Menus
         public SideMenuFilteringViewModel FilteringSideMenuVM { get; }
@@ -85,6 +88,8 @@ namespace CollectaMundo.ViewModels
         public CardListViewModel ColorIconsViewModel { get; }
         public ModifyCollectionViewModel AddCardsVM { get; }
         public ModifyCollectionViewModel EditCardsVM { get; }
+        public DeckManagementViewModel DeckManagementVM { get; }
+        public DeckEditorViewModel DeckEdititorVM { get; }
         public FilterViewModel FilterVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public UtilitiesViewModel UtilitiesVM { get; }
@@ -173,6 +178,10 @@ namespace CollectaMundo.ViewModels
             AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true);
             EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false);
 
+            // Deck management viewmodels
+            DeckManagementVM = new DeckManagementViewModel();
+            DeckEdititorVM = new DeckEditorViewModel();
+
             // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);
 
@@ -195,6 +204,7 @@ namespace CollectaMundo.ViewModels
             // Pages viewmodels
             SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
+            PagesDecksHostVM = new PagesDecksHostViewModel(DeckManagementVM, DeckEdititorVM); 
             PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, utilitiesNavigator);
 
             // Side menu viewmodels
@@ -211,7 +221,7 @@ namespace CollectaMundo.ViewModels
             _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, utilitiesNavigator);
 
             // Set up top menu with references to page VMs
-            TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, pagesUtilitiesHostVM: PagesUtilitiesHostVM);
+            TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, pagesDecksHostViewModel: PagesDecksHostVM, pagesUtilitiesHostVM: PagesUtilitiesHostVM);
 
             // event wiring
             SubscribeChildVmEvents();
