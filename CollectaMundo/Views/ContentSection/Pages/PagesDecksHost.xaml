@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:deckViews="clr-namespace:CollectaMundo.Views.ContentSection.Pages"
+             xmlns:deckViews="clr-namespace:CollectaMundo.Views.ContentSection.Decks"
              xmlns:deckVms="clr-namespace:CollectaMundo.ViewModels.Decks"
              xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages"
              mc:Ignorable="d" 
@@ -14,8 +14,8 @@
     <Grid>
         <ContentControl Content="{Binding CurrentDecksContentViewModel}">
             <ContentControl.Resources>
-                <DataTemplate DataType="{x:Type deckVms:DeckManagementViewModel}"><deckViews:PagesDeckManagementView/></DataTemplate>
-                <DataTemplate DataType="{x:Type deckVms:DeckEditorViewModel}"><deckViews:PagesDeckEditorView /></DataTemplate>
+                <DataTemplate DataType="{x:Type deckVms:DeckManagementViewModel}"><deckViews:DeckManagementView/></DataTemplate>
+                <DataTemplate DataType="{x:Type deckVms:DeckEditorViewModel}"><deckViews:DeckEditorView /></DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
     </Grid>

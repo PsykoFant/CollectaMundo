@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CollectaMundo.Views.ContentSection.Pages
+namespace CollectaMundo.Views.ContentSection.Decks
 {
     /// <summary>
-    /// Interaction logic for PagesDeckEditorView.xaml
+    /// Interaction logic for DeckEditorView.xaml
     /// </summary>
-    public partial class PagesDeckEditorView : UserControl
+    public partial class DeckEditorView : UserControl
     {
-        public PagesDeckEditorView()
+        public DeckEditorView()
         {
             InitializeComponent();
         }
