@@ -46,7 +46,15 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "name TEXT NOT NULL COLLATE NOCASE UNIQUE, " +
                     "type TEXT NOT NULL CHECK (type IN ('Storage', 'Deck'))" +
-                    ");"
+                    ");",
+				
+				["myDecks"] =				
+					"CREATE TABLE myDecks ( " +
+					"locationId INTEGER PRIMARY KEY, " +
+					"format TEXT NULL, " +
+					"description TEXT NULL, " +
+					"FOREIGN KEY (locationId) REFERENCES cardLocations(id)" +
+					");"
             };
 
         // Dynamic because price columns depend on retailer/finish definitions

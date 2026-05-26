@@ -2,17 +2,19 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.Infrastructure.Decks;
+using CollectaMundo.Infrastructure.Shared;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
-    public sealed class DeckManagementService(ICardLocationService cardLocationService) : IDeckManagementService
+    public sealed class DeckManagementService(IDbConnectionFactory dbFactory, IDeckManagementRepo deckManagementRepo,ICardLocationService cardLocationService) : IDeckManagementService
     {
-        public Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync()
+        public async Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync()
         {
-            IReadOnlyList<DeckManagementRecord> decks = [];
-            return Task.FromResult(decks);
-        }
+            using var conn = await dbFactory.OpenConnectionAsync();
 
+            return await deckManagementRepo.GetAllAsync(conn);
+        }
         public async Task<DeckManagementMutation> CreateAsync(DeckManagementInput input)
         {
             var locationMutation = await cardLocationService.CreateAsync(input.Name, CardLocationType.Deck);
@@ -21,23 +23,31 @@ namespace CollectaMundo.ApplicationServices.Decks
             {
                 return new DeckManagementMutation
                 {
-                    Result = locationMutation.Result,
-                    Deck = null
+                    Result = locationMutation.Result
                 };
             }
 
-            var deck = new DeckManagementRecord
-            {
-                LocationId = locationMutation.Location.Id,
-                Name = locationMutation.Location.Name,
-                Format = input.Format,
-                Description = input.Description
-            };
+            using var conn = await dbFactory.OpenConnectionAsync();
+
+            await deckManagementRepo.UpsertMetadataAsync(
+                conn,
+                locationMutation.Location.Id,
+                input.Format,
+                input.Description);
 
             return new DeckManagementMutation
             {
-                Result = new OperationResult(OperationResultCode.Success, "Deck created successfully."),
-                Deck = deck
+                Result = new OperationResult(
+                    OperationResultCode.Success,
+                    "Deck created successfully."),
+
+                Deck = new DeckManagementRecord
+                {
+                    LocationId = locationMutation.Location.Id,
+                    Name = locationMutation.Location.Name,
+                    Format = input.Format,
+                    Description = input.Description
+                }
             };
         }
         public async Task<DeckManagementMutation> UpdateAsync(int locationId, DeckManagementInput input)
@@ -48,30 +58,36 @@ namespace CollectaMundo.ApplicationServices.Decks
             {
                 return new DeckManagementMutation
                 {
-                    Result = locationMutation.Result,
-                    Deck = null
+                    Result = locationMutation.Result
                 };
             }
 
-            var deck = new DeckManagementRecord
-            {
-                LocationId = locationMutation.Location.Id,
-                Name = locationMutation.Location.Name,
-                Format = input.Format,
-                Description = input.Description
-            };
+            using var conn = await dbFactory.OpenConnectionAsync();
+
+            await deckManagementRepo.UpsertMetadataAsync(conn, locationId, input.Format, input.Description);
 
             return new DeckManagementMutation
             {
                 Result = new OperationResult(OperationResultCode.Success, "Deck updated successfully."),
-                Deck = deck
+
+                Deck = new DeckManagementRecord
+                {
+                    LocationId = locationId,
+                    Name = input.Name,
+                    Format = input.Format,
+                    Description = input.Description
+                }
             };
         }
         public async Task<OperationResult> DeleteAsync(int locationId)
         {
-            var locationDelete = await cardLocationService.DeleteAsync(locationId);
+            using var conn = await dbFactory.OpenConnectionAsync();
 
-            return locationDelete.Result;
+            await deckManagementRepo.DeleteMetadataAsync(conn, locationId);
+
+            var locationMutation = await cardLocationService.DeleteAsync(locationId);
+
+            return locationMutation.Result;
         }
     }
 }
