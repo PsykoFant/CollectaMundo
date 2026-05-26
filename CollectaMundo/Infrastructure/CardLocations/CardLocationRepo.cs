@@ -31,7 +31,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return results;
         }
-        public async Task<int> InsertAsync(SQLiteConnection conn, string name, string type)
+        public async Task<int> InsertAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, string type)
         {
             const string sql = """
                 INSERT INTO cardLocations (name, type)
@@ -93,7 +93,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return created;
         }
-        public async Task<int> UpdateAsync(SQLiteConnection conn, int id, string name, string type)
+        public async Task<int> UpdateAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, string type)
         {
             const string sql = """
                 UPDATE cardLocations
@@ -109,7 +109,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return await cmd.ExecuteNonQueryAsync();
         }
-        public async Task<int> DeleteAsync(SQLiteConnection conn, int id)
+        public async Task<int> DeleteAsync(SQLiteConnection conn, SQLiteTransaction tx, int id)
         {
             const string sql = """
                 DELETE FROM cardLocations
@@ -121,7 +121,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return await cmd.ExecuteNonQueryAsync();
         }
-        public async Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn)
+        public async Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             const string sql = """
                                 SELECT id, uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade
@@ -168,7 +168,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return rows;
         }
-        public async Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdAsync(SQLiteConnection conn, int locationId)
+        public async Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId)
         {
             const string sql = """
                                 SELECT id, uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade
@@ -213,7 +213,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return rows;
         }
-        public async Task<bool> ExistsByNameAsync(SQLiteConnection conn, string name, int? excludingId = null)
+        public async Task<bool> ExistsByNameAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, int? excludingId = null)
         {
             const string sql = """
                 SELECT 1

@@ -7,16 +7,20 @@ namespace CollectaMundo.ViewModels.Pages
     {
         public DeckManagementViewModel DeckManagementVM { get; }
         public DeckEditorViewModel DeckEditorVM { get; }
-
-        [ObservableProperty]
-        private object currentDecksContentViewModel;
-
-        public PagesDecksHostViewModel(DeckManagementViewModel deckManagementVM,DeckEditorViewModel deckEditorVM)
+        public PagesDecksHostViewModel(DeckManagementViewModel deckManagementVM, DeckEditorViewModel deckEditorVM)
         {
             DeckManagementVM = deckManagementVM;
             DeckEditorVM = deckEditorVM;
 
             currentDecksContentViewModel = DeckManagementVM;
+        }
+
+        [ObservableProperty]
+        private object currentDecksContentViewModel;
+        public async Task BeginAsync()
+        {
+            CurrentDecksContentViewModel = DeckManagementVM;
+            await DeckManagementVM.LoadDecksAsync();
         }
     }
 }

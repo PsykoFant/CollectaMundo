@@ -7,11 +7,11 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
     public class CollectionMutationsService(ICollectionMutationsRepo repo) : ICollectionMutationsService
     {
         private readonly ICollectionMutationsRepo _repo = repo;
-        public async Task ExecutePlanAsync(CollectionMutationPlan plan, SQLiteConnection connection)
+        public async Task ExecutePlanAsync(CollectionMutationPlan plan, SQLiteConnection connection, SQLiteTransaction transaction)
         {
             foreach (var deleteId in plan.DeleteIds)
             {
-                await _repo.DeleteCardByIdAsync(deleteId, connection);
+                await _repo.DeleteCardByIdAsync(deleteId, connection, transaction);
             }
 
             foreach (var update in plan.Updates)
@@ -25,7 +25,8 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
                     update.Identity.Finish,
                     update.Identity.LocationId,
                     update.Identity.Comment,
-                    connection);
+                    connection,
+                    transaction);
             }
 
             foreach (var insert in plan.Inserts)
@@ -39,7 +40,8 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
                     insert.Identity.Comment,
                     insert.CardsOwned,
                     insert.CardsForTrade,
-                    connection);
+                    connection,
+                    transaction);
 
                 insert.BindCardId(newId);
             }

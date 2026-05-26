@@ -61,7 +61,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
 
                 try
                 {
-                    await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
+                    await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection, uow.CurrentTransaction);
                     await uow.CommitAsync();
                     return plan.ChangeSet;
                 }
@@ -102,7 +102,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
 
                 var plan = _mutationsLogic.PlanIdentityRewriteBatch(prepared, snapshot);
 
-                await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
+                await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection, uow.CurrentTransaction);
                 await uow.CommitAsync();
 
                 return plan.ChangeSet;

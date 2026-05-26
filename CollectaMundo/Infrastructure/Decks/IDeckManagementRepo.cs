@@ -6,7 +6,7 @@ namespace CollectaMundo.Infrastructure.Decks
     public interface IDeckManagementRepo
     {
         Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync(SQLiteConnection conn);
-        Task UpsertMetadataAsync(SQLiteConnection conn, int locationId, string? format, string? description);
-        Task<int> DeleteMetadataAsync(SQLiteConnection conn, int locationId);
+        Task UpsertMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId, string? format, string? description);
+        Task<int> DeleteMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId);
     }
 }

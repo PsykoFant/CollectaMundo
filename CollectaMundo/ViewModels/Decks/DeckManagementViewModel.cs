@@ -10,10 +10,11 @@ namespace CollectaMundo.ViewModels.Decks
     public partial class DeckManagementViewModel : ObservableObject
     {
         private readonly IDeckManagementService _deckManagementService;
-
-        public DeckManagementViewModel(IDeckManagementService deckManagementService)
+        private readonly IDeckManagementStore _deckManagementStore;
+        public DeckManagementViewModel(IDeckManagementService deckManagementService, IDeckManagementStore deckManagementStore)
         {
             _deckManagementService = deckManagementService;
+            _deckManagementStore = deckManagementStore;
 
             SelectedDecks.CollectionChanged += (_, _) =>
             {
@@ -24,13 +25,11 @@ namespace CollectaMundo.ViewModels.Decks
         }
         public string SubmitButtonText => IsEditing ? "Save changes" : "Add deck";
         public string DeleteButtonText => IsDeleteConfirmationActive ? "Yes, delete!" : "Delete selected";
-
         public string ModeMessage => IsDeleteConfirmationActive
             ? "Confirm delete"
             : IsEditing
                 ? "Edit selected deck"
                 : "Add a new deck";
-
         public bool IsEditing => SelectedDeck is not null;
         public bool HasSelectedDecks => SelectedDecks.Count > 0;
         public bool SaveEditEnabled => SelectedDecks.Count < 2 && !IsDeleteConfirmationActive;
@@ -42,7 +41,7 @@ namespace CollectaMundo.ViewModels.Decks
         private string deckName = string.Empty;
 
         [ObservableProperty]
-        private string selectedDeckFormat = string.Empty;
+        private string? selectedDeckFormat = string.Empty;
 
         [ObservableProperty]
         private string description = string.Empty;
@@ -59,7 +58,7 @@ namespace CollectaMundo.ViewModels.Decks
         [ObservableProperty]
         private DeckManagementRecord? selectedDeck;
 
-        public ObservableCollection<DeckManagementRecord> Decks { get; } = [];
+        public ObservableCollection<DeckManagementRecord> Decks => _deckManagementStore.Decks;
         public ObservableCollection<DeckManagementRecord> SelectedDecks { get; } = [];
 
         public ObservableCollection<string> DeckFormats { get; } =
@@ -80,7 +79,7 @@ namespace CollectaMundo.ViewModels.Decks
             if (value is not null)
             {
                 DeckName = value.Name;
-                SelectedDeckFormat = value.Format;
+                SelectedDeckFormat = value.Format ?? string.Empty;
                 Description = value.Description ?? string.Empty;
             }
 
@@ -96,7 +95,6 @@ namespace CollectaMundo.ViewModels.Decks
             OnPropertyChanged(nameof(DeleteButtonText));
             OnPropertyChanged(nameof(SaveEditEnabled));
         }
-
         public async Task LoadDecksAsync()
         {
             if (IsBusy)
@@ -104,23 +102,11 @@ namespace CollectaMundo.ViewModels.Decks
                 return;
             }
 
-            await LoadInternalAsync();
-        }
-
-        private async Task LoadInternalAsync()
-        {
             try
             {
                 IsBusy = true;
 
-                var loadedDecks = (await _deckManagementService.GetAllAsync()).ToList();
-
-                Decks.Clear();
-
-                foreach (var deck in loadedDecks)
-                {
-                    Decks.Add(deck);
-                }
+                await _deckManagementStore.LoadAsync();
 
                 ClearStatus();
             }
@@ -162,7 +148,7 @@ namespace CollectaMundo.ViewModels.Decks
 
                     if (mutation.Result.Code == OperationResultCode.Success && mutation.Deck is not null)
                     {
-                        ReplaceDeckInCollection(mutation.Deck);
+                        _deckManagementStore.Upsert(mutation.Deck);
                         ResetEditorAndSelection();
                     }
 
@@ -175,7 +161,7 @@ namespace CollectaMundo.ViewModels.Decks
 
                 if (createMutation.Result.Code == OperationResultCode.Success && createMutation.Deck is not null)
                 {
-                    Decks.Add(createMutation.Deck);
+                    _deckManagementStore.Upsert(createMutation.Deck);
                     ResetEditorAndSelection();
                 }
             }
@@ -213,9 +199,7 @@ namespace CollectaMundo.ViewModels.Decks
                 IsBusy = true;
                 ClearStatus();
 
-                var idsToDelete = SelectedDecks
-                    .Select(deck => deck.LocationId)
-                    .ToList();
+                var idsToDelete = SelectedDecks.Select(deck => deck.LocationId).ToList();
 
                 int deletedCount = 0;
                 var failedMessages = new List<string>();
@@ -226,7 +210,7 @@ namespace CollectaMundo.ViewModels.Decks
 
                     if (result.Code == OperationResultCode.Success)
                     {
-                        RemoveDeckFromCollection(locationId);
+                        _deckManagementStore.Remove(locationId);
                         deletedCount++;
                     }
                     else
@@ -258,7 +242,6 @@ namespace CollectaMundo.ViewModels.Decks
                 IsBusy = false;
             }
         }
-
         private void ResetEditorAndSelection()
         {
             SelectedDeck = null;
@@ -267,35 +250,11 @@ namespace CollectaMundo.ViewModels.Decks
             SelectedDeckFormat = string.Empty;
             Description = string.Empty;
         }
-
-        private void ReplaceDeckInCollection(DeckManagementRecord updatedDeck)
-        {
-            int index = Decks
-                .Select((deck, i) => new { deck, i })
-                .FirstOrDefault(x => x.deck.LocationId == updatedDeck.LocationId)?.i ?? -1;
-
-            if (index >= 0)
-            {
-                Decks[index] = updatedDeck;
-            }
-        }
-
-        private void RemoveDeckFromCollection(int locationId)
-        {
-            var existing = Decks.FirstOrDefault(deck => deck.LocationId == locationId);
-
-            if (existing is not null)
-            {
-                Decks.Remove(existing);
-            }
-        }
-
         private void ClearStatus()
         {
             StatusMessage = string.Empty;
             IsStatusVisible = false;
         }
-
         private void ShowStatus(string message)
         {
             StatusMessage = message;

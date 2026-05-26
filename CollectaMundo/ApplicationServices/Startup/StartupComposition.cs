@@ -93,7 +93,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var collectionMutationsRepo = new CollectionMutationsRepo();
                 var collectionMaterializer = new CollectionMaterializer();
 
-                var collectionMutationsService = new CollectionMutationsService(collectionMutationsRepo);                                
+                var collectionMutationsService = new CollectionMutationsService(collectionMutationsRepo);
                 var collectionChangeSetApplier = new CollectionChangeSetApplier(collectionMaterializer);
 
                 var modifyService = new ModifyCollectionService(dbFactory, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService, collectionMutationsLogic);
@@ -107,14 +107,15 @@ namespace CollectaMundo.ApplicationServices.Startup
 
 
                 var cardLocationLookupStore = new CardLocationLookupStore();
-                var cardLocationService = new CardLocationService(dbFactory,new CardLocationRepo(),new CardLocationLogic(),cardLocationLookupStore,collectionMutationsLogic,collectionMutationsService);
+                var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
 
                 var deckManagementService = new DeckManagementService(dbFactory, new DeckManagementRepo(), cardLocationService);
+                var deckManagementStore = new DeckManagementStore(deckManagementService);
 
                 var importService = new ImportService(dbFactory, new ImportRepo(), fileSystemPicker, new ImportLogic(), cardLocationService);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, deckManagementService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, deckManagementService, deckManagementStore, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 operationOverlayController.Hide();

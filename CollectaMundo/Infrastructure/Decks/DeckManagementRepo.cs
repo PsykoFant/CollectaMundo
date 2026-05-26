@@ -48,31 +48,31 @@ namespace CollectaMundo.Infrastructure.Decks
 
             return decks;
         }
-        public async Task UpsertMetadataAsync(SQLiteConnection conn, int locationId, string? format, string? description)
+        public async Task UpsertMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId, string? format, string? description)
         {
             const string sql = """
-                INSERT INTO myDecks (locationId, format, description)
-                VALUES (@locationId, @format, @description)
-                ON CONFLICT(locationId) DO UPDATE SET
-                    format = excluded.format,
-                    description = excluded.description;
-                """;
+                                INSERT INTO myDecks (locationId, format, description)
+                                VALUES (@locationId, @format, @description)
+                                ON CONFLICT(locationId) DO UPDATE SET
+                                    format = excluded.format,
+                                    description = excluded.description;
+                                """;
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@locationId", locationId);
             cmd.Parameters.AddWithValue("@format", format ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@description", description ?? (object)DBNull.Value);
 
             await cmd.ExecuteNonQueryAsync();
         }
-        public async Task<int> DeleteMetadataAsync(SQLiteConnection conn, int locationId)
+        public async Task<int> DeleteMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId)
         {
             const string sql = """
-                DELETE FROM myDecks
-                WHERE locationId = @locationId;
-                """;
+                                DELETE FROM myDecks
+                                WHERE locationId = @locationId;
+                                """;
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@locationId", locationId);
 
             return await cmd.ExecuteNonQueryAsync();

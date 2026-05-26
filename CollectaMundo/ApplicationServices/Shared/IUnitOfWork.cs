@@ -9,10 +9,7 @@ namespace CollectaMundo.ApplicationServices.Shared
         Task CommitAsync();
         Task RollbackAsync();
 
-        /// <summary>
-        /// When you start a UoW, repositories can grab this transaction and
-        /// pass it into their SQLiteCommand constructors.
-        /// </summary>
+        // When you start a UoW, repositories can grab this transaction and pass it into their SQLiteCommand constructors.
         SQLiteTransaction CurrentTransaction { get; }
         SQLiteConnection CurrentConnection { get; }
     }

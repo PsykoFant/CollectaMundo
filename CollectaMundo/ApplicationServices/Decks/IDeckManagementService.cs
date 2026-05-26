@@ -5,8 +5,9 @@ namespace CollectaMundo.ApplicationServices.Decks
 {
     public interface IDeckManagementService
     {
-        Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync();
+        // CRUD operations for deck management
         Task<DeckManagementMutation> CreateAsync(DeckManagementInput input);
+        Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync();
         Task<DeckManagementMutation> UpdateAsync(int locationId, DeckManagementInput input);
         Task<OperationResult> DeleteAsync(int locationId);
     }

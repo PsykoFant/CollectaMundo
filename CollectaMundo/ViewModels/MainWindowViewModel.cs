@@ -54,6 +54,7 @@ namespace CollectaMundo.ViewModels
 
         // Deck management service
         private readonly IDeckManagementService _deckManagementService;
+        private readonly IDeckManagementStore _deckManagementStore;
 
         // Filtering infrastructure
         private readonly FilteringService _filteringService;
@@ -152,6 +153,7 @@ namespace CollectaMundo.ViewModels
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
             IDeckManagementService deckManagementService,
+            IDeckManagementStore deckManagementStore,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null)
@@ -167,6 +169,7 @@ namespace CollectaMundo.ViewModels
             _cardLocationService = cardLocationService;
             _cardLocationLookupStore = cardLocationLookupStore;
             _deckManagementService = deckManagementService;
+            _deckManagementStore = deckManagementStore;
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
             _userPromptService = userPromptService;
@@ -185,7 +188,7 @@ namespace CollectaMundo.ViewModels
             EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false);
 
             // Deck management viewmodels
-            DeckManagementVM = new DeckManagementViewModel(_deckManagementService);
+            DeckManagementVM = new DeckManagementViewModel(_deckManagementService, _deckManagementStore);
             DeckEdititorVM = new DeckEditorViewModel();
 
             // filtering viewmodel
@@ -210,7 +213,7 @@ namespace CollectaMundo.ViewModels
             // Pages viewmodels
             SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
-            PagesDecksHostVM = new PagesDecksHostViewModel(DeckManagementVM, DeckEdititorVM); 
+            PagesDecksHostVM = new PagesDecksHostViewModel(DeckManagementVM, DeckEdititorVM);
             PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, utilitiesNavigator);
 
             // Side menu viewmodels
@@ -247,12 +250,13 @@ namespace CollectaMundo.ViewModels
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
             IDeckManagementService deckManagementService,
+            IDeckManagementStore deckManagementStore,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, deckManagementService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, deckManagementService, deckManagementStore, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

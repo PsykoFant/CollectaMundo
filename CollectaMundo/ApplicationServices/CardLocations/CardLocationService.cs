@@ -21,67 +21,62 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         private readonly ICardLocationLookupStore _cardLocationLookupStore = cardLocationLookupStore;
         private readonly ICollectionMutationsLogic _mutationsLogic = mutationsLogic;
         private readonly ICollectionMutationsService _mutationsService = mutationsService;
-        public async Task<IReadOnlyList<CardLocation>> GetAllAsync()
-        {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
 
-            var records = await _cardLocationRepo.GetAllAsync(uow.CurrentConnection);
-
-            return [.. records.Select(MapToDomain)];
-        }
+        // CREATE
         public async Task<CardLocationMutationResult> CreateAsync(string name, CardLocationType type)
         {
-            string normalizedName = _cardLocationLogic.NormalizeName(name);
-            var validation = _cardLocationLogic.ValidateForCreate(normalizedName, type);
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginAsync();
+
+            var result = await CreateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, name, type);
+
+            if (result.Result.Code != OperationResultCode.Success)
+            {
+                await uow.RollbackAsync();
+                return result;
+            }
+
+            await uow.CommitAsync();
+
+            if (result.Location is not null)
+            {
+                _cardLocationLookupStore.Upsert(result.Location);
+            }
+
+            return result;
+        }
+        public async Task<CardLocationMutationResult> CreateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, CardLocationType type)
+        {
+            var validation = _cardLocationLogic.ValidateForCreate(name, type);
 
             if (validation.Code != OperationResultCode.Success)
             {
                 return new CardLocationMutationResult(validation, null);
             }
 
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
+            string normalizedName = _cardLocationLogic.NormalizeName(name);
 
-            try
+            bool exists = await _cardLocationRepo.ExistsByNameAsync(conn, tx, normalizedName);
+
+            if (exists)
             {
-                bool alreadyExists = await _cardLocationRepo.ExistsByNameAsync(uow.CurrentConnection, normalizedName);
-
-                if (alreadyExists)
-                {
-                    await uow.RollbackAsync();
-                    return new CardLocationMutationResult(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
-                }
-
-                string dbType = MapTypeToDb(type);
-                int newId = await _cardLocationRepo.InsertAsync(uow.CurrentConnection, normalizedName, dbType);
-
-                await uow.CommitAsync();
-
-                var createdLocation = new CardLocation { Id = newId, Name = normalizedName, Type = type };
-
-                _cardLocationLookupStore.Upsert(createdLocation);
-
-                return new CardLocationMutationResult(new OperationResult(OperationResultCode.Success, "Location created successfully."), createdLocation);
-            }
-            catch (SQLiteException ex) when (IsDuplicateLocationNameViolation(ex))
-            {
-                await uow.RollbackAsync();
                 return new CardLocationMutationResult(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
             }
-            catch (Exception ex)
+
+            int id = await _cardLocationRepo.InsertAsync(conn, tx, normalizedName, type.ToString());
+
+            var location = new CardLocation
             {
-                await uow.RollbackAsync();
-                return new CardLocationMutationResult(new OperationResult(OperationResultCode.Error, $"Failed to create location: {ex.Message}"), null);
-            }
+                Id = id,
+                Name = normalizedName,
+                Type = type
+            };
+
+            return new CardLocationMutationResult(new OperationResult(OperationResultCode.Success, "Card location created successfully."), location);
         }
         public async Task<IReadOnlyList<CardLocation>> CreateMissingLocationsAsStorageAsync(IReadOnlyList<string> names, CardLocationType type, CancellationToken token)
         {
-            var normalizedNames = names
-                .Select(_cardLocationLogic.NormalizeName)
-                .Where(name => !string.IsNullOrWhiteSpace(name))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            var normalizedNames = names.Select(_cardLocationLogic.NormalizeName).Where(name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
             if (normalizedNames.Count == 0)
             {
@@ -111,9 +106,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             try
             {
                 var existingLocations = await _cardLocationRepo.GetAllAsync(uow.CurrentConnection);
-
                 var existingNames = existingLocations.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
                 var namesToCreate = validNames.Where(name => !existingNames.Contains(name)).ToList();
 
                 if (namesToCreate.Count == 0)
@@ -125,7 +118,6 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 string dbType = MapTypeToDb(type);
 
                 var recordsToInsert = namesToCreate.Select(name => (Name: name, Type: dbType)).ToList();
-
                 var createdRecords = await _cardLocationRepo.InsertManyAsync(uow.CurrentConnection, uow.CurrentTransaction, recordsToInsert, token);
 
                 await uow.CommitAsync();
@@ -141,7 +133,50 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 throw;
             }
         }
+
+        // READ
+        public async Task<IReadOnlyList<CardLocation>> GetAllAsync()
+        {
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
+
+            var records = await _cardLocationRepo.GetAllAsync(uow.CurrentConnection);
+
+            return [.. records.Select(MapToDomain)];
+        }
+
+        // UPDATE
         public async Task<CardLocationMutationResult> UpdateAsync(int id, string name, CardLocationType type)
+        {
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginAsync();
+
+            try
+            {
+                var result = await UpdateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, id, name, type);
+
+                if (result.Result.Code != OperationResultCode.Success)
+                {
+                    await uow.RollbackAsync();
+                    return result;
+                }
+
+                await uow.CommitAsync();
+
+                if (result.Location is not null)
+                {
+                    _cardLocationLookupStore.Upsert(result.Location);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await uow.RollbackAsync();
+                return new CardLocationMutationResult(new OperationResult(OperationResultCode.Error, $"Failed to update location: {ex.Message}"), null);
+            }
+        }
+        public async Task<CardLocationMutationResult> UpdateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, CardLocationType type)
         {
             string normalizedName = _cardLocationLogic.NormalizeName(name);
             var validation = _cardLocationLogic.ValidateForUpdate(id, normalizedName, type);
@@ -151,30 +186,23 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new CardLocationMutationResult(validation, null);
             }
 
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
             try
             {
-                bool alreadyExists = await _cardLocationRepo.ExistsByNameAsync(uow.CurrentConnection, normalizedName, excludingId: id);
+                bool alreadyExists = await _cardLocationRepo.ExistsByNameAsync(conn, tx, normalizedName, excludingId: id);
 
                 if (alreadyExists)
                 {
-                    await uow.RollbackAsync();
                     return new CardLocationMutationResult(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
                 }
 
                 string dbType = MapTypeToDb(type);
 
-                int rowsAffected = await _cardLocationRepo.UpdateAsync(uow.CurrentConnection, id, normalizedName, dbType);
+                int rowsAffected = await _cardLocationRepo.UpdateAsync(conn, tx, id, normalizedName, dbType);
 
                 if (rowsAffected == 0)
                 {
-                    await uow.RollbackAsync();
                     return new CardLocationMutationResult(new OperationResult(OperationResultCode.NotFound, $"No location with id {id} was found."), null);
                 }
-
-                await uow.CommitAsync();
 
                 var updatedLocation = new CardLocation
                 {
@@ -183,22 +211,43 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     Type = type
                 };
 
-                _cardLocationLookupStore.Upsert(updatedLocation);
-
                 return new CardLocationMutationResult(new OperationResult(OperationResultCode.Success, "Location updated successfully."), updatedLocation);
             }
             catch (SQLiteException ex) when (IsDuplicateLocationNameViolation(ex))
             {
-                await uow.RollbackAsync();
                 return new CardLocationMutationResult(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
+            }
+        }
+
+        // DELETE
+        public async Task<CardLocationDeleteResult> DeleteAsync(int id)
+        {
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginAsync();
+
+            try
+            {
+                var result = await DeleteCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, id);
+
+                if (result.Result.Code != OperationResultCode.Success)
+                {
+                    await uow.RollbackAsync();
+                    return result;
+                }
+
+                await uow.CommitAsync();
+
+                _cardLocationLookupStore.Remove(id);
+
+                return result;
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync();
-                return new CardLocationMutationResult(new OperationResult(OperationResultCode.Error, $"Failed to update location: {ex.Message}"), null);
+                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Error, $"Failed to delete location: {ex.Message}"), new CollectionChangeSet<CardSet>());
             }
         }
-        public async Task<CardLocationDeleteResult> DeleteAsync(int id)
+        public async Task<CardLocationDeleteResult> DeleteCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id)
         {
             var validation = _cardLocationLogic.ValidateId(id);
 
@@ -209,45 +258,30 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     new CollectionChangeSet<CardSet>());
             }
 
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
+            var snapshotRows = await _cardLocationRepo.GetAllCollectionRowsAsync(conn, tx);
+            var affectedRows = await _cardLocationRepo.GetCollectionRowsByLocationIdAsync(conn, tx, id);
 
-            try
+            var snapshot = CollectionSnapshot.FromRows(snapshotRows);
+
+            var editedCards = affectedRows
+                .Select(CreateCardWithClearedLocation)
+                .ToList();
+
+            var plan = _mutationsLogic.PlanIdentityRewriteBatch(editedCards, snapshot);
+
+            await _mutationsService.ExecutePlanAsync(plan, conn, tx);
+
+            int rowsAffected = await _cardLocationRepo.DeleteAsync(conn, tx, id);
+
+            if (rowsAffected == 0)
             {
-                var snapshotRows = await _cardLocationRepo.GetAllCollectionRowsAsync(uow.CurrentConnection);
-                var affectedRows = await _cardLocationRepo.GetCollectionRowsByLocationIdAsync(uow.CurrentConnection, id);
-
-                var snapshot = CollectionSnapshot.FromRows(snapshotRows);
-
-                var editedCards = affectedRows.Select(CreateCardWithClearedLocation).ToList();
-
-                var plan = _mutationsLogic.PlanIdentityRewriteBatch(editedCards, snapshot);
-
-                await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection);
-
-                int rowsAffected = await _cardLocationRepo.DeleteAsync(uow.CurrentConnection, id);
-
-                if (rowsAffected == 0)
-                {
-                    await uow.RollbackAsync();
-
-                    return new CardLocationDeleteResult(
-                        new OperationResult(OperationResultCode.NotFound, $"No location with id {id} was found."),
-                        new CollectionChangeSet<CardSet>());
-                }
-
-                await uow.CommitAsync();
-
-                _cardLocationLookupStore.Remove(id);
-
-                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Success, "Location deleted successfully."), plan.ChangeSet);
+                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.NotFound, $"No location with id {id} was found."), new CollectionChangeSet<CardSet>());
             }
-            catch (Exception ex)
-            {
-                await uow.RollbackAsync();
-                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Error, $"Failed to delete location: {ex.Message}"), new CollectionChangeSet<CardSet>());
-            }
+
+            return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Success, "Location deleted successfully."), plan.ChangeSet);
         }
+
+
         private static CardLocation MapToDomain(CardLocationRecord record)
         {
             return new CardLocation

@@ -5,18 +5,18 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
 {
     public class CollectionMutationsRepo : ICollectionMutationsRepo
     {
-        public async Task<int> AddCardAndReturnIdAsync(string uuid, string condition, string language, string finish, int? locationId, string? comment, int cardsOwned, int cardsForTrade, SQLiteConnection conn)
+        public async Task<int> AddCardAndReturnIdAsync(string uuid, string condition, string language, string finish, int? locationId, string? comment, int cardsOwned, int cardsForTrade, SQLiteConnection conn, SQLiteTransaction tx)
         {
             const string insertSql = """
-                                        INSERT INTO myCollection
-                                            (uuid, cardsOwned, cardsForTrade, condition, language, finish, locationId, comment)
-                                        VALUES
-                                            (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish, @locationId, @comment);
-                                        """;
+            INSERT INTO myCollection
+                (uuid, cardsOwned, cardsForTrade, condition, language, finish, locationId, comment)
+            VALUES
+                (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish, @locationId, @comment);
+            """;
 
             try
             {
-                using var insertCmd = new SQLiteCommand(insertSql, conn);
+                using var insertCmd = new SQLiteCommand(insertSql, conn, tx);
                 insertCmd.Parameters.AddWithValue("@uuid", uuid);
                 insertCmd.Parameters.AddWithValue("@cardsOwned", cardsOwned);
                 insertCmd.Parameters.AddWithValue("@cardsForTrade", cardsForTrade);
@@ -28,7 +28,7 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
 
                 await insertCmd.ExecuteNonQueryAsync();
 
-                using var idCmd = new SQLiteCommand("SELECT last_insert_rowid();", conn);
+                using var idCmd = new SQLiteCommand("SELECT last_insert_rowid();", conn, tx);
                 var result = await idCmd.ExecuteScalarAsync();
 
                 return Convert.ToInt32(result);
@@ -42,30 +42,33 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
                     ex);
             }
         }
-        public async Task DeleteCardByIdAsync(int cardId, SQLiteConnection conn)
+        public async Task DeleteCardByIdAsync(int cardId, SQLiteConnection conn, SQLiteTransaction tx)
         {
-            const string sql = @"DELETE FROM myCollection WHERE id = @id;";
+            const string sql = """
+            DELETE FROM myCollection
+            WHERE id = @id;
+            """;
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@id", cardId);
 
             await cmd.ExecuteNonQueryAsync();
         }
-        public async Task UpdateCardFieldsByIdAsync(int id, int owned, int trade, string condition, string language, string finish, int? locationId, string? comment, SQLiteConnection conn)
+        public async Task UpdateCardFieldsByIdAsync(int id, int owned, int trade, string condition, string language, string finish, int? locationId, string? comment, SQLiteConnection conn, SQLiteTransaction tx)
         {
             const string sql = """
-                                UPDATE myCollection
-                                   SET cardsOwned    = @owned,
-                                       cardsForTrade = @trade,
-                                       condition     = @cond,
-                                       language      = @lang,
-                                       finish        = @fin,
-                                       locationId    = @locationId,
-                                       comment       = @comment
-                                 WHERE id = @id;
-                                """;
+            UPDATE myCollection
+               SET cardsOwned    = @owned,
+                   cardsForTrade = @trade,
+                   condition     = @cond,
+                   language      = @lang,
+                   finish        = @fin,
+                   locationId    = @locationId,
+                   comment       = @comment
+             WHERE id = @id;
+            """;
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@owned", owned);
             cmd.Parameters.AddWithValue("@trade", trade);
             cmd.Parameters.AddWithValue("@cond", condition);
