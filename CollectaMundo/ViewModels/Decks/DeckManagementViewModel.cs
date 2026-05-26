@@ -22,7 +22,6 @@ namespace CollectaMundo.ViewModels.Decks
                 OnPropertyChanged(nameof(SaveEditEnabled));
             };
         }
-
         public string SubmitButtonText => IsEditing ? "Save changes" : "Add deck";
         public string DeleteButtonText => IsDeleteConfirmationActive ? "Yes, delete!" : "Delete selected";
 

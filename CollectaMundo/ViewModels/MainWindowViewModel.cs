@@ -5,6 +5,7 @@ using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CollectionMaterialization;
 using CollectaMundo.ApplicationServices.CollectionMutations;
+using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Import.Models;
@@ -179,7 +180,7 @@ namespace CollectaMundo.ViewModels
             EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false);
 
             // Deck management viewmodels
-            DeckManagementVM = new DeckManagementViewModel();
+            DeckManagementVM = new DeckManagementViewModel(new DeckManagementService(_cardLocationService));
             DeckEdititorVM = new DeckEditorViewModel();
 
             // filtering viewmodel
