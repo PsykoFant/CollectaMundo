@@ -5,6 +5,7 @@ using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.CollectionMaterialization;
 using CollectaMundo.ApplicationServices.CollectionMutations;
+using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.KeyedDataProvider;
@@ -29,6 +30,7 @@ using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Infrastructure.CollectionMutations;
+using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.KeyedDataProvider;
@@ -100,9 +102,13 @@ public static class TestAppBuilder
         var collectionMutationsService = new CollectionMutationsService(collectionMutationsRepo);
         var collectionChangeSetApplier = new CollectionChangeSetApplier(collectionMaterializer);
 
-        var cardLocationLookupStore = new CardLocationLookupStore();
-        var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
+        var deckManagementRepo = new DeckManagementRepo();
 
+        var cardLocationLookupStore = new CardLocationLookupStore();
+        var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore, new CardLocationReferenceCleanupService(deckManagementRepo), collectionMutationsLogic, collectionMutationsService);
+
+        var deckManagementService = new DeckManagementService(dbFactory, deckManagementRepo, cardLocationService, cardLocationLookupStore);
+        var deckManagementStore = new DeckManagementStore(deckManagementService);
 
         var modifyService = new ModifyCollectionService(
             dbFactory,
@@ -142,8 +148,12 @@ public static class TestAppBuilder
             collectionChangeSetApplier,
             cardLocationService,
             cardLocationLookupStore,
+            deckManagementService,
+            deckManagementStore,
             settings,
             scheduler);
+
+        //(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, deckManagementService, deckManagementStore, settings)
 
         if (eventSink is not null)
         {

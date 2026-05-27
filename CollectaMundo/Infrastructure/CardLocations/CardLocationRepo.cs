@@ -116,7 +116,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 WHERE id = @id;
                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@id", id);
 
             return await cmd.ExecuteNonQueryAsync();

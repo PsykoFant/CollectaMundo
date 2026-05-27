@@ -1,6 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -11,6 +13,8 @@ namespace CollectaMundo.ViewModels.Decks
     {
         private readonly IDeckManagementService _deckManagementService;
         private readonly IDeckManagementStore _deckManagementStore;
+
+        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
         public DeckManagementViewModel(IDeckManagementService deckManagementService, IDeckManagementStore deckManagementStore)
         {
             _deckManagementService = deckManagementService;
@@ -208,14 +212,15 @@ namespace CollectaMundo.ViewModels.Decks
                 {
                     var result = await _deckManagementService.DeleteAsync(locationId);
 
-                    if (result.Code == OperationResultCode.Success)
+                    if (result.Result.Code == OperationResultCode.Success)
                     {
                         _deckManagementStore.Remove(locationId);
+                        CollectionChanged?.Invoke(this, result.CollectionChangeSet);
                         deletedCount++;
                     }
                     else
                     {
-                        failedMessages.Add(result.Message);
+                        failedMessages.Add(result.Result.Message);
                     }
                 }
 

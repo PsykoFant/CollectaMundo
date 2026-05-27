@@ -8,6 +8,7 @@ using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CollectionMutations;
+using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Tests.TestUtils;
 
@@ -24,13 +25,14 @@ namespace CollectaMundo.Tests.UnitTests
 
             // Use SharedMemoryDbFactory to connect to the same in-memory DB as the fixture
             var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fixture.DbName);
-            var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), new CardLocationLookupStore(), new CollectionMutationsLogic(), new CollectionMutationsService(new CollectionMutationsRepo()));
+
+            var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), new CardLocationLookupStore(), new CardLocationReferenceCleanupService(new DeckManagementRepo()), new CollectionMutationsLogic(), new CollectionMutationsService(new CollectionMutationsRepo())); ;
 
             _service = new ImportService(
                 dbFactory,
                 new ImportRepo(),
                 fileSystemPicker: null!, // Not needed for service-level tests
-                new ImportLogic(), 
+                new ImportLogic(),
                 cardLocationService
             );
         }

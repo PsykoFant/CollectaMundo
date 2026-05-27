@@ -1,23 +1,30 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Infrastructure.Shared;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
-    public sealed class DeckManagementService(IDbConnectionFactory dbFactory, IDeckManagementRepo deckManagementRepo, ICardLocationService cardLocationService) : IDeckManagementService
+    public sealed class DeckManagementService(IDbConnectionFactory dbFactory, IDeckManagementRepo deckManagementRepo, ICardLocationService cardLocationService, ICardLocationLookupStore cardLocationLookupStore) : IDeckManagementService
     {
+        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IDeckManagementRepo _deckManagementRepo = deckManagementRepo;
+        private readonly ICardLocationService _cardLocationService = cardLocationService;
+        private readonly ICardLocationLookupStore _cardLocationLookupStore = cardLocationLookupStore;
+
         // CREATE
         public async Task<DeckManagementMutation> CreateAsync(DeckManagementInput input)
         {
-            await using var uow = new UnitOfWork(dbFactory);
+            await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             try
             {
-                var locationMutation = await cardLocationService.CreateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, input.Name, CardLocationType.Deck);
+                var locationMutation = await _cardLocationService.CreateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, input.Name, CardLocationType.Deck);
 
                 if (locationMutation.Result.Code != OperationResultCode.Success || locationMutation.Location is null)
                 {
@@ -29,9 +36,11 @@ namespace CollectaMundo.ApplicationServices.Decks
                     };
                 }
 
-                await deckManagementRepo.UpsertMetadataAsync(uow.CurrentConnection, uow.CurrentTransaction, locationMutation.Location.Id, input.Format, input.Description);
+                await _deckManagementRepo.UpsertMetadataAsync(uow.CurrentConnection, uow.CurrentTransaction, locationMutation.Location.Id, input.Format, input.Description);
 
                 await uow.CommitAsync();
+
+                _cardLocationLookupStore.Upsert(locationMutation.Location);
 
                 return new DeckManagementMutation
                 {
@@ -59,19 +68,19 @@ namespace CollectaMundo.ApplicationServices.Decks
         // READ
         public async Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync()
         {
-            using var conn = await dbFactory.OpenConnectionAsync();
-            return await deckManagementRepo.GetAllAsync(conn);
+            using var conn = await _dbFactory.OpenConnectionAsync();
+            return await _deckManagementRepo.GetAllAsync(conn);
         }
 
         // UPDATE
         public async Task<DeckManagementMutation> UpdateAsync(int locationId, DeckManagementInput input)
         {
-            await using var uow = new UnitOfWork(dbFactory);
+            await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             try
             {
-                var locationMutation = await cardLocationService.UpdateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId, input.Name, CardLocationType.Deck);
+                var locationMutation = await _cardLocationService.UpdateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId, input.Name, CardLocationType.Deck);
 
                 if (locationMutation.Result.Code != OperationResultCode.Success || locationMutation.Location is null)
                 {
@@ -83,9 +92,11 @@ namespace CollectaMundo.ApplicationServices.Decks
                     };
                 }
 
-                await deckManagementRepo.UpsertMetadataAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId, input.Format, input.Description);
+                await _deckManagementRepo.UpsertMetadataAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId, input.Format, input.Description);
 
                 await uow.CommitAsync();
+
+                _cardLocationLookupStore.Upsert(locationMutation.Location);
 
                 return new DeckManagementMutation
                 {
@@ -111,32 +122,33 @@ namespace CollectaMundo.ApplicationServices.Decks
         }
 
         // DELETE
-        public async Task<OperationResult> DeleteAsync(int locationId)
+        public async Task<DeckManagementDeleteResult> DeleteAsync(int locationId)
         {
-            await using var uow = new UnitOfWork(dbFactory);
+            await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             try
             {
-                await deckManagementRepo.DeleteMetadataAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId);
-
-                var locationMutation = await cardLocationService.DeleteCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId);
+                var locationMutation = await _cardLocationService.DeleteCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId);
 
                 if (locationMutation.Result.Code != OperationResultCode.Success)
                 {
                     await uow.RollbackAsync();
-                    return locationMutation.Result;
+
+                    return new DeckManagementDeleteResult(locationMutation.Result, locationMutation.CollectionChangeSet);
                 }
 
                 await uow.CommitAsync();
 
-                return locationMutation.Result;
+                _cardLocationLookupStore.Remove(locationId);
+
+                return new DeckManagementDeleteResult(locationMutation.Result, locationMutation.CollectionChangeSet);
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync();
 
-                return new OperationResult(OperationResultCode.Error, $"Failed to delete deck: {ex.Message}");
+                return new DeckManagementDeleteResult(new OperationResult(OperationResultCode.Error, $"Failed to delete deck: {ex.Message}"), new CollectionChangeSet<CardSet>());
             }
         }
     }

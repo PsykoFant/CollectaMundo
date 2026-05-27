@@ -10,15 +10,17 @@ using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
+using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.CardLocations
 {
-    public sealed class CardLocationService(IDbConnectionFactory dbFactory, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic, ICardLocationLookupStore cardLocationLookupStore, ICollectionMutationsLogic mutationsLogic, ICollectionMutationsService mutationsService) : ICardLocationService
+    public sealed class CardLocationService(IDbConnectionFactory dbFactory, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic, ICardLocationLookupStore cardLocationLookupStore, ICardLocationReferenceCleanupService referenceCleanupService, ICollectionMutationsLogic mutationsLogic, ICollectionMutationsService mutationsService) : ICardLocationService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardLocationRepo _cardLocationRepo = cardLocationRepo;
         private readonly ICardLocationLogic _cardLocationLogic = cardLocationLogic;
         private readonly ICardLocationLookupStore _cardLocationLookupStore = cardLocationLookupStore;
+        private readonly ICardLocationReferenceCleanupService _referenceCleanupService = referenceCleanupService;
         private readonly ICollectionMutationsLogic _mutationsLogic = mutationsLogic;
         private readonly ICollectionMutationsService _mutationsService = mutationsService;
 
@@ -227,6 +229,8 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             try
             {
+                Debug.WriteLine($"Card location service lookup store: {_cardLocationLookupStore.GetHashCode()}");
+
                 var result = await DeleteCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, id);
 
                 if (result.Result.Code != OperationResultCode.Success)
@@ -263,13 +267,14 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             var snapshot = CollectionSnapshot.FromRows(snapshotRows);
 
-            var editedCards = affectedRows
-                .Select(CreateCardWithClearedLocation)
-                .ToList();
+            var editedCards = affectedRows.Select(CreateCardWithClearedLocation).ToList();
 
             var plan = _mutationsLogic.PlanIdentityRewriteBatch(editedCards, snapshot);
 
             await _mutationsService.ExecutePlanAsync(plan, conn, tx);
+
+            // Delete references to myDecks metadata table for deck location before deleting location itself, to avoid foreign key constraint violation
+            await _referenceCleanupService.CleanupBeforeLocationDeleteAsync(conn, tx, id);
 
             int rowsAffected = await _cardLocationRepo.DeleteAsync(conn, tx, id);
 

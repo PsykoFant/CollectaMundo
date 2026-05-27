@@ -273,6 +273,8 @@ namespace CollectaMundo.ViewModels
         #region event wiring (subscribe/unsubscribe)
         private void SubscribeChildVmEvents()
         {
+            Debug.WriteLine($"Main subscribed lookup store: {_cardLocationLookupStore.GetHashCode()}");
+
             ImportVM.CollectionMutationRequested += OnImportCollectionMutationRequested;
             ImportVM.CardImageSelectionRequested += OnCardImageSelectionRequested;
             AddCardsVM.CollectionChanged += OnCollectionChanged;
@@ -280,6 +282,7 @@ namespace CollectaMundo.ViewModels
             FilterVM.FilterChanged += OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged += OnLocationsChanged;
             CardLocationVM.CollectionChanged += OnCollectionChanged;
+            DeckManagementVM.CollectionChanged += OnCollectionChanged;
         }
         private void UnsubscribeChildVmEvents()
         {
@@ -290,6 +293,7 @@ namespace CollectaMundo.ViewModels
             FilterVM.FilterChanged -= OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged -= OnLocationsChanged;
             CardLocationVM.CollectionChanged -= OnCollectionChanged;
+            DeckManagementVM.CollectionChanged -= OnCollectionChanged;
         }
 
         #endregion

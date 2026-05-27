@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.Decks.Models;
+﻿using CollectaMundo.DomainLogic.Decks.Models;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
@@ -9,6 +8,6 @@ namespace CollectaMundo.ApplicationServices.Decks
         Task<DeckManagementMutation> CreateAsync(DeckManagementInput input);
         Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync();
         Task<DeckManagementMutation> UpdateAsync(int locationId, DeckManagementInput input);
-        Task<OperationResult> DeleteAsync(int locationId);
+        Task<DeckManagementDeleteResult> DeleteAsync(int locationId);
     }
 }

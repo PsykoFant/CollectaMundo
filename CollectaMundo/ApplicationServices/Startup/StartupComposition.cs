@@ -107,9 +107,11 @@ namespace CollectaMundo.ApplicationServices.Startup
 
 
                 var cardLocationLookupStore = new CardLocationLookupStore();
-                var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
+                var deckManagementRepo = new DeckManagementRepo();
 
-                var deckManagementService = new DeckManagementService(dbFactory, new DeckManagementRepo(), cardLocationService);
+                var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore, new CardLocationReferenceCleanupService(deckManagementRepo), collectionMutationsLogic, collectionMutationsService);
+
+                var deckManagementService = new DeckManagementService(dbFactory, deckManagementRepo, cardLocationService, cardLocationLookupStore);
                 var deckManagementStore = new DeckManagementStore(deckManagementService);
 
                 var importService = new ImportService(dbFactory, new ImportRepo(), fileSystemPicker, new ImportLogic(), cardLocationService);
