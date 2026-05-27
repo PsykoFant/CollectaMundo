@@ -40,7 +40,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 SELECT last_insert_rowid();
                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@name", name);
             cmd.Parameters.AddWithValue("@type", type);
 
@@ -102,7 +102,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 WHERE id = @id;
                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@id", id);
             cmd.Parameters.AddWithValue("@name", name);
             cmd.Parameters.AddWithValue("@type", type);
@@ -130,7 +130,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             var rows = new List<MyCollectionRow>();
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             using var reader = await cmd.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
@@ -178,7 +178,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             var rows = new List<MyCollectionRow>();
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@locationId", locationId);
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -223,7 +223,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 LIMIT 1;
                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn);
+            using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@name", name);
 
             var excludingIdParam = cmd.Parameters.AddWithValue("@excludingId", excludingId ?? (object)DBNull.Value);

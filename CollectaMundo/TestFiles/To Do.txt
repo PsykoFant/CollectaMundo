@@ -1,6 +1,11 @@
 TO DO 
 
 Deck editor!
+- Import transaction aware
+- Import kun brug get unique values
+- split interface
+
+
 
 Db optimering
 
