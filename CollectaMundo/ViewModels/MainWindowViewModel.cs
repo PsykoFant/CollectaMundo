@@ -53,7 +53,6 @@ namespace CollectaMundo.ViewModels
         private readonly ICardLocationLookupStore _cardLocationLookupStore;
 
         // Deck management service
-        private readonly IDeckManagementService _deckManagementService;
         private readonly IDeckManagementStore _deckManagementStore;
 
         // Filtering infrastructure
@@ -152,7 +151,6 @@ namespace CollectaMundo.ViewModels
             ICollectionChangeSetApplier collectionChangeSetApplier,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
-            IDeckManagementService deckManagementService,
             IDeckManagementStore deckManagementStore,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
@@ -168,7 +166,6 @@ namespace CollectaMundo.ViewModels
             _importService = importService;
             _cardLocationService = cardLocationService;
             _cardLocationLookupStore = cardLocationLookupStore;
-            _deckManagementService = deckManagementService;
             _deckManagementStore = deckManagementStore;
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
@@ -188,7 +185,7 @@ namespace CollectaMundo.ViewModels
             EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false);
 
             // Deck management viewmodels
-            DeckManagementVM = new DeckManagementViewModel(_deckManagementService, _deckManagementStore);
+            DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
             DeckEdititorVM = new DeckEditorViewModel();
 
             // filtering viewmodel
@@ -249,14 +246,13 @@ namespace CollectaMundo.ViewModels
             ICollectionChangeSetApplier collectionChangeSetApplier,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
-            IDeckManagementService deckManagementService,
             IDeckManagementStore deckManagementStore,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, deckManagementService, deckManagementStore, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, deckManagementStore, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
@@ -416,7 +412,7 @@ namespace CollectaMundo.ViewModels
 
             Debug.WriteLine("[ReloadAvailableLocationsAsync] Loading card locations");
 
-            var locations = await _cardLocationService.GetAllAsync();
+            var locations = await _cardLocationService.GetAllLocationsAsync();
 
             _cardLocationLookupStore.ReplaceAll(locations);
 

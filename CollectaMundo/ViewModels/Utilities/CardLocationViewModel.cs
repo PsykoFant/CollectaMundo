@@ -105,7 +105,7 @@ namespace CollectaMundo.ViewModels.Utilities
             {
                 IsBusy = true;
 
-                var loadedLocations = (await _cardLocationService.GetAllAsync()).ToList();
+                var loadedLocations = (await _cardLocationService.GetAllLocationsAsync()).ToList();
 
                 Locations.Clear();
 
@@ -142,7 +142,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
                 if (IsEditing && SelectedLocation is not null)
                 {
-                    var mutation = await _cardLocationService.UpdateAsync(SelectedLocation.Id, LocationName, SelectedLocationType);
+                    var mutation = await _cardLocationService.UpdateLocationAsync(SelectedLocation.Id, LocationName, SelectedLocationType);
 
                     ShowStatus(mutation.Result.Message);
 
@@ -155,7 +155,7 @@ namespace CollectaMundo.ViewModels.Utilities
                     return;
                 }
 
-                var createMutation = await _cardLocationService.CreateAsync(LocationName, SelectedLocationType);
+                var createMutation = await _cardLocationService.CreateLocationAsync(LocationName, SelectedLocationType);
 
                 ShowStatus(createMutation.Result.Message);
 
@@ -208,7 +208,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
                 foreach (int id in idsToDelete)
                 {
-                    var result = await _cardLocationService.DeleteAsync(id);
+                    var result = await _cardLocationService.DeleteDeckAsync(id);
 
                     if (result.Result.Code == OperationResultCode.Success)
                     {

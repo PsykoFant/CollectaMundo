@@ -265,7 +265,7 @@ namespace CollectaMundo.ApplicationServices.Import
         }
         public async Task<List<string>> GetAvailableLocationsAsync()
         {
-            var locations = await _cardLocationService.GetAllAsync();
+            var locations = await _cardLocationService.GetAllLocationsAsync();
 
             return
             [
@@ -279,7 +279,7 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             token.ThrowIfCancellationRequested();
 
-            var availableLocations = await _cardLocationService.GetAllAsync();
+            var availableLocations = await _cardLocationService.GetAllLocationsAsync();
 
             if (createMissingLocationsAsStorage)
             {
@@ -289,7 +289,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
                     token.ThrowIfCancellationRequested();
 
-                    availableLocations = await _cardLocationService.GetAllAsync();
+                    availableLocations = await _cardLocationService.GetAllLocationsAsync();
 
                     AutoMapNewlyCreatedLocations(locationMappings, availableLocations);
                 }

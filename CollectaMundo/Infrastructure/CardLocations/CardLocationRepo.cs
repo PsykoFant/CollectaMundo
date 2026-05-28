@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Shared;
+﻿using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using System.Data.SQLite;
 
@@ -6,8 +7,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
 {
     public sealed class CardLocationRepo : ICardLocationRepo
     {
-		// CREATE
-		public async Task<int> InsertAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, string type)
+        // CREATE
+        public async Task<int> InsertAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, string type)
         {
             const string sql = """
                 INSERT INTO cardLocations (name, type)
@@ -87,8 +88,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
             await cmd.ExecuteNonQueryAsync();
         }
 
-		// READ
-        public async Task<IReadOnlyList<CardLocationRecord>> GetAllAsync(SQLiteConnection conn)
+        // READ
+        public async Task<IReadOnlyList<CardLocationRecord>> GetAllLocationsAsync(SQLiteConnection conn)
         {
             const string sql = """
                 SELECT id, name, type
@@ -113,7 +114,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return results;
         }
-        public async Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync(SQLiteConnection conn)
+        public async Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn)
         {
             const string sql = """
                 SELECT
@@ -267,8 +268,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
             object? scalar = await cmd.ExecuteScalarAsync();
             return scalar is not null && scalar != DBNull.Value;
         }
-        
-		// UPDATE
+
+        // UPDATE
         public async Task<int> UpdateAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, string type)
         {
             const string sql = """
@@ -286,8 +287,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
             return await cmd.ExecuteNonQueryAsync();
         }
 
-		// DELETE
-        public async Task<int> DeleteMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId)
+        // DELETE
+        public async Task<int> DeleteDeckMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId)
         {
             const string sql = """
                                 DELETE FROM myDecks

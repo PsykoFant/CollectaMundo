@@ -1,12 +1,13 @@
-﻿using CollectaMundo.DomainLogic.Decks.Models;
+﻿using CollectaMundo.ApplicationServices.CardLocations;
+using CollectaMundo.DomainLogic.Decks.Models;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
     public sealed class DeckManagementStore(ICardLocationService cardLocationService) : IDeckManagementStore
     {
-		private readonly ICardLocationService _cardLocationService = cardLocationService;
-		
+        private readonly ICardLocationService _cardLocationService = cardLocationService;
+
         public ObservableCollection<DeckManagementRecord> Decks { get; } = [];
         public async Task LoadAsync()
         {

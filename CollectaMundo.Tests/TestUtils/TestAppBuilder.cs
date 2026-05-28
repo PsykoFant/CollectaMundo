@@ -30,7 +30,6 @@ using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Infrastructure.CollectionMutations;
-using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.KeyedDataProvider;
@@ -102,13 +101,10 @@ public static class TestAppBuilder
         var collectionMutationsService = new CollectionMutationsService(collectionMutationsRepo);
         var collectionChangeSetApplier = new CollectionChangeSetApplier(collectionMaterializer);
 
-        var deckManagementRepo = new DeckManagementRepo();
-
         var cardLocationLookupStore = new CardLocationLookupStore();
-        var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), cardLocationLookupStore, new CardLocationReferenceCleanupService(deckManagementRepo), collectionMutationsLogic, collectionMutationsService);
-
-        var deckManagementService = new DeckManagementService(dbFactory, deckManagementRepo, cardLocationService, cardLocationLookupStore);
-        var deckManagementStore = new DeckManagementStore(deckManagementService);
+        var cardLocationRepo = new CardLocationRepo();
+        var cardLocationService = new CardLocationService(dbFactory, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
+        var deckManagementStore = new DeckManagementStore(cardLocationService);
 
         var modifyService = new ModifyCollectionService(
             dbFactory,
@@ -148,7 +144,6 @@ public static class TestAppBuilder
             collectionChangeSetApplier,
             cardLocationService,
             cardLocationLookupStore,
-            deckManagementService,
             deckManagementStore,
             settings,
             scheduler);

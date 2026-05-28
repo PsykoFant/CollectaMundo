@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.Decks;
+﻿using CollectaMundo.ApplicationServices.CardLocations;
+using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Decks.Models;
