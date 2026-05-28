@@ -53,11 +53,13 @@ public static class TestAppBuilder
     {
         await fixture.InitializeAsync();
 
+        var unitOfWorkRunner = new UnitOfWorkRunner(dbFactory);
+
         var userPromptService = promptOverride ?? new UserPromptService();
         var operationOverlayViewModel = new OperationOverlayViewModel(userPromptService);
 
         var operationOverlayController = new OperationOverlayController(operationOverlayViewModel);
-        var settings = new ApplicationServices.Shared.AppSettings();
+        var settings = new AppSettings();
 
         string getRetailer() => settings.PriceInfo.Retailer;
 
@@ -103,7 +105,7 @@ public static class TestAppBuilder
 
         var cardLocationLookupStore = new CardLocationLookupStore();
         var cardLocationRepo = new CardLocationRepo();
-        var cardLocationService = new CardLocationService(dbFactory, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
+        var cardLocationService = new CardLocationService(unitOfWorkRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
         var deckManagementStore = new DeckManagementStore(cardLocationService);
 
         var modifyService = new ModifyCollectionService(

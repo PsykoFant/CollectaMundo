@@ -1,9 +1,17 @@
-﻿using System.Data.SQLite;
+﻿using System.Data;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.Shared
 {
     public static class DbHelpers
     {
+        public static SQLiteCommand CreateCommand(SQLiteConnection conn, SQLiteTransaction? tx, string sql)
+        {
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.Transaction = tx;
+            return cmd;
+        }
         public static async Task<List<string>> GetUniqueValuesAsync(SQLiteConnection conn, string tableName, string columnName, CancellationToken ct = default)
         {
             var uniqueValues = new List<string>();
@@ -27,7 +35,8 @@ namespace CollectaMundo.Infrastructure.Shared
 
             return uniqueValues;
         }
-        public static object ToDbNullableInt(int? value){
+        public static object ToDbNullableInt(int? value)
+        {
             return value.HasValue
                 ? value.Value
                 : DBNull.Value;
@@ -46,7 +55,32 @@ namespace CollectaMundo.Infrastructure.Shared
                 ? null
                 : trimmed;
         }
-
+        public static SQLiteParameter AddInt32(SQLiteCommand cmd, string name, int value)
+        {
+            return cmd.Parameters.Add(name, DbType.Int32).WithValue(value);
+        }
+        public static SQLiteParameter AddNullableInt32(SQLiteCommand cmd, string name, int? value)
+        {
+            return cmd.Parameters.Add(name, DbType.Int32).WithValue(ToDbNullableInt(value));
+        }
+        public static SQLiteParameter AddString(SQLiteCommand cmd, string name, string value)
+        {
+            return cmd.Parameters.Add(name, DbType.String).WithValue(value);
+        }
+        public static SQLiteParameter AddNullableString(SQLiteCommand cmd, string name, string? value)
+        {
+            return cmd.Parameters.Add(name, DbType.String).WithValue(ToDbNullableString(value));
+        }
+        private static SQLiteParameter WithValue(this SQLiteParameter parameter, object value)
+        {
+            parameter.Value = value;
+            return parameter;
+        }
+        public static async Task<bool> ExistsAsync(SQLiteCommand cmd, CancellationToken ct = default)
+        {
+            object? scalar = await cmd.ExecuteScalarAsync(ct);
+            return scalar is not null && scalar != DBNull.Value;
+        }
     }
 }
 

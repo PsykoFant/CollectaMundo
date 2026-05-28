@@ -208,7 +208,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
                 foreach (int id in idsToDelete)
                 {
-                    var result = await _cardLocationService.DeleteDeckAsync(id);
+                    var result = await _cardLocationService.DeleteLocationAsync(id);
 
                     if (result.Result.Code == OperationResultCode.Success)
                     {

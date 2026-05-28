@@ -9,15 +9,13 @@ using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLocations;
-using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
-using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.CardLocations
 {
-    public sealed class CardLocationService(IDbConnectionFactory dbFactory, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic, ICardLocationLookupStore cardLocationLookupStore, ICollectionMutationsLogic mutationsLogic, ICollectionMutationsService mutationsService) : ICardLocationService
+    public sealed class CardLocationService(IUnitOfWorkRunner uowRunner, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic, ICardLocationLookupStore cardLocationLookupStore, ICollectionMutationsLogic mutationsLogic, ICollectionMutationsService mutationsService) : ICardLocationService
     {
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ICardLocationRepo _cardLocationRepo = cardLocationRepo;
         private readonly ICardLocationLogic _cardLocationLogic = cardLocationLogic;
         private readonly ICardLocationLookupStore _cardLocationLookupStore = cardLocationLookupStore;
@@ -27,74 +25,73 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         // CREATE
         public async Task<CardLocationMutationResult> CreateLocationAsync(string name, CardLocationType type)
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
-            var result = await CreateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, name, type);
-
-            if (result.Result.Code != OperationResultCode.Success)
-            {
-                await uow.RollbackAsync();
-                return result;
-            }
-
-            await uow.CommitAsync();
-
-            if (result.Location is not null)
-            {
-                _cardLocationLookupStore.Upsert(result.Location);
-            }
-
-            return result;
-        }
-        public async Task<DeckManagementMutation> CreateDeckAsync(DeckManagementInput input)
-        {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
             try
             {
-                var locationMutation = await CreateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, input.Name, CardLocationType.Deck);
-
-                if (locationMutation.Result.Code != OperationResultCode.Success || locationMutation.Location is null)
-                {
-                    await uow.RollbackAsync();
-
-                    return new DeckManagementMutation
+                var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
                     {
-                        Result = locationMutation.Result
-                    };
+                        var result = await CreateCoreAsync(conn, tx, name, type);
+
+                        return (Result: result, Commit: result.Result.Code == OperationResultCode.Success
+                        );
+                    });
+
+                if (result.Location is not null)
+                {
+                    _cardLocationLookupStore.Upsert(result.Location);
                 }
 
-                await _cardLocationRepo.UpsertMetadataAsync(uow.CurrentConnection, uow.CurrentTransaction, locationMutation.Location.Id, input.Format, input.Description);
-
-                await uow.CommitAsync();
-
-                _cardLocationLookupStore.Upsert(locationMutation.Location);
-
-                return new DeckManagementMutation
-                {
-                    Result = new OperationResult(OperationResultCode.Success, "Deck created successfully."),
-                    Deck = new DeckManagementRecord
-                    {
-                        LocationId = locationMutation.Location.Id,
-                        Name = locationMutation.Location.Name,
-                        Format = input.Format,
-                        Description = input.Description
-                    }
-                };
+                return result;
             }
             catch (Exception ex)
             {
-                await uow.RollbackAsync();
+                return new CardLocationMutationResult(new OperationResult(OperationResultCode.Error, $"Failed to create location: {ex.Message}"), null);
+            }
+        }
+        public async Task<DeckManagementMutation> CreateDeckAsync(DeckManagementInput input)
+        {
+            try
+            {
+                var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+                    {
+                        var locationMutation = await CreateCoreAsync(conn, tx, input.Name, CardLocationType.Deck);
 
+                        if (locationMutation.Result.Code != OperationResultCode.Success || locationMutation.Location is null)
+                        {
+                            return (Result: new DeckManagementMutation { Result = locationMutation.Result }, Commit: false);
+                        }
+
+                        await _cardLocationRepo.UpsertMetadataAsync(conn, tx, locationMutation.Location.Id, input.Format, input.Description);
+
+                        return (Result: new DeckManagementMutation
+                        {
+                            Result = new OperationResult(OperationResultCode.Success, "Deck created successfully."),
+                            Deck = CreateDeckRecord(locationMutation.Location.Id, locationMutation.Location.Name, input)
+                        },
+                            Commit: true
+                        );
+                    });
+
+                if (result.Deck is not null)
+                {
+                    _cardLocationLookupStore.Upsert(new CardLocation
+                    {
+                        Id = result.Deck.LocationId,
+                        Name = result.Deck.Name,
+                        Type = CardLocationType.Deck
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
                 return new DeckManagementMutation
                 {
                     Result = new OperationResult(OperationResultCode.Error, $"Failed to create deck: {ex.Message}")
                 };
             }
         }
-        public async Task<CardLocationMutationResult> CreateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, CardLocationType type)
+        private async Task<CardLocationMutationResult> CreateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, CardLocationType type)
         {
             var validation = _cardLocationLogic.ValidateForCreate(name, type);
 
@@ -112,7 +109,8 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new CardLocationMutationResult(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
             }
 
-            int id = await _cardLocationRepo.InsertAsync(conn, tx, normalizedName, type.ToString());
+            string dbType = MapTypeToDb(type);
+            int id = await _cardLocationRepo.InsertAsync(conn, tx, normalizedName, dbType);
 
             var location = new CardLocation
             {
@@ -149,73 +147,67 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return [];
             }
 
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
-            try
-            {
-                var existingLocations = await _cardLocationRepo.GetAllLocationsAsync(uow.CurrentConnection);
-                var existingNames = existingLocations.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                var namesToCreate = validNames.Where(name => !existingNames.Contains(name)).ToList();
-
-                if (namesToCreate.Count == 0)
+            var createdLocations = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
                 {
-                    await uow.CommitAsync();
-                    return [];
-                }
+                    var existingLocations = await _cardLocationRepo.GetAllLocationsAsync(conn, tx);
+                    var existingNames = existingLocations.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                string dbType = MapTypeToDb(type);
+                    var namesToCreate = validNames.Where(name => !existingNames.Contains(name)).ToList();
 
-                var recordsToInsert = namesToCreate.Select(name => (Name: name, Type: dbType)).ToList();
-                var createdRecords = await _cardLocationRepo.InsertManyAsync(uow.CurrentConnection, uow.CurrentTransaction, recordsToInsert, token);
+                    if (namesToCreate.Count == 0)
+                    {
+                        return (
+                            Result: (IReadOnlyList<CardLocation>)[],
+                            Commit: false
+                        );
+                    }
 
-                await uow.CommitAsync();
+                    string dbType = MapTypeToDb(type);
 
-                var createdLocations = createdRecords.Select(MapToDomain).ToList();
-                _cardLocationLookupStore.UpsertMany(createdLocations);
+                    var recordsToInsert = namesToCreate.Select(name => (Name: name, Type: dbType)).ToList();
 
-                return createdLocations;
-            }
-            catch
+                    var createdRecords = await _cardLocationRepo.InsertManyAsync(conn, tx, recordsToInsert, token);
+
+                    var createdLocations = createdRecords.Select(MapToDomain).ToList();
+
+                    return (Result: (IReadOnlyList<CardLocation>)createdLocations, Commit: true
+                    );
+                });
+
+            if (createdLocations.Count > 0)
             {
-                await uow.RollbackAsync();
-                throw;
+                _cardLocationLookupStore.UpsertMany(createdLocations);
             }
+
+            return createdLocations;
         }
 
         // READ
         public async Task<IReadOnlyList<CardLocation>> GetAllLocationsAsync()
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-
-            var records = await _cardLocationRepo.GetAllLocationsAsync(uow.CurrentConnection);
+            var records = await _uowRunner.ExecuteReadOnlyAsync(conn => _cardLocationRepo.GetAllLocationsAsync(conn));
 
             return [.. records.Select(MapToDomain)];
         }
         public async Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync()
         {
-            using var conn = await _dbFactory.OpenConnectionAsync();
-            return await _cardLocationRepo.GetAllDecksAsync(conn);
+            return await _uowRunner.ExecuteReadOnlyAsync(conn => _cardLocationRepo.GetAllDecksAsync(conn));
         }
 
         // UPDATE
         public async Task<CardLocationMutationResult> UpdateLocationAsync(int id, string name, CardLocationType type)
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
             try
             {
-                var result = await UpdateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, id, name, type);
+                var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+                    {
+                        var result = await UpdateCoreAsync(conn, tx, id, name, type);
 
-                if (result.Result.Code != OperationResultCode.Success)
-                {
-                    await uow.RollbackAsync();
-                    return result;
-                }
-
-                await uow.CommitAsync();
+                        return (
+                            Result: result,
+                            Commit: result.Result.Code == OperationResultCode.Success
+                        );
+                    });
 
                 if (result.Location is not null)
                 {
@@ -226,58 +218,49 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             }
             catch (Exception ex)
             {
-                await uow.RollbackAsync();
                 return new CardLocationMutationResult(new OperationResult(OperationResultCode.Error, $"Failed to update location: {ex.Message}"), null);
             }
         }
         public async Task<DeckManagementMutation> UpdateDeckAsync(int locationId, DeckManagementInput input)
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
             try
             {
-                var locationMutation = await UpdateCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId, input.Name, CardLocationType.Deck);
-
-                if (locationMutation.Result.Code != OperationResultCode.Success || locationMutation.Location is null)
-                {
-                    await uow.RollbackAsync();
-
-                    return new DeckManagementMutation
+                var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
                     {
-                        Result = locationMutation.Result
-                    };
+                        var locationMutation = await UpdateCoreAsync(conn, tx, locationId, input.Name, CardLocationType.Deck);
+
+                        if (locationMutation.Result.Code != OperationResultCode.Success || locationMutation.Location is null)
+                        {
+                            return (Result: new DeckManagementMutation { Result = locationMutation.Result }, Commit: false);
+                        }
+
+                        await _cardLocationRepo.UpsertMetadataAsync(conn, tx, locationId, input.Format, input.Description);
+
+                        return (Result: new DeckManagementMutation
+                        {
+                            Result = new OperationResult(OperationResultCode.Success, "Deck updated successfully."),
+                            Deck = CreateDeckRecord(locationId, locationMutation.Location.Name, input)
+                        },
+                            Commit: true
+                        );
+                    });
+
+                if (result.Deck is not null)
+                {
+                    _cardLocationLookupStore.Upsert(new CardLocation { Id = result.Deck.LocationId, Name = result.Deck.Name, Type = CardLocationType.Deck });
                 }
 
-                await _cardLocationRepo.UpsertMetadataAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId, input.Format, input.Description);
-
-                await uow.CommitAsync();
-
-                _cardLocationLookupStore.Upsert(locationMutation.Location);
-
-                return new DeckManagementMutation
-                {
-                    Result = new OperationResult(OperationResultCode.Success, "Deck updated successfully."),
-                    Deck = new DeckManagementRecord
-                    {
-                        LocationId = locationId,
-                        Name = locationMutation.Location.Name,
-                        Format = input.Format,
-                        Description = input.Description
-                    }
-                };
+                return result;
             }
             catch (Exception ex)
             {
-                await uow.RollbackAsync();
-
                 return new DeckManagementMutation
                 {
                     Result = new OperationResult(OperationResultCode.Error, $"Failed to update deck: {ex.Message}")
                 };
             }
         }
-        public async Task<CardLocationMutationResult> UpdateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, CardLocationType type)
+        private async Task<CardLocationMutationResult> UpdateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, CardLocationType type)
         {
             string normalizedName = _cardLocationLogic.NormalizeName(name);
             var validation = _cardLocationLogic.ValidateForUpdate(id, normalizedName, type);
@@ -323,98 +306,99 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         // DELETE
         public async Task<CardLocationDeleteResult> DeleteLocationAsync(int id)
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
             try
             {
-                Debug.WriteLine($"Card location service lookup store: {_cardLocationLookupStore.GetHashCode()}");
+                var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+                    {
+                        var result = await DeleteCoreAsync(conn, tx, id);
 
-                var result = await DeleteCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, id);
+                        return (
+                            Result: result,
+                            Commit: result.Result.Code == OperationResultCode.Success
+                        );
+                    });
 
-                if (result.Result.Code != OperationResultCode.Success)
+                if (result.Result.Code == OperationResultCode.Success)
                 {
-                    await uow.RollbackAsync();
-                    return result;
+                    _cardLocationLookupStore.Remove(id);
                 }
-
-                await uow.CommitAsync();
-
-                _cardLocationLookupStore.Remove(id);
 
                 return result;
             }
             catch (Exception ex)
             {
-                await uow.RollbackAsync();
                 return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Error, $"Failed to delete location: {ex.Message}"), new CollectionChangeSet<CardSet>());
             }
         }
         public async Task<DeckManagementDeleteResult> DeleteDeckAsync(int locationId)
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
             try
             {
-                var locationMutation = await DeleteCoreAsync(uow.CurrentConnection, uow.CurrentTransaction, locationId);
+                var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+                    {
+                        var locationMutation = await DeleteCoreAsync(conn, tx, locationId);
 
-                if (locationMutation.Result.Code != OperationResultCode.Success)
+                        return (Result: new DeckManagementDeleteResult(
+                            locationMutation.Result,
+                            locationMutation.CollectionChangeSet),
+                            Commit: locationMutation.Result.Code == OperationResultCode.Success
+                        );
+                    });
+
+                if (result.Result.Code == OperationResultCode.Success)
                 {
-                    await uow.RollbackAsync();
-
-                    return new DeckManagementDeleteResult(locationMutation.Result, locationMutation.CollectionChangeSet);
+                    _cardLocationLookupStore.Remove(locationId);
                 }
 
-                await uow.CommitAsync();
-
-                _cardLocationLookupStore.Remove(locationId);
-
-                return new DeckManagementDeleteResult(locationMutation.Result, locationMutation.CollectionChangeSet);
+                return result;
             }
             catch (Exception ex)
             {
-                await uow.RollbackAsync();
-
                 return new DeckManagementDeleteResult(new OperationResult(OperationResultCode.Error, $"Failed to delete deck: {ex.Message}"), new CollectionChangeSet<CardSet>());
             }
         }
-        public async Task<CardLocationDeleteResult> DeleteCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id)
+        private async Task<CardLocationDeleteResult> DeleteCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id)
         {
             var validation = _cardLocationLogic.ValidateId(id);
 
             if (validation.Code != OperationResultCode.Success)
             {
-                return new CardLocationDeleteResult(
-                    validation,
-                    new CollectionChangeSet<CardSet>());
+                return new CardLocationDeleteResult(validation, new CollectionChangeSet<CardSet>());
+            }
+
+            bool exists = await _cardLocationRepo.ExistsByIdAsync(conn, tx, id);
+
+            if (!exists)
+            {
+                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.NotFound, $"No location with id {id} was found."), new CollectionChangeSet<CardSet>());
             }
 
             var snapshotRows = await _cardLocationRepo.GetAllCollectionRowsAsync(conn, tx);
             var affectedRows = await _cardLocationRepo.GetCollectionRowsByLocationIdAsync(conn, tx, id);
 
             var snapshot = CollectionSnapshot.FromRows(snapshotRows);
-
             var editedCards = affectedRows.Select(CreateCardWithClearedLocation).ToList();
 
             var plan = _mutationsLogic.PlanIdentityRewriteBatch(editedCards, snapshot);
 
             await _mutationsService.ExecutePlanAsync(plan, conn, tx);
-
-            // Safe/idempotent: if this location is not a deck, zero rows are deleted.
             await _cardLocationRepo.DeleteDeckMetadataAsync(conn, tx, id);
-
-            int rowsAffected = await _cardLocationRepo.DeleteAsync(conn, tx, id);
-
-            if (rowsAffected == 0)
-            {
-                return new CardLocationDeleteResult(new OperationResult(OperationResultCode.NotFound, $"No location with id {id} was found."), new CollectionChangeSet<CardSet>());
-            }
+            await _cardLocationRepo.DeleteAsync(conn, tx, id);
 
             return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Success, "Location deleted successfully."), plan.ChangeSet);
         }
 
-
+        // Helpers
+        private static DeckManagementRecord CreateDeckRecord(int locationId, string name, DeckManagementInput input)
+        {
+            return new DeckManagementRecord
+            {
+                LocationId = locationId,
+                Name = name,
+                Format = input.Format,
+                Description = input.Description
+            };
+        }
         private static CardLocation MapToDomain(CardLocationRecord record)
         {
             return new CardLocation

@@ -64,6 +64,9 @@ namespace CollectaMundo.ApplicationServices.Shared
             {
                 if (_txn != null)
                 {
+                    try { _txn.Rollback(); }
+                    catch { /* already committed/rolled back */ }
+
                     await _txn.DisposeAsync();
                     _txn = null;
                 }

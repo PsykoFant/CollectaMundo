@@ -5,6 +5,7 @@ Deck editor!
 - Import kun brug get unique values
 - split interface
 
+Andre steder vi kan bruge runner?
 
 
 Db optimering

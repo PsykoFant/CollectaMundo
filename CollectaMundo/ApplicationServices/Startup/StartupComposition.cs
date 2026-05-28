@@ -55,6 +55,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var remoteLookups = new RemoteLookups();
                 var dbFactory = new DbConnectionFactory(settings);
+                var uowRunner = new UnitOfWorkRunner(dbFactory);
 
                 // Card DB prep (repos + services)
                 var missingPngService = new GenerateMissingPngService(new GenerateMissingPngRepo(), remoteLookups, new GenerateMissingPngLogic());
@@ -106,7 +107,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var cardLocationLookupStore = new CardLocationLookupStore();
                 var cardLocationRepo = new CardLocationRepo();
-                var cardLocationService = new CardLocationService(dbFactory, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
+                var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
                 var deckManagementStore = new DeckManagementStore(cardLocationService);
 
                 var importService = new ImportService(dbFactory, new ImportRepo(), fileSystemPicker, new ImportLogic(), cardLocationService);

@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Import;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CollectionMutations;
@@ -25,7 +26,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Use SharedMemoryDbFactory to connect to the same in-memory DB as the fixture
             var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fixture.DbName);
 
-            var cardLocationService = new CardLocationService(dbFactory, new CardLocationRepo(), new CardLocationLogic(), new CardLocationLookupStore(), new CollectionMutationsLogic(), new CollectionMutationsService(new CollectionMutationsRepo())); ;
+            var cardLocationService = new CardLocationService(new UnitOfWorkRunner(dbFactory), new CardLocationRepo(), new CardLocationLogic(), new CardLocationLookupStore(), new CollectionMutationsLogic(), new CollectionMutationsService(new CollectionMutationsRepo())); ;
 
             _service = new ImportService(
                 dbFactory,

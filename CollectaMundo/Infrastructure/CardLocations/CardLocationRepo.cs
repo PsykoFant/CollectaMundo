@@ -1,7 +1,10 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.Shared;
+using System.Data.Common;
 using System.Data.SQLite;
+
 
 namespace CollectaMundo.Infrastructure.CardLocations
 {
@@ -10,25 +13,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
         // CREATE
         public async Task<int> InsertAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, string type)
         {
-            const string sql = """
-                INSERT INTO cardLocations (name, type)
-                VALUES (@name, @type);
-
-                SELECT last_insert_rowid();
-                """;
-
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@type", type);
-
-            object? scalar = await cmd.ExecuteScalarAsync();
-
-            if (scalar is null || scalar == DBNull.Value)
-            {
-                throw new InvalidOperationException("InsertAsync failed to return a new card location id.");
-            }
-
-            return Convert.ToInt32(scalar);
+            var created = await InsertManyAsync(conn, tx, [(name, type)], CancellationToken.None);
+            return created[0].Id;
         }
         public async Task<IReadOnlyList<CardLocationRecord>> InsertManyAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token)
         {
@@ -41,9 +27,9 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             var created = new List<CardLocationRecord>(locations.Count);
 
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.Add("@name", System.Data.DbType.String);
-            cmd.Parameters.Add("@type", System.Data.DbType.String);
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            DbHelpers.AddString(cmd, "@name", "");
+            DbHelpers.AddString(cmd, "@type", "");
 
             foreach (var location in locations)
             {
@@ -80,35 +66,36 @@ namespace CollectaMundo.Infrastructure.CardLocations
                                     description = excluded.description;
                                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.AddWithValue("@locationId", locationId);
-            cmd.Parameters.AddWithValue("@format", format ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@description", description ?? (object)DBNull.Value);
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            DbHelpers.AddInt32(cmd, "@locationId", locationId);
+            DbHelpers.AddNullableString(cmd, "@format", format);
+            DbHelpers.AddNullableString(cmd, "@description", description);
 
             await cmd.ExecuteNonQueryAsync();
         }
 
         // READ
-        public async Task<IReadOnlyList<CardLocationRecord>> GetAllLocationsAsync(SQLiteConnection conn)
+        public async Task<IReadOnlyList<CardLocationRecord>> GetAllLocationsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
         {
             const string sql = """
-                SELECT id, name, type
-                FROM cardLocations
-                ORDER BY type ASC, name COLLATE NOCASE ASC;
-                """;
+                                SELECT id, name, type
+                                FROM cardLocations
+                                ORDER BY name
+                                """;
+
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
 
             var results = new List<CardLocationRecord>();
 
-            using var cmd = new SQLiteCommand(sql, conn);
             using var reader = await cmd.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
             {
                 results.Add(new CardLocationRecord
                 {
-                    Id = reader.GetInt32(reader.GetOrdinal("id")),
-                    Name = reader.GetString(reader.GetOrdinal("name")),
-                    Type = reader.GetString(reader.GetOrdinal("type"))
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    Type = reader.GetString(2)
                 });
             }
 
@@ -157,97 +144,84 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return decks;
         }
-        public async Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx)
+        public Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             const string sql = """
-                                SELECT id, uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade
+                                SELECT id, uuid, language, finish, condition,
+                                       locationId, comment, cardsOwned, cardsForTrade
                                 FROM myCollection;
                                 """;
 
+            return ExecuteCollectionRowQueryAsync(conn, tx, sql);
+        }
+        public Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId)
+        {
+            const string sql = """
+                            SELECT id, uuid, language, finish, condition,
+                                   locationId, comment, cardsOwned, cardsForTrade
+                            FROM myCollection
+                            WHERE locationId = @locationId;
+                            """;
+
+            return ExecuteCollectionRowQueryAsync(conn, tx, sql, cmd => cmd.Parameters.AddWithValue("@locationId", locationId));
+        }
+        public async Task<bool> ExistsByIdAsync(SQLiteConnection conn, SQLiteTransaction tx, int id)
+        {
+            const string sql = """
+                                SELECT 1
+                                FROM cardLocations
+                                WHERE id = @id
+                                LIMIT 1;
+                                """;
+
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            DbHelpers.AddInt32(cmd, "@id", id);
+
+            return await DbHelpers.ExistsAsync(cmd);
+        }
+        private static async Task<IReadOnlyList<MyCollectionRow>> ExecuteCollectionRowQueryAsync(SQLiteConnection conn, SQLiteTransaction tx, string sql, Action<SQLiteCommand>? configureCommand = null)
+        {
             var rows = new List<MyCollectionRow>();
 
-            using var cmd = new SQLiteCommand(sql, conn, tx);
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+
+            configureCommand?.Invoke(cmd);
+
             using var reader = await cmd.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
             {
-                var id = reader.GetInt32(reader.GetOrdinal("id"));
-                var uuid = reader.GetString(reader.GetOrdinal("uuid"));
-                var language = reader.GetString(reader.GetOrdinal("language"));
-                var finish = reader.GetString(reader.GetOrdinal("finish"));
-                var condition = reader.GetString(reader.GetOrdinal("condition"));
-                var locationIdOrdinal = reader.GetOrdinal("locationId");
-                var commentOrdinal = reader.GetOrdinal("comment");
-
-                int? locationId = reader.IsDBNull(locationIdOrdinal)
-                    ? null
-                    : reader.GetInt32(locationIdOrdinal);
-
-                string? comment = reader.IsDBNull(commentOrdinal)
-                    ? null
-                    : reader.GetString(commentOrdinal);
-
-                rows.Add(new MyCollectionRow
-                {
-                    CardId = id,
-                    Identity = CollectionIdentityFactory.Create(
-                        uuid,
-                        condition,
-                        language,
-                        finish,
-                        locationId,
-                        comment),
-                    CardsOwned = reader.GetInt32(reader.GetOrdinal("cardsOwned")),
-                    CardsForTrade = reader.GetInt32(reader.GetOrdinal("cardsForTrade"))
-                });
+                rows.Add(MapCollectionRow(reader));
             }
 
             return rows;
         }
-        public async Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId)
+        private static MyCollectionRow MapCollectionRow(DbDataReader reader)
         {
-            const string sql = """
-                                SELECT id, uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade
-                                FROM myCollection
-                                WHERE locationId = @locationId;
-                                """;
+            var id = reader.GetInt32(reader.GetOrdinal("id"));
+            var uuid = reader.GetString(reader.GetOrdinal("uuid"));
+            var language = reader.GetString(reader.GetOrdinal("language"));
+            var finish = reader.GetString(reader.GetOrdinal("finish"));
+            var condition = reader.GetString(reader.GetOrdinal("condition"));
 
-            var rows = new List<MyCollectionRow>();
+            var locationIdOrdinal = reader.GetOrdinal("locationId");
+            var commentOrdinal = reader.GetOrdinal("comment");
 
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.AddWithValue("@locationId", locationId);
+            int? locationId = reader.IsDBNull(locationIdOrdinal)
+                ? null
+                : reader.GetInt32(locationIdOrdinal);
 
-            using var reader = await cmd.ExecuteReaderAsync();
+            string? comment = reader.IsDBNull(commentOrdinal)
+                ? null
+                : reader.GetString(commentOrdinal);
 
-            while (await reader.ReadAsync())
+            return new MyCollectionRow
             {
-                var id = reader.GetInt32(reader.GetOrdinal("id"));
-                var uuid = reader.GetString(reader.GetOrdinal("uuid"));
-                var language = reader.GetString(reader.GetOrdinal("language"));
-                var finish = reader.GetString(reader.GetOrdinal("finish"));
-                var condition = reader.GetString(reader.GetOrdinal("condition"));
-                var commentOrdinal = reader.GetOrdinal("comment");
-
-                string? comment = reader.IsDBNull(commentOrdinal)
-                    ? null
-                    : reader.GetString(commentOrdinal);
-
-                rows.Add(new MyCollectionRow
-                {
-                    CardId = id,
-                    Identity = CollectionIdentityFactory.Create(
-                        uuid,
-                        condition,
-                        language,
-                        finish,
-                        locationId,
-                        comment),
-                    CardsOwned = reader.GetInt32(reader.GetOrdinal("cardsOwned")),
-                    CardsForTrade = reader.GetInt32(reader.GetOrdinal("cardsForTrade"))
-                });
-            }
-
-            return rows;
+                CardId = id,
+                Identity = CollectionIdentityFactory.Create(uuid, condition, language, finish, locationId, comment),
+                CardsOwned = reader.GetInt32(reader.GetOrdinal("cardsOwned")),
+                CardsForTrade = reader.GetInt32(reader.GetOrdinal("cardsForTrade"))
+            };
         }
         public async Task<bool> ExistsByNameAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, int? excludingId = null)
         {
@@ -259,14 +233,11 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 LIMIT 1;
                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.AddWithValue("@name", name);
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            DbHelpers.AddString(cmd, "@name", name);
+            DbHelpers.AddNullableInt32(cmd, "@excludingId", excludingId);
 
-            var excludingIdParam = cmd.Parameters.AddWithValue("@excludingId", excludingId ?? (object)DBNull.Value);
-            excludingIdParam.Value = excludingId.HasValue ? excludingId.Value : DBNull.Value;
-
-            object? scalar = await cmd.ExecuteScalarAsync();
-            return scalar is not null && scalar != DBNull.Value;
+            return await DbHelpers.ExistsAsync(cmd);
         }
 
         // UPDATE
@@ -279,10 +250,10 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 WHERE id = @id;
                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@type", type);
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            DbHelpers.AddInt32(cmd, "@id", id);
+            DbHelpers.AddString(cmd, "@name", name);
+            DbHelpers.AddString(cmd, "@type", type);
 
             return await cmd.ExecuteNonQueryAsync();
         }
@@ -295,8 +266,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
                                 WHERE locationId = @locationId;
                                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.AddWithValue("@locationId", locationId);
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            DbHelpers.AddInt32(cmd, "@locationId", locationId);
 
             return await cmd.ExecuteNonQueryAsync();
         }
@@ -307,8 +278,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 WHERE id = @id;
                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.AddWithValue("@id", id);
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            DbHelpers.AddInt32(cmd, "@id", id);
 
             return await cmd.ExecuteNonQueryAsync();
         }

@@ -12,11 +12,12 @@ namespace CollectaMundo.Infrastructure.CardLocations
         Task UpsertMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId, string? format, string? description);
 
         // READ		
-        Task<IReadOnlyList<CardLocationRecord>> GetAllLocationsAsync(SQLiteConnection conn);
+        Task<IReadOnlyList<CardLocationRecord>> GetAllLocationsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null);
         Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn);
         Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx);
         Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId);
         Task<bool> ExistsByNameAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, int? excludingId = null);
+        Task<bool> ExistsByIdAsync(SQLiteConnection conn, SQLiteTransaction tx, int id);
 
         // UPDATE
         Task<int> UpdateAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, string type);
