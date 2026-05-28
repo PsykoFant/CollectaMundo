@@ -11,13 +11,13 @@ namespace CollectaMundo.ViewModels.Decks
 {
     public partial class DeckManagementViewModel : ObservableObject
     {
-        private readonly IDeckManagementService _deckManagementService;
+        private readonly ICardLocationService _cardLocationService;
         private readonly IDeckManagementStore _deckManagementStore;
 
         public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
-        public DeckManagementViewModel(IDeckManagementService deckManagementService, IDeckManagementStore deckManagementStore)
+        public DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore)
         {
-            _deckManagementService = deckManagementService;
+            _cardLocationService = cardLocationService;
             _deckManagementStore = deckManagementStore;
 
             SelectedDecks.CollectionChanged += (_, _) =>
@@ -146,7 +146,7 @@ namespace CollectaMundo.ViewModels.Decks
 
                 if (IsEditing && SelectedDeck is not null)
                 {
-                    var mutation = await _deckManagementService.UpdateAsync(SelectedDeck.LocationId, input);
+                    var mutation = await _cardLocationService.UpdateDeckAsync(SelectedDeck.LocationId, input);
 
                     ShowStatus(mutation.Result.Message);
 
@@ -159,7 +159,7 @@ namespace CollectaMundo.ViewModels.Decks
                     return;
                 }
 
-                var createMutation = await _deckManagementService.CreateAsync(input);
+                var createMutation = await _cardLocationService.CreateDeckAsync(input);
 
                 ShowStatus(createMutation.Result.Message);
 
@@ -210,7 +210,7 @@ namespace CollectaMundo.ViewModels.Decks
 
                 foreach (int locationId in idsToDelete)
                 {
-                    var result = await _deckManagementService.DeleteAsync(locationId);
+                    var result = await _cardLocationService.DeleteDeckAsync(locationId);
 
                     if (result.Result.Code == OperationResultCode.Success)
                     {

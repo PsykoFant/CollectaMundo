@@ -6,32 +6,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
 {
     public sealed class CardLocationRepo : ICardLocationRepo
     {
-        public async Task<IReadOnlyList<CardLocationRecord>> GetAllAsync(SQLiteConnection conn)
-        {
-            const string sql = """
-                SELECT id, name, type
-                FROM cardLocations
-                ORDER BY type ASC, name COLLATE NOCASE ASC;
-                """;
-
-            var results = new List<CardLocationRecord>();
-
-            using var cmd = new SQLiteCommand(sql, conn);
-            using var reader = await cmd.ExecuteReaderAsync();
-
-            while (await reader.ReadAsync())
-            {
-                results.Add(new CardLocationRecord
-                {
-                    Id = reader.GetInt32(reader.GetOrdinal("id")),
-                    Name = reader.GetString(reader.GetOrdinal("name")),
-                    Type = reader.GetString(reader.GetOrdinal("type"))
-                });
-            }
-
-            return results;
-        }
-        public async Task<int> InsertAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, string type)
+		// CREATE
+		public async Task<int> InsertAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, string type)
         {
             const string sql = """
                 INSERT INTO cardLocations (name, type)
@@ -93,33 +69,92 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return created;
         }
-        public async Task<int> UpdateAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, string type)
+        public async Task UpsertMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId, string? format, string? description)
         {
             const string sql = """
-                UPDATE cardLocations
-                SET name = @name,
-                    type = @type
-                WHERE id = @id;
-                """;
+                                INSERT INTO myDecks (locationId, format, description)
+                                VALUES (@locationId, @format, @description)
+                                ON CONFLICT(locationId) DO UPDATE SET
+                                    format = excluded.format,
+                                    description = excluded.description;
+                                """;
 
             using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@type", type);
+            cmd.Parameters.AddWithValue("@locationId", locationId);
+            cmd.Parameters.AddWithValue("@format", format ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@description", description ?? (object)DBNull.Value);
 
-            return await cmd.ExecuteNonQueryAsync();
+            await cmd.ExecuteNonQueryAsync();
         }
-        public async Task<int> DeleteAsync(SQLiteConnection conn, SQLiteTransaction tx, int id)
+
+		// READ
+        public async Task<IReadOnlyList<CardLocationRecord>> GetAllAsync(SQLiteConnection conn)
         {
             const string sql = """
-                DELETE FROM cardLocations
-                WHERE id = @id;
+                SELECT id, name, type
+                FROM cardLocations
+                ORDER BY type ASC, name COLLATE NOCASE ASC;
                 """;
 
-            using var cmd = new SQLiteCommand(sql, conn, tx);
-            cmd.Parameters.AddWithValue("@id", id);
+            var results = new List<CardLocationRecord>();
 
-            return await cmd.ExecuteNonQueryAsync();
+            using var cmd = new SQLiteCommand(sql, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                results.Add(new CardLocationRecord
+                {
+                    Id = reader.GetInt32(reader.GetOrdinal("id")),
+                    Name = reader.GetString(reader.GetOrdinal("name")),
+                    Type = reader.GetString(reader.GetOrdinal("type"))
+                });
+            }
+
+            return results;
+        }
+        public async Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync(SQLiteConnection conn)
+        {
+            const string sql = """
+                SELECT
+                    cl.id AS locationId,
+                    cl.name AS name,
+                    md.format AS format,
+                    md.description AS description
+                FROM cardLocations cl
+                LEFT JOIN myDecks md ON md.locationId = cl.id
+                WHERE cl.type = 'Deck'
+                ORDER BY cl.name COLLATE NOCASE ASC;
+                """;
+
+            var decks = new List<DeckManagementRecord>();
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                int formatOrdinal = reader.GetOrdinal("format");
+                int descriptionOrdinal = reader.GetOrdinal("description");
+
+                string? format = reader.IsDBNull(formatOrdinal)
+                    ? null
+                    : reader.GetString(formatOrdinal);
+
+                string? description = reader.IsDBNull(descriptionOrdinal)
+                    ? null
+                    : reader.GetString(descriptionOrdinal);
+
+                decks.Add(new DeckManagementRecord
+                {
+                    LocationId = reader.GetInt32(reader.GetOrdinal("locationId")),
+                    Name = reader.GetString(reader.GetOrdinal("name")),
+                    Format = format,
+                    Description = description
+                });
+            }
+
+            return decks;
         }
         public async Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
@@ -231,6 +266,50 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             object? scalar = await cmd.ExecuteScalarAsync();
             return scalar is not null && scalar != DBNull.Value;
+        }
+        
+		// UPDATE
+        public async Task<int> UpdateAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, string type)
+        {
+            const string sql = """
+                UPDATE cardLocations
+                SET name = @name,
+                    type = @type
+                WHERE id = @id;
+                """;
+
+            using var cmd = new SQLiteCommand(sql, conn, tx);
+            cmd.Parameters.AddWithValue("@id", id);
+            cmd.Parameters.AddWithValue("@name", name);
+            cmd.Parameters.AddWithValue("@type", type);
+
+            return await cmd.ExecuteNonQueryAsync();
+        }
+
+		// DELETE
+        public async Task<int> DeleteMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId)
+        {
+            const string sql = """
+                                DELETE FROM myDecks
+                                WHERE locationId = @locationId;
+                                """;
+
+            using var cmd = new SQLiteCommand(sql, conn, tx);
+            cmd.Parameters.AddWithValue("@locationId", locationId);
+
+            return await cmd.ExecuteNonQueryAsync();
+        }
+        public async Task<int> DeleteAsync(SQLiteConnection conn, SQLiteTransaction tx, int id)
+        {
+            const string sql = """
+                DELETE FROM cardLocations
+                WHERE id = @id;
+                """;
+
+            using var cmd = new SQLiteCommand(sql, conn, tx);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            return await cmd.ExecuteNonQueryAsync();
         }
     }
 }

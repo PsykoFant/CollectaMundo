@@ -5,13 +5,23 @@ namespace CollectaMundo.Infrastructure.CardLocations
 {
     public interface ICardLocationRepo
     {
-        Task<IReadOnlyList<CardLocationRecord>> GetAllAsync(SQLiteConnection conn);
+		// CREATE
         Task<int> InsertAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, string type);
         Task<IReadOnlyList<CardLocationRecord>> InsertManyAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token);
-        Task<int> UpdateAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, string type);
-        Task<int> DeleteAsync(SQLiteConnection conn, SQLiteTransaction tx, int id);
+		Task UpsertMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId, string? format, string? description);
+		
+		// READ		
+        Task<IReadOnlyList<CardLocationRecord>> GetAllAsync(SQLiteConnection conn);
+		Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync(SQLiteConnection conn);
         Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx);
         Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId);
         Task<bool> ExistsByNameAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, int? excludingId = null);
+
+		// UPDATE
+        Task<int> UpdateAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, string type);
+
+		// DELETE
+        Task<int> DeleteAsync(SQLiteConnection conn, SQLiteTransaction tx, int id);
+		Task<int> DeleteMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId);
     }
 }

@@ -3,12 +3,14 @@ using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
-    public sealed class DeckManagementStore(IDeckManagementService deckManagementService) : IDeckManagementStore
+    public sealed class DeckManagementStore(ICardLocationService cardLocationService) : IDeckManagementStore
     {
+		private readonly ICardLocationService _cardLocationService = cardLocationService;
+		
         public ObservableCollection<DeckManagementRecord> Decks { get; } = [];
         public async Task LoadAsync()
         {
-            var loadedDecks = await deckManagementService.GetAllAsync();
+            var loadedDecks = await _cardLocationService.GetAllDecksAsync();
 
             Decks.Clear();
 

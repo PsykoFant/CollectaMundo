@@ -6,17 +6,24 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 {
     public interface ICardLocationService
     {
-        Task<IReadOnlyList<CardLocation>> GetAllAsync();
-
-        // Standalone operations used by CardLocationViewModel
-        Task<CardLocationMutationResult> CreateAsync(string name, CardLocationType type);
-        Task<CardLocationMutationResult> UpdateAsync(int id, string name, CardLocationType type);
-        Task<CardLocationDeleteResult> DeleteAsync(int id);
-
-        // Composable operations used by other services
+		// CREATE
+        Task<CardLocationMutationResult> CreateAsync(string name, CardLocationType type);		
+		Task<DeckManagementMutation> CreateAsync(DeckManagementInput input);
         Task<CardLocationMutationResult> CreateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, CardLocationType type);
         Task<IReadOnlyList<CardLocation>> CreateMissingLocationsAsStorageAsync(IReadOnlyList<string> names, CardLocationType type, CancellationToken token);
-        Task<CardLocationMutationResult> UpdateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, CardLocationType type);
+		
+		// READ
+        Task<IReadOnlyList<CardLocation>> GetAllAsync();
+		Task<IReadOnlyList<DeckManagementRecord>> GetAllAsync();
+
+        // UPDATE
+        Task<CardLocationMutationResult> UpdateAsync(int id, string name, CardLocationType type);
+        Task<DeckManagementMutation> UpdateAsync(int locationId, DeckManagementInput input);
+		Task<CardLocationMutationResult> UpdateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, CardLocationType type);
+
+		// DELETE
+        Task<CardLocationDeleteResult> DeleteAsync(int id);
         Task<CardLocationDeleteResult> DeleteCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id);
-    }
+        Task<DeckManagementDeleteResult> DeleteAsync(int locationId);
+	}
 }
