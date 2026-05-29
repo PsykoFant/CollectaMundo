@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Decks.Models;
+﻿using CollectaMundo.ApplicationServices.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared.Models;
 using System.Data.SQLite;
 

@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.DomainLogic.Decks.Models
+﻿namespace CollectaMundo.ApplicationServices.CardLocations.Models
 {
     public sealed class DeckManagementRecord
     {

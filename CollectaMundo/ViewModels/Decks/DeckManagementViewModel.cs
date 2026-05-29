@@ -1,8 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
+using CollectaMundo.ApplicationServices.CardLocations.Models;
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -151,9 +151,9 @@ namespace CollectaMundo.ViewModels.Decks
 
                     ShowStatus(mutation.Result.Message);
 
-                    if (mutation.Result.Code == OperationResultCode.Success && mutation.Deck is not null)
+                    if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
                     {
-                        _deckManagementStore.Upsert(mutation.Deck);
+                        _deckManagementStore.Upsert(mutation.Entity);
                         ResetEditorAndSelection();
                     }
 
@@ -164,9 +164,9 @@ namespace CollectaMundo.ViewModels.Decks
 
                 ShowStatus(createMutation.Result.Message);
 
-                if (createMutation.Result.Code == OperationResultCode.Success && createMutation.Deck is not null)
+                if (createMutation.Result.Code == OperationResultCode.Success && createMutation.Entity is not null)
                 {
-                    _deckManagementStore.Upsert(createMutation.Deck);
+                    _deckManagementStore.Upsert(createMutation.Entity);
                     ResetEditorAndSelection();
                 }
             }

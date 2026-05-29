@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Decks.Models;
+﻿using CollectaMundo.ApplicationServices.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared;
@@ -101,9 +101,9 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return results;
         }
-		public async Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
-		{
-			const string sql = """
+        public async Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
+        {
+            const string sql = """
 				SELECT
 					cl.id AS locationId,
 					cl.name AS name,
@@ -115,10 +115,12 @@ namespace CollectaMundo.Infrastructure.CardLocations
 				ORDER BY cl.name COLLATE NOCASE ASC;
 				""";
 
-			using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
-			using var reader = await cmd.ExecuteReaderAsync();
+            var decks = new List<DeckManagementRecord>();
 
-			int formatOrdinal = reader.GetOrdinal("format");
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            int formatOrdinal = reader.GetOrdinal("format");
             int descriptionOrdinal = reader.GetOrdinal("description");
 
             while (await reader.ReadAsync())

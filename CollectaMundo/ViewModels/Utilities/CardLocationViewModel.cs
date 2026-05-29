@@ -146,9 +146,9 @@ namespace CollectaMundo.ViewModels.Utilities
 
                     ShowStatus(mutation.Result.Message);
 
-                    if (mutation.Result.Code == OperationResultCode.Success && mutation.Location is not null)
+                    if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
                     {
-                        ReplaceLocationInCollection(mutation.Location);
+                        ReplaceLocationInCollection(mutation.Entity);
                         ResetEditorAndSelection();
                     }
 
@@ -159,9 +159,9 @@ namespace CollectaMundo.ViewModels.Utilities
 
                 ShowStatus(createMutation.Result.Message);
 
-                if (createMutation.Result.Code == OperationResultCode.Success && createMutation.Location is not null)
+                if (createMutation.Result.Code == OperationResultCode.Success && createMutation.Entity is not null)
                 {
-                    Locations.Add(createMutation.Location);
+                    Locations.Add(createMutation.Entity);
                     ResetEditorAndSelection();
                 }
             }

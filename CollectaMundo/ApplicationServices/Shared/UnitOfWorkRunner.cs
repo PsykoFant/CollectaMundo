@@ -14,11 +14,9 @@ namespace CollectaMundo.ApplicationServices.Shared
 
             try
             {
-                var outcome = await action(
-                    uow.CurrentConnection,
-                    uow.CurrentTransaction);
+                var (Result, Commit) = await action(uow.CurrentConnection, uow.CurrentTransaction);
 
-                if (outcome.Commit)
+                if (Commit)
                 {
                     await uow.CommitAsync();
                 }
@@ -27,7 +25,7 @@ namespace CollectaMundo.ApplicationServices.Shared
                     await uow.RollbackAsync();
                 }
 
-                return outcome.Result;
+                return Result;
             }
             catch
             {
