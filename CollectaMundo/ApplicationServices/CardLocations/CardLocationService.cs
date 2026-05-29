@@ -344,6 +344,21 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new CardLocationDeleteResult(new OperationResult(OperationResultCode.Error, $"Failed to delete {entityName}: {ex.Message}"), new CollectionChangeSet<CardSet>());
             }
         }
+        private static CardSet CreateCardWithClearedLocation(MyCollectionRow row)
+        {
+            return new CardSet
+            {
+                CardId = row.CardId,
+                Uuid = row.Identity.Uuid,
+                SelectedCondition = row.Identity.Condition,
+                Language = row.Identity.Language,
+                SelectedFinish = row.Identity.Finish,
+                SelectedLocationId = null,
+                Comment = row.Identity.Comment,
+                CardsOwned = row.CardsOwned,
+                CardsForTrade = row.CardsForTrade
+            };
+        }
 
         // Helpers
         private static DeckManagementRecord CreateDeckRecord(int locationId, string name, DeckManagementInput input)
@@ -368,6 +383,16 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         private static CardLocation MapToDomain(CardLocationRecord record)
         {
             return CreateLocation(record.Id, record.Name, MapTypeFromDb(record.Type));
+
+            static CardLocationType MapTypeFromDb(string dbType)
+            {
+                return dbType switch
+                {
+                    "Storage" => CardLocationType.Storage,
+                    "Deck" => CardLocationType.Deck,
+                    _ => throw new InvalidOperationException($"Unsupported card location type in database: '{dbType}'.")
+                };
+            }
         }
         private static string MapTypeToDb(CardLocationType type)
         {
@@ -382,15 +407,6 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         {
             return CreateLocation(deck.LocationId, deck.Name, CardLocationType.Deck);
         }
-        private static CardLocationType MapTypeFromDb(string dbType)
-        {
-            return dbType switch
-            {
-                "Storage" => CardLocationType.Storage,
-                "Deck" => CardLocationType.Deck,
-                _ => throw new InvalidOperationException($"Unsupported card location type in database: '{dbType}'.")
-            };
-        }
         private static bool IsDuplicateLocationNameViolation(SQLiteException ex)
         {
             if (ex.ResultCode == SQLiteErrorCode.Constraint || ex.ResultCode == SQLiteErrorCode.Constraint_Unique)
@@ -400,20 +416,6 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             return ex.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) && ex.Message.Contains("cardLocations", StringComparison.OrdinalIgnoreCase);
         }
-        private static CardSet CreateCardWithClearedLocation(MyCollectionRow row)
-        {
-            return new CardSet
-            {
-                CardId = row.CardId,
-                Uuid = row.Identity.Uuid,
-                SelectedCondition = row.Identity.Condition,
-                Language = row.Identity.Language,
-                SelectedFinish = row.Identity.Finish,
-                SelectedLocationId = null,
-                Comment = row.Identity.Comment,
-                CardsOwned = row.CardsOwned,
-                CardsForTrade = row.CardsForTrade
-            };
-        }
+
     }
 }

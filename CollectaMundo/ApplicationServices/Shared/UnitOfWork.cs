@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
-using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.Shared
 {
@@ -60,29 +59,24 @@ namespace CollectaMundo.ApplicationServices.Shared
         }
         public async ValueTask DisposeAsync()
         {
-            try
+            await DisposeAsyncCore();
+            GC.SuppressFinalize(this);
+        }
+        protected virtual async ValueTask DisposeAsyncCore()
+        {
+            if (_txn != null)
             {
-                if (_txn != null)
-                {
-                    try { _txn.Rollback(); }
-                    catch { /* already committed/rolled back */ }
-
-                    await _txn.DisposeAsync();
-                    _txn = null;
-                }
-
-                if (_conn != null)
-                {
-                    var conn = _conn;
-                    _conn = null; // clear reference early
-                    await conn.CloseAsync();
-                    await conn.DisposeAsync();
-                    Debug.WriteLine("[DISPOSE] Reader/Command disposed");
-                }
+                await _txn.DisposeAsync();
+                _txn = null;
             }
-            catch (Exception ex)
+
+            if (_conn != null)
             {
-                Debug.WriteLine($"[UnitOfWork] DisposeAsync error: {ex.Message}");
+                var conn = _conn;
+                _conn = null;
+
+                await conn.CloseAsync();
+                await conn.DisposeAsync();
             }
         }
         private static void ApplyCommonPragmas(SQLiteConnection conn, bool readOnly)
