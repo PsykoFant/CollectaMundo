@@ -13,7 +13,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
         // READ		
         Task<IReadOnlyList<CardLocationRecord>> GetAllLocationsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null);
-        Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn);
+        Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn, SQLiteTransaction? tx = null);
         Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx);
         Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId);
         Task<bool> ExistsByNameAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, int? excludingId = null);

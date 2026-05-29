@@ -80,7 +80,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
             const string sql = """
                                 SELECT id, name, type
                                 FROM cardLocations
-                                ORDER BY name
+                                ORDER BY name COLLATE NOCASE ASC
                                 """;
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
@@ -101,30 +101,28 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return results;
         }
-        public async Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn)
-        {
-            const string sql = """
-                SELECT
-                    cl.id AS locationId,
-                    cl.name AS name,
-                    md.format AS format,
-                    md.description AS description
-                FROM cardLocations cl
-                LEFT JOIN myDecks md ON md.locationId = cl.id
-                WHERE cl.type = 'Deck'
-                ORDER BY cl.name COLLATE NOCASE ASC;
-                """;
+		public async Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
+		{
+			const string sql = """
+				SELECT
+					cl.id AS locationId,
+					cl.name AS name,
+					md.format AS format,
+					md.description AS description
+				FROM cardLocations cl
+				LEFT JOIN myDecks md ON md.locationId = cl.id
+				WHERE cl.type = 'Deck'
+				ORDER BY cl.name COLLATE NOCASE ASC;
+				""";
 
-            var decks = new List<DeckManagementRecord>();
+			using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+			using var reader = await cmd.ExecuteReaderAsync();
 
-            using var cmd = new SQLiteCommand(sql, conn);
-            using var reader = await cmd.ExecuteReaderAsync();
+			int formatOrdinal = reader.GetOrdinal("format");
+            int descriptionOrdinal = reader.GetOrdinal("description");
 
             while (await reader.ReadAsync())
             {
-                int formatOrdinal = reader.GetOrdinal("format");
-                int descriptionOrdinal = reader.GetOrdinal("description");
-
                 string? format = reader.IsDBNull(formatOrdinal)
                     ? null
                     : reader.GetString(formatOrdinal);
