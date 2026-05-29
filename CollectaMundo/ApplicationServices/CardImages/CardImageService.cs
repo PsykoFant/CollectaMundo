@@ -5,15 +5,13 @@ using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardImages.Models;
 using CollectaMundo.Infrastructure.RemoteLookups;
-using CollectaMundo.Infrastructure.Shared;
-using System.Data.SQLite;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.CardImages
 {
-    public sealed class CardImageService(IDbConnectionFactory dbFactory, IRemoteLookups remoteLookups, ICardImageLogic logic, ICardImageRepo repo, ICardImageDownloader downloader) : ICardImageService
+    public sealed class CardImageService(IUnitOfWorkRunner uowRunner, IRemoteLookups remoteLookups, ICardImageLogic logic, ICardImageRepo repo, ICardImageDownloader downloader) : ICardImageService
     {
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly IRemoteLookups _remoteLookups = remoteLookups;
         private readonly ICardImageRepo _repo = repo;
         private readonly ICardImageLogic _logic = logic;
@@ -27,7 +25,7 @@ namespace CollectaMundo.ApplicationServices.CardImages
             // Get IDs + metadata
             if (!string.IsNullOrWhiteSpace(card.Uuid))
             {
-                await WithReadOnlyUowAsync(async conn =>
+                await _uowRunner.ExecuteReadOnlyAsync(async conn =>
                 {
                     scryfallID = await _repo.GetScryfallIdByUuidAsync(card.Uuid, conn);
                     metadata = await _repo.GetImageMetadataByUuidAsync(card.Uuid, conn);
@@ -36,14 +34,14 @@ namespace CollectaMundo.ApplicationServices.CardImages
             }
             else if (!string.IsNullOrWhiteSpace(card.Name))
             {
-                var idTuple = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByNameAsync(card.Name, conn));
+                var idTuple = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetScryfallIdByNameAsync(card.Name, conn));
                 scryfallID = idTuple.Value.ScryfallId;
                 card.Uuid = idTuple.Value.Uuid;
 
                 // Now that we have UUID, fetch metadata (same UoW style, read-only)
                 if (!string.IsNullOrWhiteSpace(card.Uuid))
                 {
-                    metadata = await WithReadOnlyUowAsync(conn => _repo.GetImageMetadataByUuidAsync(card.Uuid, conn));
+                    metadata = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetImageMetadataByUuidAsync(card.Uuid, conn));
                 }
             }
 
@@ -69,7 +67,7 @@ namespace CollectaMundo.ApplicationServices.CardImages
             {
                 if (!await _remoteLookups.IsValidUrlAsync(backUrl))
                 {
-                    var otherFaceScryfallID = await WithReadOnlyUowAsync(conn => _repo.GetOtherFaceScryfallIdByUuidAsync(card.Uuid, conn));
+                    var otherFaceScryfallID = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetOtherFaceScryfallIdByUuidAsync(card.Uuid, conn));
                     if (!string.IsNullOrWhiteSpace(otherFaceScryfallID))
                     {
                         backUrl = _logic.BuildOtherSideImageUrl(otherFaceScryfallID, frontUrl);
@@ -95,26 +93,7 @@ namespace CollectaMundo.ApplicationServices.CardImages
             };
         }
 
-        private async Task<T> WithReadOnlyUowAsync<T>(Func<SQLiteConnection, Task<T>> work)
-        {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-            try
-            {
-                var result = await work(uow.CurrentConnection);
-                await uow.CommitAsync();
-                return result;
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
-            finally
-            {
-                await uow.DisposeAsync();
-            }
-        }
+
 
     }
 

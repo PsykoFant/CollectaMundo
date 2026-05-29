@@ -53,7 +53,7 @@ public static class TestAppBuilder
     {
         await fixture.InitializeAsync();
 
-        var unitOfWorkRunner = new UnitOfWorkRunner(dbFactory);
+        var uowRunner = new UnitOfWorkRunner(dbFactory);
 
         var userPromptService = promptOverride ?? new UserPromptService();
         var operationOverlayViewModel = new OperationOverlayViewModel(userPromptService);
@@ -105,7 +105,7 @@ public static class TestAppBuilder
 
         var cardLocationLookupStore = new CardLocationLookupStore();
         var cardLocationRepo = new CardLocationRepo();
-        var cardLocationService = new CardLocationService(unitOfWorkRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
+        var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
         var deckManagementStore = new DeckManagementStore(cardLocationService);
 
         var modifyService = new ModifyCollectionService(
@@ -116,7 +116,7 @@ public static class TestAppBuilder
             collectionMutationsLogic);
 
         var cardImageService = new CardImageService(
-            dbFactory,
+            uowRunner,
             remoteLookups,
             new CardImageLogic(),
             new CardImageRepo(),

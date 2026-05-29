@@ -4,7 +4,6 @@ using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.RemoteLookups;
-using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.TestUtils;
 using Moq;
 using System.Data.SQLite;
@@ -32,6 +31,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Arrange: use a persistent in-memory DB
             var dbName = $"TestDb_{Guid.NewGuid()}";
             var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(dbName);
+            var uowRunner = new UnitOfWorkRunner(dbFactory);
 
             // Prepare the card
             var card = new CardSet { Uuid = "abc", Side = "a", Name = "Foo" };
@@ -61,12 +61,7 @@ namespace CollectaMundo.Tests.UnitTests
                       .ReturnsAsync([4, 5, 6]);
 
             // CreateCollectionChangeSetFromEdits the service with our mocks + real in-memory DB factory
-            var service = new CardImageService(
-                dbFactory,
-                remoteLookups.Object,
-                logic,
-                repo.Object,
-                downloader.Object);
+            var service = new CardImageService(uowRunner, remoteLookups.Object, logic, repo.Object, downloader.Object);
 
             // Act
             var result = await service.GetImageForCardAsync(card);
@@ -142,10 +137,10 @@ namespace CollectaMundo.Tests.UnitTests
 
             Assert.Null(result);
         }
-        private static CardImageService BuildService(IDbConnectionFactory? dbFactory = null, IRemoteLookups? remoteLookups = null, ICardImageLogic? logic = null, ICardImageRepo? repo = null, ICardImageDownloader? downloader = null)
+        private static CardImageService BuildService(IUnitOfWorkRunner? uowRunner = null, IRemoteLookups? remoteLookups = null, ICardImageLogic? logic = null, ICardImageRepo? repo = null, ICardImageDownloader? downloader = null)
         {
             return new CardImageService(
-                dbFactory ?? Mock.Of<IDbConnectionFactory>(),
+                uowRunner ?? Mock.Of<IUnitOfWorkRunner>(),
                 remoteLookups ?? Mock.Of<IRemoteLookups>(),
                 logic ?? new CardImageLogic(),
                 repo ?? Mock.Of<ICardImageRepo>(),

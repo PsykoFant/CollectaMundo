@@ -100,7 +100,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var fileSystemPicker = new FileSystemPicker();
 
                 var cardImageDownloader = new CardImageDownloader(settings);
-                var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
+                var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
 
                 var keyedDataProviderService = new KeyedDataProviderService(dbFactory, new KeyedDataProviderRepo(), getRetailer);
                 var cardListService = new CardListService(dbFactory, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, new CardCoreAggregator(), collectionMaterializer);
