@@ -8,7 +8,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         // CREATE
         Task<MutationResult<CardLocation>> CreateLocationAsync(string name, CardLocationType type);
         Task<MutationResult<DeckManagementRecord>> CreateDeckAsync(DeckManagementInput input);
-        Task<IReadOnlyList<CardLocation>> CreateMissingLocationsAsStorageAsync(IReadOnlyList<string> names, CardLocationType type, CancellationToken token);
+        Task<IReadOnlyList<CardLocation>> CreateMissingLocationsAsStorageAsync(IReadOnlyList<string> names, CancellationToken token);
 
         // READ
         Task<IReadOnlyList<CardLocation>> GetAllLocationsAsync();

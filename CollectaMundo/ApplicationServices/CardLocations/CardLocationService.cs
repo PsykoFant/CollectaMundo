@@ -115,8 +115,10 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new MutationResult<CardLocation>(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
             }
         }
-        public async Task<IReadOnlyList<CardLocation>> CreateMissingLocationsAsStorageAsync(IReadOnlyList<string> names, CardLocationType type, CancellationToken token)
+        public async Task<IReadOnlyList<CardLocation>> CreateMissingLocationsAsStorageAsync(IReadOnlyList<string> names, CancellationToken token)
         {
+            var type = CardLocationType.Storage;
+
             var normalizedNames = names.Select(_cardLocationLogic.NormalizeName).Where(name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
             if (normalizedNames.Count == 0)
@@ -142,31 +144,30 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             }
 
             var createdLocations = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+            {
+                var existingLocations = await _cardLocationRepo.GetAllLocationsAsync(conn, tx);
+
+                var existingNames = existingLocations.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var namesToCreate = validNames.Where(name => !existingNames.Contains(name)).ToList();
+
+                if (namesToCreate.Count == 0)
                 {
-                    var existingLocations = await _cardLocationRepo.GetAllLocationsAsync(conn, tx);
-                    var existingNames = existingLocations.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-                    var namesToCreate = validNames.Where(name => !existingNames.Contains(name)).ToList();
-
-                    if (namesToCreate.Count == 0)
-                    {
-                        return (
-                            Result: (IReadOnlyList<CardLocation>)[],
-                            Commit: false
-                        );
-                    }
-
-                    string dbType = MapTypeToDb(type);
-
-                    var recordsToInsert = namesToCreate.Select(name => (Name: name, Type: dbType)).ToList();
-
-                    var createdRecords = await _cardLocationRepo.InsertManyAsync(conn, tx, recordsToInsert, token);
-
-                    var createdLocations = createdRecords.Select(MapToDomain).ToList();
-
-                    return (Result: (IReadOnlyList<CardLocation>)createdLocations, Commit: true
+                    return (
+                        Result: (IReadOnlyList<CardLocation>)[],
+                        Commit: false
                     );
-                });
+                }
+
+                string dbType = MapTypeToDb(type);
+
+                var recordsToInsert = namesToCreate.Select(name => (Name: name, Type: dbType)).ToList();
+
+                var createdRecords = await _cardLocationRepo.InsertManyAsync(conn, tx, recordsToInsert, token);
+
+                var createdLocations = createdRecords.Select(MapToDomain).ToList();
+
+                return (Result: (IReadOnlyList<CardLocation>)createdLocations, Commit: true);
+            });
 
             if (createdLocations.Count > 0)
             {

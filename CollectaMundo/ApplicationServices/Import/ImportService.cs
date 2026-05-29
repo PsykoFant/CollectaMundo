@@ -378,7 +378,7 @@ namespace CollectaMundo.ApplicationServices.Import
                 return;
             }
 
-            await _cardLocationService.CreateMissingLocationsAsStorageAsync(missingLocationNames!, CardLocationType.Storage, token);
+            await _cardLocationService.CreateMissingLocationsAsStorageAsync(missingLocationNames!, token);
         }
         private static void AutoMapNewlyCreatedLocations(IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations)
         {
