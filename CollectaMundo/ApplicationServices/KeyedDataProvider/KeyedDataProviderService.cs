@@ -4,15 +4,14 @@ using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CollectaMundo.Infrastructure.KeyedDataProvider;
-using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.KeyedDataProvider
 {
 
-    public sealed class KeyedDataProviderService(IDbConnectionFactory dbFactory, IKeyedDataProviderRepo repo, Func<string> getRetailer) : IKeyedDataProviderService
+    public sealed class KeyedDataProviderService(IUnitOfWorkRunner uowRunner, IKeyedDataProviderRepo repo, Func<string> getRetailer) : IKeyedDataProviderService
     {
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly IKeyedDataProviderRepo _repo = repo;
         private readonly Func<string> _getRetailer = getRetailer;
         public async Task<KeyedDataProviderPackage> LoadKeyedDataAsync(SQLiteConnection conn, KeyedDataProviderOptions opts)
@@ -50,22 +49,14 @@ namespace CollectaMundo.ApplicationServices.KeyedDataProvider
         public async Task ResetPricesMetaProviderAsync(string retailerKey)
         {
             // Load the new map for the requested retailer
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-            var dict = await _repo.ReadPricesAsync(uow.CurrentConnection, retailerKey);
-            await uow.CommitAsync();
+            var dict = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.ReadPricesAsync(conn, retailerKey));
 
             // Swap the static provider (all CardSet getters read through this)
             CardSet.PriceMetaProvider = new ValueProvider<string, PriceDto>(dict);
         }
         public async Task ResetCardLocationProviderAsync()
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-
-            var dict = await _repo.ReadLocationsAsync(uow.CurrentConnection);
-
-            await uow.CommitAsync();
+            var dict = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.ReadLocationsAsync(conn));
 
             CardSet.CardLocationProvider = new ValueProvider<int, CardLocation>(dict);
         }

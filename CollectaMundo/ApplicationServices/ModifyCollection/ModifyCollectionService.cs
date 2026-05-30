@@ -7,27 +7,23 @@ using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.ModifyCollection;
-using CollectaMundo.Infrastructure.Shared;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.ModifyCollection
 {
-    public class ModifyCollectionService(IDbConnectionFactory dbFactory, IModifyCollectionLogic logic, IModifyCollectionRepo repo, ICollectionMutationsService mutationsService, ICollectionMutationsLogic mutationsLogic) : IModifyCollectionService
+    public class ModifyCollectionService(IUnitOfWorkRunner uowRunner, IModifyCollectionLogic logic, IModifyCollectionRepo repo, ICollectionMutationsService mutationsService, ICollectionMutationsLogic mutationsLogic) : IModifyCollectionService
     {
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly IModifyCollectionLogic _logic = logic;
         private readonly IModifyCollectionRepo _repo = repo;
         private readonly ICollectionMutationsLogic _mutationsLogic = mutationsLogic;
         private readonly ICollectionMutationsService _mutationsService = mutationsService;
         public async Task<CardSet> CreateCardForListAsync(CardSet selectedCard, bool isEdit)
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
-            try
+            return await _uowRunner.ExecuteReadOnlyAsync(async conn =>
             {
-                var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid!, uow.CurrentConnection);
-                var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid!, uow.CurrentConnection);
+                var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid!, conn);
+                var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid!, conn);
 
                 var metadata = new CardToAddMetadataDto
                 {
@@ -35,16 +31,8 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                     AvailableLanguages = languages ?? []
                 };
 
-                var prepared = _logic.PrepareCardForList(selectedCard, metadata, isEdit);
-
-                await uow.CommitAsync();
-                return prepared;
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
+                return _logic.PrepareCardForList(selectedCard, metadata, isEdit);
+            });
         }
 
         // Submitting new cards or card edits
@@ -53,23 +41,13 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
             try
             {
                 var cardList = cards.ToList();
-                var isEdit = cardList.Any(c => c.CardId != null);
                 var plan = _mutationsLogic.PlanIdentityRewriteBatch(cardList, snapshot);
 
-                await using var uow = new UnitOfWork(_dbFactory);
-                await uow.BeginAsync();
-
-                try
+                return await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
                 {
-                    await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection, uow.CurrentTransaction);
-                    await uow.CommitAsync();
-                    return plan.ChangeSet;
-                }
-                catch
-                {
-                    await uow.RollbackAsync();
-                    throw;
-                }
+                    await _mutationsService.ExecutePlanAsync(plan, conn, tx);
+                    return (Result: plan.ChangeSet, Commit: true);
+                });
             }
             catch (Exception ex)
             {
@@ -79,17 +57,14 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         }
         public async Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
         {
-            var prepared = new List<CardSet>();
-
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
-            try
+            return await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {
+                var prepared = new List<CardSet>();
+
                 foreach (var raw in cards)
                 {
-                    var finishes = await _repo.FetchFinishesForCardAsync(raw.Uuid!, uow.CurrentConnection);
-                    var languages = await _repo.FetchLanguagesForCardAsync(raw.Uuid!, uow.CurrentConnection);
+                    var finishes = await _repo.FetchFinishesForCardAsync(raw.Uuid!, conn);
+                    var languages = await _repo.FetchLanguagesForCardAsync(raw.Uuid!, conn);
 
                     var metadata = new CardToAddMetadataDto
                     {
@@ -102,16 +77,10 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
 
                 var plan = _mutationsLogic.PlanIdentityRewriteBatch(prepared, snapshot);
 
-                await _mutationsService.ExecutePlanAsync(plan, uow.CurrentConnection, uow.CurrentTransaction);
-                await uow.CommitAsync();
+                await _mutationsService.ExecutePlanAsync(plan, conn, tx);
 
-                return plan.ChangeSet;
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
+                return (Result: plan.ChangeSet, Commit: true);
+            });
         }
     }
 }

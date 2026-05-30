@@ -16,9 +16,9 @@ using System.Text;
 
 namespace CollectaMundo.ApplicationServices.Import
 {
-    public class ImportService(IDbConnectionFactory dbFactory, IImportRepo importRepo, IFileSystemPicker fileSystemPicker, IImportLogic importLogic, ICardLocationService cardLocationService) : IImportService
+    public class ImportService(IUnitOfWorkRunner uowRunner, IImportRepo importRepo, IFileSystemPicker fileSystemPicker, IImportLogic importLogic, ICardLocationService cardLocationService) : IImportService
     {
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly IImportRepo _importRepo = importRepo;
         private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
         private readonly IImportLogic _importLogic = importLogic;
@@ -71,23 +71,7 @@ namespace CollectaMundo.ApplicationServices.Import
         }
         private async Task<List<string>> CardIdentifiersColumns()
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-            try
-            {
-                var result = await _importRepo.GetCardIdentifierColumns(uow.CurrentConnection);
-                await uow.CommitAsync();
-                return result;
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
-            finally
-            {
-                await uow.DisposeAsync();
-            }
+            return await _uowRunner.ExecuteReadOnlyAsync(conn => _importRepo.GetCardIdentifierColumns(conn));
         }
 
         // Step 2
@@ -107,23 +91,7 @@ namespace CollectaMundo.ApplicationServices.Import
         }
         private async Task<Dictionary<string, List<string>>> GetCardUuidsByIdFieldAsync(string identifierFieldName, IEnumerable<string> values)
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-            try
-            {
-                var result = await _importRepo.GetCardUuidsByIdFieldAsync(uow.CurrentConnection, identifierFieldName, values);
-                await uow.CommitAsync();
-                return result;
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
-            finally
-            {
-                await uow.DisposeAsync();
-            }
+            return await _uowRunner.ExecuteReadOnlyAsync(conn => _importRepo.GetCardUuidsByIdFieldAsync(conn, identifierFieldName, values));
         }
 
         // Step 3
@@ -142,10 +110,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
             progress.Percent.Report(0);
 
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-
-            try
+            return await _uowRunner.ExecuteReadOnlyAsync(async conn =>
             {
                 for (int start = 0; start < importCandidates.Count; start += BatchSize)
                 {
@@ -169,7 +134,7 @@ namespace CollectaMundo.ApplicationServices.Import
                     if (HasSetCode)
                     {
                         var pairs = ExtractPairs(batch, NameHeader!, SetCodeHeader!);
-                        var results = await _importRepo.QueryByNameAndSetCodeAsync(uow.CurrentConnection, pairs, token);
+                        var results = await _importRepo.QueryByNameAndSetCodeAsync(conn, pairs, token);
                         _importLogic.ApplySetCodeMatches(batch, pairs, results);
                     }
 
@@ -180,7 +145,7 @@ namespace CollectaMundo.ApplicationServices.Import
                         if (unresolved.Count > 0)
                         {
                             var pairs = ExtractPairs(unresolved, NameHeader!, SetNameHeader!);
-                            var results = await _importRepo.QueryByNameAndSetNameAsync(uow.CurrentConnection, pairs, token);
+                            var results = await _importRepo.QueryByNameAndSetNameAsync(conn, pairs, token);
                             _importLogic.ApplySetNameMatches(unresolved, pairs, results);
                         }
                     }
@@ -191,24 +156,14 @@ namespace CollectaMundo.ApplicationServices.Import
                         if (unresolved.Count > 0)
                         {
                             var names = unresolved.Select(i => i.CsvFields.TryGetValue(NameHeader!, out var v) ? v : string.Empty).ToList();
-                            var results = await _importRepo.QueryByNameOnlyAsync(uow.CurrentConnection, names, token);
+                            var results = await _importRepo.QueryByNameOnlyAsync(conn, names, token);
                             _importLogic.ApplyNameOnlyMatches(unresolved, names, results);
                         }
                     }
                 }
 
-                await uow.CommitAsync();
                 return _importLogic.FinalizeMatchResults(importCandidates);
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
-            finally
-            {
-                await uow.DisposeAsync();
-            }
+            });
         }
         private static List<(string Name, string Value)> ExtractPairs(List<TempCardItem> items, string nameHeader, string otherHeader)
         {
@@ -227,41 +182,13 @@ namespace CollectaMundo.ApplicationServices.Import
         // Step 5
         public async Task<List<string>> GetAvailableFinishesAsync()
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-
-            try
-            {
-                var rawValues = await DbHelpers.GetUniqueValuesAsync(uow.CurrentConnection, "cards", "finishes");
-
-                await uow.CommitAsync();
-
-                return ImportValueNormalizer.SplitAndDistinct(rawValues);
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
+            var rawValues = await _uowRunner.ExecuteReadOnlyAsync(conn => DbHelpers.GetUniqueValuesAsync(conn, "cards", "finishes"));
+            return ImportValueNormalizer.SplitAndDistinct(rawValues);
         }
         public async Task<List<string>> GetAvailableLanguagesAsync()
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
-
-            try
-            {
-                var rawValues = await DbHelpers.GetUniqueValuesAsync(uow.CurrentConnection, "cardForeignData", "language");
-
-                await uow.CommitAsync();
-
-                return ImportValueNormalizer.SplitAndDistinct(rawValues);
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
+            var rawValues = await _uowRunner.ExecuteReadOnlyAsync(conn => DbHelpers.GetUniqueValuesAsync(conn, "cardForeignData", "language"));
+            return ImportValueNormalizer.SplitAndDistinct(rawValues);
         }
         public async Task<List<string>> GetAvailableLocationsAsync()
         {
@@ -322,15 +249,12 @@ namespace CollectaMundo.ApplicationServices.Import
             // to validate "English" and finish availability.
             // So we proceed with Tier 1 regardless.
 
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
-            try
+            return await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {
                 token.ThrowIfCancellationRequested();
 
                 // 4) Tier 1: base availability for ALL uuids (cards/tokens)
-                var baseByUuid = await _importRepo.FetchBaseAvailabilityAsync(uuidsToValidate, uow.CurrentConnection, uow.CurrentTransaction, token);
+                var baseByUuid = await _importRepo.FetchBaseAvailabilityAsync(uuidsToValidate, conn, tx, token);
 
                 token.ThrowIfCancellationRequested();
 
@@ -339,7 +263,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
                 if (needsForeign.Count > 0)
                 {
-                    foreignByUuid = await _importRepo.FetchForeignLanguagesAsync(needsForeign, uow.CurrentConnection, uow.CurrentTransaction, token);
+                    foreignByUuid = await _importRepo.FetchForeignLanguagesAsync(needsForeign, conn, tx, token);
 
                     token.ThrowIfCancellationRequested();
                 }
@@ -353,14 +277,8 @@ namespace CollectaMundo.ApplicationServices.Import
                 // 6) Strict validation in DomainLogic (marks unimportable + warnings)
                 _importLogic.ApplyStrictVariantValidation(resolved, index);
 
-                await uow.CommitAsync();
-                return resolved;
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
+                return (Result: resolved, Commit: true);
+            });
         }
 
         // Helpers for ResolveImportItemsStrictAsync
@@ -507,22 +425,22 @@ namespace CollectaMundo.ApplicationServices.Import
                 return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, "No importable items found."), Mutation: null);
             }
 
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
             try
             {
-                token.ThrowIfCancellationRequested();
+                var upsertedRows = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+                {
+                    token.ThrowIfCancellationRequested();
 
-                progress.Detail.Report("Importing cards to collection...");
-                progress.Percent.Report(0);
+                    progress.Detail.Report("Importing cards to collection...");
+                    progress.Percent.Report(0);
 
-                Debug.WriteLine("[FinalImportResolvedItems] Upserting collapsed items ... ");
+                    Debug.WriteLine("[FinalImportResolvedItems] Upserting collapsed items ... ");
 
-                // Capture returned rows WITH CardId
-                var upsertedRows = await _importRepo.UpsertMyCollectionAsync(collapsed, uow.CurrentConnection, uow.CurrentTransaction, progress.Percent, token);
+                    // Capture returned rows WITH CardId
+                    var upsertedRows = await _importRepo.UpsertMyCollectionAsync(collapsed, conn, tx, progress.Percent, token);
 
-                await uow.CommitAsync();
+                    return (Result: upsertedRows, Commit: true);
+                });
 
                 progress.Detail.Report("Import completed.");
 
@@ -539,12 +457,10 @@ namespace CollectaMundo.ApplicationServices.Import
             }
             catch (OperationCanceledException)
             {
-                await uow.RollbackAsync();
                 return new ImportExecutionResult(new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."), Mutation: null);
             }
             catch (Exception ex)
             {
-                await uow.RollbackAsync();
                 return new ImportExecutionResult(new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"), Mutation: null);
             }
         }

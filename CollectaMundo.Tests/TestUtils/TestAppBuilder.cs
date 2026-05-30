@@ -84,7 +84,7 @@ public static class TestAppBuilder
             remoteLookups);
 
         var keyedDataProviderService = new KeyedDataProviderService(
-            dbFactory,
+            uowRunner,
             new KeyedDataProviderRepo(),
             getRetailer);
 
@@ -109,7 +109,7 @@ public static class TestAppBuilder
         var deckManagementStore = new DeckManagementStore(cardLocationService);
 
         var modifyService = new ModifyCollectionService(
-            dbFactory,
+            uowRunner,
             new ModifyCollectionLogic(),
             new ModifyCollectionRepo(),
             collectionMutationsService,
@@ -125,7 +125,7 @@ public static class TestAppBuilder
         var picker = filePickerOverride ?? new FileSystemPicker();
 
         var importService = new ImportService(
-            dbFactory,
+            uowRunner,
             new ImportRepo(),
             picker,
             new ImportLogic(),

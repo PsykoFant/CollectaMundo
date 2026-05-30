@@ -25,11 +25,12 @@ namespace CollectaMundo.Tests.UnitTests
 
             // Use SharedMemoryDbFactory to connect to the same in-memory DB as the fixture
             var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fixture.DbName);
+            var uowRunner = new UnitOfWorkRunner(dbFactory);
 
-            var cardLocationService = new CardLocationService(new UnitOfWorkRunner(dbFactory), new CardLocationRepo(), new CardLocationLogic(), new CardLocationLookupStore(), new CollectionMutationsLogic(), new CollectionMutationsService(new CollectionMutationsRepo())); ;
+            var cardLocationService = new CardLocationService(uowRunner, new CardLocationRepo(), new CardLocationLogic(), new CardLocationLookupStore(), new CollectionMutationsLogic(), new CollectionMutationsService(new CollectionMutationsRepo())); ;
 
             _service = new ImportService(
-                dbFactory,
+                uowRunner,
                 new ImportRepo(),
                 fileSystemPicker: null!, // Not needed for service-level tests
                 new ImportLogic(),
