@@ -4,46 +4,51 @@ using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using Newtonsoft.Json.Linq;
-using System.Data.SQLite;
+using ServiceStack;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 {
-    public class GenerateMissingPngService(IGenerateMissingPngRepo repository, IRemoteLookups remoteLookups, IGenerateMissingPngLogic missingPngLogic) : IGenerateMissingPngService
+    public class GenerateMissingPngService(IUnitOfWorkRunner uowRunner, IGenerateMissingPngRepo repo, IRemoteLookups remoteLookups, IGenerateMissingPngLogic missingPngLogic) : IGenerateMissingPngService
     {
-        private readonly IGenerateMissingPngRepo _repository = repository;
+        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
+        private readonly IGenerateMissingPngRepo _repo = repo;
         private readonly IRemoteLookups _remoteLookups = remoteLookups;
         private readonly IGenerateMissingPngLogic _missingPngLogic = missingPngLogic;
-        public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)
+        public async Task GenerateMissingManaSymbolImagesAsync(IProgress<int>? percentProgress = null)
         {
-            // Step 1: Get unique mana cost strings from 'cards' table
-            List<string> uniqueManaCosts = await _repository.GetUniqueValuesAsync(conn, "cards", "manaCost");
-
-            // Step 2: Use missingPngLogic layer to extract unique symbols from mana cost strings
-            List<string> extractedSymbols = [.. _missingPngLogic.ExtractSymbolsFromManaCosts(uniqueManaCosts)];
-
-            // Step 3: Insert any new symbols into the uniqueManaSymbols table
-            foreach (string symbol in extractedSymbols)
+            var symbolsWithNullImage = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {
-                await _repository.InsertIfNotExistsAsync(conn, "uniqueManaSymbols", "uniqueManaSymbol", symbol);
-            }
+                var uniqueManaCosts = await _repo.GetUniqueValuesAsync(conn, tx, "cards", "manaCost");
 
-            // Step 4: Get symbols where the PNG image is missing
-            List<string> symbolsWithNullImage = await _repository.GetValuesWithNullAsync(conn, "uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
+                var extractedSymbols = _missingPngLogic.ExtractSymbolsFromManaCosts(uniqueManaCosts).ToList();
 
-            // Step 5: Generate PNGs for each symbol in parallel
-            using var coordinator = new ParallelWorkCoordinator<(string Symbol, byte[] PngData)>(percentProgress ?? new Progress<int>(_ => { }), symbolsWithNullImage.Count, Environment.ProcessorCount);
+                foreach (string symbol in extractedSymbols)
+                {
+                    await _repo.InsertIfNotExistsAsync(conn, tx, "uniqueManaSymbols", "uniqueManaSymbol", symbol);
+                }
 
-            await Task.WhenAll(symbolsWithNullImage.Select(symbol =>
-                coordinator.DoAsync(async () =>
+                var missingSymbols = await _repo.GetValuesWithNullAsync(conn, tx, "uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
+                return (Result: missingSymbols, Commit: true);
+            });
+
+            using var coordinator = new ParallelWorkCoordinator<(string Symbol, byte[] PngData)>(
+                    percentProgress ?? new Progress<int>(_ => { }),
+                    symbolsWithNullImage.Count,
+                    Environment.ProcessorCount);
+
+            await Task.WhenAll(symbolsWithNullImage.Select(symbol => coordinator.DoAsync(async () =>
                 {
                     try
                     {
                         string svgUrl = $"https://svgs.scryfall.io/card-symbols/{symbol.Replace("/", "")}.svg";
+
                         string? svgContent = await _remoteLookups.FetchSvgContentAsync(svgUrl);
+
                         byte[] pngData = string.IsNullOrWhiteSpace(svgContent)
                             ? []
                             : await _missingPngLogic.ConvertSvgToPngAsync(svgContent);
+
                         return (symbol, pngData);
                     }
                     catch (Exception ex)
@@ -51,167 +56,177 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                         Debug.WriteLine($"Error processing symbol {symbol}: {ex.Message}");
                         return (symbol, []);
                     }
-                })
-            ));
+                })));
 
             var results = coordinator.Results;
 
-            // Step 6: Fail if too many results failed
             int failed = results.Count(r => r.PngData.Length == 0);
             int total = results.Count;
-            if (failed > total * 0.5)
+
+            if (total > 0 && failed > total * 0.5)
             {
                 throw new Exception($"More than half of mana symbol image downloads failed ({failed}/{total}).");
             }
 
-            // Step 7: Update the DB for each result
-            using var transaction = conn.BeginTransaction();
-
-            foreach (var (symbol, pngData) in results)
+            await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {
-                if (pngData.Length > 0)
+                foreach (var (symbol, pngData) in results)
                 {
-                    bool updated = await _repository.UpdateImageAsync(
-                        conn,
-                        tableName: "uniqueManaSymbols",
-                        imageColumn: "manaSymbolImage",
-                        referenceColumn: "uniqueManaSymbol",
-                        referenceValue: symbol,
-                        imageData: pngData);
+                    if (pngData.Length == 0)
+                    {
+                        Debug.WriteLine($"[PNGService] Skipped update due to empty PNG for: {symbol}");
+                        continue;
+                    }
+
+                    bool updated = await _repo.UpdateImageAsync(conn, tx, tableName: "uniqueManaSymbols", imageColumn: "manaSymbolImage", referenceColumn: "uniqueManaSymbol", referenceValue: symbol, imageData: pngData);
 
                     if (!updated)
                     {
-                        Debug.WriteLine($"[PNGService] No update performed for: {symbol} (already present?)");
+                        Debug.WriteLine($"[PNGService] No update performed for: {symbol}.");
                     }
                 }
-                else
-                {
-                    Debug.WriteLine($"[PNGService] Skipped update due to empty PNG for: {symbol}");
-                }
-            }
 
-            transaction.Commit();
+                return (Result: true, Commit: true);
+            });
         }
-        public async Task GenerateMissingManaCostImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)
+        public async Task GenerateMissingManaCostImagesAsync(IProgress<int>? percentProgress = null)
         {
-            var effectiveProgress = percentProgress ?? new Progress<int>(_ => { }); // Use percentProgress if provided, otherwise use a no-op progress reporter
-            var uniqueManaCosts = await _repository.GetUniqueValuesAsync(conn, "cards", "manaCost");
+            var effectiveProgress = percentProgress ?? new Progress<int>(_ => { });
 
-            foreach (var cost in uniqueManaCosts)
+            var missingCosts = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {
-                await _repository.InsertIfNotExistsAsync(conn, "uniqueManaCostImages", "uniqueManaCost", cost);
-            }
+                var uniqueManaCosts = await _repo.GetUniqueValuesAsync(conn, tx, "cards", "manaCost");
 
-            var missingCosts = await _repository.GetValuesWithNullAsync(conn, "uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
+                foreach (var cost in uniqueManaCosts)
+                {
+                    await _repo.InsertIfNotExistsAsync(conn, tx, "uniqueManaCostImages", "uniqueManaCost", cost);
+                }
 
-            // Extract all symbols needed
+                var costs = await _repo.GetValuesWithNullAsync(conn, tx, "uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
+
+                return (Result: costs, Commit: true);
+            });
+
             var allSymbols = new HashSet<string>();
+
             foreach (var cost in missingCosts)
             {
-                string[] symbols = cost.Trim('{', '}')
+                string[] symbols = cost
+                    .Trim('{', '}')
                     .Split(["}{"], StringSplitOptions.RemoveEmptyEntries);
-                foreach (var s in symbols)
+
+                foreach (var symbol in symbols)
                 {
-                    allSymbols.Add(s);
+                    allSymbols.Add(symbol);
                 }
             }
 
-            // Batch load all needed symbols once
-            var symbolImageMap = await _repository.GetManaSymbolImagesAsync(conn, allSymbols);
+            var symbolImageMap = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetManaSymbolImagesAsync(conn, allSymbols));
 
-            using var transaction = conn.BeginTransaction();
             using var reporter = new ProgressReporter(effectiveProgress, missingCosts.Count);
+
+            var processedImages = new List<(string ManaCost, byte[] PngData)>();
 
             foreach (var manaCost in missingCosts)
             {
-                byte[] pngData = await _missingPngLogic.ProcessManaCostInputAsync(manaCost, symbolImageMap);
+                byte[] pngData = await _missingPngLogic.ProcessManaCostInputAsync(
+                    manaCost,
+                    symbolImageMap);
 
-                if (pngData.Length > 0)
-                {
-                    await _repository.UpdateImageAsync(conn,
-                        "uniqueManaCostImages",
-                        "manaCostImage",
-                        "uniqueManaCost",
-                        manaCost,
-                        pngData);
-                }
+                processedImages.Add((manaCost, pngData));
 
-                reporter.Increment(); // Updates progress with throttle
+                reporter.Increment();
             }
 
-            transaction.Commit();
+            await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+            {
+                foreach (var (manaCost, pngData) in processedImages)
+                {
+                    if (pngData.Length == 0)
+                    {
+                        continue;
+                    }
 
+                    await _repo.UpdateImageAsync(conn, tx, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", manaCost, pngData);
+                }
+
+                return (Result: true, Commit: true);
+            });
         }
-        public async Task GenerateMissingKeyRuneImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)
+        public async Task GenerateMissingKeyRuneImagesAsync(IProgress<int>? percentProgress = null)
         {
-            // Ensure all set codes are present
-            await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
+            var missingSetCodes = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+            {
+                await _repo.InsertMissingFromColumnAsync(conn, tx, "sets", "code", "keyruneImages", "setCode");
+                await _repo.DeleteWhereDefaultSvgUsedAsync(conn, tx);
 
-            // Clear previously stored default.svg blobs so they can be regenerated
-            await _repository.DeleteWhereDefaultSvgUsedAsync(conn);
+                var setCodes = await _repo.GetValuesWithNullAsync(conn, tx, "keyruneImages", "setCode", "keyruneImage");
+                return (Result: setCodes, Commit: true);
+            });
 
-            // Worklist = rows with NULL image
-            var missingSetCodes = await _repository.GetValuesWithNullAsync(conn, "keyruneImages", "setCode", "keyruneImage");
-
-            // Fetch metadata once
             JArray? metadata = await _remoteLookups.FetchSetMetadataAsync();
+
             if (metadata == null)
             {
                 Debug.WriteLine("Failed to fetch keyrune metadata. Aborting.");
                 return;
             }
 
-            // Parallel processing with progress
             int maxParallelism = Math.Max(2, Environment.ProcessorCount / 2);
-            using var coordinator = new ParallelWorkCoordinator<(string SetCode, byte[] PngData, bool IsFallback)>(
-                percentProgress ?? new Progress<int>(_ => { }),
-                missingSetCodes.Count,
-                maxParallelism);
 
-            await Task.WhenAll(missingSetCodes.Select(setCode =>
-                coordinator.DoAsync(async () =>
+            using var coordinator = new ParallelWorkCoordinator<(string SetCode, byte[] PngData, bool IsFallback)>(
+                    percentProgress ?? new Progress<int>(_ => { }),
+                    missingSetCodes.Count,
+                    maxParallelism);
+
+            await Task.WhenAll(missingSetCodes.Select(setCode => coordinator.DoAsync(async () =>
                 {
                     string svgUrl = _remoteLookups.TryGetIconUriForSetCode(metadata, setCode) ?? "https://svgs.scryfall.io/sets/default.svg";
 
                     bool isFallback = svgUrl.Contains("default.svg", StringComparison.OrdinalIgnoreCase);
+
                     if (isFallback)
                     {
                         Debug.WriteLine($"[PNGService] Using default.svg fallback for set {setCode}");
                     }
 
                     string? svgContent = await _remoteLookups.FetchSvgContentAsync(svgUrl);
+
                     byte[] png = string.IsNullOrWhiteSpace(svgContent)
                         ? []
                         : await _missingPngLogic.ConvertSvgToPngAsync(svgContent);
 
-                    return (SetCode: setCode, PngData: png, IsFallback: isFallback);
-                })
-            ));
+                    return (
+                        SetCode: setCode,
+                        PngData: png,
+                        IsFallback: isFallback
+                    );
+                })));
 
             var results = coordinator.Results;
 
-            // Persist in one transaction
-            using var transaction = conn.BeginTransaction();
-            int updatedCount = 0;
-
-            foreach (var (SetCode, PngData, IsFallback) in results)
+            int updatedCount = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {
-                if (PngData.Length > 0)
+                int count = 0;
+
+                foreach (var (setCode, pngData, isFallback) in results)
                 {
-                    bool updated = await _repository.UpdateKeyruneImageAsync(
-                        conn,
-                        setCode: SetCode,
-                        imageData: PngData,
-                        usedDefaultSvg: IsFallback);
+                    if (pngData.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    bool updated = await _repo.UpdateKeyruneImageAsync(conn, tx, setCode, pngData, isFallback);
 
                     if (updated)
                     {
-                        updatedCount++;
+                        count++;
                     }
                 }
-            }
 
-            transaction.Commit();
+                return (Result: count, Commit: true);
+            });
+
             Debug.WriteLine($"[PNGService] Keyrune regeneration complete. Updated {updatedCount} row(s).");
         }
 

@@ -1,11 +1,9 @@
-﻿using System.Data.SQLite;
-
-namespace CollectaMundo.ApplicationServices.GenerateMissingPng
+﻿namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 {
     public interface IGenerateMissingPngService
     {
-        Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn, IProgress<int> percentProgress);
-        Task GenerateMissingManaCostImagesAsync(SQLiteConnection conn, IProgress<int> percentProgress);
-        Task GenerateMissingKeyRuneImagesAsync(SQLiteConnection conn, IProgress<int> percentProgress);
+        Task GenerateMissingManaSymbolImagesAsync(IProgress<int> percentProgress);
+        Task GenerateMissingManaCostImagesAsync(IProgress<int> percentProgress);
+        Task GenerateMissingKeyRuneImagesAsync(IProgress<int> percentProgress);
     }
 }

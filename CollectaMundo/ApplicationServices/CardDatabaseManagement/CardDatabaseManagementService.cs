@@ -11,10 +11,11 @@ using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
-    public class CardDatabaseManagementService(IAppSettings settings, IDbConnectionFactory dbFactory, ProgressSinks progressSinks, ICardDatabaseManagementRepo dbMgmtRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IRemoteLookups remoteLookups, ICardDatabaseDownloader? downloader = null) : ICardDatabaseManagementService
+    public class CardDatabaseManagementService(IAppSettings settings, IDbConnectionFactory dbFactory, IUnitOfWorkRunner uowRunner, ProgressSinks progressSinks, ICardDatabaseManagementRepo dbMgmtRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IRemoteLookups remoteLookups, ICardDatabaseDownloader? downloader = null) : ICardDatabaseManagementService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ProgressSinks _progressSinks = progressSinks ?? ProgressSinks.NoOp;
         private readonly ICardDatabaseManagementRepo _dbMgmtRepo = dbMgmtRepo;
         private readonly ICardPriceService _priceService = priceService;
@@ -124,16 +125,13 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
                 // Step 2: Query local DB
                 int numberOfSetsInDb;
-                await using var uow = new UnitOfWork(_dbFactory);
-                await uow.BeginAsync();
+
                 try
                 {
-                    numberOfSetsInDb = await _dbMgmtRepo.GetNumberOfSetsAsync(uow.CurrentConnection, ct);
-                    await uow.CommitAsync();
+                    numberOfSetsInDb = await _uowRunner.ExecuteReadOnlyAsync(conn => _dbMgmtRepo.GetNumberOfSetsAsync(conn, ct));
                 }
                 catch (Exception ex)
                 {
-                    await uow.RollbackAsync();
                     return new OperationResult(OperationResultCode.Error, $"Error querying your db for sets: {ex.Message}");
                 }
 
@@ -396,15 +394,37 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         {
             return
             [
-                (DbPrepStep.CreateTables, "Creating custom tables...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateTablesAsync(conn))), false),
-                (DbPrepStep.GenerateManaSymbols, "Generating mana symbols...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _progressSinks.Percent)), true),
-                (DbPrepStep.GenerateManaCostImages, "Generating mana cost images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _progressSinks.Percent)), true),
-                (DbPrepStep.GenerateSetIcons, "Generating set icon images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _progressSinks.Percent)), true),
-                (DbPrepStep.ImportPrices, "Processing card prices...", () => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _progressSinks.Detail, _progressSinks.Percent)), true),
-                (DbPrepStep.CreateViews, "Creating views...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateViewsAsync(conn))), false),
-                (DbPrepStep.CreateIndices, "Creating indices...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateIndicesAsync(conn))), false),
+                (DbPrepStep.CreateTables,"Creating custom tables...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateTablesAsync(conn, tx);return (Result: true, Commit: true);}),false),
+                (DbPrepStep.GenerateManaSymbols,"Generating mana symbols...",() => _missingPngService.GenerateMissingManaSymbolImagesAsync(_progressSinks.Percent),true),
+                (DbPrepStep.GenerateManaCostImages,"Generating mana cost images...",() => _missingPngService.GenerateMissingManaCostImagesAsync(_progressSinks.Percent),true),
+                (DbPrepStep.GenerateSetIcons,"Generating set icon images...",() => _missingPngService.GenerateMissingKeyRuneImagesAsync(_progressSinks.Percent),true),
+                (DbPrepStep.ImportPrices,"Processing card prices...",async () =>
+                {
+                    var priceImportResult = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+                    {
+                        var result = await _priceService.ImportPricesFromJsonAsync(_pricesPath,conn,tx,_progressSinks.Detail,_progressSinks.Percent);
+                        return (Result: result,Commit: result is not null);
+                    });
+                    if (priceImportResult is not null)
+                    {
+                        if (_settings.PriceInfo is null)
+                        {
+                            throw new InvalidOperationException("PriceInfo must be initialized before importing prices.");
+                        }
+                        var retailer = _settings.PriceInfo?.Retailer;
+                        _settings.PersistPriceInfo(priceImportResult.JsonDate,retailer);
+                    }
+                },true),
+                (DbPrepStep.CreateViews,"Creating views...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateViewsAsync(conn, tx);return (Result: true, Commit: true);}),false),
+                (DbPrepStep.CreateIndices,"Creating indices...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateIndicesAsync(conn, tx);return (Result: true, Commit: true);}),false),
                 (DbPrepStep.OptimizeDatabase, "Optimizing database...", () => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbMgmtRepo.OptimizeAsync(conn))), false),
             ];
+
+            async Task ExecuteWithConnectionAsync(Func<SQLiteConnection, Task> action)
+            {
+                await using var conn = await _dbFactory.OpenConnectionAsync();
+                await action(conn);
+            }
         }
         private enum DbPrepStep
         {
@@ -425,10 +445,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             {
                 ct.ThrowIfCancellationRequested();
 
-                await using var uow = new UnitOfWork(_dbFactory);
-                await uow.BeginAsync();
-
-                var filePath = await _dbMgmtRepo.ExportCollectionAsync(uow.CurrentConnection, _settings.BackupFolderPath, ct);
+                var filePath = await _uowRunner.ExecuteReadOnlyAsync(conn => _dbMgmtRepo.ExportCollectionAsync(conn, _settings.BackupFolderPath, ct));
 
                 ct.ThrowIfCancellationRequested();
 
@@ -446,6 +463,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error creating CSV backup: {ex.Message}");
+
                 return new OperationResult(OperationResultCode.Error, $"Error creating CSV backup: {ex.Message}");
             }
         }
@@ -466,19 +484,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
         }
 
-        // Retry logic for executing database actions
-        private async Task ExecuteWithUnitOfWorkAsync(Func<SQLiteConnection, Task> action)
-        {
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-            await action(uow.CurrentConnection);
-            await uow.CommitAsync();
-        }
-        private async Task ExecuteWithConnectionAsync(Func<SQLiteConnection, Task> action)
-        {
-            await using var conn = await _dbFactory.OpenConnectionAsync();
-            await action(conn);
-        }
 
         // Cleanup logic for partial downloads
         private static void CleanupPartialDatabaseFiles(string dbPath, string userDownloads)

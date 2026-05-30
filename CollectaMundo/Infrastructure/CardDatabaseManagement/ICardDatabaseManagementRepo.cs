@@ -5,9 +5,9 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
     public interface ICardDatabaseManagementRepo
     {
         // Create
-        Task CreateTablesAsync(SQLiteConnection conn);
-        Task CreateIndicesAsync(SQLiteConnection conn);
-        Task CreateViewsAsync(SQLiteConnection conn);
+        Task CreateTablesAsync(SQLiteConnection conn, SQLiteTransaction tx);
+        Task CreateIndicesAsync(SQLiteConnection conn, SQLiteTransaction tx);
+        Task CreateViewsAsync(SQLiteConnection conn, SQLiteTransaction tx);
         Task OptimizeAsync(SQLiteConnection conn);
 
         // Update

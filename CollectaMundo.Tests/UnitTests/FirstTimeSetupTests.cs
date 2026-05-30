@@ -50,7 +50,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(OperationResultCode.Success, result.Code);
 
             // repo/service calls
-            ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Once);
+            ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Once);
 
             // progress assertions
             Assert.Contains(ctx.VisibleToggles, v => v);          // bar was shown
@@ -67,7 +67,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             int attempts = 0;
             ctx.SchemaRepo
-               .Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()))
+               .Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()))
                .Returns(async () =>
                {
                    await Task.Yield();
@@ -111,7 +111,7 @@ namespace CollectaMundo.Tests.UnitTests
                 .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
 
             int createCalls = 0;
-            ctx.SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>())).Returns(async () => { createCalls++; await Task.Yield(); throw new Exception("Step 2 fails"); });
+            ctx.SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>())).Returns(async () => { createCalls++; await Task.Yield(); throw new Exception("Step 2 fails"); });
 
             var svc = ctx.BuildService();
 
@@ -119,7 +119,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             Assert.Equal(OperationResultCode.Error, result.Code);
             Assert.Equal(3, createCalls); // max retries
-            ctx.SchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>()), Times.Never);
+            ctx.SchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Never);
         }
         [Fact]
         public async Task DownloadFails_ReturnsDownloadFailed_DoesNotRunSteps()
@@ -142,7 +142,7 @@ namespace CollectaMundo.Tests.UnitTests
             var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
-            ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Never);
+            ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Never);
             ctx.CardDatabaseDownloaderMock.Verify(d => d.DownloadParallelAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -404,7 +404,16 @@ namespace CollectaMundo.Tests.UnitTests
             var svc = ctx.BuildService();
             var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
+            ctx.PriceService.Verify(p => p.ImportPricesFromJsonAsync(
+        It.IsAny<string>(),
+        It.IsAny<SQLiteConnection>(),
+        It.IsAny<SQLiteTransaction>(),
+        It.IsAny<IProgress<string>?>(),
+        It.IsAny<IProgress<int>?>()),
+    Times.Once);
+
             Assert.Equal(OperationResultCode.Success, result.Code);
+
 
             // ✅ Validate each URL retried once and then succeeded
             Assert.Equal(2, attemptsPerUrl["http://localhost/dummy.sqlite"]);

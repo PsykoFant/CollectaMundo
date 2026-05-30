@@ -66,17 +66,17 @@ public static class TestAppBuilder
         var remoteLookups = new RemoteLookups();
 
         var missingPngSvc = new GenerateMissingPngService(
+            uowRunner,
             new GenerateMissingPngRepo(),
             remoteLookups,
             new GenerateMissingPngLogic());
 
-        var priceService = new CardPriceService(
-            settings,
-            new CardPriceRepository());
+        var priceService = new CardPriceService(new CardPriceRepository());
 
         var prepService = new CardDatabaseManagementService(
             settings,
             dbFactory,
+            uowRunner,
             CreateProgressSinks(operationOverlayController),
             new CardDatabaseManagementRepo(),
             priceService,
@@ -91,7 +91,7 @@ public static class TestAppBuilder
         var collectionMaterializer = new CollectionMaterializer();
 
         var cardListService = new CardListService(
-            dbFactory,
+            uowRunner,
             new CardListRepo(),
             new FilterDefaultsLogic(),
             keyedDataProviderService,

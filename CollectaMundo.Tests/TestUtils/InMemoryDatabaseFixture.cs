@@ -15,7 +15,7 @@ namespace CollectaMundo.Tests.TestUtils
         public string DbName { get; } = $"MasterDb_{Guid.NewGuid():N}";
 
         // CreateCollectionChangeSetFromEdits a connection string that points to this instance's DB name
-        private string MasterConnectionString => $"Data Source=file:{DbName}?mode=memory&cache=shared;Version=3;URI=True;";
+        private string MasterConnectionString => TestSqliteConnectionStrings.SharedInMemory(DbName);
 
         // Instance fields 
         private SQLiteConnection? _masterConnection;

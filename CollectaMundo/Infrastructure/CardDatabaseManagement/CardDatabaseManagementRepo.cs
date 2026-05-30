@@ -10,7 +10,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
     public class CardDatabaseManagementRepo : ICardDatabaseManagementRepo
     {
         // Create
-        public async Task CreateTablesAsync(SQLiteConnection conn)
+        public async Task CreateTablesAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             var tables = DatabaseTableSql.GetAllStatements();
 
@@ -18,7 +18,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
             {
                 try
                 {
-                    using var command = new SQLiteCommand(sql, conn);
+                    using var command = new SQLiteCommand(sql, conn, tx);
                     await command.ExecuteNonQueryAsync();
                 }
                 catch (Exception ex)
@@ -30,23 +30,23 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
             Debug.WriteLine("Custom tables created successfully.");
         }
-        public async Task CreateIndicesAsync(SQLiteConnection conn)
+        public async Task CreateIndicesAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             foreach (var (_, sql) in DatabaseIndexSql.Statements)
             {
-                using var command = new SQLiteCommand(sql, conn);
+                using var command = new SQLiteCommand(sql, conn, tx);
                 await command.ExecuteNonQueryAsync();
             }
 
             Debug.WriteLine("Indices created successfully.");
         }
-        public async Task CreateViewsAsync(SQLiteConnection conn)
+        public async Task CreateViewsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             foreach (var (name, sql) in DatabaseViewSql.Statements)
             {
                 try
                 {
-                    using var cmd = new SQLiteCommand(sql, conn);
+                    using var cmd = new SQLiteCommand(sql, conn, tx);
                     await cmd.ExecuteNonQueryAsync();
                 }
                 catch (Exception ex)
@@ -78,7 +78,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
         // Update
         public async Task<int> GetNumberOfSetsAsync(SQLiteConnection conn, CancellationToken ct = default)
         {
-            var sets = await DbHelpers.GetUniqueValuesAsync(conn, "sets", "code", ct);
+            var sets = await DbHelpers.GetUniqueValuesAsync(conn, "sets", "code", null, ct);
             return sets.Count;
         }
         public async Task AttachTempDbAsync(SQLiteConnection conn, string newDbPath, IProgress<string> progress)

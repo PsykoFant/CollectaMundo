@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.ApplicationServices.Shared.Progress;
+﻿using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.CardPrices;
 using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Presentation;
@@ -11,11 +10,10 @@ using System.Text.Json;
 
 namespace CollectaMundo.ApplicationServices.CardPrices
 {
-    public class CardPriceService(IAppSettings appSettings, ICardPriceRepository cardPriceRepository) : ICardPriceService
+    public class CardPriceService(ICardPriceRepository cardPriceRepository) : ICardPriceService
     {
-        private readonly IAppSettings _appSettings = appSettings;
         private readonly ICardPriceRepository _cardPriceRepository = cardPriceRepository;
-        public async Task ImportPricesFromJsonAsync(string jsonPath, SQLiteConnection conn, IProgress<string>? statusProgress = null, IProgress<int>? percentProgress = null)
+        public async Task<PriceImportResult?> ImportPricesFromJsonAsync(string jsonPath, SQLiteConnection conn, SQLiteTransaction tx, IProgress<string>? statusProgress = null, IProgress<int>? percentProgress = null)
         {
             if (!File.Exists(jsonPath))
             {
@@ -35,7 +33,7 @@ namespace CollectaMundo.ApplicationServices.CardPrices
             if (jsonDate == null)
             {
                 Debug.WriteLine("[PriceImporter] Missing date in price JSON metadata.");
-                return;
+                return null;
             }
 
             // Step 2: Parse all prices (with progress)
@@ -64,7 +62,7 @@ namespace CollectaMundo.ApplicationServices.CardPrices
             {
                 string tableName = group.Key;
                 var priceList = group.Select(p => new CardPrice { Uuid = p.Uuid, Price = p.Price }).ToList();
-                await _cardPriceRepository.InsertPricesInBatchesAsync(conn, tableName, priceList);
+                await _cardPriceRepository.InsertPricesInBatchesAsync(conn, tx, tableName, priceList);
 
                 var retailer = group.First().Retailer;
                 var finish = group.First().Finish;
@@ -76,8 +74,7 @@ namespace CollectaMundo.ApplicationServices.CardPrices
                 await UIHelper.ForceRenderAsync();
             }
 
-            // Step 4: Update settings with the JSON's actual date (retailer remains unchanged)
-            _appSettings.PersistPriceInfo(jsonDate, _appSettings.PriceInfo.Retailer);
+            return new PriceImportResult(jsonDate);
         }
     }
 }

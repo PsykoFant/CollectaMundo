@@ -58,13 +58,12 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var uowRunner = new UnitOfWorkRunner(dbFactory);
 
                 // Card DB prep (repos + services)
-                var missingPngService = new GenerateMissingPngService(new GenerateMissingPngRepo(), remoteLookups, new GenerateMissingPngLogic());
-                var priceService = new CardPriceService(settings, new CardPriceRepository());
+                var missingPngService = new GenerateMissingPngService(uowRunner, new GenerateMissingPngRepo(), remoteLookups, new GenerateMissingPngLogic());
+                var priceService = new CardPriceService(new CardPriceRepository());
 
                 var progressSinks = CreateProgressSinks(operationOverlayController);
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, new CardDatabaseManagementRepo(), priceService, missingPngService, remoteLookups);
-
-                var integrityService = new DatabaseIntegrityService(dbFactory, settings);
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(), priceService, missingPngService, remoteLookups);
+                var integrityService = new DatabaseIntegrityService(uowRunner, settings);
 
                 // Status overlay
                 operationOverlayController.Show(string.Empty);
@@ -103,7 +102,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
 
                 var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
-                var cardListService = new CardListService(dbFactory, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, new CardCoreAggregator(), collectionMaterializer);
+                var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, new CardCoreAggregator(), collectionMaterializer);
 
                 var cardLocationLookupStore = new CardLocationLookupStore();
                 var cardLocationRepo = new CardLocationRepo();

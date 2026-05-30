@@ -26,13 +26,9 @@ namespace CollectaMundo.Tests.TestUtils
         {
             try { _persistentConnection?.Dispose(); } catch { /* meh */ }
         }
-
         public static IDbConnectionFactory CreateInMemoryDbFactory(string dbName)
         {
-            // Unique name per test -> isolated in-memory DB
-            // URI=True ensures the "file:dbname?..." string is parsed correctly
-            var cs = $"Data Source=file:{dbName}?mode=memory&cache=shared;Version=3;URI=True;";
-            return new SharedMemoryDbFactory(cs);
+            return new SharedMemoryDbFactory(TestSqliteConnectionStrings.SharedInMemory(dbName));
         }
     }
 }

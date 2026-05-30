@@ -5,11 +5,11 @@ namespace CollectaMundo.Infrastructure.GenerateMissingPng
 {
     public class GenerateMissingPngRepo : IGenerateMissingPngRepo
     {
-        public async Task<List<string>> GetUniqueValuesAsync(SQLiteConnection conn, string tableName, string columnName)
+        public async Task<List<string>> GetUniqueValuesAsync(SQLiteConnection conn, SQLiteTransaction tx, string tableName, string columnName)
         {
             return await DbHelpers.GetUniqueValuesAsync(conn, tableName, columnName);
         }
-        public async Task<List<string>> GetValuesWithNullAsync(SQLiteConnection conn, string tableName, string returnColumn, string targetColumn)
+        public async Task<List<string>> GetValuesWithNullAsync(SQLiteConnection conn, SQLiteTransaction tx, string tableName, string returnColumn, string targetColumn)
         {
             List<string> results = [];
 
@@ -20,7 +20,7 @@ namespace CollectaMundo.Infrastructure.GenerateMissingPng
                       AND {returnColumn} IS NOT NULL 
                       AND {returnColumn} != '';";
 
-            using var command = new SQLiteCommand(query, conn);
+            using var command = new SQLiteCommand(query, conn, tx);
             using var reader = await command.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
@@ -34,7 +34,7 @@ namespace CollectaMundo.Infrastructure.GenerateMissingPng
 
             return results;
         }
-        public async Task<bool> UpdateImageAsync(SQLiteConnection conn, string tableName, string imageColumn, string referenceColumn, string referenceValue, byte[] imageData)
+        public async Task<bool> UpdateImageAsync(SQLiteConnection conn, SQLiteTransaction tx, string tableName, string imageColumn, string referenceColumn, string referenceValue, byte[] imageData)
         {
             string query = $@"
                     UPDATE {tableName}
@@ -42,21 +42,21 @@ namespace CollectaMundo.Infrastructure.GenerateMissingPng
                     WHERE {referenceColumn} = @referenceValue
                       AND {imageColumn} IS NULL;";
 
-            using var command = new SQLiteCommand(query, conn);
+            using var command = new SQLiteCommand(query, conn, tx);
             command.Parameters.AddWithValue("@imageData", imageData);
             command.Parameters.AddWithValue("@referenceValue", referenceValue);
 
             int rowsAffected = await command.ExecuteNonQueryAsync();
             return rowsAffected > 0;
         }
-        public async Task<bool> UpdateKeyruneImageAsync(SQLiteConnection conn, string setCode, byte[] imageData, bool usedDefaultSvg)
+        public async Task<bool> UpdateKeyruneImageAsync(SQLiteConnection conn, SQLiteTransaction tx, string setCode, byte[] imageData, bool usedDefaultSvg)
         {
             const string query = @"UPDATE keyruneImages
                                     SET keyruneImage = @imageData,defaultSvgUsed = @usedDefaultSvg
                                     WHERE setCode = @setCode
                                     AND keyruneImage IS NULL;";
 
-            using var command = new SQLiteCommand(query, conn);
+            using var command = new SQLiteCommand(query, conn, tx);
             command.Parameters.AddWithValue("@imageData", imageData);
             command.Parameters.AddWithValue("@setCode", setCode);
             command.Parameters.AddWithValue("@usedDefaultSvg", usedDefaultSvg ? 1 : 0);
@@ -64,13 +64,13 @@ namespace CollectaMundo.Infrastructure.GenerateMissingPng
             int rowsAffected = await command.ExecuteNonQueryAsync();
             return rowsAffected > 0;
         }
-        public async Task InsertIfNotExistsAsync(SQLiteConnection conn, string tableName, string columnName, string value)
+        public async Task InsertIfNotExistsAsync(SQLiteConnection conn, SQLiteTransaction tx, string tableName, string columnName, string value)
         {
             string query = $@"
                     INSERT OR IGNORE INTO {tableName} ({columnName})
                     VALUES (@value);";
 
-            using var command = new SQLiteCommand(query, conn);
+            using var command = new SQLiteCommand(query, conn, tx);
             command.Parameters.AddWithValue("@value", value);
 
             await command.ExecuteNonQueryAsync();
@@ -107,7 +107,7 @@ namespace CollectaMundo.Infrastructure.GenerateMissingPng
 
             return result;
         }
-        public async Task InsertMissingFromColumnAsync(SQLiteConnection conn, string fromTable, string fromColumn, string intoTable, string intoColumn)
+        public async Task InsertMissingFromColumnAsync(SQLiteConnection conn, SQLiteTransaction tx, string fromTable, string fromColumn, string intoTable, string intoColumn)
         {
             string query = $@"
                     INSERT INTO {intoTable} ({intoColumn})
@@ -119,16 +119,16 @@ namespace CollectaMundo.Infrastructure.GenerateMissingPng
                     FROM {intoTable}
                     WHERE {intoColumn} IS NOT NULL AND {intoColumn} != '';";
 
-            using var command = new SQLiteCommand(query, conn);
+            using var command = new SQLiteCommand(query, conn, tx);
             await command.ExecuteNonQueryAsync();
         }
-        public async Task DeleteWhereDefaultSvgUsedAsync(SQLiteConnection conn)
+        public async Task DeleteWhereDefaultSvgUsedAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             string query = $@"
                             UPDATE keyruneImages 
                             SET keyruneImage = NULL, defaultSvgUsed = 0
                             WHERE defaultSvgUsed = 1;";
-            using var command = new SQLiteCommand(query, conn);
+            using var command = new SQLiteCommand(query, conn, tx);
             await command.ExecuteNonQueryAsync();
         }
 

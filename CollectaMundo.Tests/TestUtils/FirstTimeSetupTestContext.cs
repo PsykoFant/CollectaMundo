@@ -61,6 +61,7 @@ namespace CollectaMundo.Tests.TestUtils
             var dbName = $"cmtests-{Guid.NewGuid():N}";
             var factory = SharedMemoryDbFactory.CreateInMemoryDbFactory(dbName);
             _dbFactoryDisposable = factory as IDisposable;
+            var uowRunner = new UnitOfWorkRunner(factory);
 
             // 2. Set up temp dirs and stubbed settings
             _tmpRoot = Path.Combine(Path.GetTempPath(), "cm-tests", dbName);
@@ -73,6 +74,10 @@ namespace CollectaMundo.Tests.TestUtils
             Settings.Setup(s => s.UserDownloadsPath).Returns(_tmpRoot);
             Settings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
             Settings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
+            Settings.Setup(s => s.PriceInfo).Returns(new PriceInfo
+            {
+                Retailer = "CardMarket"
+            });
 
             // 3. Create progress sinks (plain Progress<T> objects, no WPF needed)
             var sinks = new ProgressSinks
@@ -88,6 +93,7 @@ namespace CollectaMundo.Tests.TestUtils
             return new CardDatabaseManagementService(
                 Settings.Object,
                 factory, // <- directly pass the in-memory connection factory here
+                uowRunner,
                 sinks,
                 SchemaRepo.Object,
                 PriceService.Object,
@@ -99,20 +105,51 @@ namespace CollectaMundo.Tests.TestUtils
 
         public void StubAllStepsAsSuccess()
         {
-            SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
-            SchemaRepo.Setup(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
-            SchemaRepo.Setup(r => r.CreateIndicesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
-            SchemaRepo.Setup(r => r.OptimizeAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
-
-            PriceService.Setup(p => p.ImportPricesFromJsonAsync(
-                    It.IsAny<string>(), It.IsAny<SQLiteConnection>(),
-                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>()))
+            SchemaRepo
+                .Setup(r => r.CreateTablesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()))
                 .Returns(Task.CompletedTask);
 
-            PngService.Setup(p => p.GenerateMissingManaSymbolImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
-            PngService.Setup(p => p.GenerateMissingManaCostImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
-            PngService.Setup(p => p.GenerateMissingKeyRuneImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+            SchemaRepo
+                .Setup(r => r.CreateViewsAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()))
+                .Returns(Task.CompletedTask);
 
+            SchemaRepo
+                .Setup(r => r.CreateIndicesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()))
+                .Returns(Task.CompletedTask);
+
+            SchemaRepo
+                .Setup(r => r.OptimizeAsync(It.IsAny<SQLiteConnection>()))
+                .Returns(Task.CompletedTask);
+
+            PriceService
+                .Setup(p => p.ImportPricesFromJsonAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>(),
+                    It.IsAny<IProgress<string>?>(),
+                    It.IsAny<IProgress<int>?>()))
+                .ReturnsAsync(new PriceImportResult("2026-05-30"));
+
+            PngService
+                .Setup(p => p.GenerateMissingManaSymbolImagesAsync(
+                    It.IsAny<IProgress<int>>()))
+                .Returns(Task.CompletedTask);
+
+            PngService
+                .Setup(p => p.GenerateMissingManaCostImagesAsync(
+                    It.IsAny<IProgress<int>>()))
+                .Returns(Task.CompletedTask);
+
+            PngService
+                .Setup(p => p.GenerateMissingKeyRuneImagesAsync(
+                    It.IsAny<IProgress<int>>()))
+                .Returns(Task.CompletedTask);
         }
 
 

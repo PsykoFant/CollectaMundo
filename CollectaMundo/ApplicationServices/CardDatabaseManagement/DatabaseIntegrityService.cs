@@ -1,16 +1,15 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
-using CollectaMundo.Infrastructure.Shared;
 using System.Diagnostics;
 using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
-    public class DatabaseIntegrityService(IDbConnectionFactory dbFactory, IAppSettings settings) : IDatabaseIntegrityService
+    public class DatabaseIntegrityService(IUnitOfWorkRunner uowRunner, IAppSettings settings) : IDatabaseIntegrityService
     {
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly IAppSettings _settings = settings;
-        private readonly IDatabaseIntegrityRepo _healthRepo = new DatabaseIntegrityRepo();
+        private readonly DatabaseIntegrityRepo _healthRepo = new();
 
         public async Task<DatabaseStatus> GetDatabaseStatusAsync()
         {
@@ -24,12 +23,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             try
             {
-                await using var uow = new UnitOfWork(_dbFactory);
-                await uow.BeginReadOnlyAsync();
-
-                bool isValid = await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection) && await _healthRepo.QuickCheckAsync(uow.CurrentConnection);
-
-                await uow.CommitAsync();
+                bool isValid = await _uowRunner.ExecuteReadOnlyAsync(async conn => await _healthRepo.HasExpectedTablesAndViewsAsync(conn) && await _healthRepo.QuickCheckAsync(conn));
 
                 Debug.WriteLine($"Is the database ok: {isValid}");
 

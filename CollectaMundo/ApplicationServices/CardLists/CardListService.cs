@@ -5,7 +5,6 @@ using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.Infrastructure.CardLists;
-using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Filtering;
 using System.Diagnostics;
@@ -15,9 +14,9 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService, ICardCoreAggregator aggregator, ICollectionMaterializer collectionMaterializer) : ICardListService
+    public sealed class CardListService(IUnitOfWorkRunner uowRunner, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService, ICardCoreAggregator aggregator, ICollectionMaterializer collectionMaterializer) : ICardListService
     {
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterDefaultsLogic = filterDefaultsLogic;
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
@@ -25,104 +24,92 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly ICollectionMaterializer _collectionMaterializer = collectionMaterializer;
         public async Task InitializeCardListsAsync(CardListViewModel allCardsVM, CardListViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
-            await using var uow = new UnitOfWork(_dbFactory);
-            try
+            var dbIoSw = Stopwatch.StartNew();
+
+            // Phase 1: DB I/O
+            var (lookupPackage, coreDtos, collectionRows) = await _uowRunner.ExecuteReadOnlyAsync(async conn =>
             {
-                await uow.BeginReadOnlyAsync();
-                var conn = uow.CurrentConnection;
-
-                var dbIoSw = Stopwatch.StartNew();
-
-                // Phase 1: DB I/O
                 var lookupPackageTask = _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All);
                 var coreDtosTask = _cardListRepo.ReadAllCardsCoreDtosAsync(conn);
                 var collectionRowsTask = _cardListRepo.ReadMyCollectionAsync(conn);
 
                 await Task.WhenAll(lookupPackageTask, coreDtosTask, collectionRowsTask);
-                await uow.CommitAsync();
 
-                dbIoSw.Stop();
-                Debug.WriteLine($"[InitializeCardListsAsync] phase 1 (DB I/O): {dbIoSw.ElapsedMilliseconds} ms");
+                return (lookupPackageTask.Result, coreDtosTask.Result, collectionRowsTask.Result);
+            });
 
-                // Phase 2a: Static provider setup (must be before FromCore)
-                var lookupPackage = lookupPackageTask.Result;
-                CardSet.ManaCostImages = lookupPackage.ManaCostImages;
-                CardSet.SetIconImages = lookupPackage.SetIconImages;
-                CardSet.SetMetaProvider = lookupPackage.SetMetaProvider;
-                CardSet.PriceMetaProvider = lookupPackage.PriceMetaProvider;
-                CardSet.CardLocationProvider = lookupPackage.CardLocationProvider;
+            dbIoSw.Stop();
+            Debug.WriteLine($"[InitializeCardListsAsync] phase 1 (DB I/O): {dbIoSw.ElapsedMilliseconds} ms");
 
-                // Phase 2b: Hydrate and aggregate
-                var coreDtos = coreDtosTask.Result;
-                var collectionRows = collectionRowsTask.Result;
+            // Phase 2a: Static provider setup (must be before FromCore)
+            CardSet.ManaCostImages = lookupPackage.ManaCostImages;
+            CardSet.SetIconImages = lookupPackage.SetIconImages;
+            CardSet.SetMetaProvider = lookupPackage.SetMetaProvider;
+            CardSet.PriceMetaProvider = lookupPackage.PriceMetaProvider;
+            CardSet.CardLocationProvider = lookupPackage.CardLocationProvider;
 
-                var phase2bSw = Stopwatch.StartNew();
+            // Phase 2b: Hydrate and aggregate
+            var phase2bSw = Stopwatch.StartNew();
 
-                var cores = new CardCore[coreDtos.Count];
-                Parallel.For(0, coreDtos.Count, i => { cores[i] = CardCore.FromDto(coreDtos[i]); });
+            var cores = new CardCore[coreDtos.Count];
+            Parallel.For(0, coreDtos.Count, i => { cores[i] = CardCore.FromDto(coreDtos[i]); });
 
-                var aggregatedCores = _aggregator.Aggregate(cores);
-                var byUuid = aggregatedCores.ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+            var aggregatedCores = _aggregator.Aggregate(cores);
+            var byUuid = aggregatedCores.ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
 
-                phase2bSw.Stop();
-                Debug.WriteLine($"[InitializeCardListsAsync] phase 2b (Hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
+            phase2bSw.Stop();
+            Debug.WriteLine($"[InitializeCardListsAsync] phase 2b (Hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
 
-                // PHASE 3a, 3b in parallel
-                var phase3abSw = Stopwatch.StartNew();
+            // PHASE 3a, 3b in parallel
+            var phase3abSw = Stopwatch.StartNew();
 
-                var allCardsTask = Task.Run(() =>
-                {
-                    var allCards = aggregatedCores
-                        .AsParallel()
-                        .AsOrdered()
-                        .Select(CardSet.FromCore)
-                        .ToList();
-
-                    allCardsVM.Cards = SortCards(allCards);
-
-                    allCardsVM.FilteredCards = allCardsVM.Cards;
-                    return allCards;
-                });
-
-                var myCollectionTask = Task.Run(() =>
-                {
-                    var myCollection = _collectionMaterializer.MaterializeRows(collectionRows, byUuid).ToList();
-
-                    myCollectionVM.Cards = SortCards(myCollection);
-                    myCollectionVM.FilteredCards = myCollectionVM.Cards;
-                    return myCollection;
-                });
-
-                await Task.WhenAll(allCardsTask, myCollectionTask);
-
-                phase3abSw.Stop();
-                Debug.WriteLine($"[InitializeCardListsAsync] phase 3a and 3b (build AllCards and MyCollection objects): {phase3abSw.ElapsedMilliseconds} ms");
-
-                var phase3cSw = Stopwatch.StartNew();
-
-                var defs = _filterDefaultsLogic.Build(allCardsTask.Result, myCollectionTask.Result);
-                filters.Clear();
-
-                foreach (var def in defs)
-                {
-                    filters[def.CriteriaKey] = new FilterItemViewModel(
-                        def.CriteriaKey,
-                        def.FilterOptions,
-                        def.DefaultText,
-                        def.ReadableLabel,
-                        filterVM,
-                        new FilterItemSearchLogic(),
-                        def.NumericCriteria);
-                }
-
-                phase3cSw.Stop();
-                Debug.WriteLine($"[InitializeCardListsAsync] phase 3c (build filters): {phase3cSw.ElapsedMilliseconds} ms");
-            }
-            catch
+            var allCardsTask = Task.Run(() =>
             {
-                await uow.RollbackAsync();
-                throw;
+                var allCards = aggregatedCores
+                    .AsParallel()
+                    .AsOrdered()
+                    .Select(CardSet.FromCore)
+                    .ToList();
+
+                allCardsVM.Cards = SortCards(allCards);
+
+                allCardsVM.FilteredCards = allCardsVM.Cards;
+                return allCards;
+            });
+
+            var myCollectionTask = Task.Run(() =>
+            {
+                var myCollection = _collectionMaterializer.MaterializeRows(collectionRows, byUuid).ToList();
+
+                myCollectionVM.Cards = SortCards(myCollection);
+                myCollectionVM.FilteredCards = myCollectionVM.Cards;
+                return myCollection;
+            });
+
+            await Task.WhenAll(allCardsTask, myCollectionTask);
+
+            phase3abSw.Stop();
+            Debug.WriteLine($"[InitializeCardListsAsync] phase 3a and 3b (build AllCards and MyCollection objects): {phase3abSw.ElapsedMilliseconds} ms");
+
+            var phase3cSw = Stopwatch.StartNew();
+
+            var defs = _filterDefaultsLogic.Build(allCardsTask.Result, myCollectionTask.Result);
+            filters.Clear();
+
+            foreach (var def in defs)
+            {
+                filters[def.CriteriaKey] = new FilterItemViewModel(
+                    def.CriteriaKey,
+                    def.FilterOptions,
+                    def.DefaultText,
+                    def.ReadableLabel,
+                    filterVM,
+                    new FilterItemSearchLogic(),
+                    def.NumericCriteria);
             }
+
+            phase3cSw.Stop();
+            Debug.WriteLine($"[InitializeCardListsAsync] phase 3c (build filters): {phase3cSw.ElapsedMilliseconds} ms");
         }
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {
