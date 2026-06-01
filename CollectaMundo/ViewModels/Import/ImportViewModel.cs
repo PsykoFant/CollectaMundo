@@ -459,9 +459,6 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report("Importing cards…");
 
             var token = _userPromptService.CreateOperationCancellationToken();
-
-            DebugResolvedImportItems();
-
             var importResult = await Task.Run(() => _importService.FinalImportResolvedItems(ResolvedImportItems, Progress, token));
 
             if (importResult.Result.Code != OperationResultCode.Success)

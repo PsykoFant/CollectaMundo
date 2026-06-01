@@ -46,7 +46,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
             CardSet.SetIconImages = lookupPackage.SetIconImages;
             CardSet.SetMetaProvider = lookupPackage.SetMetaProvider;
             CardSet.PriceMetaProvider = lookupPackage.PriceMetaProvider;
-            CardSet.CardLocationProvider = lookupPackage.CardLocationProvider;
 
             // Phase 2b: Hydrate and aggregate
             var phase2bSw = Stopwatch.StartNew();

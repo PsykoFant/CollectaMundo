@@ -15,6 +15,7 @@ using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared;
@@ -51,6 +52,7 @@ namespace CollectaMundo.ViewModels
         private readonly IImportService _importService;
         private readonly ICardLocationService _cardLocationService;
         private readonly ICardLocationLookupStore _cardLocationLookupStore;
+        private IKeyedDataProvider<int, CardLocation>? _cardLocationProvider;
 
         // Deck management service
         private readonly IDeckManagementStore _deckManagementStore;
@@ -269,8 +271,6 @@ namespace CollectaMundo.ViewModels
         #region event wiring (subscribe/unsubscribe)
         private void SubscribeChildVmEvents()
         {
-            Debug.WriteLine($"Main subscribed lookup store: {_cardLocationLookupStore.GetHashCode()}");
-
             ImportVM.CollectionMutationRequested += OnImportCollectionMutationRequested;
             ImportVM.CardImageSelectionRequested += OnCardImageSelectionRequested;
             AddCardsVM.CollectionChanged += OnCollectionChanged;
@@ -315,6 +315,8 @@ namespace CollectaMundo.ViewModels
                     existingCard.CardsForTrade += row.CardsForTrade;
                     existingCard.RecomputeCollectionPrice();
 
+                    //AttachCardLocationProvider(existingCard);
+
                     addedOrUpdated.Add(existingCard);
                     continue;
                 }
@@ -343,6 +345,11 @@ namespace CollectaMundo.ViewModels
         private void OnCollectionChanged(object? sender, CollectionChangeSet<CardSet> changeSet)
         {
             // Apply add/update
+            foreach (var card in changeSet.AddedOrUpdated)
+            {
+                AttachCardLocationProvider(card);
+            }
+
             _collectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
 
             // External collection mutations can make open add/edit rows stale. Reconcile draft rows against the updated in-memory collection:
@@ -371,16 +378,11 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.SetAvailableLocations(locations);
             EditCardsVM.SetAvailableLocations(locations);
 
-            CardSet.CardLocationProvider = new ValueProvider<int, CardLocation>(locations.ToDictionary(x => x.Id));
+            _cardLocationProvider = new ValueProvider<int, CardLocation>(locations.ToDictionary(x => x.Id));
 
             foreach (var c in MyCollectionVM.Cards)
             {
-                c.RefreshLocationsFromProvider();
-            }
-
-            foreach (var c in AllCardsVM.Cards)
-            {
-                c.RefreshLocationsFromProvider();
+                AttachCardLocationProvider(c);
             }
 
             // Rebuild collection-backed filter options after location display names changed
@@ -388,6 +390,12 @@ namespace CollectaMundo.ViewModels
 
             // Reapply active filters because selected/display values may have changed
             OnFilterChanged(this, EventArgs.Empty);
+        }
+
+        private void AttachCardLocationProvider(CardSet card)
+        {
+            card.CardLocationProvider = _cardLocationProvider;
+            card.RefreshLocationsFromProvider();
         }
 
         #endregion

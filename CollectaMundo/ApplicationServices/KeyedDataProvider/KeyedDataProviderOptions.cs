@@ -7,8 +7,7 @@
         Icons = 1,
         Sets = 2,
         Prices = 4,
-        Locations = 8,
 
-        All = Icons | Sets | Prices | Locations
+        All = Icons | Sets | Prices
     }
 }

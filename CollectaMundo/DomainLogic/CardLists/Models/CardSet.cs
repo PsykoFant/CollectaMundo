@@ -14,7 +14,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public static IKeyedDataProvider<string, ImageSource>? SetIconImages { get; set; }
         public static IKeyedDataProvider<string, SetDto>? SetMetaProvider { get; set; }
         public static IKeyedDataProvider<string, PriceDto>? PriceMetaProvider { get; set; }
-        public static IKeyedDataProvider<int, CardLocation>? CardLocationProvider { get; set; }
+        public IKeyedDataProvider<int, CardLocation>? CardLocationProvider { get; set; }
 
         // -------------------------------
         // Core reference
@@ -152,7 +152,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         // Condition       
         [ObservableProperty]
         private string? selectedCondition;
-        public List<string> Conditions { get; } = ["Mint", "Near Mint", "Excellent", "Good","Light Played", "Played", "Poor"];
+        public List<string> Conditions { get; } = ["Mint", "Near Mint", "Excellent", "Good", "Light Played", "Played", "Poor"];
 
         // Finish
         [ObservableProperty]

@@ -2,7 +2,6 @@
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
-using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.CollectionMutations
 {
@@ -56,8 +55,6 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 RemovedIds = [.. removedIds],
                 AddedOrUpdated = [.. upsertsByIdentity.Values]
             };
-
-            Debug.WriteLine($"[PlanBatch] END Deletes={plan.DeleteIds.Count} Updates={plan.Updates.Count} Inserts={plan.Inserts.Count}");
 
             return plan;
         }

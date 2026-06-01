@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CollectaMundo.Infrastructure.KeyedDataProvider;
 using System.Data.SQLite;
@@ -20,7 +19,6 @@ namespace CollectaMundo.ApplicationServices.KeyedDataProvider
             IReadOnlyDictionary<string, byte[]> setIcons = new Dictionary<string, byte[]>();
             IReadOnlyDictionary<string, SetDto> sets = new Dictionary<string, SetDto>();
             IReadOnlyDictionary<string, PriceDto> prices = new Dictionary<string, PriceDto>();
-            IReadOnlyDictionary<int, CardLocation> locations = new Dictionary<int, CardLocation>();
 
             if (opts.HasFlag(KeyedDataProviderOptions.Icons))
             {
@@ -39,12 +37,7 @@ namespace CollectaMundo.ApplicationServices.KeyedDataProvider
                 prices = await _repo.ReadPricesAsync(conn, retailerKey);
             }
 
-            if (opts.HasFlag(KeyedDataProviderOptions.Locations))
-            {
-                locations = await _repo.ReadLocationsAsync(conn);
-            }
-
-            return KeyedDataProviderBuilder.Build(manaIcons, setIcons, sets, prices, locations);
+            return KeyedDataProviderBuilder.Build(manaIcons, setIcons, sets, prices);
         }
         public async Task ResetPricesMetaProviderAsync(string retailerKey)
         {
@@ -53,12 +46,6 @@ namespace CollectaMundo.ApplicationServices.KeyedDataProvider
 
             // Swap the static provider (all CardSet getters read through this)
             CardSet.PriceMetaProvider = new ValueProvider<string, PriceDto>(dict);
-        }
-        public async Task ResetCardLocationProviderAsync()
-        {
-            var dict = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.ReadLocationsAsync(conn));
-
-            CardSet.CardLocationProvider = new ValueProvider<int, CardLocation>(dict);
         }
     }
 }

@@ -1,11 +1,15 @@
 TO DO 
 
 Deck editor!
-- Import transaction aware
-- Import kun brug get unique values
-- split interface
+ - price static?
 
-Andre steder vi kan bruge runner?
+ - Interface updates
+  - Liste af locations under location management
+  - Lav edit-bar ved klik i felt
+ - Tilføj deck opdatering til scenarietest (e.g. lav til storage osv.). Filtrer også på deck i scenarietest
+
+ Så er det sku selve deck editor!
+
 
 
 Db optimering
