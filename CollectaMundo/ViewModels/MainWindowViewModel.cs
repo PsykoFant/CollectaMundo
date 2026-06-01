@@ -429,10 +429,10 @@ namespace CollectaMundo.ViewModels
         }
 
         // When retailer is changed, refresh prices on all cards
-        public void RefreshAllPrices()
+        public async Task RefreshAllPrices()
         {
             // Reset price dictionary
-            _cardListService.ReloadPriceLookupsAsync(_settings.PriceInfo.Retailer);
+            await _cardListService.ReloadPriceLookupsAsync(_settings.PriceInfo.Retailer);
 
             // Refresh prices on all cards in all lists
             foreach (var c in AllCardsVM.Cards)

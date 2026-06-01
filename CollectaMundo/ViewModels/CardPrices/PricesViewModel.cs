@@ -64,7 +64,7 @@ namespace CollectaMundo.ViewModels
 
         // Command and command actions
         [RelayCommand]
-        private void ChangeRetailer()
+        private async Task ChangeRetailer()
         {
             if (SelectedRetailer is null)
             {
@@ -72,7 +72,7 @@ namespace CollectaMundo.ViewModels
             }
 
             _appSettings.PersistPriceInfo(updatedDate: null, retailer: SelectedRetailer.Key);
-            _cardCollectionHost.RefreshAllPrices();
+            await _cardCollectionHost.RefreshAllPrices();
             UpdatePriceHeaders();
         }
         private void UpdatePriceHeaders()

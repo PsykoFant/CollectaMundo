@@ -96,7 +96,7 @@ namespace CollectaMundo.ViewModels.Utilities
             }
         }
 
-        [RelayCommand]        
+        [RelayCommand]
         protected virtual async Task ImportFromCsv()
         {
             _userPromptService.ResetInteractionState();
@@ -136,7 +136,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
                     // Reload collection
                     _operationOverlayController.SetStep("Refreshing prices...");
-                    _cardCollectionHost.RefreshAllPrices();
+                    await _cardCollectionHost.RefreshAllPrices();
                     _operationOverlayController.SetStep(string.Empty);
 
                     _operationOverlayController.SetHeadline("Prices updated successfully!");

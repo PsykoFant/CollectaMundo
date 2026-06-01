@@ -7,6 +7,6 @@ namespace CollectaMundo.ViewModels.Shell
         // Cardlist and filter refresh
         ICollectionSnapshot CreateMyCollectionSnapshot();
         Task ReloadAllCardListsAndFiltersAsync();
-        public void RefreshAllPrices();
+        Task RefreshAllPrices();
     }
 }

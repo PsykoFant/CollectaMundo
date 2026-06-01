@@ -1,7 +1,7 @@
 TO DO 
 
 Deck editor!
- - price static?
+ - pris kolonne i my collection
 
  - Interface updates
   - Liste af locations under location management
