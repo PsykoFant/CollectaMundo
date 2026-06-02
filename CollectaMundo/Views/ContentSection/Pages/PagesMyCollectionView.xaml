@@ -155,7 +155,8 @@
         <DataGrid x:Name="MyCollectionDataGrid"
                   ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
                   Style="{StaticResource CardGridBaseStyle}" 
-                  SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"                  
+                  SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"
+                  Margin="0,280,0,0" 
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ModifyCollectionViewModel.ClearSelectionTrigger, Mode=TwoWay}">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">

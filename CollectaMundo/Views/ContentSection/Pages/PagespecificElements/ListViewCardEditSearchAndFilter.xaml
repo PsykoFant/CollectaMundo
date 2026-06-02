@@ -1,0 +1,115 @@
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.PagespecificElements.ListViewCardEditSearchAndFilter"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages"
+             xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
+             xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=pagesVm:PagesSearchAndFilterViewModel, IsDesignTimeCreatable=False}"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <ListView ItemsSource="{Binding ModifyCollectionViewModel.CardsToAddOrEdit}"
+          Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding ModifyCollectionViewModel.RefreshColumnsTrigger, Mode=OneWay}"
+          VerticalAlignment="Top" Height="170">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
+                    <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}"/>
+                    <GridViewColumn Header="Condition">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <sharedElements:RefreshColumnsComboBoxUserControl DataContext="{Binding ConditionCombo}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Finish">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <sharedElements:RefreshColumnsComboBoxUserControl DataContext="{Binding FinishCombo}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Language">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <sharedElements:RefreshColumnsComboBoxUserControl DataContext="{Binding LanguageCombo}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Location">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <sharedElements:RefreshColumnsLocationComboBoxUserControl DataContext="{Binding LocationCombo}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Comment">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding Comment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         MinWidth="140" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="+">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="+" 
+                                Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Count">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <sharedElements:NumericEditorUserControl DataContext="{Binding Owned}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="-">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="-"
+                                Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="+">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="+" Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Trade">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <sharedElements:NumericEditorUserControl DataContext="{Binding Trade}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="-">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="-" Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+    </Grid>
+</UserControl>

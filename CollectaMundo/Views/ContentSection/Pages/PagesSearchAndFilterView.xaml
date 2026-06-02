@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages"
              xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
+             xmlns:pagespecificElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.PagespecificElements"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
@@ -12,121 +13,32 @@
              d:DataContext="{d:DesignInstance Type=pagesVm:PagesSearchAndFilterViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <Label Content="{Binding PageTitle}" Style="{StaticResource MediumHeaderLabelStyle}"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="600"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Label Grid.Row="0" Content="{Binding PageTitle}" Style="{StaticResource MediumHeaderLabelStyle}"/>
+        
         <!-- Add status summary, listview buttons -->
-        <sharedElements:CardListPageChromeUserControl />
+        <Grid Grid.Row="1">
+            <sharedElements:CardListPageChromeUserControl />
+            <pagespecificElements:ListViewCardEditSearchAndFilter />            
+        </Grid>        
 
-        <!--Cards to add listview-->
-        <ListView ItemsSource="{Binding ModifyCollectionViewModel.CardsToAddOrEdit}"
-                  Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                  behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding ModifyCollectionViewModel.RefreshColumnsTrigger, Mode=OneWay}"
-                  Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
-            <ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                </Style>
-            </ListView.ItemContainerStyle>
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
-                    <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}"/>
-                    <GridViewColumn Header="Condition">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <sharedElements:RefreshColumnsComboBoxUserControl DataContext="{Binding ConditionCombo}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Finish">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <sharedElements:RefreshColumnsComboBoxUserControl DataContext="{Binding FinishCombo}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Language">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <sharedElements:RefreshColumnsComboBoxUserControl DataContext="{Binding LanguageCombo}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Location">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <sharedElements:RefreshColumnsLocationComboBoxUserControl DataContext="{Binding LocationCombo}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Comment">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBox Text="{Binding Comment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 MinWidth="140" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>                    
-                    <GridViewColumn Header="+">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button Content="+" 
-                                        Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.ModifyCollectionViewModel.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Count">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <sharedElements:NumericEditorUserControl DataContext="{Binding Owned}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="-">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button Content="-"
-                                        Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.ModifyCollectionViewModel.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="+">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button Content="+" Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.ModifyCollectionViewModel.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Trade">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <sharedElements:NumericEditorUserControl DataContext="{Binding Trade}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="-">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button Content="-" Style="{StaticResource StepperButtonStyle}"
-                                        Command="{Binding DataContext.ModifyCollectionViewModel.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                </GridView>
-            </ListView.View>
-        </ListView>
-
-        <Button Content="Add selected cards to my collection"
-                        HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
-                        Width="200" Height="20"
-                        Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
-                        Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
-                        CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
+        <Button Grid.Row="2"
+                Content="Add selected cards to my collection"
+                HorizontalAlignment="Right" VerticalAlignment="Top"
+                Width="200" Height="20"
+                Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
+                Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
+                CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
         
         <!--The main card view datagrid-->
-        <DataGrid x:Name="AllCardsDataGrid"
+        <DataGrid Grid.Row="3"
+                  x:Name="AllCardsDataGrid"
                   ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
                   Style="{StaticResource CardGridBaseStyle}" 
                   SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"                  

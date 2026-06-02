@@ -10,12 +10,18 @@
              d:DesignWidth="600">
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="210"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>        
         <!-- Filter counts x out of y -->
-        <Label Visibility="{Binding ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
+
+        <Label Grid.Row="0"  
+               Visibility="{Binding ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
                HorizontalAlignment="Left"
-               Margin="0,25,0,0"
-               VerticalAlignment="Top"
-               Height="30">
+               VerticalAlignment="Top">
             <Label.Content>
                 <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
                     <Binding Path="CardsVM.FilteredCount"/>
@@ -25,7 +31,8 @@
         </Label>        
         
         <!-- Mini-logo -->
-        <Image Source="/Resources/Images/Logo.png"
+        <Image Grid.Row="1" 
+               Source="/Resources/Images/Logo.png"
                Visibility="{Binding ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
                Stretch="Fill"
                VerticalAlignment="Top"
@@ -33,26 +40,27 @@
                Height="170"
                Width="170"
                RenderTransformOrigin="0.5,0.5"
-               Margin="0,70,0,0"
                Opacity="0.8"/> 
 
         <!-- Filter criteria summary -->
-        <ScrollViewer HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
             <TextBlock HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
         </ScrollViewer>
 
-        <Button Content="{Binding PrimarySubmitButtonText}"
+        <Button Grid.Row="3" 
+                Content="{Binding PrimarySubmitButtonText}"
                 HorizontalAlignment="Right"
-                Margin="0,45,0,0"
+
                 VerticalAlignment="Top"
                 Width="200"
                 Height="20"
                 Visibility="{Binding IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                 Command="{Binding PrimarySubmitCommand}" />
 
-        <Button Content="Clear cards without submitting"
+        <Button Grid.Row="3" 
+                Content="Clear cards without submitting"
                 HorizontalAlignment="Right"
-                Margin="0,45,210,0"
+                Margin="0,0,210,0"
                 VerticalAlignment="Top"
                 Width="200"
                 Height="20"
