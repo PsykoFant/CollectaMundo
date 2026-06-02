@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ViewModels.Filtering;
+using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.SideMenuRight;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.ComponentModel;
@@ -21,9 +22,9 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
         public FilterItemViewModel? SetNameFilter => FilterVM.Filters.TryGetValue("SetName", out var f) ? f : null;
 
 
-        public CardListEditPanelKind EditPanelKind { get; }
-        public bool IsSearchEditPanelVisible => EditPanelKind == CardListEditPanelKind.SearchAndFilter;
-        public bool IsMyCollectionEditPanelVisible => EditPanelKind == CardListEditPanelKind.MyCollection;
+        public ShellPageEnum CardListPage { get; }
+        public bool IsSearchEditPanelVisible => CardListPage == ShellPageEnum.SearchAndFilter;
+        public bool IsMyCollectionEditPanelVisible => CardListPage == ShellPageEnum.MyCollection;
 
 
         // Bindable chrome-facing properties
@@ -37,7 +38,7 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
         public ICommand? PrimarySubmitCommand { get; }
         public ICommand? ClearPendingChangesCommand => ModifyCollectionViewModel?.ClearCardsToAddCommand;
 
-        public CardListPageViewModel(CardListViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, string pageTitle, CardListEditPanelKind editPanelKind, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
+        public CardListPageViewModel(CardListViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, string pageTitle, ShellPageEnum cardListPage, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
         {
             CardsVM = cardsVM;
             CardImageVM = cardImageVM;
@@ -46,7 +47,7 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
             ModifyCollectionViewModel = modifyCollectionVM;
 
             PageTitle = pageTitle;
-            EditPanelKind = editPanelKind;
+            CardListPage = cardListPage;
             PrimarySubmitButtonText = primarySubmitButtonText;
             PrimarySubmitCommand = primarySubmitCommand;
 
@@ -78,11 +79,5 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
                 OnPropertyChanged(nameof(StatusMessage));
             }
         }
-    }
-
-    public enum CardListEditPanelKind
-    {
-        SearchAndFilter,
-        MyCollection
     }
 }
