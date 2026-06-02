@@ -1,9 +1,12 @@
-﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.SharedElements.CardListPageChromeUserControl"
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.SharedElements.CardListPageMiddlePanelUserControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages.SharedElements"
+             xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
+             xmlns:pagespecificElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.PagespecificElements"
+             xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=pagesVm:CardListPageViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="450"
@@ -11,13 +14,12 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="210"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>        
-        <!-- Filter counts x out of y -->
+            <RowDefinition Height="30"/>    <!-- 0 -->
+            <RowDefinition Height="180"/>   <!-- 1 -->
+            <RowDefinition Height="40"/>   <!-- 2 -->
+        </Grid.RowDefinitions>
 
+        <!-- Filter counts x out of y -->
         <Label Grid.Row="0"  
                Visibility="{Binding ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
                HorizontalAlignment="Left"
@@ -28,26 +30,9 @@
                     <Binding Path="CardsVM.TotalCount"/>
                 </MultiBinding>
             </Label.Content>
-        </Label>        
-        
-        <!-- Mini-logo -->
-        <Image Grid.Row="1" 
-               Source="/Resources/Images/Logo.png"
-               Visibility="{Binding ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
-               Stretch="Fill"
-               VerticalAlignment="Top"
-               HorizontalAlignment="Center"
-               Height="170"
-               Width="170"
-               RenderTransformOrigin="0.5,0.5"
-               Opacity="0.8"/> 
+        </Label>
 
-        <!-- Filter criteria summary -->
-        <ScrollViewer Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <TextBlock HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
-        </ScrollViewer>
-
-        <Button Grid.Row="3" 
+        <Button Grid.Row="0" 
                 Content="{Binding PrimarySubmitButtonText}"
                 HorizontalAlignment="Right"
 
@@ -57,7 +42,7 @@
                 Visibility="{Binding IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                 Command="{Binding PrimarySubmitCommand}" />
 
-        <Button Grid.Row="3" 
+        <Button Grid.Row="0" 
                 Content="Clear cards without submitting"
                 HorizontalAlignment="Right"
                 Margin="0,0,210,0"
@@ -67,16 +52,35 @@
                 Visibility="{Binding IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                 Command="{Binding ClearPendingChangesCommand}" />
 
-        <ScrollViewer HorizontalAlignment="Left"
-                      Margin="0,40,0,0"
+        <Grid Grid.Row="1">
+            <Image Source="/Resources/Images/Logo.png"
+                   Visibility="{Binding ShowCounts, Converter={StaticResource BoolToVisibilityConverter}}"
+                   Stretch="Fill"
+                   VerticalAlignment="Top"
+                   HorizontalAlignment="Center"
+                   Height="170"
+                   Width="170"
+                   RenderTransformOrigin="0.5,0.5"
+                   Opacity="0.8"/>
+            
+            <pagespecificElements:ListViewCardEditSearchAndFilter Visibility="{Binding IsSearchEditPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+            <pagespecificElements:ListViewCardEditMyCollection Visibility="{Binding IsMyCollectionEditPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1"
+                      HorizontalAlignment="Left"
                       VerticalAlignment="Top"
-                      Height="187"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Auto"
                       Visibility="{Binding HasStatus, Converter={StaticResource BoolToVisibilityConverter}}">
             <TextBlock TextWrapping="Wrap"
                        VerticalAlignment="Top"
                        Text="{Binding StatusMessage}" />
+        </ScrollViewer>
+
+        <!-- Filter criteria summary -->
+        <ScrollViewer Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <TextBlock HorizontalAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
         </ScrollViewer>
     </Grid>
 </UserControl>

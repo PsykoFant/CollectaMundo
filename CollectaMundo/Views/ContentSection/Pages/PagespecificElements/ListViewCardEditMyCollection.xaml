@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.PagespecificElements.ListViewCardEditSearchAndFilter"
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.PagespecificElements.ListViewCardEditMyCollection"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -24,6 +24,7 @@
                 <GridView>
                     <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
                     <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}"/>
+
                     <GridViewColumn Header="Condition">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -56,16 +57,17 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBox Text="{Binding Comment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         MinWidth="140" />
+                                 MinWidth="140" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="+" 
+                                <Button Content="+"
                                 Style="{StaticResource StepperButtonStyle}"
-                                Command="{Binding DataContext.ModifyCollectionViewModel.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                Command="{Binding DataContext.ModifyCollectionViewModel.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -81,15 +83,18 @@
                             <DataTemplate>
                                 <Button Content="-"
                                 Style="{StaticResource StepperButtonStyle}"
-                                Command="{Binding DataContext.ModifyCollectionViewModel.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                Command="{Binding DataContext.ModifyCollectionViewModel.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="+">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="+" Style="{StaticResource StepperButtonStyle}"
-                                Command="{Binding DataContext.ModifyCollectionViewModel.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                <Button Content="+"
+                                Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -103,14 +108,35 @@
                     <GridViewColumn Header="-">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="-" Style="{StaticResource StepperButtonStyle}"
-                                Command="{Binding DataContext.ModifyCollectionViewModel.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}" CommandParameter="{Binding}" />
+                                <Button Content="-"
+                                Style="{StaticResource StepperButtonStyle}"
+                                Command="{Binding DataContext.ModifyCollectionViewModel.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Split">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="  Split 1 row out  "
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.SplitOneRowOutCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding CanSplit}" Margin="5,0,5,0" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Split all">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="  Split all rows out  "
+                                        Command="{Binding DataContext.ModifyCollectionViewModel.SplitAllRowsOutCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding CanSplit}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>
-
     </Grid>
 </UserControl>

@@ -21,6 +21,11 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
         public FilterItemViewModel? SetNameFilter => FilterVM.Filters.TryGetValue("SetName", out var f) ? f : null;
 
 
+        public CardListEditPanelKind EditPanelKind { get; }
+        public bool IsSearchEditPanelVisible => EditPanelKind == CardListEditPanelKind.SearchAndFilter;
+        public bool IsMyCollectionEditPanelVisible => EditPanelKind == CardListEditPanelKind.MyCollection;
+
+
         // Bindable chrome-facing properties
         public string PageTitle { get; }
         public string PrimarySubmitButtonText { get; }
@@ -32,7 +37,7 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
         public ICommand? PrimarySubmitCommand { get; }
         public ICommand? ClearPendingChangesCommand => ModifyCollectionViewModel?.ClearCardsToAddCommand;
 
-        public CardListPageViewModel(CardListViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, string pageTitle, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
+        public CardListPageViewModel(CardListViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, string pageTitle, CardListEditPanelKind editPanelKind, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
         {
             CardsVM = cardsVM;
             CardImageVM = cardImageVM;
@@ -41,6 +46,7 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
             ModifyCollectionViewModel = modifyCollectionVM;
 
             PageTitle = pageTitle;
+            EditPanelKind = editPanelKind;
             PrimarySubmitButtonText = primarySubmitButtonText;
             PrimarySubmitCommand = primarySubmitCommand;
 
@@ -72,5 +78,11 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
                 OnPropertyChanged(nameof(StatusMessage));
             }
         }
+    }
+
+    public enum CardListEditPanelKind
+    {
+        SearchAndFilter,
+        MyCollection
     }
 }

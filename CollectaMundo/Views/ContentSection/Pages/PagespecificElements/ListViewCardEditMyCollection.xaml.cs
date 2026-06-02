@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace CollectaMundo.Views.ContentSection.Pages.SharedElements
+namespace CollectaMundo.Views.ContentSection.Pages.PagespecificElements
 {
     /// <summary>
-    /// Interaction logic for CardListPageChromeUserControl.xaml
+    /// Interaction logic for ListViewCardEditMyCollection.xaml
     /// </summary>
-    public partial class CardListPageChromeUserControl : UserControl
+    public partial class ListViewCardEditMyCollection : UserControl
     {
-        public CardListPageChromeUserControl()
+        public ListViewCardEditMyCollection()
         {
             InitializeComponent();
         }

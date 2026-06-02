@@ -5,32 +5,27 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages"
              xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
-             xmlns:pagespecificElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.PagespecificElements"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
-             xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=pagesVm:PagesSearchAndFilterViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40"/>
-            <RowDefinition Height="600"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="40"/> <!-- 0 - Header -->
+            <RowDefinition Height="230"/> <!-- 1 - Middle Panel -->
+            <RowDefinition Height="25"/> <!-- 2 - Actions -->
+            <RowDefinition Height="*"/> <!-- 3 - Data Grid -->
         </Grid.RowDefinitions>
 
         <Label Grid.Row="0" Content="{Binding PageTitle}" Style="{StaticResource MediumHeaderLabelStyle}"/>
-        
-        <!-- Add status summary, listview buttons -->
-        <Grid Grid.Row="1">
-            <sharedElements:CardListPageChromeUserControl />
-            <pagespecificElements:ListViewCardEditSearchAndFilter />            
-        </Grid>        
+
+        <sharedElements:CardListPageMiddlePanelUserControl Grid.Row="1" />
 
         <Button Grid.Row="2"
                 Content="Add selected cards to my collection"
-                HorizontalAlignment="Right" VerticalAlignment="Top"
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Top"
                 Width="200" Height="20"
                 Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
                 Command="{Binding ModifyCollectionViewModel.AddSelectedCardsCommand}"
