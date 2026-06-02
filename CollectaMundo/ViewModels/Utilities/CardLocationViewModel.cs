@@ -27,19 +27,31 @@ namespace CollectaMundo.ViewModels.Utilities
         }
 
         // Computed UI state
-        public string SubmitButtonText => IsEditing ? "Save changes" : "Add location";
-        public string DeleteButtonText => IsDeleteConfirmationActive ? "Yes, delete!" : "Delete selected";
+
+        private LocationEditorMode? editorMode;
+        private bool HasSingleSelectedLocation => SelectedLocations.Count <= 1 && SelectedLocation is not null;
+        public bool IsEditing => editorMode == LocationEditorMode.Edit;
+        public bool IsSelectionPreview => editorMode == LocationEditorMode.SelectedReadOnly;
+
+        public bool IsEditorReadOnly => editorMode == LocationEditorMode.SelectedReadOnly;
+        public bool IsEditorEnabled => editorMode is LocationEditorMode.Create or LocationEditorMode.Edit;
+
+        public string SubmitButtonText => editorMode switch
+        {
+            LocationEditorMode.Create => "Add location",
+            LocationEditorMode.SelectedReadOnly => "Edit location",
+            LocationEditorMode.Edit => "Save changes",
+            _ => "Submit"
+        };
+
         public string ModeMessage => IsDeleteConfirmationActive
             ? "Confirm delete"
             : IsEditing
                 ? "Edit selected location"
                 : "Add a new location";
 
+        public string DeleteButtonText => IsDeleteConfirmationActive ? "Yes, delete!" : "Delete selected";
 
-        [ObservableProperty]
-        private bool isEditing;
-
-        private CardLocation? editingLocation;
         public bool HasSelectedLocations => SelectedLocations.Count > 0;
         public bool SaveEditEnabled => SelectedLocations.Count < 2 && !IsDeleteConfirmationActive;
 
@@ -77,26 +89,23 @@ namespace CollectaMundo.ViewModels.Utilities
         {
             IsDeleteConfirmationActive = false;
 
-            if (!IsEditing)
+            if (value is null)
             {
-                LocationName = string.Empty;
-                SelectedLocationType = CardLocationType.Storage;
+                SetCreateMode();
+                return;
             }
 
-            OnPropertyChanged(nameof(SubmitButtonText));
-            OnPropertyChanged(nameof(ModeMessage));
-            OnPropertyChanged(nameof(SaveEditEnabled));
+            LocationName = value.Name;
+            SelectedLocationType = value.Type;
+            editorMode = LocationEditorMode.SelectedReadOnly;
+
+            RefreshEditorState();
         }
         partial void OnIsDeleteConfirmationActiveChanged(bool value)
         {
             OnPropertyChanged(nameof(ModeMessage));
             OnPropertyChanged(nameof(DeleteButtonText));
             OnPropertyChanged(nameof(SaveEditEnabled));
-        }
-        partial void OnIsEditingChanged(bool value)
-        {
-            OnPropertyChanged(nameof(SubmitButtonText));
-            OnPropertyChanged(nameof(ModeMessage));
         }
 
         // Load
@@ -140,65 +149,54 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private void BeginEditSelectedLocation()
         {
-            if (SelectedLocations.Count > 1 || SelectedLocation is null)
+            if (SelectedLocation is null || SelectedLocations.Count > 1)
             {
                 return;
             }
 
-            editingLocation = SelectedLocation;
-
             LocationName = SelectedLocation.Name;
             SelectedLocationType = SelectedLocation.Type;
-            IsEditing = true;
 
-            IsDeleteConfirmationActive = false;
-
-            OnPropertyChanged(nameof(SubmitButtonText));
-            OnPropertyChanged(nameof(ModeMessage));
-            OnPropertyChanged(nameof(SaveEditEnabled));
+            editorMode = LocationEditorMode.Edit;
+            RefreshEditorState();
         }
 
         [RelayCommand]
         private async Task SubmitLocation()
         {
-            if (IsBusy)
+            if (editorMode == LocationEditorMode.SelectedReadOnly)
             {
+                BeginEditSelectedLocation();
                 return;
             }
 
-            try
+            if (editorMode == LocationEditorMode.Edit && SelectedLocation is not null)
             {
-                IsBusy = true;
-                ClearStatus();
+                var mutation = await _cardLocationService.UpdateLocationAsync(
+                    SelectedLocation.Id,
+                    LocationName,
+                    SelectedLocationType);
 
-                if (IsEditing && editingLocation is not null)
+                ShowStatus(mutation.Result.Message);
+
+                if (mutation.Result.Code == OperationResultCode.Success)
                 {
-                    var mutation = await _cardLocationService.UpdateLocationAsync(editingLocation.Id, LocationName, SelectedLocationType);
-
-                    ShowStatus(mutation.Result.Message);
-
-                    if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
-                    {
-                        ReplaceLocationInCollection(mutation.Entity);
-                        ResetEditorAndSelection();
-                    }
-
-                    return;
-                }
-
-                var createMutation = await _cardLocationService.CreateLocationAsync(LocationName, SelectedLocationType);
-
-                ShowStatus(createMutation.Result.Message);
-
-                if (createMutation.Result.Code == OperationResultCode.Success && createMutation.Entity is not null)
-                {
-                    Locations.Add(createMutation.Entity);
                     ResetEditorAndSelection();
                 }
+
+                return;
             }
-            finally
+
+            // Create mode
+            var createMutation = await _cardLocationService.CreateLocationAsync(
+                LocationName,
+                SelectedLocationType);
+
+            ShowStatus(createMutation.Result.Message);
+
+            if (createMutation.Result.Code == OperationResultCode.Success)
             {
-                IsBusy = false;
+                ResetEditorAndSelection();
             }
         }
 
@@ -278,14 +276,30 @@ namespace CollectaMundo.ViewModels.Utilities
         }
 
         // Helpers
+        private void SetCreateMode()
+        {
+            editorMode = LocationEditorMode.Create;
+            LocationName = string.Empty;
+            SelectedLocationType = CardLocationType.Storage;
+            RefreshEditorState();
+        }
         private void ResetEditorAndSelection()
         {
             SelectedLocation = null;
             SelectedLocations.Clear();
-            editingLocation = null;
-            IsEditing = false;
             LocationName = string.Empty;
             SelectedLocationType = CardLocationType.Storage;
+        }
+
+        private void RefreshEditorState()
+        {
+            OnPropertyChanged(nameof(IsEditing));
+            OnPropertyChanged(nameof(IsSelectionPreview));
+            OnPropertyChanged(nameof(IsEditorReadOnly));
+            OnPropertyChanged(nameof(IsEditorEnabled));
+            OnPropertyChanged(nameof(SubmitButtonText));
+            OnPropertyChanged(nameof(ModeMessage));
+            OnPropertyChanged(nameof(DeleteButtonText));
         }
         private void ReplaceLocationInCollection(CardLocation updatedLocation)
         {
@@ -316,6 +330,12 @@ namespace CollectaMundo.ViewModels.Utilities
         {
             StatusMessage = message;
             IsStatusVisible = !string.IsNullOrWhiteSpace(message);
+        }
+        private enum LocationEditorMode
+        {
+            Create,
+            SelectedReadOnly,
+            Edit
         }
     }
 }

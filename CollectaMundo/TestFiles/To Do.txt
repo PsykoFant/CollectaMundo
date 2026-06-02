@@ -4,8 +4,10 @@ Deck editor!
  - pris kolonne i my collection
 
  - Interface updates
-  - Liste af locations under location management
+  - Load af list af locations under location management
+  - Delete location tager LAAAAAAANG TID
   - Lav edit-bar ved klik i felt
+  - Merge af location viewmodel og deck management viewmodel (de har meget overlap)
  - Tilføj deck opdatering til scenarietest (e.g. lav til storage osv.). Filtrer også på deck i scenarietest
 
  Så er det sku selve deck editor!
