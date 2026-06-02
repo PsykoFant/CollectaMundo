@@ -42,12 +42,13 @@ namespace CollectaMundo.ViewModels.Utilities
             LocationEditorMode.Edit => "Save changes",
             _ => "Submit"
         };
-
-        public string ModeMessage => IsDeleteConfirmationActive
-            ? "Confirm delete"
-            : IsEditing
-                ? "Edit selected location"
-                : "Add a new location";
+        public string ModeMessage => editorMode switch
+        {
+            LocationEditorMode.Create => "Add a new card location",
+            LocationEditorMode.SelectedReadOnly => string.Empty,
+            LocationEditorMode.Edit => "Edit selected card location",
+            _ => string.Empty
+        };
 
         public string DeleteButtonText => IsDeleteConfirmationActive ? "Yes, delete!" : "Delete selected";
 
@@ -75,6 +76,9 @@ namespace CollectaMundo.ViewModels.Utilities
 
         [ObservableProperty]
         private CardLocation? selectedLocation;
+
+        [ObservableProperty]
+        private int clearSelectionTrigger;
 
         // Collections
         public ObservableCollection<CardLocation> Locations { get; } = [];
@@ -292,6 +296,36 @@ namespace CollectaMundo.ViewModels.Utilities
             }
         }
 
+        [RelayCommand]
+        private void ClearSelectionAndRestoreCreateMode()
+        {
+            if (editorMode != LocationEditorMode.SelectedReadOnly)
+            {
+                return;
+            }
+
+            ResetEditorAndSelection();
+        }
+
+        [RelayCommand]
+        private void CancelOrClearSelection()
+        {
+            switch (editorMode)
+            {
+                case LocationEditorMode.SelectedReadOnly:
+                    ResetEditorAndSelection();
+                    break;
+
+                case LocationEditorMode.Edit:
+                    ResetEditorAndSelection();
+                    break;
+
+                case LocationEditorMode.Create:
+                default:
+                    break;
+            }
+        }
+
         // Helpers
         private void SetCreateMode()
         {
@@ -310,6 +344,11 @@ namespace CollectaMundo.ViewModels.Utilities
 
             LocationName = string.Empty;
             SelectedLocationType = previousType;
+
+            StatusMessage = string.Empty;
+            IsStatusVisible = false;
+
+            ClearSelectionTrigger++;
 
             RefreshEditorState();
         }

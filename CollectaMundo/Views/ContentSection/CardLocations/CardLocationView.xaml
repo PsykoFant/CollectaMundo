@@ -11,8 +11,14 @@
              d:Style="{StaticResource {x:Type UserControl}}"             
              d:DesignHeight="450"
              d:DesignWidth="800">
+    <UserControl.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CancelOrClearSelectionCommand}" />
+    </UserControl.InputBindings>
 
-    <Grid Margin="16">
+    <Grid Margin="16" Background="Transparent">
+        <i:Interaction.Behaviors>
+            <behaviors:ClearSelectionOnBackgroundClickBehavior Command="{Binding ClearSelectionAndRestoreCreateModeCommand}" />
+        </i:Interaction.Behaviors>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- Page title -->
             <RowDefinition Height="Auto"/>  <!-- Section header -->
@@ -78,6 +84,7 @@
           ItemsSource="{Binding Locations}"
           SelectedItem="{Binding SelectedLocation, Mode=TwoWay}"
           behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedLocations}"
+          behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ClearSelectionTrigger}"        
           Style="{StaticResource ManagementGridStyle}">
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="MouseDoubleClick">
