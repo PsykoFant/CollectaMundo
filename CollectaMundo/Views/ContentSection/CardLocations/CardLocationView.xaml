@@ -32,14 +32,12 @@
 
             <Label Content="Location name:" />
             <TextBox Text="{Binding LocationName, UpdateSourceTrigger=PropertyChanged}"
-                     IsReadOnly="{Binding IsEditorReadOnly}"
                      IsEnabled="{Binding IsEditorEnabled}"
                      Margin="0,0,0,10">
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="GotKeyboardFocus">
-                        <i:InvokeCommandAction Command="{Binding BeginEditSelectedLocationCommand}" />
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter"
+                    Command="{Binding SubmitLocationCommand}" />
+                </TextBox.InputBindings>
             </TextBox>
 
             <Label Content="Location type (storage or deck):" />
@@ -47,14 +45,6 @@
                       SelectedItem="{Binding SelectedLocationType, Mode=TwoWay}"
                       IsEnabled="{Binding IsEditorEnabled}"
                       Margin="0,0,0,14">
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="GotKeyboardFocus">
-                        <i:InvokeCommandAction Command="{Binding BeginEditSelectedLocationCommand}" />
-                    </i:EventTrigger>
-                    <i:EventTrigger EventName="DropDownOpened">
-                        <i:InvokeCommandAction Command="{Binding BeginEditSelectedLocationCommand}" />
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
             </ComboBox>
 
             <Grid Width="350">

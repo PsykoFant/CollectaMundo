@@ -31,11 +31,8 @@ namespace CollectaMundo.ViewModels.Utilities
         // Computed UI state
 
         private LocationEditorMode? editorMode;
-        private bool HasSingleSelectedLocation => SelectedLocations.Count <= 1 && SelectedLocation is not null;
         public bool IsEditing => editorMode == LocationEditorMode.Edit;
         public bool IsSelectionPreview => editorMode == LocationEditorMode.SelectedReadOnly;
-
-        public bool IsEditorReadOnly => editorMode == LocationEditorMode.SelectedReadOnly;
         public bool IsEditorEnabled => editorMode is LocationEditorMode.Create or LocationEditorMode.Edit;
 
         public string SubmitButtonText => editorMode switch
@@ -305,17 +302,22 @@ namespace CollectaMundo.ViewModels.Utilities
         }
         private void ResetEditorAndSelection()
         {
+            var previousType = SelectedLocationType;
+
             SelectedLocation = null;
             SelectedLocations.Clear();
+            editorMode = LocationEditorMode.Create;
+
             LocationName = string.Empty;
-            SelectedLocationType = CardLocationType.Storage;
+            SelectedLocationType = previousType;
+
+            RefreshEditorState();
         }
 
         private void RefreshEditorState()
         {
             OnPropertyChanged(nameof(IsEditing));
             OnPropertyChanged(nameof(IsSelectionPreview));
-            OnPropertyChanged(nameof(IsEditorReadOnly));
             OnPropertyChanged(nameof(IsEditorEnabled));
             OnPropertyChanged(nameof(SubmitButtonText));
             OnPropertyChanged(nameof(ModeMessage));
