@@ -24,6 +24,8 @@ namespace CollectaMundo.ViewModels.Utilities
                 OnPropertyChanged(nameof(HasSelectedLocations));
                 OnPropertyChanged(nameof(SaveEditEnabled));
             };
+
+            SetCreateMode();
         }
 
         // Computed UI state
@@ -164,39 +166,57 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private async Task SubmitLocation()
         {
-            if (editorMode == LocationEditorMode.SelectedReadOnly)
+            if (IsBusy)
             {
-                BeginEditSelectedLocation();
                 return;
             }
 
-            if (editorMode == LocationEditorMode.Edit && SelectedLocation is not null)
+            try
             {
-                var mutation = await _cardLocationService.UpdateLocationAsync(
-                    SelectedLocation.Id,
+                IsBusy = true;
+                ClearStatus();
+
+                if (editorMode == LocationEditorMode.SelectedReadOnly)
+                {
+                    BeginEditSelectedLocation();
+                    return;
+                }
+
+                if (editorMode == LocationEditorMode.Edit && SelectedLocation is not null)
+                {
+                    var mutation = await _cardLocationService.UpdateLocationAsync(
+                        SelectedLocation.Id,
+                        LocationName,
+                        SelectedLocationType);
+
+                    ShowStatus(mutation.Result.Message);
+
+                    if (mutation.Result.Code == OperationResultCode.Success &&
+                        mutation.Entity is not null)
+                    {
+                        ReplaceLocationInCollection(mutation.Entity);
+                        ResetEditorAndSelection();
+                    }
+
+                    return;
+                }
+
+                var createMutation = await _cardLocationService.CreateLocationAsync(
                     LocationName,
                     SelectedLocationType);
 
-                ShowStatus(mutation.Result.Message);
+                ShowStatus(createMutation.Result.Message);
 
-                if (mutation.Result.Code == OperationResultCode.Success)
+                if (createMutation.Result.Code == OperationResultCode.Success &&
+                    createMutation.Entity is not null)
                 {
+                    Locations.Add(createMutation.Entity);
                     ResetEditorAndSelection();
                 }
-
-                return;
             }
-
-            // Create mode
-            var createMutation = await _cardLocationService.CreateLocationAsync(
-                LocationName,
-                SelectedLocationType);
-
-            ShowStatus(createMutation.Result.Message);
-
-            if (createMutation.Result.Code == OperationResultCode.Success)
+            finally
             {
-                ResetEditorAndSelection();
+                IsBusy = false;
             }
         }
 

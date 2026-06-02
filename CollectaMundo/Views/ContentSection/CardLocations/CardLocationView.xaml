@@ -33,7 +33,7 @@
             <Label Content="Location name:" />
             <TextBox Text="{Binding LocationName, UpdateSourceTrigger=PropertyChanged}"
                      IsReadOnly="{Binding IsEditorReadOnly}"
-                     IsEnabled="{Binding SaveEditEnabled}"
+                     IsEnabled="{Binding IsEditorEnabled}"
                      Margin="0,0,0,10">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="GotKeyboardFocus">
