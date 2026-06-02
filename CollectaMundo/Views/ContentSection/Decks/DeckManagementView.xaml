@@ -13,26 +13,21 @@
 
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>  <!-- Page title -->
+            <RowDefinition Height="Auto"/>  <!-- Section header -->
+            <RowDefinition Height="Auto"/>  <!-- Form for adding/editing deck -->
+            <RowDefinition Height="30"/>    <!-- Status message -->
+            <RowDefinition Height="*"/>     <!-- Data grid for displaying decks -->
         </Grid.RowDefinitions>
 
-        <Label Grid.Row="0"
-               Content="Manage Decks"
-               Style="{StaticResource BigHeaderLabelStyle}" />
+        <!-- Page title -->
+        <Label Grid.Row="0" Content="Manage Decks" Style="{StaticResource BigHeaderLabelStyle}" />
 
-        <Label Grid.Row="1"
-               Content="{Binding ModeMessage}"
-               Style="{StaticResource SmallHeaderLabelStyle}" />
+        <!-- Section header -->
+        <Label Grid.Row="1" Content="{Binding ModeMessage}" Style="{StaticResource SmallHeaderLabelStyle}" />
 
-        <StackPanel Grid.Row="2"
-                    Margin="0,16,0,0"
-                    Width="420"
-                    HorizontalAlignment="Center">
-
+        <!-- Form for adding/editing deck -->
+        <StackPanel Grid.Row="2" Margin="0,16,0,0" Width="420" HorizontalAlignment="Center">
             <Label Content="Deck name:" />
             <TextBox Text="{Binding DeckName, UpdateSourceTrigger=PropertyChanged}"
                      IsEnabled="{Binding SaveEditEnabled}"
@@ -78,6 +73,7 @@
             </Grid>
         </StackPanel>
 
+        <!-- Status message -->
         <TextBlock Grid.Row="3"
                    Margin="0,16,0,0"
                    Text="{Binding StatusMessage}"
@@ -85,16 +81,12 @@
                    HorizontalAlignment="Center"
                    TextWrapping="Wrap" />
 
+        <!-- Data grid for displaying decks -->
         <DataGrid Grid.Row="4"
                   ItemsSource="{Binding Decks}"
                   SelectedItem="{Binding SelectedDeck, Mode=TwoWay}"
                   behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedDecks}"
-                  SelectionMode="Extended"
-                  SelectionUnit="FullRow"
-                  Style="{StaticResource DataGridBaseStyle}"
-                  MinHeight="40"
-                  Margin="0,10,0,0"
-                  AutoGenerateColumns="False">
+                  Style="{StaticResource ManagementGridStyle}">
 
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name"

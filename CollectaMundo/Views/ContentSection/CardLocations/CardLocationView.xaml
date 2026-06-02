@@ -17,13 +17,16 @@
             <RowDefinition Height="Auto"/>  <!-- Section header -->
             <RowDefinition Height="Auto"/>  <!-- Form for adding/editing location -->
             <RowDefinition Height="30"/>    <!-- Status message -->
-            <RowDefinition Height="Auto"/>  <!-- Data grid -->
+            <RowDefinition Height="*"/>     <!-- Data grid -->
             <RowDefinition Height="Auto"/>  <!-- Additional content -->
         </Grid.RowDefinitions>
 
+        <!-- Page title -->
         <Label Grid.Row="0" Content="Manage Card Locations" Style="{StaticResource BigHeaderLabelStyle}" />
+        <!-- Section header -->
         <Label Grid.Row="1" Content="{Binding ModeMessage}" Style="{StaticResource SmallHeaderLabelStyle}" />
 
+        <!-- Form for adding/editing location -->
         <StackPanel Grid.Row="2" Margin="0,16,0,0" Width="350" HorizontalAlignment="Center">
 
             <Label Content="Location name:" />
@@ -60,26 +63,18 @@
             </Grid>
         </StackPanel>
 
+        <!-- Status message -->
         <TextBlock Grid.Row="3" Margin="0,16,0,0" Text="{Binding StatusMessage}" Visibility="{Binding IsStatusVisible, Converter={StaticResource BoolToVisibilityConverter}}" HorizontalAlignment="Center" TextWrapping="Wrap" />
 
+        <!-- Data grid -->
         <DataGrid Grid.Row="4"
           ItemsSource="{Binding Locations}"
           SelectedItem="{Binding SelectedLocation, Mode=TwoWay}"
           behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedLocations}"
-          SelectionMode="Extended"
-          SelectionUnit="FullRow"
-          Style="{StaticResource DataGridBaseStyle}"
-          Width="500"
-          MinHeight="40"
-          Margin="0,10,0,0"
-          AutoGenerateColumns="False">
+          Style="{StaticResource ManagementGridStyle}">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Name"
-                            Width="*"
-                            Binding="{Binding Name}" />
-                <DataGridTextColumn Header="Type"
-                            Width="180"
-                            Binding="{Binding Type}" />
+                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
+                <DataGridTextColumn Header="Type" Width="180" Binding="{Binding Type}" />
             </DataGrid.Columns>
         </DataGrid>
     </Grid>
