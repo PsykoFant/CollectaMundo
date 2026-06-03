@@ -38,25 +38,25 @@
 
             <Label Content="Location name:" />
             <TextBox Text="{Binding LocationName, UpdateSourceTrigger=PropertyChanged}"
-                     IsEnabled="{Binding IsEditorEnabled}"
+                     IsEnabled="{Binding IsNameEditorEnabled}"
                      Margin="0,0,0,10">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter"
-                    Command="{Binding SubmitLocationCommand}" />
+                    Command="{Binding SubmitActionCommand}" />
                 </TextBox.InputBindings>
             </TextBox>
 
             <Label Content="Location type (storage or deck):" />
             <ComboBox ItemsSource="{Binding LocationTypes}"
                       SelectedItem="{Binding SelectedLocationType, Mode=TwoWay}"
-                      IsEnabled="{Binding IsEditorEnabled}"
+                      IsEnabled="{Binding IsTypeEditorEnabled}"
                       Margin="0,0,0,14">
             </ComboBox>
 
             <Grid Width="350">
-                <Button Content="{Binding SubmitButtonText}"
-                        Command="{Binding SubmitLocationCommand}"
-                        IsEnabled="{Binding SaveEditEnabled}"
+                <Button Content="{Binding ActionButtonText}"
+                        Command="{Binding SubmitActionCommand}"
+                        IsEnabled="{Binding IsActionButtonEnabled}"
                         Width="100"
                         Height="20"
                         HorizontalAlignment="Left" />
@@ -65,7 +65,7 @@
                         Width="60"
                         Height="20"
                         HorizontalAlignment="Center"
-                        Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        Visibility="{Binding IsCancelVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                 <Button Content="{Binding DeleteButtonText}"
                         Command="{Binding DeleteSelectedLocationsCommand}"
