@@ -186,13 +186,15 @@ namespace CollectaMundo.ViewModels.Utilities
                 IsBusy = true;
                 ClearStatus();
 
-                if (editorMode == LocationEditorMode.SelectedReadOnly)
+                // Preview mode: action button means "enter edit mode".
+                if (editorMode is LocationEditorMode.SelectedReadOnly)
                 {
                     BeginEditSelectedLocation();
                     return;
                 }
 
-                if (editorMode == LocationEditorMode.EditSingle && SelectedLocation is not null)
+                // Single edit mode: update name and type for the selected location.
+                if (editorMode is LocationEditorMode.EditSingle && SelectedLocation is not null)
                 {
                     if (SelectedLocationType is not CardLocationType locationType)
                     {
@@ -202,18 +204,18 @@ namespace CollectaMundo.ViewModels.Utilities
 
                     var mutation = await _cardLocationService.UpdateLocationAsync(SelectedLocation.Id, LocationName, locationType);
 
-                    if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
+                    if (mutation.Result.Code is OperationResultCode.Success && mutation.Entity is not null)
                     {
                         ReplaceLocationInCollection(mutation.Entity);
                         ResetEditorAndSelection();
                     }
 
                     ShowStatus(mutation.Result.Message);
-
                     return;
                 }
 
-                if (editorMode == LocationEditorMode.EditMultiple)
+                // Bulk edit mode: update only the type, preserving each location's own name.
+                if (editorMode is LocationEditorMode.EditMultiple)
                 {
                     if (SelectedLocationType is not CardLocationType locationType)
                     {
@@ -225,7 +227,8 @@ namespace CollectaMundo.ViewModels.Utilities
                     {
                         var mutation = await _cardLocationService.UpdateLocationAsync(location.Id, location.Name, locationType);
 
-                        if (mutation.Result.Code != OperationResultCode.Success || mutation.Entity is null)
+                        if (mutation.Result.Code is not OperationResultCode.Success ||
+                            mutation.Entity is null)
                         {
                             ShowStatus(mutation.Result.Message);
                             return;
@@ -239,27 +242,22 @@ namespace CollectaMundo.ViewModels.Utilities
                     return;
                 }
 
+                // Create mode: create a new location.
                 if (SelectedLocationType is not CardLocationType createType)
                 {
                     ShowStatus("Select a location type before creating a location.");
                     return;
                 }
 
-                var createMutation = await _cardLocationService.CreateLocationAsync(
-                    LocationName,
-                    createType);
+                var createMutation = await _cardLocationService.CreateLocationAsync(LocationName, createType);
 
-                if (createMutation.Result.Code == OperationResultCode.Success &&
-                    createMutation.Entity is not null)
+                if (createMutation.Result.Code is OperationResultCode.Success && createMutation.Entity is not null)
                 {
                     Locations.Add(createMutation.Entity);
                     ResetEditorAndSelection();
-                    ShowStatus(createMutation.Result.Message);
                 }
-                else
-                {
-                    ShowStatus(createMutation.Result.Message);
-                }
+
+                ShowStatus(createMutation.Result.Message);
             }
             finally
             {

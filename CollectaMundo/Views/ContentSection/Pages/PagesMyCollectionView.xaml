@@ -134,6 +134,11 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="CardInCollectionPrice">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DataContext.PricesVM.RetailerPriceHeader, ElementName=MyCollectionDataGrid}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>                    
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding CardInCollectionPrice}" TextWrapping="Wrap" />

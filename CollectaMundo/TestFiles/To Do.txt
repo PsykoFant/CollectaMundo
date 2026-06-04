@@ -1,17 +1,18 @@
 TO DO 
 
 Deck editor!
- - pris kolonne i my collection
 
- - Interface updates
-  - Load af list af locations under location management
   - Delete location tager LAAAAAAANG TID
+  - Merge af location viewmodel og deck management viewmodel (de har meget overlap)
+  - unit test af knaplogik i location viewmodel (f.eks. delete knappen)
+  - Load af list af locations under location management
+   - Tilføj deck opdatering til scenarietest (e.g. lav til storage osv.). Filtrer også på deck i scenarietest
 
   
-  - Merge af location viewmodel og deck management viewmodel (de har meget overlap)
 
 
- - Tilføj deck opdatering til scenarietest (e.g. lav til storage osv.). Filtrer også på deck i scenarietest
+
+
 
  Så er det sku selve deck editor!
 

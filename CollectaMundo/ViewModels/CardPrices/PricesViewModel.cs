@@ -35,6 +35,9 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private string etchedPriceHeader = "Etched Price";
 
+        [ObservableProperty]
+        private string retailerPriceHeader = "Retailer Price";
+
         public void RefreshLatestPriceDate()
         {
             OnPropertyChanged(nameof(LatestPriceUpdateDate));
@@ -60,7 +63,7 @@ namespace CollectaMundo.ViewModels
         }
 
         // simple currency mapping
-        private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "EUR" : "USD";
+        private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "\u20AC" : "\u0024";
 
         // Command and command actions
         [RelayCommand]
@@ -82,6 +85,7 @@ namespace CollectaMundo.ViewModels
             PriceHeader = $"Price ({currency})";
             FoilPriceHeader = $"Foil Price ({currency})";
             EtchedPriceHeader = $"Etched Price ({currency})";
+            RetailerPriceHeader = $"Retailer Price ({currency})";
         }
     }
 }
