@@ -32,7 +32,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
         // Computed UI state
         private LocationEditorMode? editorMode;
-        public bool IsCancelVisible => IsDeleteConfirmationActive || editorMode == LocationEditorMode.EditSingle;
+        public bool IsCancelVisible => IsDeleteConfirmationActive || editorMode is LocationEditorMode.EditSingle or LocationEditorMode.EditMultiple;
         public bool IsEditorEnabled => editorMode is LocationEditorMode.Create or LocationEditorMode.EditSingle or LocationEditorMode.EditMultiple;
         public bool IsActionButtonEnabled => !IsBusy && !IsDeleteConfirmationActive && editorMode is
             (LocationEditorMode.Create or LocationEditorMode.SelectedReadOnly or LocationEditorMode.EditSingle or LocationEditorMode.EditMultiple);
@@ -345,7 +345,7 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private void ClearSelectionAndRestoreCreateMode()
         {
-            if (editorMode is not (LocationEditorMode.SelectedReadOnly or LocationEditorMode.EditMultiple))
+            if (editorMode is not LocationEditorMode.SelectedReadOnly)
             {
                 return;
             }
