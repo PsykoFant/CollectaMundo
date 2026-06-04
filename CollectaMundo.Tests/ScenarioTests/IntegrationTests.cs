@@ -1083,7 +1083,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Act: create location
             locationVm.LocationName = "Scenario Test Deck";
             locationVm.SelectedLocationType = CardLocationType.Deck;
-            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+            await locationVm.SubmitActionCommand.ExecuteAsync(null);
 
             // Assert: location exists in utility VM
             var scenarioLocation = locationVm.Locations.Single(l => l.Name == "Scenario Test Deck");
@@ -1166,15 +1166,15 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Act: create scenario locations
             locationVm.LocationName = "Box 1";
             locationVm.SelectedLocationType = CardLocationType.Storage;
-            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+            await locationVm.SubmitActionCommand.ExecuteAsync(null);
 
             locationVm.LocationName = "Box 2";
             locationVm.SelectedLocationType = CardLocationType.Storage;
-            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+            await locationVm.SubmitActionCommand.ExecuteAsync(null);
 
             locationVm.LocationName = "Deck Awesome!";
             locationVm.SelectedLocationType = CardLocationType.Deck;
-            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+            await locationVm.SubmitActionCommand.ExecuteAsync(null);
 
             // Assert: locations exist
             var box1 = locationVm.Locations.Single(l => l.Name == "Box 1");
@@ -1433,7 +1433,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Arrange: recreate Deck Awesome because it was deleted in previous section
             locationVm.LocationName = "Deck Awesome!";
             locationVm.SelectedLocationType = CardLocationType.Deck;
-            await locationVm.SubmitLocationCommand.ExecuteAsync(null);
+            await locationVm.SubmitActionCommand.ExecuteAsync(null);
 
             deckAwesome = locationVm.Locations.Single(l => l.Name == "Deck Awesome!");
 

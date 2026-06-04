@@ -38,7 +38,7 @@
 
             <Label Content="Location name:" />
             <TextBox Text="{Binding LocationName, UpdateSourceTrigger=PropertyChanged}"
-                     IsEnabled="{Binding IsNameEditorEnabled}"
+                     IsEnabled="{Binding IsSingleItemTextEditorEnabled}"
                      Margin="0,0,0,10">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter"
@@ -49,7 +49,7 @@
             <Label Content="Location type (storage or deck):" />
             <ComboBox ItemsSource="{Binding LocationTypes}"
                       SelectedItem="{Binding SelectedLocationType, Mode=TwoWay}"
-                      IsEnabled="{Binding IsTypeEditorEnabled}"
+                      IsEnabled="{Binding IsDiscreteValueEditorEnabled}"
                       Margin="0,0,0,14">
             </ComboBox>
 
@@ -72,7 +72,7 @@
                         Width="100"
                         Height="20"
                         HorizontalAlignment="Right"
-                        Visibility="{Binding HasSelectedLocations, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        Visibility="{Binding HasSelectedItems, Converter={StaticResource BoolToVisibilityConverter}}" />
             </Grid>
         </StackPanel>
 
@@ -88,7 +88,7 @@
           Style="{StaticResource ManagementGridStyle}">
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="MouseDoubleClick">
-                    <i:InvokeCommandAction Command="{Binding BeginEditSelectedLocationCommand}" />
+                    <i:InvokeCommandAction Command="{Binding BeginEditSelectedItemCommand}" />
                 </i:EventTrigger>
             </i:Interaction.Triggers>
             <DataGrid.Columns>
