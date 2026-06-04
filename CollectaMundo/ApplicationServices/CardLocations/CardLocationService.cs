@@ -86,7 +86,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         }
         private async Task<MutationResult<CardLocation>> CreateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, CardLocationType type)
         {
-            var validation = _cardLocationLogic.ValidateForCreate(name, type);
+            var validation = _cardLocationLogic.ValidateNameAndType(name, type);
 
             if (validation.Code != OperationResultCode.Success)
             {
@@ -131,7 +131,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             foreach (var name in normalizedNames)
             {
-                var validation = _cardLocationLogic.ValidateForCreate(name, type);
+                var validation = _cardLocationLogic.ValidateNameAndType(name, type);
 
                 if (validation.Code == OperationResultCode.Success)
                 {
@@ -255,7 +255,12 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         {
             string normalizedName = _cardLocationLogic.NormalizeName(name);
 
-            var validation = _cardLocationLogic.ValidateForUpdate(id, normalizedName, type);
+            var validation = _cardLocationLogic.ValidateNameAndType(normalizedName, type);
+
+            if (validation.Code is not OperationResultCode.Success)
+            {
+                return new MutationResult<CardLocation>(validation, null);
+            }
 
             try
             {
@@ -316,12 +321,8 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         }
 
         // DELETE
-        public Task<CardLocationDeleteResult> DeleteLocationAsync(int id) => DeleteCoreAsync(id, "location");
-        public Task<CardLocationDeleteResult> DeleteDeckAsync(int id) => DeleteCoreAsync(id, "deck");
-        private Task<CardLocationDeleteResult> DeleteCoreAsync(int id, string entityName)
-        {
-            return DeleteLocationsAsync([id], entityName);
-        }
+        public Task<CardLocationDeleteResult> DeleteLocationAsync(int id) => DeleteLocationsAsync([id], "location");
+        public Task<CardLocationDeleteResult> DeleteDeckAsync(int id) => DeleteLocationsAsync([id], "deck");
         public async Task<CardLocationDeleteResult> DeleteLocationsAsync(IReadOnlyList<int> ids, string entityName = "locations", CancellationToken token = default)
         {
             var distinctIds = ids.Distinct().ToList();
@@ -373,7 +374,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                         : $"{deletedLocationCount} locations deleted successfully."),
                         plan.ChangeSet);
 
-                    return (Result: successResult, Commit: true);
+                    return (Result: successResult, Commit: deletedLocationCount > 0);
                 });
 
                 if (result.Result.Code is OperationResultCode.Success)

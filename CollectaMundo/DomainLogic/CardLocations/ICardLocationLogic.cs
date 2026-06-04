@@ -6,6 +6,6 @@ namespace CollectaMundo.DomainLogic.CardLocations
     public interface ICardLocationLogic
     {
         string NormalizeName(string? name);
-        OperationResult ValidateForCreate(string? name, CardLocationType type);
+        OperationResult ValidateNameAndType(string? name, CardLocationType type);
     }
 }

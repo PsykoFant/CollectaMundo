@@ -10,7 +10,7 @@ namespace CollectaMundo.DomainLogic.CardLocations
         {
             return (name ?? string.Empty).Trim();
         }
-        public OperationResult ValidateForCreate(string? name, CardLocationType type)
+        public OperationResult ValidateNameAndType(string? name, CardLocationType type)
         {
             string normalizedName = NormalizeName(name);
 
