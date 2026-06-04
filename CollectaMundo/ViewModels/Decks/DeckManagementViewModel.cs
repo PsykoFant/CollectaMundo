@@ -4,43 +4,29 @@ using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ViewModels.Decks
 {
-    public partial class DeckManagementViewModel : ObservableObject
+    public partial class DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore) : LocationManagementViewModel<DeckManagementRecord>
     {
-        private readonly ICardLocationService _cardLocationService;
-        private readonly IDeckManagementStore _deckManagementStore;
+        private readonly ICardLocationService _cardLocationService = cardLocationService;
+        private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
 
         public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
-        public DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore)
-        {
-            _cardLocationService = cardLocationService;
-            _deckManagementStore = deckManagementStore;
 
-            SelectedDecks.CollectionChanged += (_, _) =>
-            {
-                IsDeleteConfirmationActive = false;
-                OnPropertyChanged(nameof(HasSelectedDecks));
-                OnPropertyChanged(nameof(SaveEditEnabled));
-            };
-        }
-        public string SubmitButtonText => IsEditing ? "Save changes" : "Add deck";
-        public string DeleteButtonText => IsDeleteConfirmationActive ? "Yes, delete!" : "Delete selected";
-        public string ModeMessage => IsDeleteConfirmationActive
-            ? "Confirm delete"
-            : IsEditing
-                ? "Edit selected deck"
-                : "Add a new deck";
-        public bool IsEditing => SelectedDeck is not null;
-        public bool HasSelectedDecks => SelectedDecks.Count > 0;
-        public bool SaveEditEnabled => SelectedDecks.Count < 2 && !IsDeleteConfirmationActive;
+        protected override string CreateButtonText => "Add deck";
+        protected override string EditButtonText => "Edit deck";
+        protected override string SaveButtonText => "Save changes";
+        protected override string BulkUpdateButtonText => "Update selected";
 
-        [ObservableProperty]
-        private string statusMessage = string.Empty;
+        protected override string CreateModeMessage => "Add a new deck";
+        protected override string SelectedReadOnlyModeMessage => string.Empty;
+        protected override string EditSingleModeMessage => "Edit selected deck";
+        protected override string EditMultipleModeMessage => "Edit selected decks";
 
         [ObservableProperty]
         private string deckName = string.Empty;
@@ -50,22 +36,7 @@ namespace CollectaMundo.ViewModels.Decks
 
         [ObservableProperty]
         private string description = string.Empty;
-
-        [ObservableProperty]
-        private bool isStatusVisible;
-
-        [ObservableProperty]
-        private bool isBusy;
-
-        [ObservableProperty]
-        private bool isDeleteConfirmationActive;
-
-        [ObservableProperty]
-        private DeckManagementRecord? selectedDeck;
-
         public ObservableCollection<DeckManagementRecord> Decks => _deckManagementStore.Decks;
-        public ObservableCollection<DeckManagementRecord> SelectedDecks { get; } = [];
-
         public ObservableCollection<string> DeckFormats { get; } =
         [
             "commander",
@@ -78,27 +49,33 @@ namespace CollectaMundo.ViewModels.Decks
             "brawl",
             "historic"
         ];
-
-        partial void OnSelectedDeckChanged(DeckManagementRecord? value)
+        protected override void OnEnterCreateMode()
         {
-            if (value is not null)
-            {
-                DeckName = value.Name;
-                SelectedDeckFormat = value.Format ?? string.Empty;
-                Description = value.Description ?? string.Empty;
-            }
-
-            OnPropertyChanged(nameof(IsEditing));
-            OnPropertyChanged(nameof(SubmitButtonText));
-            OnPropertyChanged(nameof(ModeMessage));
-            OnPropertyChanged(nameof(SaveEditEnabled));
+            SelectedDeckFormat ??= string.Empty;
         }
-
-        partial void OnIsDeleteConfirmationActiveChanged(bool value)
+        protected override void OnEnterSelectedReadOnlyMode(DeckManagementRecord selectedItem)
         {
-            OnPropertyChanged(nameof(ModeMessage));
-            OnPropertyChanged(nameof(DeleteButtonText));
-            OnPropertyChanged(nameof(SaveEditEnabled));
+            DeckName = selectedItem.Name;
+            SelectedDeckFormat = selectedItem.Format ?? string.Empty;
+            Description = selectedItem.Description ?? string.Empty;
+        }
+        protected override void OnEnterEditSingleMode(DeckManagementRecord selectedItem)
+        {
+            DeckName = selectedItem.Name;
+            SelectedDeckFormat = selectedItem.Format ?? string.Empty;
+            Description = selectedItem.Description ?? string.Empty;
+        }
+        protected override void OnEnterEditMultipleMode(IReadOnlyList<DeckManagementRecord> selectedItems)
+        {
+            DeckName = string.Empty;
+            Description = string.Empty;
+            SelectedDeckFormat = null;
+        }
+        protected override void ClearEditorFields()
+        {
+            DeckName = string.Empty;
+            Description = string.Empty;
+            SelectedDeckFormat = string.Empty;
         }
         public async Task LoadDecksAsync()
         {
@@ -110,9 +87,7 @@ namespace CollectaMundo.ViewModels.Decks
             try
             {
                 IsBusy = true;
-
                 await _deckManagementStore.LoadAsync();
-
                 ClearStatus();
             }
             catch (Exception ex)
@@ -138,56 +113,100 @@ namespace CollectaMundo.ViewModels.Decks
                 IsBusy = true;
                 ClearStatus();
 
-                var input = new DeckManagementInput
+                if (EditorMode is SelectionEditorMode.SelectedReadOnly)
                 {
-                    Name = DeckName,
-                    Format = SelectedDeckFormat,
-                    Description = Description
-                };
-
-                if (IsEditing && SelectedDeck is not null)
-                {
-                    var mutation = await _cardLocationService.UpdateDeckAsync(SelectedDeck.LocationId, input);
-
-                    ShowStatus(mutation.Result.Message);
-
-                    if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
-                    {
-                        _deckManagementStore.Upsert(mutation.Entity);
-                        ResetEditorAndSelection();
-                    }
-
+                    BeginEditSelectedItemCommand.Execute(null);
                     return;
                 }
 
-                var createMutation = await _cardLocationService.CreateDeckAsync(input);
-
-                ShowStatus(createMutation.Result.Message);
-
-                if (createMutation.Result.Code == OperationResultCode.Success && createMutation.Entity is not null)
+                if (EditorMode is SelectionEditorMode.EditSingle && SelectedItem is not null)
                 {
-                    _deckManagementStore.Upsert(createMutation.Entity);
-                    ResetEditorAndSelection();
+                    await UpdateSingleDeckAsync(SelectedItem);
+                    return;
                 }
+
+                if (EditorMode is SelectionEditorMode.EditMultiple)
+                {
+                    await UpdateSelectedDeckFormatsAsync();
+                    return;
+                }
+
+                await CreateDeckAsync();
             }
             finally
             {
                 IsBusy = false;
             }
         }
-
-        [RelayCommand]
-        private void CancelEdit()
+        private async Task CreateDeckAsync()
         {
-            IsDeleteConfirmationActive = false;
+            var input = new DeckManagementInput
+            {
+                Name = DeckName,
+                Format = SelectedDeckFormat,
+                Description = Description
+            };
+
+            var mutation = await _cardLocationService.CreateDeckAsync(input);
+
+            ShowStatus(mutation.Result.Message);
+
+            if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
+            {
+                _deckManagementStore.Upsert(mutation.Entity);
+                ResetEditorAndSelection();
+            }
+        }
+        private async Task UpdateSingleDeckAsync(DeckManagementRecord selectedDeck)
+        {
+            var input = new DeckManagementInput
+            {
+                Name = DeckName,
+                Format = SelectedDeckFormat,
+                Description = Description
+            };
+
+            var mutation = await _cardLocationService.UpdateDeckAsync(
+                selectedDeck.LocationId,
+                input);
+
+            ShowStatus(mutation.Result.Message);
+
+            if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
+            {
+                _deckManagementStore.Upsert(mutation.Entity);
+                ResetEditorAndSelection();
+            }
+        }
+        private async Task UpdateSelectedDeckFormatsAsync()
+        {
+            if (string.IsNullOrWhiteSpace(SelectedDeckFormat))
+            {
+                ShowStatus("Select a format before updating selected decks.");
+                return;
+            }
+
+            var selectedDecks = SelectedItems.ToList();
+            string selectedFormat = SelectedDeckFormat;
+
+            var updatedDecks = await _cardLocationService.UpdateDeckFormatsAsync(selectedDecks, selectedFormat);
+
+            foreach (var updatedDeck in updatedDecks)
+            {
+                _deckManagementStore.Upsert(updatedDeck);
+            }
+
             ResetEditorAndSelection();
-            ClearStatus();
+
+            ShowStatus(updatedDecks.Count == 1
+                ? "Deck updated successfully."
+                : $"{updatedDecks.Count} decks updated successfully.");
         }
 
         [RelayCommand]
         private async Task DeleteSelectedDecks()
         {
-            if (IsBusy || SelectedDecks.Count == 0)
+            if (IsBusy || SelectedItems.Count == 0)
             {
                 return;
             }
@@ -204,7 +223,9 @@ namespace CollectaMundo.ViewModels.Decks
                 IsBusy = true;
                 ClearStatus();
 
-                var idsToDelete = SelectedDecks.Select(deck => deck.LocationId).ToList();
+                var idsToDelete = SelectedItems
+                    .Select(deck => deck.LocationId)
+                    .ToList();
 
                 int deletedCount = 0;
                 var failedMessages = new List<string>();
@@ -247,24 +268,6 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 IsBusy = false;
             }
-        }
-        private void ResetEditorAndSelection()
-        {
-            SelectedDeck = null;
-            SelectedDecks.Clear();
-            DeckName = string.Empty;
-            SelectedDeckFormat = string.Empty;
-            Description = string.Empty;
-        }
-        private void ClearStatus()
-        {
-            StatusMessage = string.Empty;
-            IsStatusVisible = false;
-        }
-        private void ShowStatus(string message)
-        {
-            StatusMessage = message;
-            IsStatusVisible = !string.IsNullOrWhiteSpace(message);
         }
     }
 }

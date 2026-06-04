@@ -3,21 +3,28 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              xmlns:deckManagement="clr-namespace:CollectaMundo.ViewModels.Decks"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=deckManagement:DeckManagementViewModel}"
-             d:Style="{StaticResource {x:Type UserControl}}"
+             d:Style="{StaticResource {x:Type UserControl}}"             
              d:DesignHeight="450"
              d:DesignWidth="800">
+    <UserControl.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CancelOrClearSelectionCommand}" />
+    </UserControl.InputBindings>
 
-    <Grid Margin="16">
+    <Grid Margin="16" Background="Transparent">
+        <i:Interaction.Behaviors>
+            <behaviors:ClearSelectionOnBackgroundClickBehavior Command="{Binding ClearSelectionAndRestoreCreateModeCommand}" />
+        </i:Interaction.Behaviors>        
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- Page title -->
             <RowDefinition Height="Auto"/>  <!-- Section header -->
             <RowDefinition Height="Auto"/>  <!-- Form for adding/editing deck -->
             <RowDefinition Height="30"/>    <!-- Status message -->
-            <RowDefinition Height="*"/>     <!-- Data grid for displaying decks -->
+            <RowDefinition Height="*"/>     <!-- Data grid  -->
         </Grid.RowDefinitions>
 
         <!-- Page title -->
@@ -27,21 +34,27 @@
         <Label Grid.Row="1" Content="{Binding ModeMessage}" Style="{StaticResource SmallHeaderLabelStyle}" />
 
         <!-- Form for adding/editing deck -->
-        <StackPanel Grid.Row="2" Margin="0,16,0,0" Width="420" HorizontalAlignment="Center">
+        <StackPanel Grid.Row="2" Margin="0,16,0,0" Width="350" HorizontalAlignment="Center">
+
             <Label Content="Deck name:" />
             <TextBox Text="{Binding DeckName, UpdateSourceTrigger=PropertyChanged}"
-                     IsEnabled="{Binding SaveEditEnabled}"
-                     Margin="0,0,0,10" />
+                     IsEnabled="{Binding IsSingleItemTextEditorEnabled}"
+                     Margin="0,0,0,10">
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter"
+                    Command="{Binding SubmitDeckCommand}" />
+                </TextBox.InputBindings>
+            </TextBox>
 
             <Label Content="Format:" />
             <ComboBox ItemsSource="{Binding DeckFormats}"
                       SelectedItem="{Binding SelectedDeckFormat, Mode=TwoWay}"
-                      IsEnabled="{Binding SaveEditEnabled}"
+                      IsEnabled="{Binding IsDiscreteValueEditorEnabled}"
                       Margin="0,0,0,10" />
 
             <Label Content="Description:" />
             <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
-                     IsEnabled="{Binding SaveEditEnabled}"
+                     IsEnabled="{Binding IsSingleItemTextEditorEnabled}"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto"
@@ -49,10 +62,10 @@
                      MaxHeight="90"
                      Margin="0,0,0,14" />
 
-            <Grid Width="420">
-                <Button Content="{Binding SubmitButtonText}"
+            <Grid>
+                <Button Content="{Binding ActionButtonText}"
                         Command="{Binding SubmitDeckCommand}"
-                        IsEnabled="{Binding SaveEditEnabled}"
+                        IsEnabled="{Binding IsActionButtonEnabled}" 
                         Width="100"
                         Height="20"
                         HorizontalAlignment="Left" />
@@ -62,14 +75,14 @@
                         Width="60"
                         Height="20"
                         HorizontalAlignment="Center"
-                        Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        Visibility="{Binding IsCancelVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                 <Button Content="{Binding DeleteButtonText}"
                         Command="{Binding DeleteSelectedDecksCommand}"
                         Width="100"
                         Height="20"
                         HorizontalAlignment="Right"
-                        Visibility="{Binding HasSelectedDecks, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        Visibility="{Binding HasSelectedItems, Converter={StaticResource BoolToVisibilityConverter}}" />
             </Grid>
         </StackPanel>
 
@@ -84,10 +97,15 @@
         <!-- Data grid for displaying decks -->
         <DataGrid Grid.Row="4"
                   ItemsSource="{Binding Decks}"
-                  SelectedItem="{Binding SelectedDeck, Mode=TwoWay}"
-                  behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedDecks}"
+                  SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                  behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedItems}"
+                  behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ClearSelectionTrigger}"
                   Style="{StaticResource ManagementGridStyle}">
-
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDoubleClick">
+                    <i:InvokeCommandAction Command="{Binding BeginEditSelectedItemCommand}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name"
                                     Width="2*"

@@ -251,6 +251,49 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new MutationResult<DeckManagementRecord>(new OperationResult(OperationResultCode.Error, $"Failed to update deck: {ex.Message}"), null);
             }
         }
+        public async Task<IReadOnlyList<DeckManagementRecord>> UpdateDeckFormatsAsync(IReadOnlyList<DeckManagementRecord> decks, string format, CancellationToken token = default)
+        {
+            var distinctDecks = decks.GroupBy(deck => deck.LocationId).Select(group => group.First()).ToList();
+
+            if (distinctDecks.Count == 0)
+            {
+                return [];
+            }
+
+            var updatedDecks = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+            {
+                var ids = distinctDecks.Select(deck => deck.LocationId).ToList();
+
+                var existingIds = await _cardLocationRepo.GetExistingLocationIdsAsync(conn, tx, ids, token);
+
+                if (existingIds.Count != ids.Count)
+                {
+                    return (
+                        Result: (IReadOnlyList<DeckManagementRecord>)[],
+                        Commit: false
+                    );
+                }
+
+                await _cardLocationRepo.UpdateDeckFormatsAsync(conn, tx, ids, format, token);
+
+                var result = distinctDecks
+                    .Select(deck => new DeckManagementRecord
+                    {
+                        LocationId = deck.LocationId,
+                        Name = deck.Name,
+                        Format = format,
+                        Description = deck.Description
+                    })
+                    .ToList();
+
+                return (
+                    Result: (IReadOnlyList<DeckManagementRecord>)result,
+                    Commit: result.Count > 0
+                );
+            });
+
+            return updatedDecks;
+        }
         private async Task<MutationResult<CardLocation>> UpdateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, CardLocationType type)
         {
             string normalizedName = _cardLocationLogic.NormalizeName(name);

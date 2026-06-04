@@ -22,6 +22,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
         // UPDATE
         Task<int> UpdateLocationAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, string type);
         Task<IReadOnlyList<CardLocationRecord>> UpdateLocationTypesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> ids, string type, CancellationToken token = default);
+        Task<int> UpdateDeckFormatsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, string format, CancellationToken token = default);
 
         // DELETE
         Task<int> DeleteLocationsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> ids, CancellationToken token = default);

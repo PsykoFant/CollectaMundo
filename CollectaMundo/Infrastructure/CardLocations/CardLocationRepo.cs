@@ -321,6 +321,32 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return results;
         }
+        public async Task<int> UpdateDeckFormatsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, string format, CancellationToken token = default)
+        {
+            if (locationIds.Count == 0)
+            {
+                return 0;
+            }
+
+            var parameterNames = locationIds.Select((_, index) => $"@id{index}").ToList();
+
+            string sql = $"""
+                         UPDATE myDecks
+                         SET format = @format
+                         WHERE locationId IN ({string.Join(", ", parameterNames)});
+                         """;
+
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+
+            DbHelpers.AddNullableString(cmd, "@format", format);
+
+            for (int i = 0; i < locationIds.Count; i++)
+            {
+                DbHelpers.AddInt32(cmd, parameterNames[i], locationIds[i]);
+            }
+
+            return await cmd.ExecuteNonQueryAsync(token);
+        }
 
 
         // DELETE
@@ -391,6 +417,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
             return await cmd.ExecuteNonQueryAsync(token);
         }
 
+
+
         // Helpers
         private static CardLocationRecord CreateCardLocationRecord(int locationId, string name, string type)
         {
@@ -401,6 +429,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 Type = type
             };
         }
+
         private static MyCollectionRow MapCollectionRow(DbDataReader reader)
         {
             var id = reader.GetInt32(reader.GetOrdinal("id"));

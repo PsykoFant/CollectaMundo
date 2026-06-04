@@ -25,11 +25,11 @@
             <RowDefinition Height="Auto"/>  <!-- Form for adding/editing location -->
             <RowDefinition Height="30"/>    <!-- Status message -->
             <RowDefinition Height="*"/>     <!-- Data grid -->
-            <RowDefinition Height="Auto"/>  <!-- Additional content -->
         </Grid.RowDefinitions>
 
         <!-- Page title -->
         <Label Grid.Row="0" Content="Manage Card Locations" Style="{StaticResource BigHeaderLabelStyle}" />
+        
         <!-- Section header -->
         <Label Grid.Row="1" Content="{Binding ModeMessage}" Style="{StaticResource SmallHeaderLabelStyle}" />
 
@@ -53,7 +53,7 @@
                       Margin="0,0,0,14">
             </ComboBox>
 
-            <Grid Width="350">
+            <Grid>
                 <Button Content="{Binding ActionButtonText}"
                         Command="{Binding SubmitActionCommand}"
                         IsEnabled="{Binding IsActionButtonEnabled}"
@@ -77,15 +77,20 @@
         </StackPanel>
 
         <!-- Status message -->
-        <TextBlock Grid.Row="3" Margin="0,16,0,0" Text="{Binding StatusMessage}" Visibility="{Binding IsStatusVisible, Converter={StaticResource BoolToVisibilityConverter}}" HorizontalAlignment="Center" TextWrapping="Wrap" />
+        <TextBlock Grid.Row="3" 
+                   Margin="0,16,0,0" 
+                   Text="{Binding StatusMessage}" 
+                   Visibility="{Binding IsStatusVisible, Converter={StaticResource BoolToVisibilityConverter}}" 
+                   HorizontalAlignment="Center" 
+                   TextWrapping="Wrap" />
 
         <!-- Data grid -->
         <DataGrid Grid.Row="4"
-          ItemsSource="{Binding Locations}"
-          SelectedItem="{Binding SelectedLocation, Mode=TwoWay}"
-          behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedLocations}"
-          behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ClearSelectionTrigger}"        
-          Style="{StaticResource ManagementGridStyle}">
+                  ItemsSource="{Binding Locations}"
+                  SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                  behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedItems}"
+                  behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ClearSelectionTrigger}"
+                  Style="{StaticResource ManagementGridStyle}">
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="MouseDoubleClick">
                     <i:InvokeCommandAction Command="{Binding BeginEditSelectedItemCommand}" />

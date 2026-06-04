@@ -26,12 +26,6 @@ namespace CollectaMundo.ViewModels.Utilities
         protected override string SelectedReadOnlyModeMessage => string.Empty;
         protected override string EditSingleModeMessage => "Edit selected card location";
         protected override string EditMultipleModeMessage => "Edit selected card locations";
-        public CardLocation? SelectedLocation
-        {
-            get => SelectedItem;
-            set => SelectedItem = value;
-        }
-        public ObservableCollection<CardLocation> SelectedLocations => SelectedItems;
 
         [ObservableProperty]
         private string locationName = string.Empty;
@@ -118,7 +112,7 @@ namespace CollectaMundo.ViewModels.Utilities
                     return;
                 }
 
-                if (EditorMode is SelectionEditorMode.EditSingle && SelectedLocation is not null)
+                if (EditorMode is SelectionEditorMode.EditSingle && SelectedItem is not null)
                 {
                     if (SelectedLocationType is not CardLocationType locationType)
                     {
@@ -127,7 +121,7 @@ namespace CollectaMundo.ViewModels.Utilities
                     }
 
                     var mutation = await _cardLocationService.UpdateLocationAsync(
-                        SelectedLocation.Id,
+                        SelectedItem.Id,
                         LocationName,
                         locationType);
 
@@ -149,7 +143,7 @@ namespace CollectaMundo.ViewModels.Utilities
                         return;
                     }
 
-                    var ids = SelectedLocations.Select(location => location.Id).ToList();
+                    var ids = SelectedItems.Select(location => location.Id).ToList();
 
                     var updatedLocations = await _cardLocationService.UpdateLocationTypesAsync(ids, locationType);
 
@@ -197,7 +191,7 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private async Task DeleteSelectedLocations()
         {
-            if (IsBusy || SelectedLocations.Count == 0)
+            if (IsBusy || SelectedItems.Count == 0)
             {
                 return;
             }
@@ -214,7 +208,7 @@ namespace CollectaMundo.ViewModels.Utilities
                 IsBusy = true;
                 ClearStatus();
 
-                var idsToDelete = SelectedLocations.Select(location => location.Id).ToList();
+                var idsToDelete = SelectedItems.Select(location => location.Id).ToList();
 
                 var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete);
 
