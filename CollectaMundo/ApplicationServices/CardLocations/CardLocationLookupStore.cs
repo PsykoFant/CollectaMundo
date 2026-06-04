@@ -57,5 +57,19 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             return removed;
         }
+        public void RemoveMany(IReadOnlyList<int> ids)
+        {
+            bool changed = false;
+
+            foreach (int id in ids)
+            {
+                changed |= _byId.Remove(id);
+            }
+
+            if (changed)
+            {
+                LocationsChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
     }
 }

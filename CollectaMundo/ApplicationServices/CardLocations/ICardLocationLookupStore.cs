@@ -11,6 +11,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         void Upsert(CardLocation location);
         void UpsertMany(IReadOnlyList<CardLocation> locations);
         bool Remove(int id);
+        void RemoveMany(IReadOnlyList<int> ids);
 
         event EventHandler? LocationsChanged;
     }

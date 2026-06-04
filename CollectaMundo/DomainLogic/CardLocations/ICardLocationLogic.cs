@@ -7,7 +7,5 @@ namespace CollectaMundo.DomainLogic.CardLocations
     {
         string NormalizeName(string? name);
         OperationResult ValidateForCreate(string? name, CardLocationType type);
-        OperationResult ValidateForUpdate(int id, string? name, CardLocationType type);
-        OperationResult ValidateId(int id);
     }
 }

@@ -6,6 +6,7 @@ using CollectaMundo.DomainLogic.Shared.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Utilities
 {
@@ -223,22 +224,20 @@ namespace CollectaMundo.ViewModels.Utilities
                         return;
                     }
 
-                    foreach (var location in SelectedLocations.ToList())
+                    var ids = SelectedLocations.Select(location => location.Id).ToList();
+
+                    var updatedLocations = await _cardLocationService.UpdateLocationTypesAsync(ids, locationType);
+
+                    foreach (var updatedLocation in updatedLocations)
                     {
-                        var mutation = await _cardLocationService.UpdateLocationAsync(location.Id, location.Name, locationType);
-
-                        if (mutation.Result.Code is not OperationResultCode.Success ||
-                            mutation.Entity is null)
-                        {
-                            ShowStatus(mutation.Result.Message);
-                            return;
-                        }
-
-                        ReplaceLocationInCollection(mutation.Entity);
+                        ReplaceLocationInCollection(updatedLocation);
                     }
 
                     ResetEditorAndSelection();
-                    ShowStatus("Selected locations updated.");
+                    ShowStatus(updatedLocations.Count == 1
+                        ? "Location updated successfully."
+                        : $"{updatedLocations.Count} locations updated successfully.");
+
                     return;
                 }
 
@@ -258,6 +257,11 @@ namespace CollectaMundo.ViewModels.Utilities
                 }
 
                 ShowStatus(createMutation.Result.Message);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Failed to submit changes: {ex.Message}");
+                Debug.WriteLine($"Failed to submit changes: {ex.Message}");
             }
             finally
             {
@@ -281,6 +285,7 @@ namespace CollectaMundo.ViewModels.Utilities
                 return;
             }
 
+            // First click enters delete confirmation mode.
             if (!IsDeleteConfirmationActive)
             {
                 IsDeleteConfirmationActive = true;
@@ -293,46 +298,29 @@ namespace CollectaMundo.ViewModels.Utilities
                 IsBusy = true;
                 ClearStatus();
 
-                var idsToDelete = SelectedLocations
-                    .Select(location => location.Id)
-                    .ToList();
+                var idsToDelete = SelectedLocations.Select(location => location.Id).ToList();
 
-                int deletedCount = 0;
-                var failedMessages = new List<string>();
+                var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete);
 
-                foreach (int id in idsToDelete)
+                if (result.Result.Code is OperationResultCode.Success)
                 {
-                    var result = await _cardLocationService.DeleteLocationAsync(id);
-
-                    if (result.Result.Code == OperationResultCode.Success)
+                    foreach (int id in idsToDelete)
                     {
                         RemoveLocationFromCollection(id);
-                        CollectionChanged?.Invoke(this, result.CollectionChangeSet);
-                        deletedCount++;
                     }
-                    else
-                    {
-                        failedMessages.Add(result.Result.Message);
-                    }
+
+                    CollectionChanged?.Invoke(this, result.CollectionChangeSet);
+
+                    IsDeleteConfirmationActive = false;
+                    ResetEditorAndSelection();
                 }
 
-                IsDeleteConfirmationActive = false;
-                ResetEditorAndSelection();
-
-                if (failedMessages.Count == 0)
-                {
-                    ShowStatus(deletedCount == 1
-                        ? "Location deleted successfully."
-                        : $"{deletedCount} locations deleted successfully.");
-                }
-                else if (deletedCount > 0)
-                {
-                    ShowStatus($"{deletedCount} locations deleted. Some deletions failed.");
-                }
-                else
-                {
-                    ShowStatus(failedMessages.FirstOrDefault() ?? "Failed to delete selected locations.");
-                }
+                ShowStatus(result.Result.Message);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Failed to delete selected locations: {ex.Message}");
+                Debug.WriteLine($"Failed to delete selected locations: {ex.Message}");
             }
             finally
             {
@@ -427,9 +415,7 @@ namespace CollectaMundo.ViewModels.Utilities
         }
         private void ReplaceLocationInCollection(CardLocation updatedLocation)
         {
-            int index = Locations
-                .Select((location, i) => new { location, i })
-                .FirstOrDefault(x => x.location.Id == updatedLocation.Id)?.i ?? -1;
+            int index = Locations.Select((location, i) => new { location, i }).FirstOrDefault(x => x.location.Id == updatedLocation.Id)?.i ?? -1;
 
             if (index >= 0)
             {
