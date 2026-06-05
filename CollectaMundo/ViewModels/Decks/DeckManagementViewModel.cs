@@ -99,46 +99,7 @@ namespace CollectaMundo.ViewModels.Decks
                 IsBusy = false;
             }
         }
-
-        [RelayCommand]
-        private async Task SubmitDeck()
-        {
-            if (IsBusy)
-            {
-                return;
-            }
-
-            try
-            {
-                IsBusy = true;
-                ClearStatus();
-
-                if (EditorMode is SelectionEditorMode.SelectedReadOnly)
-                {
-                    BeginEditSelectedItemCommand.Execute(null);
-                    return;
-                }
-
-                if (EditorMode is SelectionEditorMode.EditSingle && SelectedItem is not null)
-                {
-                    await UpdateSingleDeckAsync(SelectedItem);
-                    return;
-                }
-
-                if (EditorMode is SelectionEditorMode.EditMultiple)
-                {
-                    await UpdateSelectedDeckFormatsAsync();
-                    return;
-                }
-
-                await CreateDeckAsync();
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-        private async Task CreateDeckAsync()
+        protected override async Task CreateAsync()
         {
             var input = new DeckManagementInput
             {
@@ -157,7 +118,7 @@ namespace CollectaMundo.ViewModels.Decks
                 ResetEditorAndSelection();
             }
         }
-        private async Task UpdateSingleDeckAsync(DeckManagementRecord selectedDeck)
+        protected override async Task UpdateSingleAsync(DeckManagementRecord selectedDeck)
         {
             var input = new DeckManagementInput
             {
@@ -178,7 +139,7 @@ namespace CollectaMundo.ViewModels.Decks
                 ResetEditorAndSelection();
             }
         }
-        private async Task UpdateSelectedDeckFormatsAsync()
+        protected override async Task UpdateMultipleAsync(IReadOnlyList<DeckManagementRecord> selectedDecks)
         {
             if (string.IsNullOrWhiteSpace(SelectedDeckFormat))
             {
@@ -186,7 +147,6 @@ namespace CollectaMundo.ViewModels.Decks
                 return;
             }
 
-            var selectedDecks = SelectedItems.ToList();
             string selectedFormat = SelectedDeckFormat;
 
             var updatedDecks = await _cardLocationService.UpdateDeckFormatsAsync(selectedDecks, selectedFormat);

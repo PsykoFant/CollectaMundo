@@ -142,6 +142,57 @@ namespace CollectaMundo.ViewModels.Shared
         }
 
         [RelayCommand]
+        private async Task Submit()
+        {
+            if (IsBusy)
+            {
+                return;
+            }
+
+            try
+            {
+                IsBusy = true;
+                ClearStatus();
+
+                if (EditorMode is SelectionEditorMode.SelectedReadOnly)
+                {
+                    BeginEditSelectedItemCommand.Execute(null);
+                    return;
+                }
+
+                if (EditorMode is SelectionEditorMode.EditSingle && SelectedItem is not null)
+                {
+                    await UpdateSingleAsync(SelectedItem);
+                    return;
+                }
+
+                if (EditorMode is SelectionEditorMode.EditMultiple)
+                {
+                    await UpdateMultipleAsync(SelectedItems.ToList());
+                    return;
+                }
+
+                await CreateAsync();
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"{SubmitFailureMessage}: {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        protected virtual string SubmitFailureMessage => "Failed to submit changes";
+
+        protected abstract Task CreateAsync();
+
+        protected abstract Task UpdateSingleAsync(TItem selectedItem);
+
+        protected abstract Task UpdateMultipleAsync(IReadOnlyList<TItem> selectedItems);
+
+        [RelayCommand]
         protected void CancelEdit()
         {
             IsDeleteConfirmationActive = false;

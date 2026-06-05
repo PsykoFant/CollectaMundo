@@ -42,7 +42,7 @@
                      Margin="0,0,0,10">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter"
-                    Command="{Binding SubmitDeckCommand}" />
+                    Command="{Binding SubmitCommand}" />
                 </TextBox.InputBindings>
             </TextBox>
 
@@ -64,7 +64,7 @@
 
             <Grid>
                 <Button Content="{Binding ActionButtonText}"
-                        Command="{Binding SubmitDeckCommand}"
+                        Command="{Binding SubmitCommand}"
                         IsEnabled="{Binding IsActionButtonEnabled}" 
                         Width="100"
                         Height="20"

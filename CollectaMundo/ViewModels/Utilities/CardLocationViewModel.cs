@@ -42,6 +42,66 @@ namespace CollectaMundo.ViewModels.Utilities
         {
             SelectedLocationType ??= CardLocationType.Storage;
         }
+        protected override async Task CreateAsync()
+        {
+            if (SelectedLocationType is not CardLocationType createType)
+            {
+                ShowStatus("Select a location type before creating a location.");
+                return;
+            }
+
+            var createMutation = await _cardLocationService.CreateLocationAsync(LocationName, createType);
+
+            if (createMutation.Result.Code is OperationResultCode.Success && createMutation.Entity is not null)
+            {
+                Locations.Add(createMutation.Entity);
+                ResetEditorAndSelection();
+            }
+
+            ShowStatus(createMutation.Result.Message);
+        }
+        protected override async Task UpdateSingleAsync(CardLocation selectedLocation)
+        {
+            if (SelectedLocationType is not CardLocationType locationType)
+            {
+                ShowStatus("Select a location type before saving changes.");
+                return;
+            }
+
+            var mutation = await _cardLocationService.UpdateLocationAsync(selectedLocation.Id, LocationName, locationType);
+
+            if (mutation.Result.Code is OperationResultCode.Success &&
+                mutation.Entity is not null)
+            {
+                ReplaceLocationInCollection(mutation.Entity);
+                ResetEditorAndSelection();
+            }
+
+            ShowStatus(mutation.Result.Message);
+        }
+        protected override async Task UpdateMultipleAsync(IReadOnlyList<CardLocation> selectedLocations)
+        {
+            if (SelectedLocationType is not CardLocationType locationType)
+            {
+                ShowStatus("Select a location type before updating selected locations.");
+                return;
+            }
+
+            var ids = selectedLocations.Select(location => location.Id).ToList();
+
+            var updatedLocations = await _cardLocationService.UpdateLocationTypesAsync(ids, locationType);
+
+            foreach (var updatedLocation in updatedLocations)
+            {
+                ReplaceLocationInCollection(updatedLocation);
+            }
+
+            ResetEditorAndSelection();
+
+            ShowStatus(updatedLocations.Count == 1
+                ? "Location updated successfully."
+                : $"{updatedLocations.Count} locations updated successfully.");
+        }
         protected override void OnEnterSelectedReadOnlyMode(CardLocation selectedItem)
         {
             LocationName = selectedItem.Name;
@@ -86,101 +146,6 @@ namespace CollectaMundo.ViewModels.Utilities
             catch (Exception ex)
             {
                 ShowStatus($"Failed to load card locations: {ex.Message}");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        [RelayCommand]
-        private async Task SubmitAction()
-        {
-            if (IsBusy)
-            {
-                return;
-            }
-
-            try
-            {
-                IsBusy = true;
-                ClearStatus();
-
-                if (EditorMode is SelectionEditorMode.SelectedReadOnly)
-                {
-                    BeginEditSelectedItemCommand.Execute(null);
-                    return;
-                }
-
-                if (EditorMode is SelectionEditorMode.EditSingle && SelectedItem is not null)
-                {
-                    if (SelectedLocationType is not CardLocationType locationType)
-                    {
-                        ShowStatus("Select a location type before saving changes.");
-                        return;
-                    }
-
-                    var mutation = await _cardLocationService.UpdateLocationAsync(
-                        SelectedItem.Id,
-                        LocationName,
-                        locationType);
-
-                    if (mutation.Result.Code is OperationResultCode.Success && mutation.Entity is not null)
-                    {
-                        ReplaceLocationInCollection(mutation.Entity);
-                        ResetEditorAndSelection();
-                    }
-
-                    ShowStatus(mutation.Result.Message);
-                    return;
-                }
-
-                if (EditorMode is SelectionEditorMode.EditMultiple)
-                {
-                    if (SelectedLocationType is not CardLocationType locationType)
-                    {
-                        ShowStatus("Select a location type before updating selected locations.");
-                        return;
-                    }
-
-                    var ids = SelectedItems.Select(location => location.Id).ToList();
-
-                    var updatedLocations = await _cardLocationService.UpdateLocationTypesAsync(ids, locationType);
-
-                    foreach (var updatedLocation in updatedLocations)
-                    {
-                        ReplaceLocationInCollection(updatedLocation);
-                    }
-
-                    ResetEditorAndSelection();
-
-                    ShowStatus(updatedLocations.Count == 1
-                        ? "Location updated successfully."
-                        : $"{updatedLocations.Count} locations updated successfully.");
-
-                    return;
-                }
-
-                if (SelectedLocationType is not CardLocationType createType)
-                {
-                    ShowStatus("Select a location type before creating a location.");
-                    return;
-                }
-
-                var createMutation = await _cardLocationService.CreateLocationAsync(LocationName, createType);
-
-                if (createMutation.Result.Code is OperationResultCode.Success && createMutation.Entity is not null)
-                {
-                    Locations.Add(createMutation.Entity);
-                    ResetEditorAndSelection();
-                }
-
-                ShowStatus(createMutation.Result.Message);
-            }
-            catch (Exception ex)
-            {
-                ShowStatus($"Failed to submit changes: {ex.Message}");
-                Debug.WriteLine($"Failed to submit changes: {ex.Message}");
             }
             finally
             {
