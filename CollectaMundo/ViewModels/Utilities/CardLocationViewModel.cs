@@ -147,8 +147,9 @@ namespace CollectaMundo.ViewModels.Utilities
                 async selectedLocations =>
                 {
                     var idsToDelete = selectedLocations.Select(location => location.Id).ToList();
+                    var entityName = idsToDelete.Count == 1 ? "location" : "locations";
 
-                    var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete);
+                    var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete, entityName);
 
                     if (result.Result.Code is OperationResultCode.Success)
                     {

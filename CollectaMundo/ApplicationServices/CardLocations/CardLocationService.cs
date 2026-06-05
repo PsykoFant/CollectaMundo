@@ -84,38 +84,6 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new MutationResult<DeckManagementRecord>(new OperationResult(OperationResultCode.Error, $"Failed to create deck: {ex.Message}"), null);
             }
         }
-        private async Task<MutationResult<CardLocation>> CreateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, CardLocationType type)
-        {
-            var validation = _cardLocationLogic.ValidateNameAndType(name, type);
-
-            if (validation.Code != OperationResultCode.Success)
-            {
-                return new MutationResult<CardLocation>(validation, null);
-            }
-
-            string normalizedName = _cardLocationLogic.NormalizeName(name);
-
-            try
-            {
-                bool exists = await _cardLocationRepo.ExistsByNameAsync(conn, tx, normalizedName);
-
-                if (exists)
-                {
-                    return new MutationResult<CardLocation>(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
-                }
-
-                string dbType = MapTypeToDb(type);
-                int id = await _cardLocationRepo.CreateLocation(conn, tx, normalizedName, dbType);
-
-                var location = CreateLocationObject(id, normalizedName, type);
-
-                return new MutationResult<CardLocation>(new OperationResult(OperationResultCode.Success, "Card location created successfully."), location);
-            }
-            catch (SQLiteException ex) when (IsDuplicateLocationNameViolation(ex))
-            {
-                return new MutationResult<CardLocation>(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
-            }
-        }
         public async Task<IReadOnlyList<CardLocation>> CreateMissingLocationsAsStorageAsync(IReadOnlyList<string> names, CancellationToken token)
         {
             var type = CardLocationType.Storage;
@@ -176,6 +144,39 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             }
 
             return createdLocations;
+        }
+
+        private async Task<MutationResult<CardLocation>> CreateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, CardLocationType type)
+        {
+            var validation = _cardLocationLogic.ValidateNameAndType(name, type);
+
+            if (validation.Code != OperationResultCode.Success)
+            {
+                return new MutationResult<CardLocation>(validation, null);
+            }
+
+            string normalizedName = _cardLocationLogic.NormalizeName(name);
+
+            try
+            {
+                bool exists = await _cardLocationRepo.ExistsByNameAsync(conn, tx, normalizedName);
+
+                if (exists)
+                {
+                    return new MutationResult<CardLocation>(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
+                }
+
+                string dbType = MapTypeToDb(type);
+                int id = await _cardLocationRepo.CreateLocation(conn, tx, normalizedName, dbType);
+
+                var location = CreateLocationObject(id, normalizedName, type);
+
+                return new MutationResult<CardLocation>(new OperationResult(OperationResultCode.Success, "Card location created successfully."), location);
+            }
+            catch (SQLiteException ex) when (IsDuplicateLocationNameViolation(ex))
+            {
+                return new MutationResult<CardLocation>(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
+            }
         }
 
         // READ
@@ -251,6 +252,36 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new MutationResult<DeckManagementRecord>(new OperationResult(OperationResultCode.Error, $"Failed to update deck: {ex.Message}"), null);
             }
         }
+        public async Task<IReadOnlyList<CardLocation>> UpdateLocationTypesAsync(IReadOnlyList<int> ids, CardLocationType type, CancellationToken token = default)
+        {
+            var distinctIds = ids.Distinct().ToList();
+
+            if (distinctIds.Count == 0)
+            {
+                return [];
+            }
+
+            string dbType = MapTypeToDb(type);
+
+            var updatedLocations = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+            {
+                var updatedRecords = await _cardLocationRepo.UpdateLocationTypesAsync(conn, tx, distinctIds, dbType, token);
+
+                var updatedLocations = updatedRecords.Select(MapToDomain).ToList();
+
+                return (
+                Result: (IReadOnlyList<CardLocation>)updatedLocations,
+                    Commit: updatedLocations.Count > 0
+                );
+            });
+
+            if (updatedLocations.Count > 0)
+            {
+                _cardLocationLookupStore.UpsertMany(updatedLocations);
+            }
+
+            return updatedLocations;
+        }
         public async Task<IReadOnlyList<DeckManagementRecord>> UpdateDeckFormatsAsync(IReadOnlyList<DeckManagementRecord> decks, string format, CancellationToken token = default)
         {
             var distinctDecks = decks.GroupBy(deck => deck.LocationId).Select(group => group.First()).ToList();
@@ -294,6 +325,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             return updatedDecks;
         }
+
         private async Task<MutationResult<CardLocation>> UpdateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, CardLocationType type)
         {
             string normalizedName = _cardLocationLogic.NormalizeName(name);
@@ -332,43 +364,10 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new MutationResult<CardLocation>(new OperationResult(OperationResultCode.AlreadyExists, $"A location named '{normalizedName}' already exists."), null);
             }
         }
-        public async Task<IReadOnlyList<CardLocation>> UpdateLocationTypesAsync(IReadOnlyList<int> ids, CardLocationType type, CancellationToken token = default)
-        {
-            var distinctIds = ids.Distinct().ToList();
 
-            if (distinctIds.Count == 0)
-            {
-                return [];
-            }
-
-            string dbType = MapTypeToDb(type);
-
-            var updatedLocations = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
-            {
-                var updatedRecords = await _cardLocationRepo.UpdateLocationTypesAsync(conn, tx, distinctIds, dbType, token);
-
-                var updatedLocations = updatedRecords.Select(MapToDomain).ToList();
-
-                return (
-                Result: (IReadOnlyList<CardLocation>)updatedLocations,
-                    Commit: updatedLocations.Count > 0
-                );
-            });
-
-            if (updatedLocations.Count > 0)
-            {
-                _cardLocationLookupStore.UpsertMany(updatedLocations);
-            }
-
-            return updatedLocations;
-        }
 
         // DELETE
-        public Task<CardLocationDeleteResult> DeleteDecksAsync(IReadOnlyList<int> ids, CancellationToken token = default)
-        {
-            return DeleteLocationsAsync(ids, "decks", token);
-        }
-        public async Task<CardLocationDeleteResult> DeleteLocationsAsync(IReadOnlyList<int> ids, string entityName = "locations", CancellationToken token = default)
+        public async Task<CardLocationDeleteResult> DeleteLocationsAsync(IReadOnlyList<int> ids, string entityName, CancellationToken token = default)
         {
             var distinctIds = ids.Distinct().ToList();
 
@@ -378,7 +377,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 {
                     if (distinctIds.Count == 0)
                     {
-                        var emptyResult = new CardLocationDeleteResult(new OperationResult(OperationResultCode.Success, "No locations selected."), new CollectionChangeSet<CardSet>());
+                        var emptyResult = new CardLocationDeleteResult(new OperationResult(OperationResultCode.Success, $"No {entityName} selected."), new CollectionChangeSet<CardSet>());
                         return (Result: emptyResult, Commit: false);
                     }
 
@@ -415,8 +414,8 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     var successResult = new CardLocationDeleteResult(new OperationResult(
                         OperationResultCode.Success,
                         deletedLocationCount == 1
-                        ? "Location deleted successfully."
-                        : $"{deletedLocationCount} locations deleted successfully."),
+                        ? $"{entityName} deleted successfully."
+                        : $"{deletedLocationCount} {entityName} deleted successfully."),
                         plan.ChangeSet);
 
                     return (Result: successResult, Commit: deletedLocationCount > 0);

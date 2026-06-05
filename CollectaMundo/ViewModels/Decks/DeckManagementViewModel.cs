@@ -155,8 +155,9 @@ namespace CollectaMundo.ViewModels.Decks
                 async selectedDecks =>
                 {
                     var idsToDelete = selectedDecks.Select(deck => deck.LocationId).Distinct().ToList();
+                    var entityName = idsToDelete.Count == 1 ? "deck" : "decks";
 
-                    var result = await _cardLocationService.DeleteDecksAsync(idsToDelete);
+                    var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete, entityName);
 
                     if (result.Result.Code is OperationResultCode.Success)
                     {
