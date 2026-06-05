@@ -1127,8 +1127,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(scenarioLocation.Id, Convert.ToInt32(locationIdObj));
 
             // Act: delete location
-            locationVm.SelectedLocations.Clear();
-            locationVm.SelectedLocations.Add(scenarioLocation);
+            locationVm.SelectedItems.Clear();
+            locationVm.SelectedItems.Add(scenarioLocation);
 
             locationVm.DeleteSelectedLocationsCommand.Execute(null); // first click activates confirmation
             locationVm.DeleteSelectedLocationsCommand.Execute(null); // second click confirms
@@ -1394,8 +1394,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Contains(_mainVM.MyCollectionPageVM.ModifyCollectionViewModel!.CardsToAddOrEdit, r => r.CardToAddOrEdit.CardId == otterDeckAwesomeId);
 
             // Act: delete Deck Awesome location
-            locationVm.SelectedLocations.Clear();
-            locationVm.SelectedLocations.Add(deckAwesome);
+            locationVm.SelectedItems.Clear();
+            locationVm.SelectedItems.Add(deckAwesome);
 
             await locationVm.DeleteSelectedLocationsCommand.ExecuteAsync(null); // activate confirmation
             await locationVm.DeleteSelectedLocationsCommand.ExecuteAsync(null); // confirm delete

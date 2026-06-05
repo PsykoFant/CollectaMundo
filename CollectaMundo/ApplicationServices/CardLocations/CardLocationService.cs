@@ -364,8 +364,10 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         }
 
         // DELETE
-        public Task<CardLocationDeleteResult> DeleteLocationAsync(int id) => DeleteLocationsAsync([id], "location");
-        public Task<CardLocationDeleteResult> DeleteDeckAsync(int id) => DeleteLocationsAsync([id], "deck");
+        public Task<CardLocationDeleteResult> DeleteDecksAsync(IReadOnlyList<int> ids, CancellationToken token = default)
+        {
+            return DeleteLocationsAsync(ids, "decks", token);
+        }
         public async Task<CardLocationDeleteResult> DeleteLocationsAsync(IReadOnlyList<int> ids, string entityName = "locations", CancellationToken token = default)
         {
             var distinctIds = ids.Distinct().ToList();

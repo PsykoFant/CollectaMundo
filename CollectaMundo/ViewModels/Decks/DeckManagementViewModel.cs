@@ -223,46 +223,24 @@ namespace CollectaMundo.ViewModels.Decks
                 IsBusy = true;
                 ClearStatus();
 
-                var idsToDelete = SelectedItems
-                    .Select(deck => deck.LocationId)
-                    .ToList();
+                var idsToDelete = SelectedItems.Select(deck => deck.LocationId).Distinct().ToList();
 
-                int deletedCount = 0;
-                var failedMessages = new List<string>();
+                var result = await _cardLocationService.DeleteDecksAsync(idsToDelete);
 
-                foreach (int locationId in idsToDelete)
+                if (result.Result.Code == OperationResultCode.Success)
                 {
-                    var result = await _cardLocationService.DeleteDeckAsync(locationId);
-
-                    if (result.Result.Code == OperationResultCode.Success)
+                    foreach (int locationId in idsToDelete)
                     {
                         _deckManagementStore.Remove(locationId);
-                        CollectionChanged?.Invoke(this, result.CollectionChangeSet);
-                        deletedCount++;
                     }
-                    else
-                    {
-                        failedMessages.Add(result.Result.Message);
-                    }
+
+                    CollectionChanged?.Invoke(this, result.CollectionChangeSet);
+
+                    IsDeleteConfirmationActive = false;
+                    ResetEditorAndSelection();
                 }
 
-                IsDeleteConfirmationActive = false;
-                ResetEditorAndSelection();
-
-                if (failedMessages.Count == 0)
-                {
-                    ShowStatus(deletedCount == 1
-                        ? "Deck deleted successfully."
-                        : $"{deletedCount} decks deleted successfully.");
-                }
-                else if (deletedCount > 0)
-                {
-                    ShowStatus($"{deletedCount} decks deleted. Some deletions failed.");
-                }
-                else
-                {
-                    ShowStatus(failedMessages.FirstOrDefault() ?? "Failed to delete selected decks.");
-                }
+                ShowStatus(result.Result.Message);
             }
             finally
             {
