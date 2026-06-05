@@ -7,7 +7,6 @@ using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Utilities
 {
@@ -15,8 +14,7 @@ namespace CollectaMundo.ViewModels.Utilities
     {
         private readonly ICardLocationService _cardLocationService = cardLocationService;
 
-        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
-
+        // UI text
         protected override string CreateButtonText => "Add location";
         protected override string EditButtonText => "Edit location";
         protected override string SaveButtonText => "Save changes";
@@ -32,16 +30,33 @@ namespace CollectaMundo.ViewModels.Utilities
 
         [ObservableProperty]
         private CardLocationType? selectedLocationType;
+
+        // View data
         public ObservableCollection<CardLocation> Locations { get; } = [];
         public ObservableCollection<CardLocationType> LocationTypes { get; } =
         [
             CardLocationType.Storage,
             CardLocationType.Deck
         ];
-        protected override void OnEnterCreateMode()
+
+        // Editor state hooks
+        protected override void LoadEditorFromItem(CardLocation selectedItem)
         {
-            SelectedLocationType ??= CardLocationType.Storage;
+            LocationName = selectedItem.Name;
+            SelectedLocationType = selectedItem.Type;
         }
+        protected override void OnEnterEditMultipleMode(IReadOnlyList<CardLocation> selectedItems)
+        {
+            LocationName = string.Empty;
+            SelectedLocationType = null;
+        }
+        protected override void ClearEditorFields()
+        {
+            LocationName = string.Empty;
+            SelectedLocationType = CardLocationType.Storage;
+        }
+
+        // CRUD operations
         protected override async Task CreateAsync()
         {
             if (SelectedLocationType is not CardLocationType createType)
@@ -73,7 +88,7 @@ namespace CollectaMundo.ViewModels.Utilities
             if (mutation.Result.Code is OperationResultCode.Success &&
                 mutation.Entity is not null)
             {
-                ReplaceLocationInCollection(mutation.Entity);
+                UpdateLocationInCollection(mutation.Entity);
                 ResetEditorAndSelection();
             }
 
@@ -93,7 +108,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
             foreach (var updatedLocation in updatedLocations)
             {
-                ReplaceLocationInCollection(updatedLocation);
+                UpdateLocationInCollection(updatedLocation);
             }
 
             ResetEditorAndSelection();
@@ -102,36 +117,12 @@ namespace CollectaMundo.ViewModels.Utilities
                 ? "Location updated successfully."
                 : $"{updatedLocations.Count} locations updated successfully.");
         }
-        protected override void OnEnterSelectedReadOnlyMode(CardLocation selectedItem)
-        {
-            LocationName = selectedItem.Name;
-            SelectedLocationType = selectedItem.Type;
-        }
-        protected override void OnEnterEditSingleMode(CardLocation selectedItem)
-        {
-            LocationName = selectedItem.Name;
-            SelectedLocationType = selectedItem.Type;
-        }
-        protected override void OnEnterEditMultipleMode(IReadOnlyList<CardLocation> selectedItems)
-        {
-            LocationName = string.Empty;
-            SelectedLocationType = null;
-        }
-        protected override void ClearEditorFields()
-        {
-            LocationName = string.Empty;
-        }
-        public async Task LoadCardLocationsAsync()
-        {
-            if (IsBusy)
-            {
-                return;
-            }
 
-            try
+        // Data loading
+        public Task LoadCardLocationsAsync()
+        {
+            return RunBusyOperationAsync(async () =>
             {
-                IsBusy = true;
-
                 var loadedLocations = (await _cardLocationService.GetAllLocationsAsync()).ToList();
 
                 Locations.Clear();
@@ -140,69 +131,43 @@ namespace CollectaMundo.ViewModels.Utilities
                 {
                     Locations.Add(location);
                 }
-
-                ClearStatus();
-            }
-            catch (Exception ex)
-            {
-                ShowStatus($"Failed to load card locations: {ex.Message}");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            },
+            "Failed to load card locations");
         }
 
+        // External notifications
+        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
+
+        // Commands
         [RelayCommand]
-        private async Task DeleteSelectedLocations()
+        private Task DeleteSelectedLocations()
         {
-            if (IsBusy || SelectedItems.Count == 0)
-            {
-                return;
-            }
-
-            if (!IsDeleteConfirmationActive)
-            {
-                IsDeleteConfirmationActive = true;
-                ShowStatus("This will also delete the location from cards with that location in your collection (if any).");
-                return;
-            }
-
-            try
-            {
-                IsBusy = true;
-                ClearStatus();
-
-                var idsToDelete = SelectedItems.Select(location => location.Id).ToList();
-
-                var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete);
-
-                if (result.Result.Code is OperationResultCode.Success)
+            return DeleteSelectedItemsAsync(
+                "This will also delete the location from cards with that location in your collection (if any).",
+                async selectedLocations =>
                 {
-                    foreach (int id in idsToDelete)
+                    var idsToDelete = selectedLocations.Select(location => location.Id).ToList();
+
+                    var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete);
+
+                    if (result.Result.Code is OperationResultCode.Success)
                     {
-                        RemoveLocationFromCollection(id);
+                        foreach (int id in idsToDelete)
+                        {
+                            RemoveLocationFromCollection(id);
+                        }
+
+                        CollectionChanged?.Invoke(this, result.CollectionChangeSet);
                     }
 
-                    CollectionChanged?.Invoke(this, result.CollectionChangeSet);
+                    ShowStatus(result.Result.Message);
 
-                    IsDeleteConfirmationActive = false;
-                    ResetEditorAndSelection();
-                }
-
-                ShowStatus(result.Result.Message);
-            }
-            catch (Exception ex)
-            {
-                ShowStatus($"Failed to delete selected locations: {ex.Message}");
-                Debug.WriteLine($"Failed to delete selected locations: {ex.Message}");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+                    return result.Result.Code is OperationResultCode.Success;
+                });
         }
-        private void ReplaceLocationInCollection(CardLocation updatedLocation)
+
+        // Collection synchronization
+        private void UpdateLocationInCollection(CardLocation updatedLocation)
         {
             int index = Locations
                 .Select((location, i) => new { location, i })

@@ -6,6 +6,7 @@ namespace CollectaMundo.ViewModels.Shared
 {
     public abstract partial class LocationManagementViewModel<TItem> : ObservableObject where TItem : class
     {
+        // Tracks the current editor workflow state.
         private SelectionEditorMode editorMode;
         protected LocationManagementViewModel()
         {
@@ -18,6 +19,8 @@ namespace CollectaMundo.ViewModels.Shared
 
             SetCreateMode();
         }
+
+        // Core editor state
         protected SelectionEditorMode EditorMode
         {
             get => editorMode;
@@ -28,9 +31,12 @@ namespace CollectaMundo.ViewModels.Shared
             }
         }
 
+        // Selection state
         public ObservableCollection<TItem> SelectedItems { get; } = [];
         public bool HasSelectedItems => SelectedItems.Count > 0;
         public bool IsCancelVisible => IsDeleteConfirmationActive || EditorMode is SelectionEditorMode.EditSingle or SelectionEditorMode.EditMultiple;
+
+        // Editor enablement
         public bool IsActionButtonEnabled =>
             !IsBusy &&
             !IsDeleteConfirmationActive &&
@@ -48,6 +54,8 @@ namespace CollectaMundo.ViewModels.Shared
             EditorMode is SelectionEditorMode.Create
                 or SelectionEditorMode.EditSingle
                 or SelectionEditorMode.EditMultiple;
+
+        // UI text
         public string ActionButtonText => EditorMode switch
         {
             SelectionEditorMode.Create => CreateButtonText,
@@ -85,6 +93,8 @@ namespace CollectaMundo.ViewModels.Shared
 
         [ObservableProperty]
         private int clearSelectionTrigger;
+
+        // Customizable UI text
         protected virtual string CreateButtonText => "Add";
         protected virtual string EditButtonText => "Edit";
         protected virtual string SaveButtonText => "Save changes";
@@ -95,12 +105,28 @@ namespace CollectaMundo.ViewModels.Shared
         protected virtual string EditSingleModeMessage => "Edit selected item";
         protected virtual string EditMultipleModeMessage => "Edit selected items";
         protected virtual string DeleteConfirmationMessage => "Confirm delete";
+        protected virtual string SubmitFailureMessage => "Failed to submit changes";
 
+        // Mode transition hooks
         protected virtual void OnEnterCreateMode() { }
-        protected virtual void OnEnterSelectedReadOnlyMode(TItem selectedItem) { }
-        protected virtual void OnEnterEditSingleMode(TItem selectedItem) { }
+        protected virtual void OnEnterSelectedReadOnlyMode(TItem item)
+        {
+            LoadEditorFromItem(item);
+        }
+        protected virtual void OnEnterEditSingleMode(TItem item)
+        {
+            LoadEditorFromItem(item);
+        }
+        protected abstract void LoadEditorFromItem(TItem item);
         protected virtual void OnEnterEditMultipleMode(IReadOnlyList<TItem> selectedItems) { }
         protected virtual void ClearEditorFields() { }
+
+        // Domain operations supplied by derived view models
+        protected abstract Task CreateAsync();
+        protected abstract Task UpdateSingleAsync(TItem selectedItem);
+        protected abstract Task UpdateMultipleAsync(IReadOnlyList<TItem> selectedItems);
+
+        // ObservableProperty callbacks
         partial void OnSelectedItemChanged(TItem? value)
         {
             IsDeleteConfirmationActive = false;
@@ -117,7 +143,6 @@ namespace CollectaMundo.ViewModels.Shared
 
             EditorMode = SelectionEditorMode.SelectedReadOnly;
             OnEnterSelectedReadOnlyMode(value);
-            RefreshEditorState();
         }
         partial void OnIsDeleteConfirmationActiveChanged(bool value)
         {
@@ -128,6 +153,7 @@ namespace CollectaMundo.ViewModels.Shared
             RefreshEditorState();
         }
 
+        // Commands
         [RelayCommand]
         protected virtual void BeginEditSelectedItem()
         {
@@ -138,7 +164,6 @@ namespace CollectaMundo.ViewModels.Shared
 
             EditorMode = SelectionEditorMode.EditSingle;
             OnEnterEditSingleMode(SelectedItem);
-            RefreshEditorState();
         }
 
         [RelayCommand]
@@ -184,14 +209,6 @@ namespace CollectaMundo.ViewModels.Shared
             }
         }
 
-        protected virtual string SubmitFailureMessage => "Failed to submit changes";
-
-        protected abstract Task CreateAsync();
-
-        protected abstract Task UpdateSingleAsync(TItem selectedItem);
-
-        protected abstract Task UpdateMultipleAsync(IReadOnlyList<TItem> selectedItems);
-
         [RelayCommand]
         protected void CancelEdit()
         {
@@ -219,12 +236,75 @@ namespace CollectaMundo.ViewModels.Shared
                 ResetEditorAndSelection();
             }
         }
+
+        // Shared workflow helpers
+
+        protected async Task RunBusyOperationAsync(Func<Task> operation, string failureMessage)
+        {
+            if (IsBusy)
+            {
+                return;
+            }
+
+            try
+            {
+                IsBusy = true;
+                ClearStatus();
+
+                await operation();
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"{failureMessage}: {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        protected async Task DeleteSelectedItemsAsync(string confirmationMessage, Func<IReadOnlyList<TItem>, Task<bool>> deleteOperation)
+        {
+            if (IsBusy || SelectedItems.Count == 0)
+            {
+                return;
+            }
+
+            if (!IsDeleteConfirmationActive)
+            {
+                IsDeleteConfirmationActive = true;
+                ShowStatus(confirmationMessage);
+                return;
+            }
+
+            try
+            {
+                IsBusy = true;
+                ClearStatus();
+
+                var selectedItems = SelectedItems.ToList();
+
+                bool success = await deleteOperation(selectedItems);
+
+                if (success)
+                {
+                    IsDeleteConfirmationActive = false;
+                    ResetEditorAndSelection();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Failed to delete selected items: {ex.Message}");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
         protected void SetCreateMode()
         {
             EditorMode = SelectionEditorMode.Create;
             ClearEditorFields();
             OnEnterCreateMode();
-            RefreshEditorState();
         }
         protected void ResetEditorAndSelection()
         {
@@ -237,7 +317,6 @@ namespace CollectaMundo.ViewModels.Shared
             ClearSelectionTrigger++;
 
             OnEnterCreateMode();
-            RefreshEditorState();
         }
         protected void RefreshSelectionMode()
         {
@@ -248,7 +327,6 @@ namespace CollectaMundo.ViewModels.Shared
                 EditorMode = SelectionEditorMode.EditMultiple;
                 ClearEditorFields();
                 OnEnterEditMultipleMode(SelectedItems.ToList());
-                RefreshEditorState();
                 return;
             }
 
@@ -256,12 +334,13 @@ namespace CollectaMundo.ViewModels.Shared
             {
                 EditorMode = SelectionEditorMode.SelectedReadOnly;
                 OnEnterSelectedReadOnlyMode(SelectedItem);
-                RefreshEditorState();
                 return;
             }
 
             SetCreateMode();
         }
+
+        // Status and UI refresh helpers
         protected void ClearStatus()
         {
             StatusMessage = string.Empty;

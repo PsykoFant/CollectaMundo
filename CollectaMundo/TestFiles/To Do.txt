@@ -2,7 +2,7 @@ TO DO
 
 Deck editor!
 
-  - Merge af location viewmodel og deck management viewmodel (de har meget overlap)
+
   - unit test af knaplogik i location viewmodel (f.eks. delete knappen)
   - Load af list af locations under location management
    - Tilføj deck opdatering til scenarietest (e.g. lav til storage osv.). Filtrer også på deck i scenarietest

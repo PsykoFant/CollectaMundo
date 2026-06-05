@@ -16,8 +16,7 @@ namespace CollectaMundo.ViewModels.Decks
         private readonly ICardLocationService _cardLocationService = cardLocationService;
         private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
 
-        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
-
+        // UI text
         protected override string CreateButtonText => "Add deck";
         protected override string EditButtonText => "Edit deck";
         protected override string SaveButtonText => "Save changes";
@@ -36,6 +35,8 @@ namespace CollectaMundo.ViewModels.Decks
 
         [ObservableProperty]
         private string description = string.Empty;
+
+        // View data
         public ObservableCollection<DeckManagementRecord> Decks => _deckManagementStore.Decks;
         public ObservableCollection<string> DeckFormats { get; } =
         [
@@ -49,17 +50,9 @@ namespace CollectaMundo.ViewModels.Decks
             "brawl",
             "historic"
         ];
-        protected override void OnEnterCreateMode()
-        {
-            SelectedDeckFormat ??= string.Empty;
-        }
-        protected override void OnEnterSelectedReadOnlyMode(DeckManagementRecord selectedItem)
-        {
-            DeckName = selectedItem.Name;
-            SelectedDeckFormat = selectedItem.Format ?? string.Empty;
-            Description = selectedItem.Description ?? string.Empty;
-        }
-        protected override void OnEnterEditSingleMode(DeckManagementRecord selectedItem)
+
+        // Editor state hooks
+        protected override void LoadEditorFromItem(DeckManagementRecord selectedItem)
         {
             DeckName = selectedItem.Name;
             SelectedDeckFormat = selectedItem.Format ?? string.Empty;
@@ -77,28 +70,14 @@ namespace CollectaMundo.ViewModels.Decks
             Description = string.Empty;
             SelectedDeckFormat = string.Empty;
         }
-        public async Task LoadDecksAsync()
-        {
-            if (IsBusy)
-            {
-                return;
-            }
 
-            try
-            {
-                IsBusy = true;
-                await _deckManagementStore.LoadAsync();
-                ClearStatus();
-            }
-            catch (Exception ex)
-            {
-                ShowStatus($"Failed to load decks: {ex.Message}");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+        // Data loading
+        public Task LoadDecksAsync()
+        {
+            return RunBusyOperationAsync(() => _deckManagementStore.LoadAsync(), "Failed to load decks");
         }
+
+        // CRUD operations
         protected override async Task CreateAsync()
         {
             var input = new DeckManagementInput
@@ -108,7 +87,7 @@ namespace CollectaMundo.ViewModels.Decks
                 Description = Description
             };
 
-            var mutation = await _cardLocationService.CreateDeckAsync(input);
+            var mutation = await _cardLocationService.CreateDeckAsync(CreateInput());
 
             ShowStatus(mutation.Result.Message);
 
@@ -120,16 +99,7 @@ namespace CollectaMundo.ViewModels.Decks
         }
         protected override async Task UpdateSingleAsync(DeckManagementRecord selectedDeck)
         {
-            var input = new DeckManagementInput
-            {
-                Name = DeckName,
-                Format = SelectedDeckFormat,
-                Description = Description
-            };
-
-            var mutation = await _cardLocationService.UpdateDeckAsync(
-                selectedDeck.LocationId,
-                input);
+            var mutation = await _cardLocationService.UpdateDeckAsync(selectedDeck.LocationId, CreateInput());
 
             ShowStatus(mutation.Result.Message);
 
@@ -162,50 +132,46 @@ namespace CollectaMundo.ViewModels.Decks
                 ? "Deck updated successfully."
                 : $"{updatedDecks.Count} decks updated successfully.");
         }
+        private DeckManagementInput CreateInput()
+        {
+            return new DeckManagementInput
+            {
+                Name = DeckName,
+                Format = SelectedDeckFormat,
+                Description = Description
+            };
+        }
+
+        // External notifications
+        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
+
+        // Commands
 
         [RelayCommand]
-        private async Task DeleteSelectedDecks()
+        private Task DeleteSelectedDecks()
         {
-            if (IsBusy || SelectedItems.Count == 0)
-            {
-                return;
-            }
-
-            if (!IsDeleteConfirmationActive)
-            {
-                IsDeleteConfirmationActive = true;
-                ShowStatus("This will delete the selected deck metadata and deck location.");
-                return;
-            }
-
-            try
-            {
-                IsBusy = true;
-                ClearStatus();
-
-                var idsToDelete = SelectedItems.Select(deck => deck.LocationId).Distinct().ToList();
-
-                var result = await _cardLocationService.DeleteDecksAsync(idsToDelete);
-
-                if (result.Result.Code == OperationResultCode.Success)
+            return DeleteSelectedItemsAsync(
+                "This will delete the selected deck metadata and deck location.",
+                async selectedDecks =>
                 {
-                    foreach (int locationId in idsToDelete)
+                    var idsToDelete = selectedDecks.Select(deck => deck.LocationId).Distinct().ToList();
+
+                    var result = await _cardLocationService.DeleteDecksAsync(idsToDelete);
+
+                    if (result.Result.Code is OperationResultCode.Success)
                     {
-                        _deckManagementStore.Remove(locationId);
+                        foreach (int locationId in idsToDelete)
+                        {
+                            _deckManagementStore.Remove(locationId);
+                        }
+
+                        CollectionChanged?.Invoke(this, result.CollectionChangeSet);
                     }
 
-                    CollectionChanged?.Invoke(this, result.CollectionChangeSet);
+                    ShowStatus(result.Result.Message);
 
-                    IsDeleteConfirmationActive = false;
-                    ResetEditorAndSelection();
-                }
-
-                ShowStatus(result.Result.Message);
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+                    return result.Result.Code is OperationResultCode.Success;
+                });
         }
     }
 }
