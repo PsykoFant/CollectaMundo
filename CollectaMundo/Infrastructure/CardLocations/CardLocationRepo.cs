@@ -11,12 +11,12 @@ namespace CollectaMundo.Infrastructure.CardLocations
     public sealed class CardLocationRepo : ICardLocationRepo
     {
         // CREATE
-        public async Task<int> CreateLocation(SQLiteConnection conn, SQLiteTransaction tx, string name, string type)
+        public async Task<int> CreateLocationAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, string type)
         {
-            var created = await CreateLocations(conn, tx, [(name, type)], CancellationToken.None);
-            return created[0].Id;
+            var created = await CreateLocationsAsync(conn, tx, [(name, type)], CancellationToken.None);
+            return created.Single().Id;
         }
-        public async Task<IReadOnlyList<CardLocationRecord>> CreateLocations(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token)
+        public async Task<IReadOnlyList<CardLocationRecord>> CreateLocationsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token)
         {
             const string sql = """
                                 INSERT INTO cardLocations (name, type)
@@ -43,7 +43,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 if (scalar is null || scalar == DBNull.Value)
                 {
                     throw new InvalidOperationException(
-                        $"CreateLocations failed to return a new card location id for '{location.Name}'.");
+                        $"CreateLocationsAsync failed to return a new card location id for '{location.Name}'.");
                 }
 
                 created.Add(CreateCardLocationRecord(Convert.ToInt32(scalar), location.Name, location.Type));
@@ -70,6 +70,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
         }
 
         // READ
+
+        // locations
         public async Task<IReadOnlyList<CardLocationRecord>> GetAllLocationsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
         {
             const string sql = """
@@ -93,26 +95,26 @@ namespace CollectaMundo.Infrastructure.CardLocations
         }
         public async Task<IReadOnlyList<int>> GetExistingLocationIdsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> ids, CancellationToken token = default)
         {
-            var distinctIds = ids.Distinct().ToList();
+            var distinctIds = GetDistinctIds(ids);
 
             if (distinctIds.Count == 0)
             {
                 return [];
             }
 
-            var parameterNames = distinctIds.Select((_, index) => $"@id{index}").ToList();
+            var parameters = CreateParameterList(distinctIds.Count);
 
             string sql = $"""
                         SELECT id
                         FROM cardLocations
-                        WHERE id IN ({string.Join(", ", parameterNames)});
+                        WHERE id IN ({parameters.InClause});
                         """;
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameterNames[i], distinctIds[i]);
+                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             var existingIds = new List<int>();
@@ -126,6 +128,24 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return existingIds;
         }
+        public async Task<bool> ExistsByNameAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, int? excludingId = null)
+        {
+            const string sql = """
+                SELECT 1
+                FROM cardLocations
+                WHERE name = @name COLLATE NOCASE
+                  AND (@excludingId IS NULL OR id <> @excludingId)
+                LIMIT 1;
+                """;
+
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            DbHelpers.AddString(cmd, "@name", name);
+            DbHelpers.AddNullableInt32(cmd, "@excludingId", excludingId);
+
+            return await DbHelpers.ExistsAsync(cmd);
+        }
+
+        // decks
         public async Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
         {
             const string sql = """
@@ -169,6 +189,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return decks;
         }
+
+        // collection rows
         public Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             const string sql = """
@@ -181,29 +203,45 @@ namespace CollectaMundo.Infrastructure.CardLocations
         }
         public async Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, CancellationToken token = default)
         {
-            var distinctIds = locationIds.Distinct().ToList();
+            var distinctIds = GetDistinctIds(locationIds);
 
             if (distinctIds.Count == 0)
             {
                 return [];
             }
 
-            var parameterNames = distinctIds.Select((_, index) => $"@locationId{index}").ToList();
+            var parameters = CreateParameterList(distinctIds.Count);
 
             string sql = $"""
-                        SELECT *
+                        SELECT id, uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade
                         FROM myCollection
-                        WHERE locationId IN ({string.Join(", ", parameterNames)});
+                        WHERE locationId IN ({parameters.InClause});
                         """;
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameterNames[i], distinctIds[i]);
+                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
+            return await ExecuteCollectionRowQueryAsync(conn, tx, sql, cmd =>
+            {
+                for (int i = 0; i < distinctIds.Count; i++)
+                {
+                    DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
+                }
+            }, token);
+        }
+
+
+        private static async Task<IReadOnlyList<MyCollectionRow>> ExecuteCollectionRowQueryAsync(SQLiteConnection conn, SQLiteTransaction tx, string sql, Action<SQLiteCommand>? configureCommand = null, CancellationToken token = default)
+        {
             var rows = new List<MyCollectionRow>();
+
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+
+            configureCommand?.Invoke(cmd);
 
             using var reader = await cmd.ExecuteReaderAsync(token);
 
@@ -213,39 +251,6 @@ namespace CollectaMundo.Infrastructure.CardLocations
             }
 
             return rows;
-        }
-        private static async Task<IReadOnlyList<MyCollectionRow>> ExecuteCollectionRowQueryAsync(SQLiteConnection conn, SQLiteTransaction tx, string sql, Action<SQLiteCommand>? configureCommand = null)
-        {
-            var rows = new List<MyCollectionRow>();
-
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
-
-            configureCommand?.Invoke(cmd);
-
-            using var reader = await cmd.ExecuteReaderAsync();
-
-            while (await reader.ReadAsync())
-            {
-                rows.Add(MapCollectionRow(reader));
-            }
-
-            return rows;
-        }
-        public async Task<bool> ExistsByNameAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, int? excludingId = null)
-        {
-            const string sql = """
-                SELECT 1
-                FROM cardLocations
-                WHERE name = @name COLLATE NOCASE
-                  AND (@excludingId IS NULL OR id <> @excludingId)
-                LIMIT 1;
-                """;
-
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
-            DbHelpers.AddString(cmd, "@name", name);
-            DbHelpers.AddNullableInt32(cmd, "@excludingId", excludingId);
-
-            return await DbHelpers.ExistsAsync(cmd);
         }
 
         // UPDATE
@@ -267,47 +272,44 @@ namespace CollectaMundo.Infrastructure.CardLocations
         }
         public async Task<IReadOnlyList<CardLocationRecord>> UpdateLocationTypesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> ids, string type, CancellationToken token = default)
         {
-            var distinctIds = ids.Distinct().ToList();
+            var distinctIds = GetDistinctIds(ids);
 
             if (distinctIds.Count == 0)
             {
                 return [];
             }
 
-            const string updateSql = """
-                                    UPDATE cardLocations
-                                    SET type = @type
-                                    WHERE id = @id;
-                                    """;
+            var parameters = CreateParameterList(distinctIds.Count);
+
+            string updateSql = $"""
+                        UPDATE cardLocations
+                        SET type = @type
+                        WHERE id IN ({parameters.InClause});
+                        """;
 
             using var updateCmd = DbHelpers.CreateCommand(conn, tx, updateSql);
-            DbHelpers.AddInt32(updateCmd, "@id", 0);
+
             DbHelpers.AddString(updateCmd, "@type", type);
 
-            foreach (int id in distinctIds)
+            for (int i = 0; i < distinctIds.Count; i++)
             {
-                token.ThrowIfCancellationRequested();
-
-                updateCmd.Parameters["@id"].Value = id;
-                updateCmd.Parameters["@type"].Value = type;
-
-                await updateCmd.ExecuteNonQueryAsync(token);
+                DbHelpers.AddInt32(updateCmd, parameters.Names[i], distinctIds[i]);
             }
 
-            var parameterNames = distinctIds.Select((_, index) => $"@id{index}").ToList();
+            await updateCmd.ExecuteNonQueryAsync(token);
 
             string selectSql = $"""
-                                SELECT id, name, type
-                                FROM cardLocations
-                                WHERE id IN ({string.Join(", ", parameterNames)})
-                                ORDER BY name COLLATE NOCASE ASC;
-                                """;
+                        SELECT id, name, type
+                        FROM cardLocations
+                        WHERE id IN ({parameters.InClause})
+                        ORDER BY name COLLATE NOCASE ASC;
+                        """;
 
             using var selectCmd = DbHelpers.CreateCommand(conn, tx, selectSql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(selectCmd, parameterNames[i], distinctIds[i]);
+                DbHelpers.AddInt32(selectCmd, parameters.Names[i], distinctIds[i]);
             }
 
             var results = new List<CardLocationRecord>();
@@ -323,26 +325,27 @@ namespace CollectaMundo.Infrastructure.CardLocations
         }
         public async Task<int> UpdateDeckFormatsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, string format, CancellationToken token = default)
         {
-            if (locationIds.Count == 0)
+            var distinctIds = GetDistinctIds(locationIds);
+            if (distinctIds.Count == 0)
             {
                 return 0;
             }
 
-            var parameterNames = locationIds.Select((_, index) => $"@id{index}").ToList();
+            var parameters = CreateParameterList(distinctIds.Count);
 
             string sql = $"""
                          UPDATE myDecks
                          SET format = @format
-                         WHERE locationId IN ({string.Join(", ", parameterNames)});
+                         WHERE locationId IN ({parameters.InClause});
                          """;
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
 
             DbHelpers.AddNullableString(cmd, "@format", format);
 
-            for (int i = 0; i < locationIds.Count; i++)
+            for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameterNames[i], locationIds[i]);
+                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             return await cmd.ExecuteNonQueryAsync(token);
@@ -352,71 +355,54 @@ namespace CollectaMundo.Infrastructure.CardLocations
         // DELETE
         public async Task<int> DeleteLocationsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> ids, CancellationToken token = default)
         {
-            var distinctIds = ids.Distinct().ToList();
+            var distinctIds = GetDistinctIds(ids);
 
             if (distinctIds.Count == 0)
             {
                 return 0;
             }
 
-            var parameterNames = distinctIds
-                .Select((_, index) => $"@id{index}")
-                .ToList();
+            var parameters = CreateParameterList(distinctIds.Count);
 
             string sql = $"""
                             DELETE FROM cardLocations
-                            WHERE id IN ({string.Join(", ", parameterNames)});
+                            WHERE id IN ({parameters.InClause});
                             """;
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameterNames[i], distinctIds[i]);
+                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             return await cmd.ExecuteNonQueryAsync(token);
         }
-        public async Task<int> DeleteDeckMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId)
-        {
-            const string sql = """
-                                DELETE FROM myDecks
-                                WHERE locationId = @locationId;
-                                """;
-
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
-            DbHelpers.AddInt32(cmd, "@locationId", locationId);
-
-            return await cmd.ExecuteNonQueryAsync();
-        }
         public async Task<int> DeleteDecksMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, CancellationToken token = default)
         {
-            var distinctIds = locationIds.Distinct().ToList();
+            var distinctIds = GetDistinctIds(locationIds);
 
             if (distinctIds.Count == 0)
             {
                 return 0;
             }
 
-            var parameterNames = distinctIds
-                .Select((_, index) => $"@locationId{index}")
-                .ToList();
+            var parameters = CreateParameterList(distinctIds.Count);
 
             string sql = $"""
                             DELETE FROM myDecks
-                            WHERE locationId IN ({string.Join(", ", parameterNames)});
+                            WHERE locationId IN ({parameters.InClause});
                             """;
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameterNames[i], distinctIds[i]);
+                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             return await cmd.ExecuteNonQueryAsync(token);
         }
-
 
 
         // Helpers
@@ -429,7 +415,6 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 Type = type
             };
         }
-
         private static MyCollectionRow MapCollectionRow(DbDataReader reader)
         {
             var id = reader.GetInt32(reader.GetOrdinal("id"));
@@ -456,6 +441,17 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 CardsOwned = reader.GetInt32(reader.GetOrdinal("cardsOwned")),
                 CardsForTrade = reader.GetInt32(reader.GetOrdinal("cardsForTrade"))
             };
+        }
+        private static List<int> GetDistinctIds(IEnumerable<int> ids)
+        {
+            return [.. ids.Distinct()];
+        }
+        private sealed record SqlParameterList(IReadOnlyList<string> Names, string InClause);
+        private static SqlParameterList CreateParameterList(int count, string prefix = "id")
+        {
+            List<string> names = [.. Enumerable.Range(0, count).Select(index => $"@{prefix}{index}")];
+
+            return new SqlParameterList(names, string.Join(", ", names));
         }
     }
 }

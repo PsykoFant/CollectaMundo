@@ -131,7 +131,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                 var recordsToInsert = namesToCreate.Select(name => (Name: name, Type: dbType)).ToList();
 
-                var createdRecords = await _cardLocationRepo.CreateLocations(conn, tx, recordsToInsert, token);
+                var createdRecords = await _cardLocationRepo.CreateLocationsAsync(conn, tx, recordsToInsert, token);
 
                 var createdLocations = createdRecords.Select(MapToDomain).ToList();
 
@@ -167,7 +167,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 }
 
                 string dbType = MapTypeToDb(type);
-                int id = await _cardLocationRepo.CreateLocation(conn, tx, normalizedName, dbType);
+                int id = await _cardLocationRepo.CreateLocationAsync(conn, tx, normalizedName, dbType);
 
                 var location = CreateLocationObject(id, normalizedName, type);
 

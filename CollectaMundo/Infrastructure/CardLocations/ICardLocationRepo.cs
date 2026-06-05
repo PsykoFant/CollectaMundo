@@ -7,8 +7,8 @@ namespace CollectaMundo.Infrastructure.CardLocations
     public interface ICardLocationRepo
     {
         // CREATE
-        Task<int> CreateLocation(SQLiteConnection conn, SQLiteTransaction tx, string name, string type);
-        Task<IReadOnlyList<CardLocationRecord>> CreateLocations(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token);
+        Task<int> CreateLocationAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, string type);
+        Task<IReadOnlyList<CardLocationRecord>> CreateLocationsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token);
         Task UpsertMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId, string? format, string? description);
 
         // READ		
@@ -26,7 +26,6 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
         // DELETE
         Task<int> DeleteLocationsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> ids, CancellationToken token = default);
-        Task<int> DeleteDeckMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, int locationId);
         Task<int> DeleteDecksMetadataAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, CancellationToken token = default);
     }
 }
