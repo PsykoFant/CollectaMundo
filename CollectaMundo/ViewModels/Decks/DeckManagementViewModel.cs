@@ -38,18 +38,7 @@ namespace CollectaMundo.ViewModels.Decks
 
         // View data
         public ObservableCollection<DeckManagementRecord> Decks => _deckManagementStore.Decks;
-        public ObservableCollection<string> DeckFormats { get; } =
-        [
-            "commander",
-            "standard",
-            "modern",
-            "pioneer",
-            "legacy",
-            "vintage",
-            "pauper",
-            "brawl",
-            "historic"
-        ];
+        public ObservableCollection<DeckFormatOption> DeckFormats { get; } = [];
 
         // Editor state hooks
         protected override void LoadEditorFromItem(DeckManagementRecord selectedItem)
@@ -74,7 +63,22 @@ namespace CollectaMundo.ViewModels.Decks
         // Data loading
         public Task LoadDecksAsync()
         {
-            return RunBusyOperationAsync(() => _deckManagementStore.LoadAsync(), "Failed to load decks");
+            return RunBusyOperationAsync(async () =>
+            {
+                await _deckManagementStore.LoadAsync();
+
+                var formats = await _cardLocationService.GetDeckFormatsAsync();
+
+                DeckFormats.Clear();
+
+                DeckFormats.Add(new DeckFormatOption("casual", "Casual/kitchen table"));
+
+                foreach (string format in formats)
+                {
+                    DeckFormats.Add(new DeckFormatOption(format, char.ToUpperInvariant(format[0]) + format[1..]));
+                }
+            },
+            "Failed to load decks");
         }
 
         // CRUD operations
@@ -175,4 +179,5 @@ namespace CollectaMundo.ViewModels.Decks
                 });
         }
     }
+    public sealed record DeckFormatOption(string Value, string DisplayName);
 }

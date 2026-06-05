@@ -189,6 +189,30 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return decks;
         }
+        public async Task<IReadOnlyList<string>> GetDeckFormatsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
+        {
+            const string sql = """
+                       PRAGMA table_info(cardLegalities);
+                       """;
+
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+
+            var formats = new List<string>();
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                string columnName = reader.GetString(reader.GetOrdinal("name"));
+
+                if (!string.Equals(columnName, "uuid", StringComparison.OrdinalIgnoreCase))
+                {
+                    formats.Add(columnName);
+                }
+            }
+
+            return [.. formats.OrderBy(format => format, StringComparer.OrdinalIgnoreCase)];
+        }
 
         // collection rows
         public Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx)

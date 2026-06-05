@@ -13,6 +13,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         // READ
         Task<IReadOnlyList<CardLocation>> GetAllLocationsAsync();
         Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync();
+        Task<IReadOnlyList<string>> GetDeckFormatsAsync();
 
         // UPDATE
         Task<MutationResult<CardLocation>> UpdateLocationAsync(int id, string name, CardLocationType type);

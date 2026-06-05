@@ -48,7 +48,9 @@
 
             <Label Content="Format:" />
             <ComboBox ItemsSource="{Binding DeckFormats}"
-                      SelectedItem="{Binding SelectedDeckFormat, Mode=TwoWay}"
+                      DisplayMemberPath="DisplayName"
+                      SelectedValuePath="Value"
+                      SelectedValue="{Binding SelectedDeckFormat, Mode=TwoWay}"
                       IsEnabled="{Binding IsDiscreteValueEditorEnabled}"
                       Margin="0,0,0,10" />
 

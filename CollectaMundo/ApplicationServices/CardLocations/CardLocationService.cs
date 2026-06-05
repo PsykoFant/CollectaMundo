@@ -190,6 +190,10 @@ namespace CollectaMundo.ApplicationServices.CardLocations
         {
             return await _uowRunner.ExecuteReadOnlyAsync(conn => _cardLocationRepo.GetAllDecksAsync(conn));
         }
+        public async Task<IReadOnlyList<string>> GetDeckFormatsAsync()
+        {
+            return await _uowRunner.ExecuteReadOnlyAsync(conn => _cardLocationRepo.GetDeckFormatsAsync(conn));
+        }
 
         // UPDATE
         public async Task<MutationResult<CardLocation>> UpdateLocationAsync(int id, string name, CardLocationType type)
