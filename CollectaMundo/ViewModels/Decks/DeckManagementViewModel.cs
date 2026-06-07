@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardLocations.Models;
 using CollectaMundo.ApplicationServices.Decks;
+using CollectaMundo.ApplicationServices.Decks.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared.Models;
@@ -11,7 +12,7 @@ using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ViewModels.Decks
 {
-    public partial class DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore) : LocationManagementViewModel<DeckManagementRecord>
+    public partial class DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore) : LocationManagementViewModel<DeckManagementRowViewModel>
     {
         private readonly ICardLocationService _cardLocationService = cardLocationService;
         private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
@@ -37,17 +38,17 @@ namespace CollectaMundo.ViewModels.Decks
         private string description = string.Empty;
 
         // View data
-        public ObservableCollection<DeckManagementRecord> Decks => _deckManagementStore.Decks;
-        public ObservableCollection<DeckFormatOption> DeckFormats { get; } = [];
+        public ObservableCollection<DeckManagementRowViewModel> Decks { get; } = [];
+        public ObservableCollection<DeckFormatOption> DeckFormats => _deckManagementStore.DeckFormats;
 
         // Editor state hooks
-        protected override void LoadEditorFromItem(DeckManagementRecord selectedItem)
+        protected override void LoadEditorFromItem(DeckManagementRowViewModel selectedItem)
         {
             DeckName = selectedItem.Name;
             SelectedDeckFormat = selectedItem.Format ?? string.Empty;
             Description = selectedItem.Description ?? string.Empty;
         }
-        protected override void OnEnterEditMultipleMode(IReadOnlyList<DeckManagementRecord> selectedItems)
+        protected override void OnEnterEditMultipleMode(IReadOnlyList<DeckManagementRowViewModel> selectedItems)
         {
             DeckName = string.Empty;
             Description = string.Empty;
@@ -67,53 +68,60 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 await _deckManagementStore.LoadAsync();
 
-                var formats = await _cardLocationService.GetDeckFormatsAsync();
+                Decks.Clear();
 
-                DeckFormats.Clear();
-
-                DeckFormats.Add(new DeckFormatOption("casual", "Casual/kitchen table"));
-
-                foreach (string format in formats)
+                foreach (var deck in _deckManagementStore.Decks)
                 {
-                    DeckFormats.Add(new DeckFormatOption(format, char.ToUpperInvariant(format[0]) + format[1..]));
+                    Decks.Add(CreateRow(deck));
                 }
             },
             "Failed to load decks");
+        }
+        private DeckManagementRowViewModel CreateRow(DeckManagementRecord record)
+        {
+            return new DeckManagementRowViewModel(record, GetDeckFormatDisplayName);
+        }
+        private string GetDeckFormatDisplayName(string? format)
+        {
+            if (string.IsNullOrWhiteSpace(format))
+            {
+                return string.Empty;
+            }
+
+            return DeckFormats
+                .FirstOrDefault(option => option.Value == format)
+                ?.DisplayName
+                ?? format;
         }
 
         // CRUD operations
         protected override async Task CreateAsync()
         {
-            var input = new DeckManagementInput
-            {
-                Name = DeckName,
-                Format = SelectedDeckFormat,
-                Description = Description
-            };
-
-            var mutation = await _cardLocationService.CreateDeckAsync(CreateInput());
+            var input = CreateInput();
+            var mutation = await _cardLocationService.CreateDeckAsync(input);
 
             ShowStatus(mutation.Result.Message);
 
             if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
             {
-                _deckManagementStore.Upsert(mutation.Entity);
+                UpsertDeckRow(mutation.Entity);
                 ResetEditorAndSelection();
             }
         }
-        protected override async Task UpdateSingleAsync(DeckManagementRecord selectedDeck)
+        protected override async Task UpdateSingleAsync(DeckManagementRowViewModel selectedDeck)
         {
             var mutation = await _cardLocationService.UpdateDeckAsync(selectedDeck.LocationId, CreateInput());
 
             ShowStatus(mutation.Result.Message);
 
-            if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
+            if (mutation.Result.Code == OperationResultCode.Success &&
+                mutation.Entity is not null)
             {
-                _deckManagementStore.Upsert(mutation.Entity);
+                UpsertDeckRow(mutation.Entity);
                 ResetEditorAndSelection();
             }
         }
-        protected override async Task UpdateMultipleAsync(IReadOnlyList<DeckManagementRecord> selectedDecks)
+        protected override async Task UpdateMultipleAsync(IReadOnlyList<DeckManagementRowViewModel> selectedDecks)
         {
             if (string.IsNullOrWhiteSpace(SelectedDeckFormat))
             {
@@ -121,13 +129,13 @@ namespace CollectaMundo.ViewModels.Decks
                 return;
             }
 
-            string selectedFormat = SelectedDeckFormat;
+            var selectedRecords = selectedDecks.Select(row => row.Record).ToList();
 
-            var updatedDecks = await _cardLocationService.UpdateDeckFormatsAsync(selectedDecks, selectedFormat);
+            var updatedDecks = await _cardLocationService.UpdateDeckFormatsAsync(selectedRecords, SelectedDeckFormat);
 
             foreach (var updatedDeck in updatedDecks)
             {
-                _deckManagementStore.Upsert(updatedDeck);
+                UpsertDeckRow(updatedDeck);
             }
 
             ResetEditorAndSelection();
@@ -136,21 +144,9 @@ namespace CollectaMundo.ViewModels.Decks
                 ? "Deck updated successfully."
                 : $"{updatedDecks.Count} decks updated successfully.");
         }
-        private DeckManagementInput CreateInput()
-        {
-            return new DeckManagementInput
-            {
-                Name = DeckName,
-                Format = SelectedDeckFormat,
-                Description = Description
-            };
-        }
 
-        // External notifications
-        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
 
         // Commands
-
         [RelayCommand]
         private Task DeleteSelectedDecks()
         {
@@ -160,14 +156,13 @@ namespace CollectaMundo.ViewModels.Decks
                 {
                     var idsToDelete = selectedDecks.Select(deck => deck.LocationId).Distinct().ToList();
                     var entityName = idsToDelete.Count == 1 ? "deck" : "decks";
-
                     var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete, entityName);
 
                     if (result.Result.Code is OperationResultCode.Success)
                     {
                         foreach (int locationId in idsToDelete)
                         {
-                            _deckManagementStore.Remove(locationId);
+                            RemoveDeckRow(locationId);
                         }
 
                         CollectionChanged?.Invoke(this, result.CollectionChangeSet);
@@ -178,6 +173,49 @@ namespace CollectaMundo.ViewModels.Decks
                     return result.Result.Code is OperationResultCode.Success;
                 });
         }
+
+        // External notifications
+        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
+
+        // Helper methods
+        private DeckManagementInput CreateInput()
+        {
+            return new DeckManagementInput
+            {
+                Name = DeckName,
+                Format = SelectedDeckFormat,
+                Description = Description
+            };
+        }
+        private void UpsertDeckRow(DeckManagementRecord deck)
+        {
+            _deckManagementStore.Upsert(deck);
+
+            int index = Decks
+                .Select((row, i) => new { row, i })
+                .FirstOrDefault(x => x.row.LocationId == deck.LocationId)
+                ?.i ?? -1;
+
+            var row = CreateRow(deck);
+
+            if (index >= 0)
+            {
+                Decks[index] = row;
+                return;
+            }
+
+            Decks.Add(row);
+        }
+        private void RemoveDeckRow(int locationId)
+        {
+            _deckManagementStore.Remove(locationId);
+
+            var existing = Decks.FirstOrDefault(row => row.LocationId == locationId);
+
+            if (existing is not null)
+            {
+                Decks.Remove(existing);
+            }
+        }
     }
-    public sealed record DeckFormatOption(string Value, string DisplayName);
 }

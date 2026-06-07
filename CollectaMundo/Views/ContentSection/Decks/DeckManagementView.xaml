@@ -115,7 +115,7 @@
 
                 <DataGridTextColumn Header="Format"
                                     Width="110"
-                                    Binding="{Binding Format}" />
+                                    Binding="{Binding FormatDisplayName}" />
 
                 <DataGridTextColumn Header="Description"
                                     Width="3*"

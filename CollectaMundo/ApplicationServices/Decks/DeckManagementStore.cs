@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardLocations.Models;
+using CollectaMundo.ApplicationServices.Decks.Models;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices.Decks
@@ -7,18 +8,32 @@ namespace CollectaMundo.ApplicationServices.Decks
     public sealed class DeckManagementStore(ICardLocationService cardLocationService) : IDeckManagementStore
     {
         private readonly ICardLocationService _cardLocationService = cardLocationService;
-
         public ObservableCollection<DeckManagementRecord> Decks { get; } = [];
+        public ObservableCollection<DeckFormatOption> DeckFormats { get; } = [];
         public async Task LoadAsync()
         {
             var loadedDecks = await _cardLocationService.GetAllDecksAsync();
+            var loadedFormats = await _cardLocationService.GetDeckFormatsAsync();
 
             Decks.Clear();
-
             foreach (var deck in loadedDecks)
             {
                 Decks.Add(deck);
             }
+
+            DeckFormats.Clear();
+
+            DeckFormats.Add(new DeckFormatOption(string.Empty, "(No format)"));
+            DeckFormats.Add(new DeckFormatOption("casual", "Casual/kitchen table"));
+
+            foreach (var format in loadedFormats)
+            {
+                DeckFormats.Add(CreateDeckFormatOption(format));
+            }
+        }
+        private static DeckFormatOption CreateDeckFormatOption(string value)
+        {
+            return new DeckFormatOption(value, char.ToUpperInvariant(value[0]) + value[1..]);
         }
         public void Upsert(DeckManagementRecord deck)
         {
