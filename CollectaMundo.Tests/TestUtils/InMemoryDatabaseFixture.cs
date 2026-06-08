@@ -276,31 +276,60 @@ namespace CollectaMundo.Tests.TestUtils
             command.ExecuteNonQuery();
 
             command.CommandText = @"
-        CREATE TABLE IF NOT EXISTS tokenIdentifiers (
-            cardKingdomEtchedId TEXT,
-            cardKingdomFoilId TEXT,
-            cardKingdomId TEXT,
-            cardsphereFoilId TEXT,
-            cardsphereId TEXT,
-            deckboxId TEXT,
-            mcmId TEXT,
-            mcmMetaId TEXT,
-            mtgArenaId TEXT,
-            mtgjsonFoilVersionId TEXT,
-            mtgjsonNonFoilVersionId TEXT,
-            mtgjsonV4Id TEXT,
-            mtgoFoilId TEXT,
-            mtgoId TEXT,
-            multiverseId TEXT,
-            scryfallCardBackId TEXT,
-            scryfallId TEXT,
-            scryfallIllustrationId TEXT,
-            scryfallOracleId TEXT,
-            tcgplayerEtchedProductId TEXT,
-            tcgplayerProductId TEXT,
-            uuid TEXT
-        );
-    ";
+                                    CREATE TABLE IF NOT EXISTS tokenIdentifiers (
+                                        cardKingdomEtchedId TEXT,
+                                        cardKingdomFoilId TEXT,
+                                        cardKingdomId TEXT,
+                                        cardsphereFoilId TEXT,
+                                        cardsphereId TEXT,
+                                        deckboxId TEXT,
+                                        mcmId TEXT,
+                                        mcmMetaId TEXT,
+                                        mtgArenaId TEXT,
+                                        mtgjsonFoilVersionId TEXT,
+                                        mtgjsonNonFoilVersionId TEXT,
+                                        mtgjsonV4Id TEXT,
+                                        mtgoFoilId TEXT,
+                                        mtgoId TEXT,
+                                        multiverseId TEXT,
+                                        scryfallCardBackId TEXT,
+                                        scryfallId TEXT,
+                                        scryfallIllustrationId TEXT,
+                                        scryfallOracleId TEXT,
+                                        tcgplayerEtchedProductId TEXT,
+                                        tcgplayerProductId TEXT,
+                                        uuid TEXT
+                                    );
+                                ";
+            command.ExecuteNonQuery();
+
+            command.CommandText = @"
+                                    CREATE TABLE cardLegalities(
+                                      uuid TEXT,
+                                      alchemy TEXT,
+                                      brawl TEXT,
+                                      commander TEXT,
+                                      duel TEXT,
+                                      future TEXT,
+                                      gladiator TEXT,
+                                      historic TEXT,
+                                      legacy TEXT,
+                                      modern TEXT,
+                                      oathbreaker TEXT,
+                                      oldschool TEXT,
+                                      pauper TEXT,
+                                      paupercommander TEXT,
+                                      penny TEXT,
+                                      pioneer TEXT,
+                                      predh TEXT,
+                                      premodern TEXT,
+                                      standard TEXT,
+                                      standardbrawl TEXT,
+                                      timeless TEXT,
+                                      tlr TEXT,
+                                      vintage TEXT
+                                    );
+                                ";
             command.ExecuteNonQuery();
         }
         private static void CreateCustomTables(SQLiteCommand command)
@@ -352,16 +381,20 @@ namespace CollectaMundo.Tests.TestUtils
 
             try
             {
+                // Build-in tables
                 await SeedTableAsync("cards", Path.Combine(basePath, "cards.csv"));
                 await SeedTableAsync("tokens", Path.Combine(basePath, "tokens.csv"));
                 await SeedTableAsync("sets", Path.Combine(basePath, "sets.csv"));
-                await SeedTableAsync("keyruneImages", Path.Combine(basePath, "keyruneImages.csv"));
-                await SeedTableAsync("uniqueManaCostImages", Path.Combine(basePath, "uniqueManaCostImages.csv"));
                 await SeedTableAsync("cardForeignData", Path.Combine(basePath, "cardForeignData.csv"));
                 await SeedTableAsync("cardIdentifiers", Path.Combine(basePath, "cardIdentifiers.csv"));
+                await SeedTableAsync("cardLegalities", Path.Combine(basePath, "cardLegalities.csv"));
+
+                // Custom tables
+                await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
+                await SeedTableAsync("keyruneImages", Path.Combine(basePath, "keyruneImages.csv"));
+                await SeedTableAsync("uniqueManaCostImages", Path.Combine(basePath, "uniqueManaCostImages.csv"));
                 await SeedTableAsync("tokenIdentifiers", Path.Combine(basePath, "tokenIdentifiers.csv"));
                 await SeedTableAsync("cardPrices", Path.Combine(basePath, "cardPrices.csv"));
-                await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
                 await SeedTableAsync("cardLocations", Path.Combine(basePath, "cardLocations.csv"));
             }
             catch (Exception ex)
@@ -493,7 +526,6 @@ namespace CollectaMundo.Tests.TestUtils
             }
             return blobCols;
         }
-
         public ValueTask DisposeAsync()
         {
             _masterConnection?.Dispose();
