@@ -659,24 +659,6 @@ namespace CollectaMundo.Tests.ScenarioTests
         [Fact]
         public async Task Filter_Integration_Test_Scenario_With_Event_Subscription()
         {
-            // local helper: apply current filters to both views
-            void ApplyAll()
-            {
-                _ctx.MainVM.AllCardsVM.FilteredCards = _ctx.FilteringService.ApplyFilters(_ctx.MainVM.AllCardsVM.Cards, _ctx.MainVM.FilterVM.Filters.Values);
-                _ctx.MainVM.MyCollectionVM.FilteredCards = _ctx.FilteringService.ApplyFilters(_ctx.MainVM.MyCollectionVM.Cards, _ctx.MainVM.FilterVM.Filters.Values);
-            }
-
-            void AssertFiltersCleared()
-            {
-                Assert.Equal(65, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
-                Assert.Equal(22, _ctx.MainVM.MyCollectionVM.FilteredCards.Count);
-                Assert.True(string.IsNullOrEmpty(_ctx.MainVM.FilterVM.FilterSummary));
-            }
-
-
-            // local helper: find card by uuid from either AllCards or MyCollection
-            CardSet FindCard(IEnumerable<CardSet> source, string uuid) => source.Single(c => string.Equals(c.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
-
             #region ===== Section A: "Simple" test =====
 
             // Arrange: ManaValue > 1
@@ -694,7 +676,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             rarityFilter.OperatorSelection = OperatorType.NOT;
 
             // Act
-            ApplyAll();
+            ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
 
             // Assert
             var expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
@@ -712,7 +694,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             colorFilter.OperatorSelection = OperatorType.OR;
 
             // Act
-            ApplyAll();
+            ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
 
             // Assert
             expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
@@ -743,7 +725,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             nameFilter.SelectedSingleOption = "";
 
             // Assert
-            AssertFiltersCleared();
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
 
             // Act: type "modern horizons" into SetName free text search
             var setNameFilter = (TestableFilterItemViewModel)_ctx.MainVM.FilterVM.Filters["SetName"];
@@ -757,7 +739,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             setNameFilter.FreetextSearch = "";
 
             // Assert
-            AssertFiltersCleared();
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
 
             // Act: SetName = "Modern Horizons Art Series"
             setNameFilter.SelectedSingleOption = "Modern Horizons Art Series";
@@ -766,7 +748,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(3, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
 
             _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
-            AssertFiltersCleared();
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
             #endregion
 
             #region ===== Section C: text + set filters =====
@@ -785,7 +767,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             rulesFilter.HandleKeyLogic(Key.Escape);
 
             // Assert: cleared
-            AssertFiltersCleared();
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
 
             // Act: Text type in "a" 
             rulesFilter.FreetextSearch = "a";
@@ -798,7 +780,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Act: Press Backspace to remove "a"
             rulesFilter.FreetextSearch = rulesFilter.FreetextSearch[..^1];
-            AssertFiltersCleared();
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
 
             // Act: Text contains “+1/+1 counter”
             rulesFilter.SelectedSingleOption = "+1/+1 counter";
@@ -820,7 +802,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Reset
             _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-            AssertFiltersCleared();
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
             #endregion
 
             #region ===== Section D: types + supertypes =====
@@ -855,7 +837,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Arrange
             const string uuidKarox = "e4dcfe4f-8441-5eec-9f74-a7b3672e90e0";
-            var karox = FindCard(_ctx.MainVM.AllCardsVM.FilteredCards, uuidKarox);
+            var karox = ScenarioTestHelpers.FindCard(_ctx.MainVM.AllCardsVM.FilteredCards, uuidKarox);
 
             // Act
             _ctx.MainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { karox });
@@ -883,7 +865,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Arrange
             const string uuidSokrates = "3c389f9c-e459-5b16-87b5-d51644f05b25";
-            var sokrates = FindCard(_ctx.MainVM.AllCardsVM.FilteredCards, uuidSokrates);
+            var sokrates = ScenarioTestHelpers.FindCard(_ctx.MainVM.AllCardsVM.FilteredCards, uuidSokrates);
             // Act: stage Sokrates
             _ctx.MainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { sokrates });
 
@@ -901,7 +883,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Assert: now in MyCollection with edits
             Assert.Equal(24, _ctx.MainVM.MyCollectionVM.Cards.Count);
 
-            var sokratesInCollection = FindCard(_ctx.MainVM.MyCollectionVM.Cards, uuidSokrates);
+            var sokratesInCollection = ScenarioTestHelpers.FindCard(_ctx.MainVM.MyCollectionVM.Cards, uuidSokrates);
             Assert.Equal("Played", sokratesInCollection.SelectedCondition);
             Assert.Equal(1, sokratesInCollection.CardsForTrade);
 
@@ -922,8 +904,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             const string uuidEtched = "0add0930-720f-5bf5-bcf5-ee208eeb9040"; // Once Upon a Time (etched)
             const string uuidGerman = "5e6a3099-2597-5755-8a6f-67f1569a3b8a"; // Leave No Trace (German)
 
-            var etchedCard = FindCard(_ctx.MainVM.MyCollectionVM.Cards, uuidEtched);
-            var germanCard = FindCard(_ctx.MainVM.MyCollectionVM.Cards, uuidGerman);
+            var etchedCard = ScenarioTestHelpers.FindCard(_ctx.MainVM.MyCollectionVM.Cards, uuidEtched);
+            var germanCard = ScenarioTestHelpers.FindCard(_ctx.MainVM.MyCollectionVM.Cards, uuidGerman);
 
             var deletionSelection = new object[] { etchedCard, germanCard };
 
@@ -982,16 +964,39 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             Assert.Equal(ownedVm, survivor.CardsOwned);
 
-            int sumOwnedDb = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory, """
-                                                                                                SELECT SUM(cardsOwned)
-                                                                                                FROM myCollection;
-                                                                                                """);
+            int sumOwnedDb = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
+                """
+                SELECT SUM(cardsOwned)
+                FROM myCollection
+                WHERE uuid = @uuid
+                  AND condition = @cond
+                  AND language = @lang
+                  AND finish = @finish;
+                """,
+                cmd =>
+                {
+                    cmd.Parameters.AddWithValue("@uuid", uuidMerge);
+                    cmd.Parameters.AddWithValue("@cond", cond);
+                    cmd.Parameters.AddWithValue("@lang", lang);
+                    cmd.Parameters.AddWithValue("@finish", finish);
+                });
 
-            int sumTradeDb = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory, """
-                                                                                                SELECT SUM(cardsForTrade)
-                                                                                                FROM myCollection;
-                                                                                                """);
-
+            int sumTradeDb = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
+                """
+                SELECT SUM(cardsForTrade)
+                FROM myCollection
+                WHERE uuid = @uuid
+                  AND condition = @cond
+                  AND language = @lang
+                  AND finish = @finish;
+                """,
+                cmd =>
+                {
+                    cmd.Parameters.AddWithValue("@uuid", uuidMerge);
+                    cmd.Parameters.AddWithValue("@cond", cond);
+                    cmd.Parameters.AddWithValue("@lang", lang);
+                    cmd.Parameters.AddWithValue("@finish", finish);
+                });
 
             Assert.Equal(ownedVm, sumOwnedDb);
             #endregion
@@ -1000,7 +1005,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Reset
             _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-            AssertFiltersCleared();
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
 
             // Arrange
             _ctx.MainVM.FilterVM.Filters["Keywords"].FilterOptions.FirstOrDefault(o => o.OptionName == "Vigilance")!.IsSelected = true;
@@ -1017,7 +1022,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Arrange
             _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
-            AssertFiltersCleared();
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
 
             var locationVm = _ctx.MainVM.CardLocationVM;
 
@@ -1046,11 +1051,13 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal("Deck: Scenario Test Deck", updatedTarget.SelectedLocationDisplayName);
 
             // Assert: DB card has location
-            var locationId = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory, """
-                                                                                                SELECT locationId
-                                                                                                FROM myCollection
-                                                                                                WHERE id = @id;
-                                                                                                """);
+            var locationId = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
+                """
+                SELECT locationId
+                FROM myCollection
+                WHERE id = @id;
+                """,
+                cmd => cmd.Parameters.AddWithValue("@id", targetCardId));
 
             Assert.Equal(scenarioLocation.Id, locationId);
 
@@ -1107,7 +1114,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Arrange: add five otters with different collection identities
             const string uuidOtter = "49481296-5e87-500b-9d95-8011f432466a";
-            var otter = FindCard(_ctx.MainVM.AllCardsVM.Cards, uuidOtter);
+            var otter = ScenarioTestHelpers.FindCard(_ctx.MainVM.AllCardsVM.Cards, uuidOtter);
 
             _ctx.MainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { otter, otter, otter, otter, otter });
 
@@ -1482,61 +1489,52 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             Assert.Equal(1, count);
 
-            //// Assert persisted metadata
+            // Assert persisted metadata
+            var deckRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string Format, string Description)>(_ctx.DbFactory,
+                """
+                SELECT format, description
+                FROM myDecks d
+                INNER JOIN cardLocations l
+                    ON l.id = d.locationId
+                WHERE l.name = @name;
+                """,
+                reader => (
+                    Format: reader.GetString(reader.GetOrdinal("format")),
+                    Description: reader.GetString(reader.GetOrdinal("description"))
+                ),
+                cmd => cmd.Parameters.AddWithValue("@name", "Control Shell"));
 
-            //await using (var conn = await _dbFactory.OpenConnectionAsync())
-            //{
-            //    const string deckSql = """
-            //                        SELECT format, description
-            //                        FROM myDecks d
-            //                        INNER JOIN cardLocations l
-            //                            ON l.id = d.locationId
-            //                        WHERE l.name = 'Control Shell';
-            //                        """;
+            var (Format, Description) = Assert.Single(deckRows);
 
-            //    using var cmd = conn.CreateCommand();
-            //    cmd.CommandText = deckSql;
+            Assert.Equal("commander", Format);
+            Assert.Equal("Blue-white control deck", Description);
 
-            //    using var reader = await cmd.ExecuteReaderAsync();
+            // Assign deck to collection card through right - click command
 
-            //    Assert.True(await reader.ReadAsync());
+            var cardToUpdate = _ctx.MainVM.MyCollectionVM.Cards.First(c => c.SelectedLocationId is null);
 
-            //    Assert.Equal("commander", reader.GetString(0));
-            //    Assert.Equal("Blue-white control deck", reader.GetString(1));
-            //}
+            var setLocationParam = new SetLocationForSelectedCardsParameter(new object[] { cardToUpdate }, createdLocation.Id);
 
-            // Assign deck to collection card through right-click command
+            _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SetLocationForSelectedCardsCommand.Execute(setLocationParam);
 
-            //var cardToUpdate = _ctx.MainVM.MyCollectionVM.Cards.First(c => c.SelectedLocationId is null);
+            var updatedCard = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.CardId == cardToUpdate.CardId);
 
-            //var setLocationParam = new SetLocationForSelectedCardsParameter(
-            //    new object[] { cardToUpdate },
-            //    createdLocation.Id);
+            Assert.Equal(createdLocation.Id, updatedCard.SelectedLocationId);
 
-            //_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!
-            //    .SetLocationForSelectedCardsCommand
-            //    .Execute(setLocationParam);
+            // Filter on deck location
+            _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null); // clear other filters to isolate location filter behavior
 
-            //var updatedCard = _ctx.MainVM.MyCollectionVM.Cards
-            //    .Single(c => c.CardId == cardToUpdate.CardId);
+            var locationFilter = _ctx.MainVM.FilterVM.Filters["SelectedLocationDisplayName"];
 
-            //Assert.Equal(createdLocation.Id, updatedCard.SelectedLocationId);
-            //Assert.Equal("Control Shell", updatedCard.LocationName);
 
-            //// Filter on deck location
+            locationFilter.FilterOptions.Single(o => o.OptionName == "Deck: Control Shell").IsSelected = true;
+            ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
 
-            //_ctx.MainVM.FilterVM.SelectedLocations.Clear();
-            //_ctx.MainVM.FilterVM.SelectedLocations.Add(createdLocation);
+            var filteredCard = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
 
-            //ApplyAll();
-
-            //Assert.Single(_ctx.MainVM.MyCollectionVM.FilteredCards);
-
-            //var filteredCard = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
-
-            //Assert.Equal(updatedCard.CardId, filteredCard.CardId);
-            //Assert.Equal(createdLocation.Id, filteredCard.SelectedLocationId);
-            //Assert.Equal("Control Shell", filteredCard.LocationName);
+            Assert.Equal(updatedCard.CardId, filteredCard.CardId);
+            Assert.Equal(createdLocation.Id, filteredCard.SelectedLocationId);
+            Assert.Equal("Control Shell", filteredCard.SelectedLocationDisplayName);
 
             #endregion
 

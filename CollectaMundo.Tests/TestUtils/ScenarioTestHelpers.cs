@@ -15,14 +15,12 @@ namespace CollectaMundo.Tests.TestUtils
             mainVM.AllCardsVM.FilteredCards = filteringService.ApplyFilters(mainVM.AllCardsVM.Cards, mainVM.FilterVM.Filters.Values);
             mainVM.MyCollectionVM.FilteredCards = filteringService.ApplyFilters(mainVM.MyCollectionVM.Cards, mainVM.FilterVM.Filters.Values);
         }
-
         public static void AssertFiltersCleared(MainWindowViewModel mainVM)
         {
             Assert.Equal(65, mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(22, mainVM.MyCollectionVM.FilteredCards.Count);
             Assert.True(string.IsNullOrEmpty(mainVM.FilterVM.FilterSummary));
         }
-
         public static CardSet FindCard(IEnumerable<CardSet> source, string uuid)
         {
             return source.Single(c => string.Equals(c.Uuid, uuid, StringComparison.OrdinalIgnoreCase));

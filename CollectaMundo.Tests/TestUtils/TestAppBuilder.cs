@@ -150,8 +150,6 @@ public static class TestAppBuilder
             settings,
             scheduler);
 
-        //(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, deckManagementService, deckManagementStore, settings)
-
         if (eventSink is not null)
         {
             mainVM.AddCardsVM.CollectionChanged += (_, e) => eventSink.Add(e);
