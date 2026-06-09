@@ -43,7 +43,6 @@ namespace CollectaMundo.ApplicationServices.Filtering
                 return [.. cards]; // fallback
             }
         }
-
         public void ResetAllFilters(IEnumerable<FilterItemViewModel> allFilters)
         {
             foreach (var filter in allFilters)
@@ -110,38 +109,38 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     switch (filter.FilterCategory)
                     {
                         case FilterType.Single:
-                            if (!string.IsNullOrWhiteSpace(filter.SelectedSingleOption) &&
-                                filter.SelectedSingleOption != filter.DefaultText)
+                            if (!string.IsNullOrWhiteSpace(filter.SelectedSingleOption) && filter.SelectedSingleOption != filter.DefaultText)
                             {
-                                summary.Append($"{filter.CriteriaKey}: \"{filter.SelectedSingleOption}\" AND ");
+                                summary.Append($"{filter.ReadableLabel}: \"{filter.SelectedSingleOption}\" AND ");
                             }
                             break;
 
                         case FilterType.Multi:
                             if (filter.SelectedOptions != null && filter.SelectedOptions.Any())
                             {
-                                // Determine the operator symbol.
                                 string operatorSymbol = filter.OperatorSelection switch
                                 {
                                     OperatorType.OR => "OR",
                                     OperatorType.AND => "AND",
-                                    OperatorType.NOT => "AND",  // We join with "AND" but prefix each option with "NOT"
+                                    OperatorType.NOT => "AND",
                                     _ => ""
                                 };
 
-                                // CreateCollectionChangeSetFromEdits the filter segment. If the operator is NOT, prefix each option with "NOT ".
-                                string filterSegment = filter.OperatorSelection == OperatorType.NOT
-                                    ? string.Join($" {operatorSymbol} ", filter.SelectedOptions.Select(opt => $"NOT {opt}"))
-                                    : string.Join($" {operatorSymbol} ", filter.SelectedOptions);
+                                var selectedDisplayNames = filter.SelectedOptionDisplayNames;
 
-                                summary.Append($"{filter.CriteriaKey}: {{{filterSegment}}} AND ");
+                                string filterSegment = filter.OperatorSelection == OperatorType.NOT
+                                    ? string.Join($" {operatorSymbol} ", selectedDisplayNames.Select(opt => $"NOT {opt}"))
+                                    : string.Join($" {operatorSymbol} ", selectedDisplayNames);
+
+                                summary.Append($"{filter.ReadableLabel}: {{{filterSegment}}} AND ");
                             }
+
                             break;
 
                         case FilterType.Numeric:
                             if (filter.SelectedNumericValue != null)
                             {
-                                summary.Append($"{filter.CriteriaKey} {GetOperatorSymbol(filter.OperatorSelection)} {filter.SelectedNumericValue} AND ");
+                                summary.Append($"{filter.ReadableLabel} {GetOperatorSymbol(filter.OperatorSelection)} {filter.SelectedNumericValue} AND ");
                             }
                             break;
                     }
@@ -175,7 +174,5 @@ namespace CollectaMundo.ApplicationServices.Filtering
                 _ => ""
             };
         }
-
-
     }
 }

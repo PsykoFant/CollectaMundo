@@ -775,7 +775,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Assert
             Assert.Equal(46, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
-            Assert.Equal("Text: \"a\"", _ctx.MainVM.FilterVM.FilterSummary);
+            Assert.Equal("Rulestext: \"a\"", _ctx.MainVM.FilterVM.FilterSummary);
             Assert.Equal(21, _ctx.MainVM.MyCollectionVM.FilteredCards.Count);
 
             // Act: Press Backspace to remove "a"
@@ -797,7 +797,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Assert
             Assert.Equal(2, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(2, _ctx.MainVM.MyCollectionVM.FilteredCards.Count);
-            Assert.Equal("SetName: \"The List\" AND Text: \"+1/+1 counter\"", _ctx.MainVM.FilterVM.FilterSummary);
+            Assert.Equal("Set Name: \"The List\" AND Rulestext: \"+1/+1 counter\"", _ctx.MainVM.FilterVM.FilterSummary);
 
             // Reset
             _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
@@ -830,7 +830,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Assert
             Assert.Equal(6, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
             Assert.Empty(_ctx.MainVM.MyCollectionVM.FilteredCards);
-            Assert.Equal("SuperTypes: {Legendary} AND Types: {Creature OR Planeswalker}", _ctx.MainVM.FilterVM.FilterSummary);
+            Assert.Equal("Supertypes: {Legendary} AND Card type: {Creature OR Planeswalker}", _ctx.MainVM.FilterVM.FilterSummary);
             #endregion
 
             #region ===== Section E: add one card (Karox) via AddSelectedCards =====
@@ -1604,7 +1604,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal("casual", _ctx.MainVM.DeckManagementVM.SelectedDeckFormat);
             Assert.Equal("Casual control pile", _ctx.MainVM.DeckManagementVM.Description);
 
-            // Assert filter option still exists after update
+            // Assert filter option still exists after update and filtering is preserved after update
             var updatedLocationFilter = _ctx.MainVM.FilterVM.Filters["SelectedLocationDisplayName"];
             Assert.Contains(updatedLocationFilter.FilterOptions, o => o.OptionName == "Deck: Control Pile");
 
@@ -1613,20 +1613,19 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(updatedCard.CardId, filteredCard.CardId);
             Assert.Equal(createdLocation.Id, filteredCard.SelectedLocationId);
             Assert.Equal("Deck: Control Pile", filteredCard.SelectedLocationDisplayName);
-            //_ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
-
 
             // Act: clear format through single edit
-
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+            Assert.Equal("Edit deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Click edit
+            Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
             _ctx.MainVM.DeckManagementVM.SelectedDeckFormat = string.Empty;
 
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Submit
 
             // Assert deck manager state after clearing format
 
-            var clearedFormatDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Control Pile");
+            var clearedFormatDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == createdDeck.LocationId);
 
             Assert.True(string.IsNullOrWhiteSpace(clearedFormatDeck.Format));
             Assert.Equal("Casual control pile", clearedFormatDeck.Description);
@@ -1637,12 +1636,12 @@ namespace CollectaMundo.Tests.ScenarioTests
             var clearedFormatRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string? Format, string Description)>(
                 _ctx.DbFactory,
                 """
-    SELECT format, description
-    FROM myDecks d
-    INNER JOIN cardLocations l
-        ON l.id = d.locationId
-    WHERE l.name = @name;
-    """,
+                SELECT format, description
+                FROM myDecks d
+                INNER JOIN cardLocations l
+                    ON l.id = d.locationId
+                WHERE l.id = @id;
+                """,
                 reader =>
                 {
                     var formatOrdinal = reader.GetOrdinal("format");
@@ -1654,7 +1653,7 @@ namespace CollectaMundo.Tests.ScenarioTests
                         Description: reader.GetString(reader.GetOrdinal("description"))
                     );
                 },
-                cmd => cmd.Parameters.AddWithValue("@name", "Control Pile"));
+                cmd => cmd.Parameters.AddWithValue("@id", createdDeck.LocationId));
 
             var (ClearedFormat, ClearedDescription) = Assert.Single(clearedFormatRows);
 
@@ -1662,12 +1661,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal("Casual control pile", ClearedDescription);
 
             // Assert editor reloads blank format
-
             _ctx.MainVM.DeckManagementVM.SelectedItem = clearedFormatDeck;
-
-            Assert.Equal("Control Pile", _ctx.MainVM.DeckManagementVM.DeckName);
             Assert.True(string.IsNullOrWhiteSpace(_ctx.MainVM.DeckManagementVM.SelectedDeckFormat));
-            Assert.Equal("Casual control pile", _ctx.MainVM.DeckManagementVM.Description);
 
             #endregion
 

@@ -116,7 +116,8 @@ namespace CollectaMundo.ViewModels.Filtering
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<FilterOption> FilteredOptions { get; private set; }
         public ObservableCollection<string> SelectedOptions { get; } = [];
-        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(opt => opt.OptionName)];
+        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(opt => opt.DisplayName)];
+        public IReadOnlyList<string> SelectedOptionDisplayNames => [.. FilterOptions.Where(o => o.IsSelected).Select(o => o.DisplayName)];
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
         public ObservableCollection<int>? AvailableNumericOptions { get; }
 
@@ -124,12 +125,22 @@ namespace CollectaMundo.ViewModels.Filtering
         public void ResetOptions(IEnumerable<string> newOptionNames)
         {
             var incoming = _filterItemSearchLogic.NormalizeOptionNames(newOptionNames);
-            var current = FilterOptions.Select(o => o.OptionName);
 
-            if (_filterItemSearchLogic.IsEquivalentOptionList(current, incoming))
+            ResetOptions(incoming.Select(name => new FilterOption(name, name)));
+        }
+        public void ResetOptions(IEnumerable<FilterOption> newOptions)
+        {
+            var incoming = _filterItemSearchLogic.BuildOptions(newOptions);
+
+            if (_filterItemSearchLogic.IsEquivalentOptionList(FilterOptions, incoming))
             {
                 return;
             }
+
+            var selectedValues = FilterOptions
+                .Where(o => o.IsSelected)
+                .Select(o => o.Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var opt in FilterOptions)
             {
@@ -138,9 +149,9 @@ namespace CollectaMundo.ViewModels.Filtering
 
             FilterOptions.Clear();
 
-            var newOptions = _filterItemSearchLogic.BuildOptionsFromNames(incoming);
-            foreach (var opt in newOptions)
+            foreach (var opt in incoming)
             {
+                opt.IsSelected = selectedValues.Contains(opt.Value);
                 opt.PropertyChanged += FilterOption_PropertyChanged;
                 FilterOptions.Add(opt);
             }
@@ -225,8 +236,7 @@ namespace CollectaMundo.ViewModels.Filtering
                     ? string.Empty
                     : FilterText;
 
-            FilteredOptions = new ObservableCollection<FilterOption>(
-                _filterItemSearchLogic.ApplyTextFilter(FilterOptions, effectiveFilterText));
+            FilteredOptions = new ObservableCollection<FilterOption>(_filterItemSearchLogic.ApplyTextFilter(FilterOptions, effectiveFilterText));
 
             OnPropertyChanged(nameof(FilteredOptions));
         }
@@ -395,15 +405,15 @@ namespace CollectaMundo.ViewModels.Filtering
 
             if (FilterCategory == FilterType.Single && selectedItem is FilterOption opt)
             {
-                _typingTimer?.Stop(); // cancel pending debounce
+                _typingTimer?.Stop();
 
-                _isSelectionInProgress = true; // set guard flag
+                _isSelectionInProgress = true;
 
                 OperatorSelection = OperatorType.EQUALS;
-                SelectedSingleOption = opt.OptionName;
-                FreetextSearch = opt.OptionName;
+                SelectedSingleOption = opt.Value;
+                FreetextSearch = opt.DisplayName;
 
-                _isSelectionInProgress = false; //release guard
+                _isSelectionInProgress = false;
             }
         }
 

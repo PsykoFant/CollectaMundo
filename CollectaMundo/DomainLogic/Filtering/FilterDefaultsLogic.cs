@@ -13,6 +13,8 @@ namespace CollectaMundo.Data.Filtering
         public List<FilterDefaults> Build(IEnumerable<CardSet> allCards, IEnumerable<CardSet> myCollection)
         {
             var filterDefaultsDict = new ConcurrentDictionary<string, FilterDefaults>();
+            List<FilterOption>? explicitOptions = null;
+            List<string> rawValues = [];
 
             Parallel.ForEach(FilterCriteriaMappings.CriteriaMappings, entry =>
             {
@@ -163,14 +165,15 @@ namespace CollectaMundo.Data.Filtering
                             break;
 
                         case "SelectedLocationDisplayName":
-                            foreach (var c in myCollection)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.SelectedLocationDisplayName))
-                                {
-                                    rawValues.Add(c.SelectedLocationDisplayName);
-                                }
-                            }
-
+                            explicitOptions =
+                            [
+                                .. myCollection.Where(c => c.SelectedLocationId is not null && !string.IsNullOrWhiteSpace(c.SelectedLocationDisplayName))
+                                .GroupBy(c => c.SelectedLocationId!.Value)
+                                .Select(g => new FilterOption(
+                                    g.Key.ToString(),
+                                    g.First().SelectedLocationDisplayName!))
+                                .OrderBy(o => o.DisplayName, StringComparer.OrdinalIgnoreCase)
+                            ];
                             break;
 
                         default:
@@ -202,7 +205,7 @@ namespace CollectaMundo.Data.Filtering
                     numericValues = [.. cleanedValues.Where(v => int.TryParse(v, out _)).Select(int.Parse)];
                 }
 
-                var filterOptions = cleanedValues.Select(v => new FilterOption(v)).ToList();
+                var filterOptions = cleanedValues.Select(v => new FilterOption(v, v)).ToList();
 
                 string defaultText = string.Empty;
                 if (mapping.Type == FilterType.Multi || criteriaKey == "Text" || criteriaKey == "Comment")

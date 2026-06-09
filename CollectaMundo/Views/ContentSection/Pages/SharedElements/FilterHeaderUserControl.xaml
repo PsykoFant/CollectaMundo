@@ -23,7 +23,7 @@
                   Margin="4,0,4,0"
                   ItemsSource="{Binding FilteredOptions}"
                   Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                  DisplayMemberPath="OptionName"
+                  DisplayMemberPath="DisplayName"
                   IsTextSearchEnabled="False"
                   IsEditable="True"
                   Height="20"

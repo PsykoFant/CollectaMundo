@@ -47,29 +47,27 @@ namespace CollectaMundo.DomainLogic.Filtering
                         return true;
                     }
 
-                    switch (OperatorSelection)
+                    return OperatorSelection switch
                     {
-                        case OperatorType.AND:
-                            // Every selected color must be present (if "Colorless" is selected, card must be colorless).
-                            return SelectedOptions.All(opt =>
-                                opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
-                                manaCostSymbols.Contains(opt) ||
-                                colorSymbols.Contains(opt)
-                            );
-                        case OperatorType.NOT:
-                            // No selected color should be present.
-                            return !SelectedOptions.Any(opt =>
-                                opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
-                                manaCostSymbols.Contains(opt) ||
-                                colorSymbols.Contains(opt)
-                            );
-                        default: // OR case (or any other operator)
-                            return SelectedOptions.Any(opt =>
-                                opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
-                                manaCostSymbols.Contains(opt) ||
-                                colorSymbols.Contains(opt)
-                            );
-                    }
+                        // Every selected color must be present (if "Colorless" is selected, card must be colorless).
+                        OperatorType.AND => SelectedOptions.All(opt =>
+                                                        opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
+                                                        manaCostSymbols.Contains(opt) ||
+                                                        colorSymbols.Contains(opt)
+                                                    ),
+                        // No selected color should be present.                        
+                        OperatorType.NOT => !SelectedOptions.Any(opt =>
+                                                        opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
+                                                        manaCostSymbols.Contains(opt) ||
+                                                        colorSymbols.Contains(opt)
+                                                    ),
+                        // OR case (or any other operator)                           
+                        _ => SelectedOptions.Any(opt =>
+                                                        opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
+                                                        manaCostSymbols.Contains(opt) ||
+                                                        colorSymbols.Contains(opt)
+                                                    ),
+                    };
                 }
 
                 // Special case for SelectedFinish: perform an exact match.
@@ -86,14 +84,30 @@ namespace CollectaMundo.DomainLogic.Filtering
                     {
                         case OperatorType.OR:
                             // Exact match required.
-                            return SelectedOptions.Any(opt =>
-                                string.Equals(opt, cardFinish, StringComparison.OrdinalIgnoreCase));
+                            return SelectedOptions.Any(opt => string.Equals(opt, cardFinish, StringComparison.OrdinalIgnoreCase));
                         case OperatorType.NOT:
-                            return !SelectedOptions.Any(opt =>
-                                string.Equals(opt, cardFinish, StringComparison.OrdinalIgnoreCase));
+                            return !SelectedOptions.Any(opt => string.Equals(opt, cardFinish, StringComparison.OrdinalIgnoreCase));
                         default:
                             return true;
                     }
+                }
+
+                // Special case for location filtering.
+                // The UI displays location names, but selected filter values are stable location ids.
+                if (CriteriaKey.Equals("SelectedLocationDisplayName", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (SelectedOptions == null || !SelectedOptions.Any())
+                    {
+                        return true;
+                    }
+
+                    string cardLocationId = card.SelectedLocationId?.ToString() ?? string.Empty;
+
+                    return OperatorSelection switch
+                    {
+                        OperatorType.NOT => !SelectedOptions.Any(opt => string.Equals(opt, cardLocationId, StringComparison.OrdinalIgnoreCase)),
+                        _ => SelectedOptions.Any(opt => string.Equals(opt, cardLocationId, StringComparison.OrdinalIgnoreCase))
+                    };
                 }
 
                 // For other filter types, use your existing logic.
@@ -135,15 +149,15 @@ namespace CollectaMundo.DomainLogic.Filtering
 
                         if (OperatorSelection == OperatorType.AND)
                         {
-                            return SelectedOptions.All(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
+                            return SelectedOptions.All(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
                         }
                         else if (OperatorSelection == OperatorType.NOT)
                         {
-                            return !SelectedOptions.Any(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
+                            return !SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
                         }
                         else // default OR
                         {
-                            return SelectedOptions.Any(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
+                            return SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
                         }
 
                     case FilterType.Numeric:

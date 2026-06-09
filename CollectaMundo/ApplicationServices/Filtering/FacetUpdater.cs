@@ -6,12 +6,35 @@ namespace CollectaMundo.ApplicationServices.Filtering
 {
     public sealed class FacetUpdater : IFacetUpdater
     {
+        private const string LocationCriteriaKey = "SelectedLocationDisplayName";
+
         public void RefreshFromCollection(IEnumerable<CardSet> collection, IReadOnlyDictionary<string, FilterItemViewModel> filters)
         {
             foreach (var (key, spec) in FilterCriteriaMappings.CriteriaMappings)
             {
                 if (!spec.IsCollectionFacet || spec.SelectedExtractor is null)
                 {
+                    continue;
+                }
+
+                if (!filters.TryGetValue(key, out var item) || item is null)
+                {
+                    continue;
+                }
+
+                if (key == LocationCriteriaKey)
+                {
+                    var locationOptions = collection
+                        .Where(c => c.SelectedLocationId is not null &&
+                                    !string.IsNullOrWhiteSpace(c.SelectedLocationDisplayName))
+                        .GroupBy(c => c.SelectedLocationId!.Value)
+                        .Select(g => new FilterOption(
+                            g.Key.ToString(),
+                            g.First().SelectedLocationDisplayName!))
+                        .OrderBy(o => o.DisplayName, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    item.ResetOptions(locationOptions);
                     continue;
                 }
 
@@ -23,10 +46,7 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
-                if (filters.TryGetValue(key, out var item) && item is not null)
-                {
-                    item.ResetOptions(values);
-                }
+                item.ResetOptions(values);
             }
         }
     }
