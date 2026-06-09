@@ -18,15 +18,15 @@ namespace CollectaMundo.ViewModels.Decks
         private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
 
         // UI text
-        protected override string CreateButtonText => "Add deck";
-        protected override string EditButtonText => "Edit deck";
-        protected override string SaveButtonText => "Save changes";
-        protected override string BulkUpdateButtonText => "Update selected";
-
-        protected override string CreateModeMessage => "Add a new deck";
-        protected override string SelectedReadOnlyModeMessage => string.Empty;
-        protected override string EditSingleModeMessage => "Edit selected deck";
-        protected override string EditMultipleModeMessage => "Edit selected decks";
+        protected override LocationManagementText Text { get; } = new(
+            CreateText: "Add deck",
+            EditText: "Edit deck",
+            SaveText: "Save changes",
+            BulkUpdateText: "Update selected",
+            CreateMode: "Add a new deck",
+            SelectedReadOnlyMode: string.Empty,
+            EditSingleMode: "Edit selected deck",
+            EditMultipleMode: "Edit selected decks");
 
         [ObservableProperty]
         private string deckName = string.Empty;
@@ -114,8 +114,7 @@ namespace CollectaMundo.ViewModels.Decks
 
             ShowStatus(mutation.Result.Message);
 
-            if (mutation.Result.Code == OperationResultCode.Success &&
-                mutation.Entity is not null)
+            if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
             {
                 UpsertDeckRow(mutation.Entity);
                 ResetEditorAndSelection();

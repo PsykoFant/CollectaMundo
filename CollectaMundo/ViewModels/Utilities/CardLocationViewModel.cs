@@ -15,15 +15,15 @@ namespace CollectaMundo.ViewModels.Utilities
         private readonly ICardLocationService _cardLocationService = cardLocationService;
 
         // UI text
-        protected override string CreateButtonText => "Add location";
-        protected override string EditButtonText => "Edit location";
-        protected override string SaveButtonText => "Save changes";
-        protected override string BulkUpdateButtonText => "Update selected";
-
-        protected override string CreateModeMessage => "Add a new card location";
-        protected override string SelectedReadOnlyModeMessage => string.Empty;
-        protected override string EditSingleModeMessage => "Edit selected card location";
-        protected override string EditMultipleModeMessage => "Edit selected card locations";
+        protected override LocationManagementText Text { get; } = new(
+            CreateText: "Add location",
+            EditText: "Edit location",
+            SaveText: "Save changes",
+            BulkUpdateText: "Update selected",
+            CreateMode: "Add a new card location",
+            SelectedReadOnlyMode: string.Empty,
+            EditSingleMode: "Edit selected card location",
+            EditMultipleMode: "Edit selected card locations");
 
         [ObservableProperty]
         private string locationName = string.Empty;

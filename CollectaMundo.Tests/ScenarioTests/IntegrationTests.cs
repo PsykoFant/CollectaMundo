@@ -1512,7 +1512,6 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Assign deck to collection card through right - click command
 
             var cardToUpdate = _ctx.MainVM.MyCollectionVM.Cards.First(c => c.SelectedLocationId is null);
-
             var setLocationParam = new SetLocationForSelectedCardsParameter(new object[] { cardToUpdate }, createdLocation.Id);
 
             _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SetLocationForSelectedCardsCommand.Execute(setLocationParam);
@@ -1526,7 +1525,6 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             var locationFilter = _ctx.MainVM.FilterVM.Filters["SelectedLocationDisplayName"];
 
-
             locationFilter.FilterOptions.Single(o => o.OptionName == "Deck: Control Shell").IsSelected = true;
             ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
 
@@ -1534,7 +1532,142 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             Assert.Equal(updatedCard.CardId, filteredCard.CardId);
             Assert.Equal(createdLocation.Id, filteredCard.SelectedLocationId);
-            Assert.Equal("Control Shell", filteredCard.SelectedLocationDisplayName);
+            Assert.Equal("Deck: Control Shell", filteredCard.SelectedLocationDisplayName);
+
+            #endregion
+
+            #region Test 2 - Happy path update and clear format + string updates 
+
+            // Act: update name, format and description for newly created deck
+
+            // Assert initial state of deck editor for created deck
+            Assert.Equal("Add a new deck", _ctx.MainVM.DeckManagementVM.ModeMessage);
+            Assert.Equal("Add deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+
+            _ctx.MainVM.DeckManagementVM.SelectedItem = createdDeck; // Select the created deck 
+
+            // Assert deck editor state after selecting existing deck for edit
+            Assert.Equal(string.Empty, _ctx.MainVM.DeckManagementVM.ModeMessage);
+            Assert.Equal("Edit deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+
+            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Click edit
+
+            // ... then assert strings update
+            Assert.Equal("Edit selected deck", _ctx.MainVM.DeckManagementVM.ModeMessage);
+            Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+
+            _ctx.MainVM.DeckManagementVM.DeckName = "Control Pile";
+            _ctx.MainVM.DeckManagementVM.SelectedDeckFormat = "casual";
+            _ctx.MainVM.DeckManagementVM.Description = "Casual control pile";
+
+            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Submit edit
+            Assert.Equal("Add a new deck", _ctx.MainVM.DeckManagementVM.ModeMessage);
+            Assert.Equal("Add deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            Assert.Equal("Deck updated successfully.", _ctx.MainVM.DeckManagementVM.StatusMessage);
+
+            // Assert deck manager state
+            var updatedDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == createdDeck.LocationId);
+
+            Assert.Equal("Control Pile", updatedDeck.Name);
+            Assert.Equal("casual", updatedDeck.Format);
+            Assert.Equal("Casual control pile", updatedDeck.Description);
+            Assert.Equal("Casual/kitchen table", updatedDeck.FormatDisplayName);
+
+            // Assert persisted update
+            var updatedDeckRows = await ScenarioTestHelpers.ExecuteQueryAsync<
+                (string Name, string Format, string Description)>(
+                _ctx.DbFactory,
+                """
+                SELECT l.name, d.format, d.description
+                FROM myDecks d
+                INNER JOIN cardLocations l
+                    ON l.id = d.locationId
+                WHERE l.id = @id;
+                """,
+                reader => (
+                    Name: reader.GetString(reader.GetOrdinal("name")),
+                    Format: reader.GetString(reader.GetOrdinal("format")),
+                    Description: reader.GetString(reader.GetOrdinal("description"))
+                ),
+                cmd => cmd.Parameters.AddWithValue("@id", createdDeck.LocationId));
+
+            var (UpdatedName, UpdatedFormat, UpdatedDescription) = Assert.Single(updatedDeckRows);
+
+            Assert.Equal("Control Pile", UpdatedName);
+            Assert.Equal("casual", UpdatedFormat);
+            Assert.Equal("Casual control pile", UpdatedDescription);
+
+            // Assert editor reloads canonical value when row is selected after update
+            _ctx.MainVM.DeckManagementVM.SelectedItem = updatedDeck;
+
+            Assert.Equal("Control Pile", _ctx.MainVM.DeckManagementVM.DeckName);
+            Assert.Equal("casual", _ctx.MainVM.DeckManagementVM.SelectedDeckFormat);
+            Assert.Equal("Casual control pile", _ctx.MainVM.DeckManagementVM.Description);
+
+            // Assert filter option still exists after update
+            var updatedLocationFilter = _ctx.MainVM.FilterVM.Filters["SelectedLocationDisplayName"];
+            Assert.Contains(updatedLocationFilter.FilterOptions, o => o.OptionName == "Deck: Control Pile");
+
+            filteredCard = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
+
+            Assert.Equal(updatedCard.CardId, filteredCard.CardId);
+            Assert.Equal(createdLocation.Id, filteredCard.SelectedLocationId);
+            Assert.Equal("Deck: Control Pile", filteredCard.SelectedLocationDisplayName);
+            //_ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+
+
+            // Act: clear format through single edit
+
+            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+
+            _ctx.MainVM.DeckManagementVM.SelectedDeckFormat = string.Empty;
+
+            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+
+            // Assert deck manager state after clearing format
+
+            var clearedFormatDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Control Pile");
+
+            Assert.True(string.IsNullOrWhiteSpace(clearedFormatDeck.Format));
+            Assert.Equal("Casual control pile", clearedFormatDeck.Description);
+            Assert.Equal(string.Empty, clearedFormatDeck.FormatDisplayName);
+
+            // Assert persisted cleared format
+
+            var clearedFormatRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string? Format, string Description)>(
+                _ctx.DbFactory,
+                """
+    SELECT format, description
+    FROM myDecks d
+    INNER JOIN cardLocations l
+        ON l.id = d.locationId
+    WHERE l.name = @name;
+    """,
+                reader =>
+                {
+                    var formatOrdinal = reader.GetOrdinal("format");
+
+                    return (
+                        Format: reader.IsDBNull(formatOrdinal)
+                            ? null
+                            : reader.GetString(formatOrdinal),
+                        Description: reader.GetString(reader.GetOrdinal("description"))
+                    );
+                },
+                cmd => cmd.Parameters.AddWithValue("@name", "Control Pile"));
+
+            var (ClearedFormat, ClearedDescription) = Assert.Single(clearedFormatRows);
+
+            Assert.True(string.IsNullOrWhiteSpace(ClearedFormat));
+            Assert.Equal("Casual control pile", ClearedDescription);
+
+            // Assert editor reloads blank format
+
+            _ctx.MainVM.DeckManagementVM.SelectedItem = clearedFormatDeck;
+
+            Assert.Equal("Control Pile", _ctx.MainVM.DeckManagementVM.DeckName);
+            Assert.True(string.IsNullOrWhiteSpace(_ctx.MainVM.DeckManagementVM.SelectedDeckFormat));
+            Assert.Equal("Casual control pile", _ctx.MainVM.DeckManagementVM.Description);
 
             #endregion
 

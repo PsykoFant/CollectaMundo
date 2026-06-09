@@ -92,10 +92,10 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             var phase3cSw = Stopwatch.StartNew();
 
-            var defs = _filterDefaultsLogic.Build(allCardsTask.Result, myCollectionTask.Result);
+            var filterDefaults = _filterDefaultsLogic.Build(allCardsTask.Result, myCollectionTask.Result);
             filters.Clear();
 
-            foreach (var def in defs)
+            foreach (var def in filterDefaults)
             {
                 filters[def.CriteriaKey] = new FilterItemViewModel(
                     def.CriteriaKey,

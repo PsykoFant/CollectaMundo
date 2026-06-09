@@ -232,8 +232,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                     if (locationMutation.Result.Code != OperationResultCode.Success || locationMutation.Entity is null)
                     {
-                        return (Result: new MutationResult<DeckManagementRecord>(locationMutation.Result, null), Commit: false
-                        );
+                        return (Result: new MutationResult<DeckManagementRecord>(locationMutation.Result, null), Commit: false);
                     }
 
                     await _cardLocationRepo.UpsertMetadataAsync(conn, tx, locationId, input.Format, input.Description);

@@ -56,24 +56,28 @@ namespace CollectaMundo.ViewModels.Shared
                 or SelectionEditorMode.EditMultiple;
 
         // UI text
+        protected abstract LocationManagementText Text { get; }
         public string ActionButtonText => EditorMode switch
         {
-            SelectionEditorMode.Create => CreateButtonText,
-            SelectionEditorMode.SelectedReadOnly => EditButtonText,
-            SelectionEditorMode.EditSingle => SaveButtonText,
-            SelectionEditorMode.EditMultiple => BulkUpdateButtonText,
+            SelectionEditorMode.Create => Text.CreateText,
+            SelectionEditorMode.SelectedReadOnly => Text.EditText,
+            SelectionEditorMode.EditSingle => Text.SaveText,
+            SelectionEditorMode.EditMultiple => Text.BulkUpdateText,
             _ => "Submit"
         };
+
         public string ModeMessage => IsDeleteConfirmationActive
-            ? DeleteConfirmationMessage
+            ? Text.DeleteConfirmation
             : EditorMode switch
             {
-                SelectionEditorMode.Create => CreateModeMessage,
-                SelectionEditorMode.SelectedReadOnly => SelectedReadOnlyModeMessage,
-                SelectionEditorMode.EditSingle => EditSingleModeMessage,
-                SelectionEditorMode.EditMultiple => EditMultipleModeMessage,
+                SelectionEditorMode.Create => Text.CreateMode,
+                SelectionEditorMode.SelectedReadOnly => Text.SelectedReadOnlyMode,
+                SelectionEditorMode.EditSingle => Text.EditSingleMode,
+                SelectionEditorMode.EditMultiple => Text.EditMultipleMode,
                 _ => string.Empty
             };
+
+        protected virtual string SubmitFailureMessage => Text.SubmitFailure;
         public string DeleteButtonText => IsDeleteConfirmationActive ? "Yes, delete!" : "Delete selected";
 
         [ObservableProperty]
@@ -95,17 +99,18 @@ namespace CollectaMundo.ViewModels.Shared
         private int clearSelectionTrigger;
 
         // Customizable UI text
-        protected virtual string CreateButtonText => "Add";
-        protected virtual string EditButtonText => "Edit";
-        protected virtual string SaveButtonText => "Save changes";
-        protected virtual string BulkUpdateButtonText => "Update selected";
+        protected sealed record LocationManagementText(
+            string CreateText,
+            string EditText,
+            string SaveText,
+            string BulkUpdateText,
+            string CreateMode,
+            string SelectedReadOnlyMode,
+            string EditSingleMode,
+            string EditMultipleMode,
+            string DeleteConfirmation = "Confirm delete",
+            string SubmitFailure = "Failed to submit changes");
 
-        protected virtual string CreateModeMessage => "Add new item";
-        protected virtual string SelectedReadOnlyModeMessage => string.Empty;
-        protected virtual string EditSingleModeMessage => "Edit selected item";
-        protected virtual string EditMultipleModeMessage => "Edit selected items";
-        protected virtual string DeleteConfirmationMessage => "Confirm delete";
-        protected virtual string SubmitFailureMessage => "Failed to submit changes";
 
         // Mode transition hooks
         protected virtual void OnEnterCreateMode() { }
