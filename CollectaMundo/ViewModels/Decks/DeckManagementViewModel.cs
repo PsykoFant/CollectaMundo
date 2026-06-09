@@ -17,6 +17,8 @@ namespace CollectaMundo.ViewModels.Decks
         private readonly ICardLocationService _cardLocationService = cardLocationService;
         private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
 
+        public event EventHandler<DeckManagementRowViewModel>? EditDeckRequested;
+
         // UI text
         protected override LocationManagementText Text { get; } = new(
             CreateText: "Add deck",
@@ -171,6 +173,17 @@ namespace CollectaMundo.ViewModels.Decks
 
                     return result.Result.Code is OperationResultCode.Success;
                 });
+        }
+
+        [RelayCommand]
+        private void EditSelectedDeck()
+        {
+            if (SelectedItem is null)
+            {
+                return;
+            }
+
+            EditDeckRequested?.Invoke(this, SelectedItem);
         }
 
         // External notifications

@@ -27,7 +27,7 @@ namespace CollectaMundo.ViewModels
         public IReadOnlyList<CardLocation> AvailableLocations => _availableLocations;
         public IReadOnlyList<LocationMenuItemViewModel> LocationMenuItems { get; private set; } = [];
 
-        // Contstructor
+        // Constructor
         public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost cardCollectionHost, bool removeCardWhenZero)
         {
             _cardCollectionHost = cardCollectionHost;
@@ -381,24 +381,24 @@ namespace CollectaMundo.ViewModels
             }
 
             var edits = selectedCards.Where(c => c.CardId is not null).Select(c => new CardSet
-                {
-                    CardId = c.CardId,
-                    Uuid = c.Uuid,
-                    SelectedCondition = c.SelectedCondition,
-                    Language = c.Language,
-                    SelectedFinish = c.SelectedFinish,
-                    SelectedLocationId = parameter.LocationId,
-                    Comment = c.Comment,
-                    CardsOwned = c.CardsOwned,
-                    CardsForTrade = c.CardsForTrade
-                }).ToList();
+            {
+                CardId = c.CardId,
+                Uuid = c.Uuid,
+                SelectedCondition = c.SelectedCondition,
+                Language = c.Language,
+                SelectedFinish = c.SelectedFinish,
+                SelectedLocationId = parameter.LocationId,
+                Comment = c.Comment,
+                CardsOwned = c.CardsOwned,
+                CardsForTrade = c.CardsForTrade
+            }).ToList();
 
             if (edits.Count == 0)
             {
                 return;
             }
 
-            await SubmitBatchAsync(edits,(cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot),
+            await SubmitBatchAsync(edits, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot),
                 clearAfter: false,
                 summaryTitle: parameter.LocationId is null
                     ? "Removed location from the following cards:"

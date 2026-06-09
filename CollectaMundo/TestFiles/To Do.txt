@@ -2,14 +2,6 @@ TO DO
 
 Deck editor!
 
-   - Tilføj deck opdatering til scenarietest (e.g. lav til storage osv.). Filtrer også på deck i scenarietest
-
-  
-
-
-
-
-
  Så er det sku selve deck editor!
 
 

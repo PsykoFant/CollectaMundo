@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CollectaMundo.ViewModels.Decks
+﻿namespace CollectaMundo.ViewModels.Decks
 {
     public class DeckEditorViewModel
     {
+        public event EventHandler? ExitEditorRequested;
     }
 }

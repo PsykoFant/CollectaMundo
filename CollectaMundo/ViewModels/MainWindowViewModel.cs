@@ -89,7 +89,6 @@ namespace CollectaMundo.ViewModels
 
         public CardListViewModel AllCardsVM { get; }
         public CardListViewModel AllCardsForDecksVM { get; }
-        public CardListViewModel AllCardsInDecksVM { get; }
         public CardListViewModel MyCollectionVM { get; }
         public CardListViewModel ColorIconsViewModel { get; }
         public ModifyCollectionViewModel AddCardsVM { get; }
@@ -178,7 +177,6 @@ namespace CollectaMundo.ViewModels
             AllCardsVM = new CardListViewModel();
             MyCollectionVM = new CardListViewModel();
             AllCardsForDecksVM = new CardListViewModel();
-            AllCardsInDecksVM = new CardListViewModel();
             List<string> manaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
             ColorIconsViewModel = new CardListViewModel { Cards = [.. manaKeys.Select(CardSet.FromManaKey)] };
 

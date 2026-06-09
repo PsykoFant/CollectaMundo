@@ -12,11 +12,25 @@ namespace CollectaMundo.ViewModels.Pages
             DeckManagementVM = deckManagementVM;
             DeckEditorVM = deckEditorVM;
 
+            DeckManagementVM.EditDeckRequested += OnEditDeckRequested;
+            DeckEditorVM.ExitEditorRequested += OnExitEditorRequested;
+
             currentDecksContentViewModel = DeckManagementVM;
         }
 
         [ObservableProperty]
         private object currentDecksContentViewModel;
+        private void OnEditDeckRequested(object? sender, DeckManagementRowViewModel selectedDeck)
+        {
+            // later:
+            // DeckEditorVM.LoadDeck(selectedDeck.LocationId);
+
+            CurrentDecksContentViewModel = DeckEditorVM;
+        }
+        private void OnExitEditorRequested(object? sender, EventArgs e)
+        {
+            CurrentDecksContentViewModel = DeckManagementVM;
+        }
         public async Task BeginAsync()
         {
             CurrentDecksContentViewModel = DeckManagementVM;

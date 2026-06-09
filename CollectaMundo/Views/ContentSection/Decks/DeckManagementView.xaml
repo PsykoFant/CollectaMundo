@@ -24,6 +24,7 @@
             <RowDefinition Height="Auto"/>  <!-- Section header -->
             <RowDefinition Height="Auto"/>  <!-- Form for adding/editing deck -->
             <RowDefinition Height="30"/>    <!-- Status message -->
+            <RowDefinition Height="30"/>    <!-- Edit deck button -->
             <RowDefinition Height="*"/>     <!-- Data grid  -->
         </Grid.RowDefinitions>
 
@@ -96,8 +97,16 @@
                    HorizontalAlignment="Center"
                    TextWrapping="Wrap" />
 
+        <!-- Edit deck button -->
+        <Button Grid.Row="4"
+                Content="Edit Selected deck Deck" 
+                Margin="0,5,0,5"
+                Command="{Binding EditSelectedDeckCommand}"
+                Visibility="{Binding HasSelectedItems, Converter={StaticResource BoolToVisibilityConverter}}" />
+
         <!-- Data grid for displaying decks -->
-        <DataGrid Grid.Row="4"
+        
+        <DataGrid Grid.Row="5"
                   ItemsSource="{Binding Decks}"
                   SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                   behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedItems}"
