@@ -1,11 +1,10 @@
 ﻿using CollectaMundo.ApplicationServices.CollectionMaterialization;
 using CollectaMundo.ApplicationServices.KeyedDataProvider;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.CardLists.Aggregation;
+using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.Infrastructure.CardLists;
-using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Filtering;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -22,39 +21,43 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
         private readonly ICollectionMaterializer _collectionMaterializer = collectionMaterializer;
-        public async Task InitializeCardListsAsync(CardListViewModel allCardsVM, CardListViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
+        public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             var dbIoSw = Stopwatch.StartNew();
 
             // Phase 1: DB I/O
-            var (lookupPackage, coreDtos, collectionRows) = await _uowRunner.ExecuteReadOnlyAsync(async conn =>
+            var (lookupPackage, printingRows, collectionRows) = await _uowRunner.ExecuteReadOnlyAsync(async conn =>
             {
                 var lookupPackageTask = _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All);
-                var coreDtosTask = _cardListRepo.ReadAllCardsCoreDtosAsync(conn);
+                var printingRowsTask = _cardListRepo.ReadAllCardPrintingDbRowsAsync(conn);
                 var collectionRowsTask = _cardListRepo.ReadMyCollectionAsync(conn);
 
-                await Task.WhenAll(lookupPackageTask, coreDtosTask, collectionRowsTask);
+                await Task.WhenAll(lookupPackageTask, printingRowsTask, collectionRowsTask);
 
-                return (lookupPackageTask.Result, coreDtosTask.Result, collectionRowsTask.Result);
+                return (lookupPackageTask.Result, printingRowsTask.Result, collectionRowsTask.Result);
             });
 
             dbIoSw.Stop();
             Debug.WriteLine($"[InitializeCardListsAsync] phase 1 (DB I/O): {dbIoSw.ElapsedMilliseconds} ms");
 
-            // Phase 2a: Static provider setup (must be before FromCore)
-            CardSet.ManaCostImages = lookupPackage.ManaCostImages;
-            CardSet.SetIconImages = lookupPackage.SetIconImages;
-            CardSet.SetMetaProvider = lookupPackage.SetMetaProvider;
-            CardSet.PriceMetaProvider = lookupPackage.PriceMetaProvider;
+            // Phase 2a: Static provider setup
+            CardDataProviders.ManaCostImages = lookupPackage.ManaCostImages;
+            CardDataProviders.SetIconImages = lookupPackage.SetIconImages;
+            CardDataProviders.SetMetaProvider = lookupPackage.SetMetaProvider;
+            CardDataProviders.PriceMetaProvider = lookupPackage.PriceMetaProvider;
 
             // Phase 2b: Hydrate and aggregate
             var phase2bSw = Stopwatch.StartNew();
 
-            var cores = new CardCore[coreDtos.Count];
-            Parallel.For(0, coreDtos.Count, i => { cores[i] = CardCore.FromDto(coreDtos[i]); });
+            var printings = new PrintingCard[printingRows.Count];
 
-            var aggregatedCores = _aggregator.Aggregate(cores);
-            var byUuid = aggregatedCores.ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+            Parallel.For(0, printingRows.Count, i =>
+            {
+                printings[i] = PrintingCardFactory.FromRow(printingRows[i]);
+            });
+
+            var aggregatedPrintings = PrintingCardAggregator.Aggregate(printings);
+            var printingByUuid = aggregatedPrintings.Where(p => !string.IsNullOrWhiteSpace(p.Uuid)).ToDictionary(p => p.Uuid, StringComparer.OrdinalIgnoreCase);
 
             phase2bSw.Stop();
             Debug.WriteLine($"[InitializeCardListsAsync] phase 2b (Hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
@@ -64,24 +67,23 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             var allCardsTask = Task.Run(() =>
             {
-                var allCards = aggregatedCores
-                    .AsParallel()
-                    .AsOrdered()
-                    .Select(CardSet.FromCore)
-                    .ToList();
+                var allCards = SortCards(aggregatedPrintings);
 
-                allCardsVM.Cards = SortCards(allCards);
-
+                allCardsVM.Cards = allCards;
                 allCardsVM.FilteredCards = allCardsVM.Cards;
+
                 return allCards;
             });
 
             var myCollectionTask = Task.Run(() =>
             {
-                var myCollection = _collectionMaterializer.MaterializeRows(collectionRows, byUuid).ToList();
+                var myCollection = _collectionMaterializer
+                    .MaterializeRows(collectionRows, printingByUuid)
+                    .ToList();
 
                 myCollectionVM.Cards = SortCards(myCollection);
                 myCollectionVM.FilteredCards = myCollectionVM.Cards;
+
                 return myCollection;
             });
 
@@ -93,6 +95,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
             var phase3cSw = Stopwatch.StartNew();
 
             var filterDefaults = _filterDefaultsLogic.Build(allCardsTask.Result, myCollectionTask.Result);
+
             filters.Clear();
 
             foreach (var def in filterDefaults)
@@ -116,7 +119,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
         }
 
         // helper to sort cards in the desired order
-        private static List<CardSet> SortCards(IEnumerable<CardSet> cards)
+        private static List<TCard> SortCards<TCard>(IEnumerable<TCard> cards) where TCard : ICardListSortable
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             static int ColorRankFast(string? colors)
@@ -127,7 +130,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
                     return 7;
                 }
 
-                // Monocolor -> exactly one char
                 if (colors.Length == 1)
                 {
                     return colors[0] switch
@@ -141,15 +143,17 @@ namespace CollectaMundo.ApplicationServices.CardLists
                     };
                 }
 
-                // Anything longer than 1 char we treat as multicolor (no allocations / parsing)
                 return 5;
             }
 
-            return [.. cards
-                .OrderByDescending(c => c.ReleaseDate)
-                .ThenBy(c => c.SetCode, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(c => ColorRankFast(c.Colors))
-                .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)];
+            return
+            [
+                .. cards
+            .OrderByDescending(c => c.ReleaseDate)
+            .ThenBy(c => c.SetCode, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(c => ColorRankFast(c.Colors))
+            .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)
+            ];
         }
     }
 }

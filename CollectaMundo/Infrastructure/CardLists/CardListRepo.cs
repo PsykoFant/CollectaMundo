@@ -1,71 +1,79 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Shared;
+﻿using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
 using System.Data.Common;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardLists
 {
-    public class CardListRepo() : ICardListRepo
+    public class CardListRepo : ICardListRepo
     {
-        public async Task<IReadOnlyList<CardCoreDto>> ReadAllCardsCoreDtosAsync(SQLiteConnection conn)
+        public async Task<IReadOnlyList<CardPrintingDbRow>> ReadAllCardPrintingDbRowsAsync(SQLiteConnection conn)
         {
-            const string query = $@"
-                        SELECT 
-                            c.name        AS Name,
-		                    c.setCode     AS SetCode,
-                            c.manaCost    AS ManaCost,
-                            c.types       AS Types,
-                            c.colors      AS Colors,
-                            c.supertypes  AS SuperTypes,
-                            c.subtypes    AS SubTypes,
-                            c.type        AS Type,
-                            c.keywords    AS Keywords,
-                            c.text        AS RulesText,
-                            c.manaValue   AS ManaValue,
-                            c.language    AS Language,
-                            c.uuid        AS Uuid,
-							c.otherFaceIds AS OtherIDs,
-                            c.finishes    AS Finishes,
-                            c.side        AS Side,
-                            c.rarity      AS Rarity
-                        FROM cards c
-                        UNION ALL
-                        SELECT 
-                            t.name        AS Name,
-		                    t.setCode     AS SetCode,
-                            t.manaCost    AS ManaCost,
-                            t.types       AS Types,
-                            t.colors      AS Colors,
-                            t.supertypes  AS SuperTypes,
-                            t.subtypes    AS SubTypes,
-                            t.type        AS Type,
-                            t.keywords    AS Keywords,
-                            t.text        AS RulesText,
-                            NULL          AS ManaValue,
-                            t.language    AS Language,
-                            t.uuid        AS Uuid,
-							t.otherFaceIds AS OtherIDs,
-                            t.finishes    AS Finishes,
-                            t.side        AS Side,
-                            NULL          AS Rarity
-                        FROM tokens t";
+            const string query = """
+                                SELECT 
+                                    c.scryfallOracleId AS ScryfallOracleId,
+                                    c.name             AS Name,
+                                    c.setCode          AS SetCode,
+                                    c.manaCost         AS ManaCost,
+                                    c.types            AS Types,
+                                    c.colors           AS Colors,
+                                    c.supertypes       AS SuperTypes,
+                                    c.subtypes         AS SubTypes,
+                                    c.type             AS Type,
+                                    c.keywords         AS Keywords,
+                                    c.text             AS RulesText,
+                                    c.manaValue        AS ManaValue,
+                                    c.language         AS Language,
+                                    c.uuid             AS Uuid,
+                                    c.otherFaceIds     AS OtherFaceIds,
+                                    c.finishes         AS Finishes,
+                                    c.side             AS Side,
+                                    c.rarity           AS Rarity
+                                FROM cards c
+
+                                UNION ALL
+
+                                SELECT 
+                                    t.scryfallOracleId AS ScryfallOracleId,
+                                    t.name             AS Name,
+                                    t.setCode          AS SetCode,
+                                    t.manaCost         AS ManaCost,
+                                    t.types            AS Types,
+                                    t.colors           AS Colors,
+                                    t.supertypes       AS SuperTypes,
+                                    t.subtypes         AS SubTypes,
+                                    t.type             AS Type,
+                                    t.keywords         AS Keywords,
+                                    t.text             AS RulesText,
+                                    NULL               AS ManaValue,
+                                    t.language         AS Language,
+                                    t.uuid             AS Uuid,
+                                    t.otherFaceIds     AS OtherFaceIds,
+                                    t.finishes         AS Finishes,
+                                    t.side             AS Side,
+                                    NULL               AS Rarity
+                                FROM tokens t
+                                """;
 
             using var cmd = new SQLiteCommand(query, conn);
-            var list = new List<CardCoreDto>(capacity: 120000);
+            var list = new List<CardPrintingDbRow>(capacity: 120000);
+
             using var reader = await cmd.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
             {
-                list.Add(DtoFromReader(reader));
+                list.Add(CardPrintingDbRowFromReader(reader));
             }
 
             return list;
         }
-        private static CardCoreDto DtoFromReader(DbDataReader r)
+        private static CardPrintingDbRow CardPrintingDbRowFromReader(DbDataReader r)
         {
-            return new CardCoreDto
+            return new CardPrintingDbRow
             {
+                ScryfallOracleId = GetFieldValue<string>(r, "ScryfallOracleId"),
+
                 Name = GetFieldValue<string>(r, "Name"),
                 ManaCostRaw = GetFieldValue<string>(r, "ManaCost"),
                 Colors = GetFieldValue<string>(r, "Colors"),
@@ -76,13 +84,14 @@ namespace CollectaMundo.Infrastructure.CardLists
                 Keywords = GetFieldValue<string>(r, "Keywords"),
                 RulesText = GetFieldValue<string>(r, "RulesText"),
                 Side = GetFieldValue<string>(r, "Side"),
-                Language = GetFieldValue<string>(r, "Language"),
+                OtherFaceIds = GetFieldValue<string>(r, "OtherFaceIds"),
+                ManaValue = GetFieldValue<double?>(r, "ManaValue"),
+
                 Uuid = GetFieldValue<string>(r, "Uuid"),
-                OtherFaceIds = GetFieldValue<string>(r, "OtherIDs"),
+                Language = GetFieldValue<string>(r, "Language"),
                 SetCode = GetFieldValue<string>(r, "SetCode"),
                 Rarity = GetFieldValue<string>(r, "Rarity"),
-                Finishes = GetFieldValue<string>(r, "Finishes"),
-                ManaValue = GetFieldValue<double?>(r, "ManaValue"),
+                Finishes = GetFieldValue<string>(r, "Finishes")
             };
         }
         public async Task<List<MyCollectionRow>> ReadMyCollectionAsync(SQLiteConnection conn)
@@ -109,29 +118,33 @@ namespace CollectaMundo.Infrastructure.CardLists
             while (await rdr.ReadAsync())
             {
                 var uuid = rdr["uuid"]?.ToString() ?? throw new InvalidOperationException("uuid must not be null");
-
                 var condition = rdr["condition"]?.ToString() ?? throw new InvalidOperationException("condition must not be null");
-
                 var language = rdr["language"]?.ToString() ?? throw new InvalidOperationException("language must not be null");
-
                 var finish = rdr["finish"]?.ToString() ?? throw new InvalidOperationException("finish must not be null");
-
                 int? locationId = rdr["locationId"] == DBNull.Value
                     ? null
-                    : rdr["locationId"] is long ll
-                        ? (int)ll
+                    : rdr["locationId"] is long locationLong
+                        ? (int)locationLong
                         : Convert.ToInt32(rdr["locationId"]);
-
                 string? comment = rdr["comment"] == DBNull.Value
                     ? null
                     : rdr["comment"]?.ToString();
 
                 list.Add(new MyCollectionRow
                 {
-                    CardId = rdr["id"] is long li ? (int)li : Convert.ToInt32(rdr["id"]),
+                    CardId = rdr["id"] is long idLong
+                        ? (int)idLong
+                        : Convert.ToInt32(rdr["id"]),
+
                     Identity = CollectionIdentityFactory.Create(uuid, condition, language, finish, locationId, comment),
-                    CardsOwned = rdr["cardsOwned"] is long lo ? (int)lo : Convert.ToInt32(rdr["cardsOwned"]),
-                    CardsForTrade = rdr["cardsForTrade"] is long lt ? (int)lt : Convert.ToInt32(rdr["cardsForTrade"])
+
+                    CardsOwned = rdr["cardsOwned"] is long ownedLong
+                        ? (int)ownedLong
+                        : Convert.ToInt32(rdr["cardsOwned"]),
+
+                    CardsForTrade = rdr["cardsForTrade"] is long tradeLong
+                        ? (int)tradeLong
+                        : Convert.ToInt32(rdr["cardsForTrade"])
                 });
             }
 
@@ -144,12 +157,16 @@ namespace CollectaMundo.Infrastructure.CardLists
                 return default;
             }
 
-            object value = reader[columnName];
+            var value = reader[columnName];
 
-            // Explicit conversion for specific cases
             if (typeof(T) == typeof(int?) && value is long longValue)
             {
                 return (T)(object)(int?)longValue;
+            }
+
+            if (typeof(T) == typeof(double?) && value is double doubleValue)
+            {
+                return (T)(object)(double?)doubleValue;
             }
 
             return (T)value;
