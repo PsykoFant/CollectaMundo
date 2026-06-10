@@ -24,9 +24,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public string? Side => Printing.Side;
         public double ManaValue => Printing.ManaValue;
         public string? SetCode => Printing.SetCode;
-        public string? Language => Printing.Language;
         public string? Rarity => Printing.Rarity;
-        public string? Finishes => Printing.Finishes;
         public ImageSource? ManaCostImage => Printing.ManaCostImage;
         public ImageSource? KeyRuneImage => Printing.KeyRuneImage;
         public string? SetName => Printing.SetName;
@@ -34,12 +32,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public decimal? NormalPrice => Printing.NormalPrice;
         public decimal? FoilPrice => Printing.FoilPrice;
         public decimal? EtchedPrice => Printing.EtchedPrice;
-
-        [ObservableProperty]
-        private int cardsOwned;
-
-        [ObservableProperty]
-        private int cardsForTrade;
 
         [ObservableProperty]
         private string? selectedCondition;
@@ -56,7 +48,17 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 
         [ObservableProperty]
         private string? selectedFinish;
-        public List<string> AvailableFinishes { get; set; } = [];
+        public IReadOnlyList<string> FinishOptions => Printing.FinishOptions;
+
+        [ObservableProperty]
+        private string? language;
+        public IReadOnlyList<string> OtherLanguages => Printing.OtherLanguages;
+
+        [ObservableProperty]
+        private int cardsOwned;
+
+        [ObservableProperty]
+        private int cardsForTrade;
 
         [ObservableProperty]
         private int? selectedLocationId;

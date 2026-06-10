@@ -8,8 +8,14 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public required string Uuid { get; init; }
         public string? SetCode { get; init; }
         public string? Language { get; init; }
-        public string? Rarity { get; init; }
         public string? Finishes { get; init; }
+        public IReadOnlyList<string> FinishOptions =>
+            string.IsNullOrWhiteSpace(Finishes)
+                ? []
+                : Finishes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+        public List<string> OtherLanguages { get; set; } = [];
+        public string? Rarity { get; init; }
         public string Name => Oracle.Name;
         public string? ScryfallOracleId => Oracle.ScryfallOracleId;
         public string? ManaCost => Oracle.ManaCost;
