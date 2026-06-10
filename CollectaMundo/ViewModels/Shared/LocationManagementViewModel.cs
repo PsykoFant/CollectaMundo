@@ -8,6 +8,8 @@ namespace CollectaMundo.ViewModels.Shared
     {
         // Tracks the current editor workflow state.
         private SelectionEditorMode editorMode;
+
+        // Constructor
         protected LocationManagementViewModel()
         {
             SelectedItems.CollectionChanged += (_, _) =>
@@ -113,16 +115,7 @@ namespace CollectaMundo.ViewModels.Shared
 
 
         // Mode transition hooks
-        protected virtual void OnEnterCreateMode() { }
-        protected virtual void OnEnterSelectedReadOnlyMode(TItem item)
-        {
-            LoadEditorFromItem(item);
-        }
-        protected virtual void OnEnterEditSingleMode(TItem item)
-        {
-            LoadEditorFromItem(item);
-        }
-        protected abstract void LoadEditorFromItem(TItem item);
+        protected abstract void OnEnterEditSingleMode(TItem item);
         protected virtual void OnEnterEditMultipleMode(IReadOnlyList<TItem> selectedItems) { }
         protected virtual void ClearEditorFields() { }
 
@@ -147,7 +140,7 @@ namespace CollectaMundo.ViewModels.Shared
             }
 
             EditorMode = SelectionEditorMode.SelectedReadOnly;
-            OnEnterSelectedReadOnlyMode(value);
+            OnEnterEditSingleMode(value);
         }
         partial void OnIsDeleteConfirmationActiveChanged(bool value)
         {
@@ -168,7 +161,6 @@ namespace CollectaMundo.ViewModels.Shared
             }
 
             EditorMode = SelectionEditorMode.EditSingle;
-            OnEnterEditSingleMode(SelectedItem);
         }
 
         [RelayCommand]
@@ -309,7 +301,6 @@ namespace CollectaMundo.ViewModels.Shared
         {
             EditorMode = SelectionEditorMode.Create;
             ClearEditorFields();
-            OnEnterCreateMode();
         }
         protected void ResetEditorAndSelection()
         {
@@ -320,8 +311,6 @@ namespace CollectaMundo.ViewModels.Shared
 
             EditorMode = SelectionEditorMode.Create;
             ClearSelectionTrigger++;
-
-            OnEnterCreateMode();
         }
         protected void RefreshSelectionMode()
         {
@@ -331,14 +320,13 @@ namespace CollectaMundo.ViewModels.Shared
             {
                 EditorMode = SelectionEditorMode.EditMultiple;
                 ClearEditorFields();
-                OnEnterEditMultipleMode(SelectedItems.ToList());
+                OnEnterEditMultipleMode([.. SelectedItems]);
                 return;
             }
 
             if (SelectedItem is not null)
             {
                 EditorMode = SelectionEditorMode.SelectedReadOnly;
-                OnEnterSelectedReadOnlyMode(SelectedItem);
                 return;
             }
 

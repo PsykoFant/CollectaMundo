@@ -40,7 +40,7 @@ namespace CollectaMundo.ViewModels.Utilities
         ];
 
         // Editor state hooks
-        protected override void LoadEditorFromItem(CardLocation selectedItem)
+        protected override void OnEnterEditSingleMode(CardLocation selectedItem)
         {
             LocationName = selectedItem.Name;
             SelectedLocationType = selectedItem.Type;

@@ -44,8 +44,6 @@
             <!-- Deck rows -->
             <GroupBox Grid.Column="0" Header="Deck">
                 <DataGrid x:Name="DeckCardsDataGrid"
-                          ItemsSource="{Binding DeckRows}"
-                          SelectedItem="{Binding SelectedDeckRow, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="False"
@@ -53,16 +51,14 @@
 
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Qty"
-                                            Width="50"
-                                            Binding="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            Width="50"/>
 
                         <DataGridTemplateColumn Header="Card Name"
                                                 Width="*"
                                                 SortMemberPath="CardName">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding CardName}"
-                                               TextWrapping="Wrap"/>
+                                    <TextBlock TextWrapping="Wrap"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -72,8 +68,7 @@
                                                 SortMemberPath="ManaValue">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Image Source="{Binding ManaCostImage}"
-                                           Height="20"
+                                    <Image Height="20"
                                            HorizontalAlignment="Right"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -81,22 +76,12 @@
 
                         <DataGridTextColumn Header="Owned"
                                             Width="70"
-                                            IsReadOnly="True"
-                                            Binding="{Binding Owned}"/>
+                                            IsReadOnly="True"/>
 
                         <DataGridTextColumn Header="Allocated"
                                             Width="80"
-                                            IsReadOnly="True"
-                                            Binding="{Binding Allocated}"/>
+                                            IsReadOnly="True"/>
                     </DataGrid.Columns>
-
-                    <DataGrid.ContextMenu>
-                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                            <MenuItem Header="Remove from deck"
-                                      Command="{Binding RemoveDeckRowCommand}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                        </ContextMenu>
-                    </DataGrid.ContextMenu>
                 </DataGrid>
             </GroupBox>
 
@@ -109,10 +94,10 @@
 
                     <Separator Margin="0,8"/>
 
-                    <TextBlock Text="{Binding TotalCardsText}"/>
-                    <TextBlock Text="{Binding OwnedCardsText}"/>
-                    <TextBlock Text="{Binding AllocatedCardsText}"/>
-                    <TextBlock Text="{Binding MissingCardsText}"/>
+                    <TextBlock/>
+                    <TextBlock/>
+                    <TextBlock/>
+                    <TextBlock/>
                 </StackPanel>
             </GroupBox>
         </Grid>
@@ -120,8 +105,6 @@
         <!-- Bottom: Filterable oracle card source -->
         <GroupBox Grid.Row="3" Header="Add Cards">
             <DataGrid x:Name="AvailableCardsDataGrid"
-                      ItemsSource="{Binding SearchCardsVM.FilteredCards}"
-                      SelectedItem="{Binding SelectedSearchCard, Mode=TwoWay}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
                       IsReadOnly="True"
@@ -133,8 +116,7 @@
                                             SortMemberPath="Name">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Name}"
-                                           TextWrapping="Wrap"/>
+                                <TextBlock TextWrapping="Wrap"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -144,28 +126,12 @@
                                             SortMemberPath="ManaValue">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Image Source="{Binding ManaCostImage}"
-                                       Height="20"
+                                <Image Height="20"
                                        HorizontalAlignment="Right"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
-
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="MouseDoubleClick">
-                        <i:InvokeCommandAction Command="{Binding AddSelectedSearchCardsToDeckCommand}"
-                                               CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-
-                <DataGrid.ContextMenu>
-                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                        <MenuItem Header="Add to deck"
-                                  Command="{Binding AddSelectedSearchCardsToDeckCommand}"
-                                  CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    </ContextMenu>
-                </DataGrid.ContextMenu>
             </DataGrid>
         </GroupBox>
     </Grid>

@@ -1,7 +1,16 @@
-﻿namespace CollectaMundo.ViewModels.Decks
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+
+namespace CollectaMundo.ViewModels.Decks
 {
-    public class DeckEditorViewModel
+    public partial class DeckEditorViewModel : ObservableObject
     {
         public event EventHandler? ExitEditorRequested;
+
+        [RelayCommand]
+        private void BackToDeckManagement()
+        {
+            ExitEditorRequested?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

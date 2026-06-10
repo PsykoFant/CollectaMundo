@@ -17,6 +17,8 @@ namespace CollectaMundo.ViewModels.Decks
         private readonly ICardLocationService _cardLocationService = cardLocationService;
         private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
 
+        // External notifications
+        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
         public event EventHandler<DeckManagementRowViewModel>? EditDeckRequested;
 
         // UI text
@@ -39,22 +41,28 @@ namespace CollectaMundo.ViewModels.Decks
         [ObservableProperty]
         private string description = string.Empty;
 
+        // UI state
+        [ObservableProperty]
+        private bool isEditDeckButtonEnabled = false;
+
         // View data
         public ObservableCollection<DeckManagementRowViewModel> Decks { get; } = [];
         public ObservableCollection<DeckFormatOption> DeckFormats => _deckManagementStore.DeckFormats;
 
         // Editor state hooks
-        protected override void LoadEditorFromItem(DeckManagementRowViewModel selectedItem)
+        protected override void OnEnterEditSingleMode(DeckManagementRowViewModel selectedItem)
         {
             DeckName = selectedItem.Name;
             SelectedDeckFormat = selectedItem.Format ?? string.Empty;
             Description = selectedItem.Description ?? string.Empty;
+            IsEditDeckButtonEnabled = true;
         }
         protected override void OnEnterEditMultipleMode(IReadOnlyList<DeckManagementRowViewModel> selectedItems)
         {
             DeckName = string.Empty;
             Description = string.Empty;
             SelectedDeckFormat = null;
+            IsEditDeckButtonEnabled = false;
         }
         protected override void ClearEditorFields()
         {
@@ -146,7 +154,6 @@ namespace CollectaMundo.ViewModels.Decks
                 : $"{updatedDecks.Count} decks updated successfully.");
         }
 
-
         // Commands
         [RelayCommand]
         private Task DeleteSelectedDecks()
@@ -185,9 +192,6 @@ namespace CollectaMundo.ViewModels.Decks
 
             EditDeckRequested?.Invoke(this, SelectedItem);
         }
-
-        // External notifications
-        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
 
         // Helper methods
         private DeckManagementInput CreateInput()
