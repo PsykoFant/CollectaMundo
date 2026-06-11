@@ -19,7 +19,7 @@ namespace CollectaMundo.ViewModels
         private IReadOnlyList<CardLocation> _availableLocations = [];
         private readonly bool _removeCardWhenZero;
 
-        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
+        public event EventHandler<CollectionChangeSet<CollectionCard>>? CollectionChanged;
         public ObservableCollection<CardSetEditRowViewModel> CardsToAddOrEdit { get; } = [];
         public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
         public bool ShowCounts => !HasStatus;
@@ -66,11 +66,9 @@ namespace CollectaMundo.ViewModels
 
             RefreshColumnsTrigger++;
         }
-        public void ReconcileOpenRowsWithCollection(IReadOnlyList<CardSet> collection)
+        public void ReconcileOpenRowsWithCollection(IReadOnlyList<CollectionCard> collection)
         {
-            var currentById = collection
-                .Where(c => c.CardId.HasValue)
-                .ToDictionary(c => c.CardId!.Value);
+            var currentById = collection.ToDictionary(c => c.CardId);
 
             for (int i = CardsToAddOrEdit.Count - 1; i >= 0; i--)
             {

@@ -18,7 +18,7 @@ namespace CollectaMundo.ViewModels.Decks
         private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
 
         // External notifications
-        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
+        public event EventHandler<CollectionChangeSet<CollectionCard>>? CollectionChanged;
         public event EventHandler<DeckManagementRowViewModel>? EditDeckRequested;
 
         // UI text

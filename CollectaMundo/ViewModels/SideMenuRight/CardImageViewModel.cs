@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardImages;
-using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.ApplicationServices.CardImages.Models;
+using CollectaMundo.DomainLogic.CardImages.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.IO;
 using System.Windows.Media.Imaging;
@@ -11,13 +12,13 @@ namespace CollectaMundo.ViewModels.SideMenuRight
         private readonly ICardImageService _cardImageService = cardImageService;
 
         [ObservableProperty]
-        private CardSet? selectedCard;
+        private ICardImageSourceCard? selectedCard;
 
-        partial void OnSelectedCardChanged(CardSet? value)
+        partial void OnSelectedCardChanged(ICardImageSourceCard? value)
         {
             OnCardSelected(value);
         }
-        private async void OnCardSelected(CardSet? selectedCard)
+        private async void OnCardSelected(ICardImageSourceCard? selectedCard)
         {
             if (selectedCard is null)
             {
@@ -28,12 +29,16 @@ namespace CollectaMundo.ViewModels.SideMenuRight
                 return;
             }
 
-            // Capture the card we are loading for
             var requestedCard = selectedCard;
 
-            var imageResult = await _cardImageService.GetImageForCardAsync(selectedCard);
+            var imageResult = await _cardImageService.GetImageForCardAsync(
+                new CardImageRequest
+                {
+                    Uuid = selectedCard.Uuid,
+                    Name = selectedCard.Name,
+                    Side = selectedCard.Side
+                });
 
-            // Guard: selection changed while awaiting
             if (!ReferenceEquals(SelectedCard, requestedCard))
             {
                 return;

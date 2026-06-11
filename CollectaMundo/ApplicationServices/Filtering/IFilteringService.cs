@@ -1,11 +1,10 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.ViewModels.Filtering;
+﻿using CollectaMundo.ViewModels.Filtering;
 
 namespace CollectaMundo.ApplicationServices.Filtering
 {
     public interface IFilteringService
     {
-        List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> vmFilters);
+        List<TCard> ApplyFilters<TCard>(IEnumerable<TCard> cards, IEnumerable<FilterItemViewModel> vmFilters);
         void ResetAllFilters(IEnumerable<FilterItemViewModel> filters);
         string BuildSummary(IEnumerable<FilterItemViewModel> filters);
     }

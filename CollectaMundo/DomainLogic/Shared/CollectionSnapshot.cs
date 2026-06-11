@@ -15,29 +15,30 @@ namespace CollectaMundo.DomainLogic.Shared
         public IReadOnlyCollection<MyCollectionRow> Rows => _byId.Values;
         public bool TryGetById(int cardId, out MyCollectionRow row) => _byId.TryGetValue(cardId, out row!);
         public bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row) => _byIdentity.TryGetValue(identity, out row!);
-        public static CollectionSnapshot From(IEnumerable<CardSet> cards)
+        public static CollectionSnapshot From(IEnumerable<CollectionCard> cards)
         {
             var byId = new Dictionary<int, MyCollectionRow>(capacity: 1024);
             var byIdentity = new Dictionary<CollectionIdentity, MyCollectionRow>(capacity: 1024);
 
             foreach (var card in cards)
             {
-                if (card.CardId is not int cardId)
-                {
-                    continue;
-                }
-
-                var identity = CollectionIdentityFactory.Create(card.Uuid, card.SelectedCondition, card.Language, card.SelectedFinish, card.SelectedLocationId, card.Comment);
+                var identity = CollectionIdentityFactory.Create(
+                    card.Uuid,
+                    card.SelectedCondition,
+                    card.Language,
+                    card.SelectedFinish,
+                    card.SelectedLocationId,
+                    card.Comment);
 
                 var row = new MyCollectionRow
                 {
-                    CardId = cardId,
+                    CardId = card.CardId,
                     Identity = identity,
                     CardsOwned = card.CardsOwned,
                     CardsForTrade = card.CardsForTrade
                 };
 
-                byId[cardId] = row;
+                byId[card.CardId] = row;
                 byIdentity[identity] = row;
             }
 

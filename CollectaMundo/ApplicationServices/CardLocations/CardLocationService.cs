@@ -1,10 +1,10 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations.Models;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.CollectionMutations;
+using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLocations;
@@ -380,7 +380,11 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 {
                     if (distinctIds.Count == 0)
                     {
-                        var emptyResult = new CardLocationDeleteResult(new OperationResult(OperationResultCode.Success, $"No {entityName} selected."), new CollectionChangeSet<CardSet>());
+                        var emptyResult = new CardLocationDeleteResult(
+                            new OperationResult(
+                                OperationResultCode.Success,
+                                $"No {entityName} selected."),
+                            new CollectionChangeSet<MyCollectionRow>());
                         return (Result: emptyResult, Commit: false);
                     }
 
@@ -392,7 +396,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                         var missingIds = distinctIds.Except(existingIds).ToList();
                         var notFoundResult = new CardLocationDeleteResult(new OperationResult(
                             OperationResultCode.NotFound, $"Could not find {entityName}: {string.Join(", ", missingIds)}."),
-                            new CollectionChangeSet<CardSet>());
+                            new CollectionChangeSet<MyCollectionRow>());
 
                         return (Result: notFoundResult, Commit: false);
                     }
@@ -403,7 +407,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                     // Step 3: build and execute one collection mutation plan for all affected cards.
                     var snapshot = CollectionSnapshot.FromRows(snapshotRows);
-                    var editedCards = affectedRows.Select(CreateCardWithClearedLocation).ToList();
+                    var editedCards = affectedRows.Select(CreateDraftWithClearedLocation).ToList();
                     var plan = _mutationsLogic.PlanIdentityRewriteBatch(editedCards, snapshot);
 
                     await _mutationsService.ExecutePlanAsync(plan, conn, tx);
@@ -437,12 +441,12 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     new OperationResult(
                         OperationResultCode.Error,
                         $"Failed to delete {entityName}: {ex.Message}"),
-                    new CollectionChangeSet<CardSet>());
+                    new CollectionChangeSet<MyCollectionRow>());
             }
         }
-        private static CardSet CreateCardWithClearedLocation(MyCollectionRow row)
+        private static CollectionCardDraft CreateDraftWithClearedLocation(MyCollectionRow row)
         {
-            return new CardSet
+            return new CollectionCardDraft
             {
                 CardId = row.CardId,
                 Uuid = row.Identity.Uuid,

@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardImages;
+using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardImages.Models.CollectaMundo.DomainLogic.CardImages.Models;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardImages.Models;
 using CollectaMundo.Infrastructure.RemoteLookups;
@@ -17,37 +17,41 @@ namespace CollectaMundo.ApplicationServices.CardImages
         private readonly ICardImageLogic _logic = logic;
         private readonly ICardImageDownloader _downloader = downloader;
 
-        public async Task<CardImageDto?> GetImageForCardAsync(CardSet card)
+        public async Task<CardImageDto?> GetImageForCardAsync(CardImageRequest request)
         {
             string? scryfallID = null;
             CardImageMetadata? metadata = null;
 
+            var uuid = request.Uuid;
+            var name = request.Name;
+            var side = request.Side;
+
             // Get IDs + metadata
-            if (!string.IsNullOrWhiteSpace(card.Uuid))
+            if (!string.IsNullOrWhiteSpace(uuid))
             {
                 await _uowRunner.ExecuteReadOnlyAsync(async conn =>
                 {
-                    scryfallID = await _repo.GetScryfallIdByUuidAsync(card.Uuid, conn);
-                    metadata = await _repo.GetImageMetadataByUuidAsync(card.Uuid, conn);
+                    scryfallID = await _repo.GetScryfallIdByUuidAsync(uuid, conn);
+                    metadata = await _repo.GetImageMetadataByUuidAsync(uuid, conn);
                     return true;
                 });
             }
-            else if (!string.IsNullOrWhiteSpace(card.Name))
+            else if (!string.IsNullOrWhiteSpace(name))
             {
-                var idTuple = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetScryfallIdByNameAsync(card.Name, conn));
+                var idTuple = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetScryfallIdByNameAsync(name, conn));
                 scryfallID = idTuple.Value.ScryfallId;
-                card.Uuid = idTuple.Value.Uuid;
+                uuid = idTuple.Value.Uuid;
 
                 // Now that we have UUID, fetch metadata (same UoW style, read-only)
-                if (!string.IsNullOrWhiteSpace(card.Uuid))
+                if (!string.IsNullOrWhiteSpace(uuid))
                 {
-                    metadata = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetImageMetadataByUuidAsync(card.Uuid, conn));
+                    metadata = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetImageMetadataByUuidAsync(uuid, conn));
                 }
             }
 
             else
             {
-                Debug.WriteLine("Both card UUID and name are missing. Cannot fetch image.");
+                Debug.WriteLine("Both request UUID and name are missing. Cannot fetch image.");
                 return null;
             }
 
@@ -58,16 +62,16 @@ namespace CollectaMundo.ApplicationServices.CardImages
             }
 
             // CreateCollectionChangeSetFromEdits image URLs
-            var (FrontUrl, BackUrl) = _logic.BuildImageUrls(scryfallID, card);
+            var (FrontUrl, BackUrl) = _logic.BuildImageUrls(scryfallID, side);
             string frontUrl = FrontUrl;
             string? backUrl = BackUrl;
 
             // Handle double-faced cards
-            if (card.Side == "a" && backUrl is not null)
+            if (side == "a" && backUrl is not null)
             {
                 if (!await _remoteLookups.IsValidUrlAsync(backUrl))
                 {
-                    var otherFaceScryfallID = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetOtherFaceScryfallIdByUuidAsync(card.Uuid, conn));
+                    var otherFaceScryfallID = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetOtherFaceScryfallIdByUuidAsync(uuid, conn));
                     if (!string.IsNullOrWhiteSpace(otherFaceScryfallID))
                     {
                         backUrl = _logic.BuildOtherSideImageUrl(otherFaceScryfallID, frontUrl);
@@ -78,11 +82,11 @@ namespace CollectaMundo.ApplicationServices.CardImages
             // Download as byte arrays
             var frontBytes = string.IsNullOrWhiteSpace(frontUrl)
                 ? null
-                : await _downloader.DownloadAsync(frontUrl, card.Uuid, "front");
+                : await _downloader.DownloadAsync(frontUrl, uuid, "front");
 
             var backBytes = string.IsNullOrWhiteSpace(backUrl)
                 ? null
-                : await _downloader.DownloadAsync(backUrl, card.Uuid, "back");
+                : await _downloader.DownloadAsync(backUrl, uuid, "back");
 
             return new CardImageDto
             {
@@ -92,9 +96,6 @@ namespace CollectaMundo.ApplicationServices.CardImages
                 SetName = metadata?.SetName
             };
         }
-
-
-
     }
 
 }

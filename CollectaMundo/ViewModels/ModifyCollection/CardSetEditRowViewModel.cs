@@ -8,7 +8,7 @@ namespace CollectaMundo.ViewModels.ModifyCollection;
 
 public sealed partial class CardSetEditRowViewModel : ObservableObject
 {
-    public CardSet CardToAddOrEdit { get; }
+    public CollectionCard CardToAddOrEdit { get; }
     public bool CanSplit => CardsOwned > 1;
 
     // Bindable properties for the combo boxes
@@ -20,7 +20,7 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     // Bindable properties for the numeric inputs
     public NumericBindingViewModel Owned { get; }
     public NumericBindingViewModel Trade { get; }
-    public CardSetEditRowViewModel(CardSet cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand)
+    public CardSetEditRowViewModel(CollectionCard cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand)
     {
         CardToAddOrEdit = cardToAdd;
         RefreshColumnsCommand = refreshColumnsCommand;
@@ -32,7 +32,7 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
             refreshCommand: refreshColumnsCommand);
 
         FinishCombo = new ComboBindingViewModel(
-            items: cardToAdd.AvailableFinishes,
+            items: cardToAdd.FinishOptions,
             getter: () => SelectedFinish,
             setter: v => SelectedFinish = (string?)v,
             refreshCommand: refreshColumnsCommand);

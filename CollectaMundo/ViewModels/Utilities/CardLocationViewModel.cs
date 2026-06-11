@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.ViewModels.Shared;
@@ -136,7 +135,7 @@ namespace CollectaMundo.ViewModels.Utilities
         }
 
         // External notifications
-        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
+        public event EventHandler<CollectionChangeSet<MyCollectionRow>>? CollectionChanged;
 
         // Commands
         [RelayCommand]

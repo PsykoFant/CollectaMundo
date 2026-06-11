@@ -1,5 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Shared.Models;
+﻿using CollectaMundo.DomainLogic.Shared.Models;
 
 namespace CollectaMundo.DomainLogic.CollectionMutations.Models
 {
@@ -8,6 +7,6 @@ namespace CollectaMundo.DomainLogic.CollectionMutations.Models
         public List<int> DeleteIds { get; } = [];
         public List<UpdateCommand> Updates { get; } = [];
         public List<InsertCommand> Inserts { get; } = [];
-        public CollectionChangeSet<CardSet> ChangeSet { get; set; } = new();
+        public CollectionChangeSet<MyCollectionRow> ChangeSet { get; set; } = new();
     }
 }

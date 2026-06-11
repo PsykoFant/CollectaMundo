@@ -1,5 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.CollectionMutations.Models;
+﻿using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 
@@ -7,11 +6,11 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 {
     public class CollectionMutationsLogic : ICollectionMutationsLogic
     {
-        public CollectionMutationPlan PlanIdentityRewriteBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
+        public CollectionMutationPlan PlanIdentityRewriteBatch(IEnumerable<CollectionCardDraft> cards, ICollectionSnapshot snapshot)
         {
             var plan = new CollectionMutationPlan();
             var removedIds = new HashSet<int>();
-            var upsertsByIdentity = new Dictionary<CollectionIdentity, CardSet>();
+            var upsertsByIdentity = new Dictionary<CollectionIdentity, MyCollectionRow>();
             var updatesByCardId = new Dictionary<int, UpdateCommand>();
 
             var workingById = new Dictionary<int, WorkingRow>();
@@ -50,7 +49,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             plan.Updates.Clear();
             plan.Updates.AddRange(updatesByCardId.Values);
 
-            plan.ChangeSet = new CollectionChangeSet<CardSet>
+            plan.ChangeSet = new CollectionChangeSet<MyCollectionRow>
             {
                 RemovedIds = [.. removedIds],
                 AddedOrUpdated = [.. upsertsByIdentity.Values]
@@ -76,38 +75,35 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 workingByIdentity[working.Identity] = working;
             }
         }
-        private static void PlanAdd(CardSet card, CollectionIdentity identity, Dictionary<int, UpdateCommand> updatesByCardId, CollectionMutationPlan plan, Dictionary<CollectionIdentity, CardSet> upsertsByIdentity, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity, Dictionary<CollectionIdentity, InsertCommand> insertsByIdentity)
+        private static void PlanAdd(
+            CollectionCardDraft card,
+            CollectionIdentity identity,
+            Dictionary<int, UpdateCommand> updatesByCardId,
+            CollectionMutationPlan plan,
+            Dictionary<CollectionIdentity, MyCollectionRow> upsertsByIdentity,
+            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity,
+            Dictionary<CollectionIdentity, InsertCommand> insertsByIdentity)
         {
-            // Same new identity was already planned for insert in this batch, so collapse into one insert.
             if (insertsByIdentity.TryGetValue(identity, out var existingInsert))
             {
                 var mergedOwned = existingInsert.CardsOwned + card.CardsOwned;
                 var mergedTrade = existingInsert.CardsForTrade + card.CardsForTrade;
 
-                var replacement = new InsertCommand(
-                    identity,
-                    mergedOwned,
-                    mergedTrade,
-                    card);
+                var replacement = new InsertCommand(identity, mergedOwned, mergedTrade, card);
 
                 var index = plan.Inserts.IndexOf(existingInsert);
                 if (index < 0)
                 {
-                    throw new InvalidOperationException(
-                        $"Planned insert for identity '{identity}' was tracked but not found in plan.");
+                    throw new InvalidOperationException($"Planned insert for identity '{identity}' was tracked but not found in plan.");
                 }
 
                 plan.Inserts[index] = replacement;
                 insertsByIdentity[identity] = replacement;
 
-                card.CardsOwned = mergedOwned;
-                card.CardsForTrade = mergedTrade;
-
-                upsertsByIdentity[identity] = card;
+                upsertsByIdentity[identity] = ToRow(0, identity, mergedOwned, mergedTrade);
                 return;
             }
 
-            // Identity already exists in the collection snapshot, so adding becomes an additive update.
             if (workingByIdentity.TryGetValue(identity, out var existing))
             {
                 var mergedOwned = existing.CardsOwned + card.CardsOwned;
@@ -118,38 +114,37 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 existing.CardsOwned = mergedOwned;
                 existing.CardsForTrade = mergedTrade;
 
-                card.CardId = existing.CardId;
-                card.CardsOwned = mergedOwned;
-                card.CardsForTrade = mergedTrade;
-
-                upsertsByIdentity[identity] = card;
+                upsertsByIdentity[identity] = ToRow(existing.CardId, identity, mergedOwned, mergedTrade);
                 return;
             }
 
-            // Brand-new identity: schedule one insert and track it so later identical rows can collapse into it.
-            var insert = new InsertCommand(
-                identity,
-                card.CardsOwned,
-                card.CardsForTrade,
-                card);
+            var insert = new InsertCommand(identity, card.CardsOwned, card.CardsForTrade, card);
 
             plan.Inserts.Add(insert);
             insertsByIdentity[identity] = insert;
 
-            upsertsByIdentity[identity] = card;
+            upsertsByIdentity[identity] = ToRow(0, identity, card.CardsOwned, card.CardsForTrade);
         }
-        private static void PlanEdit(CardSet card, CollectionIdentity targetIdentity, Dictionary<int, UpdateCommand> updatesByCardId, CollectionMutationPlan plan, HashSet<int> removedIds, Dictionary<CollectionIdentity, CardSet> upsertsByIdentity, Dictionary<int, WorkingRow> workingById, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity, Dictionary<CollectionIdentity, InsertCommand> insertsByIdentity)
+        private static void PlanEdit(
+            CollectionCardDraft card,
+            CollectionIdentity targetIdentity,
+            Dictionary<int, UpdateCommand> updatesByCardId,
+            CollectionMutationPlan plan,
+            HashSet<int> removedIds,
+            Dictionary<CollectionIdentity, MyCollectionRow> upsertsByIdentity,
+            Dictionary<int, WorkingRow> workingById,
+            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity,
+            Dictionary<CollectionIdentity, InsertCommand> insertsByIdentity)
         {
-            var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
+            var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId.");
 
             if (!workingById.TryGetValue(currentId, out var currentRow))
             {
-                throw new InvalidOperationException($"CardId {currentId} not found in working state");
+                throw new InvalidOperationException($"CardId {currentId} not found in working state.");
             }
 
             var currentIdentity = currentRow.Identity;
 
-            // Identity did not change; only quantities need updating.
             if (targetIdentity.Equals(currentIdentity))
             {
                 SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
@@ -157,25 +152,21 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 currentRow.CardsOwned = card.CardsOwned;
                 currentRow.CardsForTrade = card.CardsForTrade;
 
-                upsertsByIdentity[targetIdentity] = card;
+                upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
+
                 return;
             }
 
-            // Target identity is currently a planned insert from this same batch.
-            // Cancel that insert and fold its quantities into this existing row update.
             if (insertsByIdentity.TryGetValue(targetIdentity, out var plannedInsert))
             {
                 var mergedOwned = card.CardsOwned + plannedInsert.CardsOwned;
                 var mergedTrade = card.CardsForTrade + plannedInsert.CardsForTrade;
 
-                var insertIndex = plan.Inserts.IndexOf(plannedInsert);
-                if (insertIndex < 0)
+                if (!plan.Inserts.Remove(plannedInsert))
                 {
-                    throw new InvalidOperationException(
-                        $"Planned insert for identity '{targetIdentity}' was tracked but not found in plan.");
+                    throw new InvalidOperationException($"Planned insert for identity '{targetIdentity}' was tracked but not found in plan.");
                 }
 
-                plan.Inserts.RemoveAt(insertIndex);
                 insertsByIdentity.Remove(targetIdentity);
 
                 SetUpdate(updatesByCardId, currentId, targetIdentity, mergedOwned, mergedTrade);
@@ -191,14 +182,13 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 card.CardsOwned = mergedOwned;
                 card.CardsForTrade = mergedTrade;
 
-                upsertsByIdentity[targetIdentity] = card;
+                upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, mergedOwned, mergedTrade);
+
                 return;
             }
 
-            // Target identity already exists in the working collection state, so this edit merges into that survivor.
             if (workingByIdentity.TryGetValue(targetIdentity, out var survivor))
             {
-                // Defensive branch: the target identity maps back to the same row.
                 if (survivor.CardId == currentId)
                 {
                     SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
@@ -210,18 +200,16 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                     workingByIdentity.Remove(currentIdentity);
                     workingByIdentity[targetIdentity] = currentRow;
 
-                    upsertsByIdentity[targetIdentity] = card;
+                    upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
+
                     return;
                 }
 
                 var mergedOwned = survivor.CardsOwned + card.CardsOwned;
                 var mergedTrade = survivor.CardsForTrade + card.CardsForTrade;
 
-                // Current row is absorbed by the survivor row.
                 plan.DeleteIds.Add(currentId);
                 removedIds.Add(currentId);
-
-                // The current row disappears, so any prior update for it is no longer relevant.
                 updatesByCardId.Remove(currentId);
 
                 SetUpdate(updatesByCardId, survivor.CardId, targetIdentity, mergedOwned, mergedTrade);
@@ -236,11 +224,11 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 card.CardsOwned = mergedOwned;
                 card.CardsForTrade = mergedTrade;
 
-                upsertsByIdentity[targetIdentity] = card;
+                upsertsByIdentity[targetIdentity] = ToRow(survivor.CardId, targetIdentity, mergedOwned, mergedTrade);
+
                 return;
             }
 
-            // Identity changed, but no collision exists; update this row in place to the new identity.
             SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
 
             workingByIdentity.Remove(currentIdentity);
@@ -250,24 +238,30 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             currentRow.CardsForTrade = card.CardsForTrade;
 
             workingByIdentity[targetIdentity] = currentRow;
-            upsertsByIdentity[targetIdentity] = card;
+
+            upsertsByIdentity[targetIdentity] =
+                ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
         }
-        private static void PlanEditDelete(CardSet card, CollectionMutationPlan plan, HashSet<int> removedIds, Dictionary<CollectionIdentity, CardSet> upsertsByIdentity, Dictionary<int, WorkingRow> workingById, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        private static void PlanEditDelete(
+            CollectionCardDraft card,
+            CollectionMutationPlan plan,
+            HashSet<int> removedIds,
+            Dictionary<CollectionIdentity, MyCollectionRow> upsertsByIdentity,
+            Dictionary<int, WorkingRow> workingById,
+            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
         {
-            var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
+            var currentId = card.CardId ?? throw new InvalidOperationException("Edit delete requires CardId.");
 
             if (!workingById.TryGetValue(currentId, out var currentRow))
             {
-                throw new InvalidOperationException($"CardId {currentId} not found in working state");
+                throw new InvalidOperationException($"CardId {currentId} not found in working state.");
             }
 
             var currentIdentity = currentRow.Identity;
 
-            // Owned count zero means delete this existing collection row.
             plan.DeleteIds.Add(currentId);
             removedIds.Add(currentId);
 
-            // Remove the row from working state so later rows in the same batch plan against the updated collection.
             workingById.Remove(currentId);
             workingByIdentity.Remove(currentIdentity);
             upsertsByIdentity.Remove(currentIdentity);
@@ -275,6 +269,16 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
         private static void SetUpdate(Dictionary<int, UpdateCommand> updatesByCardId, int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade)
         {
             updatesByCardId[cardId] = new UpdateCommand(cardId, identity, cardsOwned, cardsForTrade);
+        }
+        private static MyCollectionRow ToRow(int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade)
+        {
+            return new MyCollectionRow
+            {
+                CardId = cardId,
+                Identity = identity,
+                CardsOwned = cardsOwned,
+                CardsForTrade = cardsForTrade
+            };
         }
 
         // Internal class used to track working state during PlanIdentityRewriteBatch

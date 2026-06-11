@@ -5,6 +5,6 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
 {
     public interface ICollectionChangeSetApplier
     {
-        void Apply(IList<CardSet> collection, CollectionChangeSet<CardSet> changes);
+        void Apply(IList<CollectionCard> collection, CollectionChangeSet<CollectionCard> changes);
     }
 }

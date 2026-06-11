@@ -1,10 +1,11 @@
-﻿using CollectaMundo.DomainLogic.CardLocations.Models;
+﻿using CollectaMundo.ApplicationServices.CardImages.Models;
+using CollectaMundo.DomainLogic.CardLocations.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Media;
 
 namespace CollectaMundo.DomainLogic.CardLists.Models
 {
-    public sealed partial class CollectionCard : ObservableObject, ICardListSortable
+    public sealed partial class CollectionCard : ObservableObject, ICardListSortable, ICardImageSourceCard
     {
         public required PrintingCard Printing { get; init; }
         public int CardId { get; init; }
@@ -94,13 +95,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         }
         public void RecomputeCollectionPrice()
         {
-            OnPropertyChanged(nameof(CardInCollectionPrice));
-        }
-        public void RefreshPricesFromProvider()
-        {
-            OnPropertyChanged(nameof(NormalPrice));
-            OnPropertyChanged(nameof(FoilPrice));
-            OnPropertyChanged(nameof(EtchedPrice));
             OnPropertyChanged(nameof(CardInCollectionPrice));
         }
         public void RefreshLocationsFromProvider()

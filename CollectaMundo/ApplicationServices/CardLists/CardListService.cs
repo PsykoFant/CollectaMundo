@@ -5,6 +5,7 @@ using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.Infrastructure.CardLists;
+using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Filtering;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -13,13 +14,12 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IUnitOfWorkRunner uowRunner, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService, ICardCoreAggregator aggregator, ICollectionMaterializer collectionMaterializer) : ICardListService
+    public sealed class CardListService(IUnitOfWorkRunner uowRunner, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService, ICollectionMaterializer collectionMaterializer) : ICardListService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterDefaultsLogic = filterDefaultsLogic;
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
-        private readonly ICardCoreAggregator _aggregator = aggregator;
         private readonly ICollectionMaterializer _collectionMaterializer = collectionMaterializer;
         public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterPanelViewModel filterVM)
         {

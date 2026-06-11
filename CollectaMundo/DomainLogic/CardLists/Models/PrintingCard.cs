@@ -1,8 +1,9 @@
-﻿using System.Windows.Media;
+﻿using CollectaMundo.ApplicationServices.CardImages.Models;
+using System.Windows.Media;
 
 namespace CollectaMundo.DomainLogic.CardLists.Models
 {
-    public sealed class PrintingCard : ICardListSortable
+    public sealed class PrintingCard : ICardListSortable, ICardImageSourceCard
     {
         public required OracleCard Oracle { get; init; }
         public required string Uuid { get; init; }

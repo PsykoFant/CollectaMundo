@@ -36,4 +36,4 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         }
     }
 }
-}
+

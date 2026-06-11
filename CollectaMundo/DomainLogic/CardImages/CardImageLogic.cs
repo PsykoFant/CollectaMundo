@@ -1,15 +1,13 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-
-namespace CollectaMundo.DomainLogic.CardImages
+﻿namespace CollectaMundo.DomainLogic.CardImages
 {
     public class CardImageLogic() : ICardImageLogic
     {
-        public (string FrontUrl, string? BackUrl) BuildImageUrls(string scryfallId, CardSet card)
+        public (string FrontUrl, string? BackUrl) BuildImageUrls(string scryfallId, string? side)
         {
             var frontUrl = BuildImageUrl(scryfallId, front: true);
             string? backUrl = null;
 
-            if (card.Side == "a")
+            if (side == "a")
             {
                 backUrl = BuildImageUrl(scryfallId, front: false);
             }
@@ -20,7 +18,7 @@ namespace CollectaMundo.DomainLogic.CardImages
         public string? BuildOtherSideImageUrl(string scryfallId, string frontUrl)
         {
             var url = BuildImageUrl(scryfallId, front: true); // 'other face' always assumed to be a front            
-            return url != frontUrl ? url : null; // If the URLs are the same, it's probably split, adventure, Aftermath etc. cards where we don't want to show card back
+            return url != frontUrl ? url : null; // If the URLs are the same, it's probably split, adventure, Aftermath etc. cards where we don't want to show side back
         }
         private static string BuildImageUrl(string scryfallId, bool front)
         {

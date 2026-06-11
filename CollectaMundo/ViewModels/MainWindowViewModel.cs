@@ -276,7 +276,7 @@ namespace CollectaMundo.ViewModels
             EditCardsVM.CollectionChanged += OnCollectionChanged;
             FilterVM.FilterChanged += OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged += OnLocationsChanged;
-            CardLocationVM.CollectionChanged += OnCollectionChanged;
+            CardLocationVM.CollectionChanged += OnCollectionRowsChanged;
             DeckManagementVM.CollectionChanged += OnCollectionChanged;
         }
         private void UnsubscribeChildVmEvents()
@@ -337,12 +337,11 @@ namespace CollectaMundo.ViewModels
         {
             if (string.IsNullOrWhiteSpace(uuid))
             {
-                CardImageVM.SelectedCard = null; // reset UI
+                CardImageVM.SelectedCard = null;
+                return;
             }
-            else
-            {
-                CardImageVM.SelectedCard = new CardSet { Uuid = uuid };
-            }
+
+            CardImageVM.SelectedCard = AllCardsVM.Cards.FirstOrDefault(card => string.Equals(card.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
         }
         private void OnLocationsChanged(object? sender, EventArgs e)
         {
@@ -370,7 +369,51 @@ namespace CollectaMundo.ViewModels
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
+        private void OnCollectionChanged(object? sender, CollectionChangeSet<CollectionCard> changeSet)
+        {
+            // Newly materialized CollectionCards need access to location lookups
+            // for SelectedLocationName / SelectedLocationType / SelectedLocationDisplayName.
+            foreach (var card in changeSet.AddedOrUpdated)
+            {
+                card.RefreshLocationsFromProvider();
+            }
 
+            // Apply DB-truth changes to the in-memory collection list.
+            _collectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
+
+            // Open add/edit staging rows may now be stale.
+            // Reconcile them against the updated in-memory collection:
+            // - remove draft rows whose source CardId no longer exists
+            // - refresh draft rows whose source CardId still exists
+            AddCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
+            EditCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
+
+            // Reapply active filters to the updated collection list.
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+
+            // Refresh collection-derived filter facets after mutation.
+            _facetScheduler.Cancel();
+            _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
+        }
+        private void OnCollectionRowsChanged(object? sender, CollectionChangeSet<MyCollectionRow> rowChangeSet)
+        {
+            var hydratedChangeSet = BuildCollectionChangeSetFromRows(rowChangeSet);
+            OnCollectionChanged(sender, hydratedChangeSet);
+        }
+        private CollectionChangeSet<CollectionCard> BuildCollectionChangeSetFromRows(CollectionChangeSet<MyCollectionRow> rowChangeSet)
+        {
+            var printingByUuid = AllCardsVM.Cards.Where(c => !string.IsNullOrWhiteSpace(c.Uuid)).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+
+            return new CollectionChangeSet<CollectionCard>
+            {
+                RemovedIds = rowChangeSet.RemovedIds,
+                AddedOrUpdated =
+                [
+                    .. rowChangeSet.AddedOrUpdated
+                .Select(row => _collectionMaterializer.MaterializeFromRow(row, printingByUuid))
+                ]
+            };
+        }
 
         #endregion
 
@@ -405,19 +448,11 @@ namespace CollectaMundo.ViewModels
         // When retailer is changed, refresh prices on all cards
         public async Task RefreshAllPrices()
         {
-            // Reset price dictionary
             await _cardListService.ReloadPriceLookupsAsync(_settings.PriceInfo.Retailer);
 
-            // Refresh prices on all cards in all lists
-            foreach (var c in AllCardsVM.Cards)
-            {
-                c.RefreshPricesFromProvider();
-            }
-
-            foreach (var c in MyCollectionVM.Cards)
-            {
-                c.RefreshPricesFromProvider();
-            }
+            // Force grids to re-read computed price properties.
+            AllCardsVM.FilteredCards = [.. AllCardsVM.FilteredCards];
+            MyCollectionVM.FilteredCards = [.. MyCollectionVM.FilteredCards];
 
             Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}");
             PricesVM.RefreshLatestPriceDate();

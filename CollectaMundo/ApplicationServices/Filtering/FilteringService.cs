@@ -1,5 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Filtering;
+﻿using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.ViewModels.Filtering;
 using System.Diagnostics;
@@ -9,9 +8,9 @@ using System.Windows.Media;
 
 namespace CollectaMundo.ApplicationServices.Filtering
 {
-    public class FilteringService() : IFilteringService
+    public class FilteringService : IFilteringService
     {
-        public List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> vmFilters)
+        public List<TCard> ApplyFilters<TCard>(IEnumerable<TCard> cards, IEnumerable<FilterItemViewModel> vmFilters)
         {
             if (vmFilters == null || !vmFilters.Any())
             {
