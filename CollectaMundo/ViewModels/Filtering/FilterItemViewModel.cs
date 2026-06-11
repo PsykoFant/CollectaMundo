@@ -161,7 +161,7 @@ namespace CollectaMundo.ViewModels.Filtering
             OnPropertyChanged(nameof(AvailableOptions));
         }
 
-        private readonly FilterViewModel _filterViewModel;
+        private readonly FilterPanelViewModel _filterViewModel;
         private readonly IFilterItemSearchLogic _filterItemSearchLogic;
         private readonly Timer? _typingTimer;
         private bool _isSelectionInProgress = false;
@@ -170,7 +170,7 @@ namespace CollectaMundo.ViewModels.Filtering
         private bool _suppressFiltering = false; // Used to temporarily suppress filter update
 
         // Constructor
-        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null)
+        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterPanelViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null)
         {
             _filterViewModel = filterViewModel;
             _filterItemSearchLogic = filterItemSearchLogic;

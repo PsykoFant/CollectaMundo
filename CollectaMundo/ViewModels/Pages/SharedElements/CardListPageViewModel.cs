@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ViewModels.Filtering;
+﻿using CollectaMundo.ViewModels.CardLists;
+using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.SideMenuRight;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -7,12 +8,12 @@ using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.Pages.SharedElements
 {
-    public abstract class CardListPageViewModel : ObservableObject, IClearPageStatus
+    public abstract class CardListPageViewModel<TCard> : ObservableObject, IClearPageStatus
     {
         // Child VMs passed down from MainWindowViewModel
-        public CardListViewModel CardsVM { get; }
+        public CardListViewModel<TCard> CardsVM { get; }
         public CardImageViewModel CardImageVM { get; }
-        public FilterViewModel FilterVM { get; }
+        public FilterPanelViewModel FilterVM { get; }
         public ModifyCollectionViewModel? ModifyCollectionViewModel { get; }
         public PricesViewModel? PricesVM { get; }
 
@@ -38,7 +39,7 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
         public ICommand? PrimarySubmitCommand { get; }
         public ICommand? ClearPendingChangesCommand => ModifyCollectionViewModel?.ClearCardsToAddCommand;
 
-        public CardListPageViewModel(CardListViewModel cardsVM, CardImageViewModel cardImageVM, FilterViewModel filterVM, string pageTitle, ShellPageEnum cardListPage, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
+        public CardListPageViewModel(CardListViewModel<TCard> cardsVM, CardImageViewModel cardImageVM, FilterPanelViewModel filterVM, string pageTitle, ShellPageEnum cardListPage, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
         {
             CardsVM = cardsVM;
             CardImageVM = cardImageVM;

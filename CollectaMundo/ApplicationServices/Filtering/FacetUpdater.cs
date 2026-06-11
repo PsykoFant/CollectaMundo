@@ -8,11 +8,11 @@ namespace CollectaMundo.ApplicationServices.Filtering
     {
         private const string LocationCriteriaKey = "SelectedLocationDisplayName";
 
-        public void RefreshFromCollection(IEnumerable<CardSet> collection, IReadOnlyDictionary<string, FilterItemViewModel> filters)
+        public void RefreshFromCollection(IEnumerable<CollectionCard> collection, IReadOnlyDictionary<string, FilterItemViewModel> filters)
         {
             foreach (var (key, spec) in FilterCriteriaMappings.CriteriaMappings)
             {
-                if (!spec.IsCollectionFacet || spec.SelectedExtractor is null)
+                if (!spec.IsCollectionFacet || spec.CollectionFacetExtractor is null)
                 {
                     continue;
                 }
@@ -38,8 +38,7 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     continue;
                 }
 
-                var values = collection
-                    .Select(spec.SelectedExtractor)
+                var values = collection.Select(spec.CollectionFacetExtractor)
                     .Where(s => !string.IsNullOrWhiteSpace(s))
                     .Select(s => s!)
                     .Distinct(StringComparer.OrdinalIgnoreCase)

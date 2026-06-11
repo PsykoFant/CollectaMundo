@@ -1,19 +1,18 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace CollectaMundo.ViewModels
+namespace CollectaMundo.ViewModels.CardLists
 {
-    public partial class CardListViewModel : ObservableObject
+    public partial class CardListViewModel<TCard> : ObservableObject
     {
-        public List<CardSet> Cards { get; set; } = [];
+        public List<TCard> Cards { get; set; } = [];
 
         [ObservableProperty]
-        private List<CardSet> filteredCards = [];
+        private List<TCard> filteredCards = [];
 
         public int FilteredCount => FilteredCards.Count;
         public int TotalCount => Cards.Count;
 
-        partial void OnFilteredCardsChanged(List<CardSet>? oldValue, List<CardSet> newValue)
+        partial void OnFilteredCardsChanged(List<TCard>? oldValue, List<TCard> newValue)
         {
             OnPropertyChanged(nameof(FilteredCount));
             OnPropertyChanged(nameof(TotalCount));

@@ -15,11 +15,11 @@ using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
-using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
+using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Import;
@@ -52,7 +52,6 @@ namespace CollectaMundo.ViewModels
         private readonly IImportService _importService;
         private readonly ICardLocationService _cardLocationService;
         private readonly ICardLocationLookupStore _cardLocationLookupStore;
-        private IKeyedDataProvider<int, CardLocation>? _cardLocationProvider;
 
         // Deck management service
         private readonly IDeckManagementStore _deckManagementStore;
@@ -77,8 +76,8 @@ namespace CollectaMundo.ViewModels
         public TopMenuViewModel TopMenuVM { get; }
 
         // Pages
-        public CardListPageViewModel SearchAndFilterPageVM { get; }
-        public CardListPageViewModel MyCollectionPageVM { get; }
+        public CardListPageViewModel<PrintingCard> SearchAndFilterPageVM { get; }
+        public CardListPageViewModel<CollectionCard> MyCollectionPageVM { get; }
         public PagesDecksHostViewModel PagesDecksHostVM { get; }
         public PagesUtilitiesHostViewModel PagesUtilitiesHostVM { get; }
 
@@ -87,15 +86,15 @@ namespace CollectaMundo.ViewModels
         public SideMenuFilteringViewModel FilteringSideMenuVM { get; }
         public SideMenuUtilitiesViewModel UtilitiesSideMenuVM { get; }
 
-        public CardListViewModel AllCardsVM { get; }
-        public CardListViewModel AllCardsForDecksVM { get; }
-        public CardListViewModel MyCollectionVM { get; }
-        public CardListViewModel ColorIconsViewModel { get; }
+        public CardListViewModel<PrintingCard> AllCardsVM { get; }
+        public CardListViewModel<CollectionCard> MyCollectionVM { get; }
+        public CardListViewModel<OracleCard> AllCardsForDecksVM { get; }
+        public CardListViewModel<ManaSymbolViewModel> ColorIconsViewModel { get; }
         public ModifyCollectionViewModel AddCardsVM { get; }
         public ModifyCollectionViewModel EditCardsVM { get; }
         public DeckManagementViewModel DeckManagementVM { get; }
         public DeckEditorViewModel DeckEdititorVM { get; }
-        public FilterViewModel FilterVM { get; }
+        public FilterPanelViewModel FilterVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public UtilitiesViewModel UtilitiesVM { get; }
         public ImportViewModel ImportVM { get; }
@@ -174,11 +173,13 @@ namespace CollectaMundo.ViewModels
             _filesystemPicker = fileSystemPicker;
 
             // cardlist viewmodels
-            AllCardsVM = new CardListViewModel();
-            MyCollectionVM = new CardListViewModel();
-            AllCardsForDecksVM = new CardListViewModel();
+            AllCardsVM = new CardListViewModel<PrintingCard>();
+            MyCollectionVM = new CardListViewModel<CollectionCard>();
+            AllCardsForDecksVM = new CardListViewModel<OracleCard>();
+
             List<string> manaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
-            ColorIconsViewModel = new CardListViewModel { Cards = [.. manaKeys.Select(CardSet.FromManaKey)] };
+            var manaSymbols = manaKeys.Select(key => new ManaSymbolViewModel { ManaCostRaw = key }).ToList();
+            ColorIconsViewModel = new CardListViewModel<ManaSymbolViewModel> { Cards = manaSymbols, FilteredCards = manaSymbols };
 
             // Modify collection viewmodels
             AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true);
@@ -189,7 +190,7 @@ namespace CollectaMundo.ViewModels
             DeckEdititorVM = new DeckEditorViewModel();
 
             // filtering viewmodel
-            FilterVM = new FilterViewModel(_filteringService);
+            FilterVM = new FilterPanelViewModel(_filteringService);
 
             // card image viewmodel
             CardImageVM = new CardImageViewModel(cardImageService);
@@ -298,32 +299,35 @@ namespace CollectaMundo.ViewModels
             var changeSet = BuildCollectionChangeSetFromMutation(mutation);
             OnCollectionChanged(sender, changeSet);
         }
-        private CollectionChangeSet<CardSet> BuildCollectionChangeSetFromMutation(ImportCollectionUpsertResult mutation)
+        private CollectionChangeSet<CollectionCard> BuildCollectionChangeSetFromMutation(ImportCollectionUpsertResult mutation)
         {
-            var addedOrUpdated = new List<CardSet>();
+            var addedOrUpdated = new List<CollectionCard>();
 
-            var cardById = MyCollectionVM.Cards.Where(c => c.CardId.HasValue).ToDictionary(c => c.CardId!.Value);
-            var coreByUuid = AllCardsVM.Cards.Where(c => c.Core is not null).Select(c => c.Core!).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+            // Existing in-memory collection cards, keyed by DB collection row id. If an import row updates an existing row, we mutate that existing object so current bindings keep working.
+            var cardById = MyCollectionVM.Cards.ToDictionary(c => c.CardId);
+
+            // AllCardsVM is the hydrated printing catalog.
+            var printingByUuid = AllCardsVM.Cards.Where(c => !string.IsNullOrWhiteSpace(c.Uuid)).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
 
             foreach (var row in mutation.UpsertedRows)
             {
                 if (cardById.TryGetValue(row.CardId, out var existingCard))
                 {
+                    // Import mutation rows contain only collection identity/quantity data. The existing CollectionCard already has the hydrated PrintingCard, so for existing rows we only need to apply quantity deltas.
                     existingCard.CardsOwned += row.CardsOwned;
                     existingCard.CardsForTrade += row.CardsForTrade;
                     existingCard.RecomputeCollectionPrice();
-
-                    //AttachCardLocationProvider(existingCard);
 
                     addedOrUpdated.Add(existingCard);
                     continue;
                 }
 
-                var card = _collectionMaterializer.MaterializeFromRow(row, coreByUuid);
+                // New row: hydrate collection identity data with the richer PrintingCard so the collection list has name, mana cost, set icon, prices, etc.
+                var card = _collectionMaterializer.MaterializeFromRow(row, printingByUuid);
                 addedOrUpdated.Add(card);
             }
 
-            return new CollectionChangeSet<CardSet>
+            return new CollectionChangeSet<CollectionCard>
             {
                 RemovedIds = [],
                 AddedOrUpdated = addedOrUpdated
@@ -340,35 +344,6 @@ namespace CollectaMundo.ViewModels
                 CardImageVM.SelectedCard = new CardSet { Uuid = uuid };
             }
         }
-        private void OnCollectionChanged(object? sender, CollectionChangeSet<CardSet> changeSet)
-        {
-            // Apply add/update
-            foreach (var card in changeSet.AddedOrUpdated)
-            {
-                AttachCardLocationProvider(card);
-            }
-
-            _collectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
-
-            // External collection mutations can make open add/edit rows stale. Reconcile draft rows against the updated in-memory collection:
-            // - remove rows whose source CardId no longer exists
-            // - refresh rows whose source CardId still exists
-            AddCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
-            EditCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
-
-            // Reapply filters
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
-
-            // Debounced facet refresh
-            _facetScheduler.Cancel();
-            _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
-        }
-        private void OnFilterChanged(object? sender, EventArgs e)
-        {
-            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
-            AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
-        }
         private void OnLocationsChanged(object? sender, EventArgs e)
         {
             var locations = _cardLocationLookupStore.GetAll();
@@ -376,25 +351,26 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.SetAvailableLocations(locations);
             EditCardsVM.SetAvailableLocations(locations);
 
-            _cardLocationProvider = new ValueProvider<int, CardLocation>(locations.ToDictionary(x => x.Id));
+            CardDataProviders.CardLocationProvider = new ValueProvider<int, CardLocation>(locations.ToDictionary(x => x.Id));
 
-            foreach (var c in MyCollectionVM.Cards)
+            foreach (var card in MyCollectionVM.Cards)
             {
-                AttachCardLocationProvider(c);
+                card.RefreshLocationsFromProvider();
             }
 
-            // Rebuild collection-backed filter options after location display names changed
+            // Rebuild collection-backed filter options after location display names changed.
             _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters);
 
-            // Reapply active filters because selected/display values may have changed
+            // Reapply active filters because selected/display values may have changed.
             OnFilterChanged(this, EventArgs.Empty);
         }
-
-        private void AttachCardLocationProvider(CardSet card)
+        private void OnFilterChanged(object? sender, EventArgs e)
         {
-            card.CardLocationProvider = _cardLocationProvider;
-            card.RefreshLocationsFromProvider();
+            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+            AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
+
 
         #endregion
 

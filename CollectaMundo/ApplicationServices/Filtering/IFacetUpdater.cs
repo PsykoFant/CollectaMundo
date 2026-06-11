@@ -5,6 +5,6 @@ namespace CollectaMundo.ApplicationServices.Filtering
 {
     public interface IFacetUpdater
     {
-        void RefreshFromCollection(IEnumerable<CardSet> collection, IReadOnlyDictionary<string, FilterItemViewModel> filters);
+        void RefreshFromCollection(IEnumerable<CollectionCard> collection, IReadOnlyDictionary<string, FilterItemViewModel> filters);
     }
 }

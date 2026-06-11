@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ViewModels.Filtering;
+﻿using CollectaMundo.ViewModels.CardLists;
+using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.ComponentModel;
@@ -10,18 +11,17 @@ namespace CollectaMundo.ViewModels.SideMenuLeft
     {
         private readonly IShellUiState _shellUiState;
 
-        public SideMenuFilteringViewModel(FilterViewModel filterVM, CardListViewModel colorIconsViewModel, IShellUiState shellUiState)
+        public SideMenuFilteringViewModel(FilterPanelViewModel filterVM, CardListViewModel<ManaSymbolViewModel> colorIconsViewModel, IShellUiState shellUiState)
         {
             FilterVM = filterVM;
             ColorIconsViewModel = colorIconsViewModel;
 
             _shellUiState = shellUiState;
-
             _shellUiState.PropertyChanged += ShellUiState_PropertyChanged;
         }
 
-        public FilterViewModel FilterVM { get; }
-        public CardListViewModel ColorIconsViewModel { get; }
+        public FilterPanelViewModel FilterVM { get; }
+        public CardListViewModel<ManaSymbolViewModel> ColorIconsViewModel { get; }
 
         public bool IsMyCollectionPageActive => _shellUiState.CurrentPage == ShellPageEnum.MyCollection;
         private void ShellUiState_PropertyChanged(object? sender, PropertyChangedEventArgs e)

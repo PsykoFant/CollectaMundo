@@ -21,7 +21,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
         private readonly ICollectionMaterializer _collectionMaterializer = collectionMaterializer;
-        public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
+        public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterPanelViewModel filterVM)
         {
             var dbIoSw = Stopwatch.StartNew();
 

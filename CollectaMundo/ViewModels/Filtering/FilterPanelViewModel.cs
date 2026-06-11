@@ -4,7 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace CollectaMundo.ViewModels.Filtering
 {
-    public partial class FilterViewModel(IFilteringService filteringService) : ObservableObject
+    public partial class FilterPanelViewModel(IFilteringService filteringService) : ObservableObject
     {
         private readonly IFilteringService _filteringService = filteringService;
 

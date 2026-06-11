@@ -5,7 +5,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 {
     public interface ICardListService
     {
-        Task InitializeCardListsAsync(CardListViewModel allCardsVM, CardListViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM);
+        Task InitializeCardListsAsync(CardListViewModel allCardsVM, CardListViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterPanelViewModel filterVM);
         Task ReloadPriceLookupsAsync(string retailerKey);
     }
 }
