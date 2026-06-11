@@ -287,7 +287,7 @@ namespace CollectaMundo.ViewModels
             EditCardsVM.CollectionChanged -= OnCollectionChanged;
             FilterVM.FilterChanged -= OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged -= OnLocationsChanged;
-            CardLocationVM.CollectionChanged -= OnCollectionChanged;
+            CardLocationVM.CollectionChanged -= OnCollectionRowsChanged;
             DeckManagementVM.CollectionChanged -= OnCollectionChanged;
         }
 

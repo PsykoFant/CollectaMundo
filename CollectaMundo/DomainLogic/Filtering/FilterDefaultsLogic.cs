@@ -10,227 +10,165 @@ namespace CollectaMundo.Data.Filtering
 {
     public partial class FilterDefaultsLogic() : IFilterDefaultsLogic
     {
-        public List<FilterDefaults> Build(IEnumerable<CardSet> allCards, IEnumerable<CardSet> myCollection)
+        public List<FilterDefaults> Build(IReadOnlyList<PrintingCard> allCards, IReadOnlyList<CollectionCard> myCollection)
         {
             var filterDefaultsDict = new ConcurrentDictionary<string, FilterDefaults>();
-            List<FilterOption>? explicitOptions = null;
-            List<string> rawValues = [];
 
             Parallel.ForEach(FilterCriteriaMappings.CriteriaMappings, entry =>
             {
                 var criteriaKey = entry.Key;
                 var mapping = entry.Value;
-                List<string> rawValues = [];
 
-                // Special case handling
-                if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
-                {
-                    rawValues = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
-                }
-                else if (criteriaKey.Equals("Text", StringComparison.OrdinalIgnoreCase) || criteriaKey.Equals("CardsForTrade", StringComparison.OrdinalIgnoreCase) || criteriaKey.Equals("Comment", StringComparison.OrdinalIgnoreCase))
-                {
-                    rawValues = [];
-                }
-                else
-                {
-                    switch (criteriaKey)
-                    {
-                        case "ManaValue":
-                            foreach (var c in allCards)
-                            {
-                                rawValues.Add(c.ManaValue.ToString());
-                            }
+                var filterDefaults = mapping.DataSource == FilterDataSource.Collection
+                    ? BuildCollectionDefault(criteriaKey, mapping, myCollection)
+                    : BuildPrintingDefault(criteriaKey, mapping, allCards);
 
-                            break;
+                filterDefaultsDict[criteriaKey] = filterDefaults;
+            });
 
-                        case "Name":
-                            foreach (var c in allCards)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.Name))
-                                {
-                                    rawValues.Add(c.Name);
-                                }
-                            }
+            return [.. FilterCriteriaMappings.CriteriaMappings.Keys.Select(k => filterDefaultsDict[k])];
+        }
 
-                            break;
+        private static FilterDefaults BuildPrintingDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<PrintingCard> cards)
+        {
+            var rawValues = criteriaKey switch
+            {
+                "Colors" => ["W", "U", "B", "R", "G", "C", "X", "Colorless"],
+                "Text" or "Comment" or "CardsForTrade" => [],
+                "ManaValue" => [.. cards.Select(c => c.ManaValue.ToString())],
+                "Name" => ExtractValues(cards, c => c.Name),
+                "SetName" => ExtractValues(cards, c => c.SetName),
+                "Rarity" => ExtractValues(cards, c => c.Rarity),
+                "SuperTypes" => ExtractValues(cards, c => c.SuperTypes),
+                "Types" => ExtractValues(cards, c => c.Types),
+                "SubTypes" => ExtractValues(cards, c => c.SubTypes),
+                "Keywords" => ExtractValues(cards, c => c.Keywords),
+                "Finishes" => ExtractValues(cards, c => c.Finishes),
 
-                        case "SetName":
-                            foreach (var c in allCards)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.SetName))
-                                {
-                                    rawValues.Add(c.SetName);
-                                }
-                            }
+                _ => throw new Exception($"Unhandled printing criteria key: {criteriaKey}")
+            };
 
-                            break;
+            return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues, explicitOptions: null);
+        }
+        private static FilterDefaults BuildCollectionDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<CollectionCard> cards)
+        {
+            if (criteriaKey.Equals("SelectedLocationDisplayName", StringComparison.OrdinalIgnoreCase))
+            {
+                var explicitOptions = cards
+                    .Where(c =>
+                        c.SelectedLocationId is not null &&
+                        !string.IsNullOrWhiteSpace(c.SelectedLocationDisplayName))
+                    .GroupBy(c => c.SelectedLocationId!.Value)
+                    .Select(g => new FilterOption(
+                        g.Key.ToString(),
+                        g.First().SelectedLocationDisplayName!))
+                    .OrderBy(o => o.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
-                        case "Rarity":
-                            foreach (var c in allCards)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.Rarity))
-                                {
-                                    rawValues.Add(c.Rarity);
-                                }
-                            }
+                return BuildDefaultFromRawValues(
+                    criteriaKey,
+                    mapping,
+                    rawValues: [],
+                    explicitOptions);
+            }
 
-                            break;
+            if (mapping.CollectionExtractor is null)
+            {
+                throw new Exception($"Collection criteria key '{criteriaKey}' is missing CollectionExtractor.");
+            }
 
-                        case "SuperTypes":
-                            foreach (var c in allCards)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.SuperTypes))
-                                {
-                                    rawValues.Add(c.SuperTypes);
-                                }
-                            }
+            var rawValues = cards.Select(mapping.CollectionExtractor).Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v!).ToList();
 
-                            break;
+            return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues, explicitOptions: null);
+        }
+        private static FilterDefaults BuildDefaultFromRawValues(string criteriaKey, CriteriaSpec mapping, List<string> rawValues, List<FilterOption>? explicitOptions)
+        {
+            var cleanedValues = rawValues;
 
-                        case "Types":
-                            foreach (var c in allCards)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.Types))
-                                {
-                                    rawValues.Add(c.Types);
-                                }
-                            }
-
-                            break;
-
-                        case "SubTypes":
-                            foreach (var c in allCards)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.SubTypes))
-                                {
-                                    rawValues.Add(c.SubTypes);
-                                }
-                            }
-
-                            break;
-
-                        case "Keywords":
-                            foreach (var c in allCards)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.Keywords))
-                                {
-                                    rawValues.Add(c.Keywords);
-                                }
-                            }
-
-                            break;
-
-                        case "Finishes":
-                            foreach (var c in allCards)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.Finishes))
-                                {
-                                    rawValues.Add(c.Finishes);
-                                }
-                            }
-
-                            break;
-
-                        case "SelectedFinish":
-                            foreach (var c in myCollection)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.SelectedFinish))
-                                {
-                                    rawValues.Add(c.SelectedFinish);
-                                }
-                            }
-
-                            break;
-
-                        case "Language":
-                            foreach (var c in myCollection)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.Language))
-                                {
-                                    rawValues.Add(c.Language);
-                                }
-                            }
-
-                            break;
-
-                        case "SelectedCondition":
-                            foreach (var c in myCollection)
-                            {
-                                if (!string.IsNullOrWhiteSpace(c.SelectedCondition))
-                                {
-                                    rawValues.Add(c.SelectedCondition);
-                                }
-                            }
-
-                            break;
-
-                        case "SelectedLocationDisplayName":
-                            explicitOptions =
-                            [
-                                .. myCollection.Where(c => c.SelectedLocationId is not null && !string.IsNullOrWhiteSpace(c.SelectedLocationDisplayName))
-                                .GroupBy(c => c.SelectedLocationId!.Value)
-                                .Select(g => new FilterOption(
-                                    g.Key.ToString(),
-                                    g.First().SelectedLocationDisplayName!))
-                                .OrderBy(o => o.DisplayName, StringComparer.OrdinalIgnoreCase)
-                            ];
-                            break;
-
-                        default:
-                            throw new Exception($"Unhandled criteria key: {criteriaKey}");
-                    }
-
-                }
-
+            if (explicitOptions is null)
+            {
                 var removeItems = GetUnwantedItems(criteriaKey);
-                bool shouldNotSplit = mapping.ShouldNotSplit;
-                var cleanedValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
+                cleanedValues = CleanAndFilter(rawValues, removeItems, mapping.ShouldNotSplit);
 
-                // Special sorting for SetName by release date descending
-                if (criteriaKey.Equals("SetName", StringComparison.OrdinalIgnoreCase) && CardSet.SetMetaProvider is ValueProvider<string, SetDto> provider)
+                if (criteriaKey.Equals("SetName", StringComparison.OrdinalIgnoreCase))
                 {
-                    var releaseDateMap = provider.Values.Where(s => !string.IsNullOrWhiteSpace(s.Name) && s.ReleaseDate.HasValue).ToDictionary(s => s.Name, s => s.ReleaseDate!.Value, StringComparer.OrdinalIgnoreCase);
-                    cleanedValues = [.. cleanedValues.OrderByDescending(name => releaseDateMap.TryGetValue(name, out var date) ? date : DateTime.MinValue)];
+                    cleanedValues = SortSetNamesByReleaseDate(cleanedValues);
                 }
 
-                // Skip cleaning for hardcoded
                 if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
                 {
                     cleanedValues = rawValues;
                 }
+            }
 
-                List<int>? numericValues = null;
-                if (mapping.Type == FilterType.Numeric)
+            List<int>? numericValues = null;
+
+            if (mapping.Type == FilterType.Numeric)
+            {
+                numericValues = [.. cleanedValues.Where(v => int.TryParse(v, out _)).Select(int.Parse)];
+            }
+
+            var filterOptions = explicitOptions
+                ?? cleanedValues.Select(v => new FilterOption(v, v)).ToList();
+
+            var defaultText = string.Empty;
+
+            if (mapping.Type == FilterType.Multi || criteriaKey.Equals("Text", StringComparison.OrdinalIgnoreCase) || criteriaKey.Equals("Comment", StringComparison.OrdinalIgnoreCase))
+            {
+                defaultText = string.IsNullOrWhiteSpace(mapping.ReadableLabel)
+                    ? $"{criteriaKey} ..."
+                    : $"{mapping.ReadableLabel} ...";
+            }
+
+            var readableLabel = string.IsNullOrEmpty(mapping.ReadableLabel)
+                ? criteriaKey
+                : mapping.ReadableLabel;
+
+            return new FilterDefaults
+            {
+                CriteriaKey = criteriaKey,
+                FilterOptions = filterOptions,
+                NumericCriteria = numericValues,
+                DefaultText = defaultText,
+                ReadableLabel = readableLabel
+            };
+        }
+        private static List<string> ExtractValues<T>(IReadOnlyList<T> cards, Func<T, string?> selector)
+        {
+            var values = new List<string>();
+
+            foreach (var card in cards)
+            {
+                var value = selector(card);
+
+                if (!string.IsNullOrWhiteSpace(value))
                 {
-                    numericValues = [.. cleanedValues.Where(v => int.TryParse(v, out _)).Select(int.Parse)];
+                    values.Add(value);
                 }
+            }
 
-                var filterOptions = cleanedValues.Select(v => new FilterOption(v, v)).ToList();
+            return values;
+        }
+        private static List<string> SortSetNamesByReleaseDate(List<string> setNames)
+        {
+            if (CardDataProviders.SetMetaProvider is not ValueProvider<string, SetDto> provider)
+            {
+                return setNames;
+            }
 
-                string defaultText = string.Empty;
-                if (mapping.Type == FilterType.Multi || criteriaKey == "Text" || criteriaKey == "Comment")
-                {
-                    defaultText = string.IsNullOrWhiteSpace(mapping.ReadableLabel)
-                        ? $"{criteriaKey} ..."
-                        : $"{mapping.ReadableLabel} ...";
-                }
+            var releaseDateMap = provider.Values
+                .Where(s => !string.IsNullOrWhiteSpace(s.Name) && s.ReleaseDate.HasValue)
+                .ToDictionary(
+                    s => s.Name!,
+                    s => s.ReleaseDate!.Value,
+                    StringComparer.OrdinalIgnoreCase);
 
-                string readableLabel = string.IsNullOrEmpty(mapping.ReadableLabel)
-                    ? criteriaKey
-                    : mapping.ReadableLabel;
-
-                filterDefaultsDict[criteriaKey] = new FilterDefaults
-                {
-                    CriteriaKey = criteriaKey,
-                    FilterOptions = filterOptions,
-                    NumericCriteria = numericValues,
-                    DefaultText = defaultText,
-                    ReadableLabel = readableLabel
-                };
-            });
-
-            return [.. FilterCriteriaMappings.CriteriaMappings.Keys.Select(k => filterDefaultsDict[k])];
-
+            return
+            [
+                .. setNames.OrderByDescending(name => releaseDateMap.TryGetValue(name, out var date)
+                ? date
+                : DateTime.MinValue)
+            ];
         }
         private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems, bool shouldNotSplit)
         {

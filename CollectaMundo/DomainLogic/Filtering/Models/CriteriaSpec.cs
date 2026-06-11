@@ -9,7 +9,6 @@ namespace CollectaMundo.DomainLogic.Filtering.Models
         FilterType Type,
         OperatorType[]? Operators,
         bool ShouldNotSplit,
-        bool IsCollectionFacet = false,
-        Func<CollectionCard, string?>? CollectionFacetExtractor = null
-    );
+        FilterDataSource DataSource,
+        Func<CollectionCard, string?>? CollectionExtractor = null);
 }

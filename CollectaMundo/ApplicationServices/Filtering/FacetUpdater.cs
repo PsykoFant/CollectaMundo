@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
 using CollectaMundo.ViewModels.Filtering;
 
@@ -12,7 +13,7 @@ namespace CollectaMundo.ApplicationServices.Filtering
         {
             foreach (var (key, spec) in FilterCriteriaMappings.CriteriaMappings)
             {
-                if (!spec.IsCollectionFacet || spec.CollectionFacetExtractor is null)
+                if (spec.DataSource != FilterDataSource.Collection || spec.CollectionExtractor is null)
                 {
                     continue;
                 }
@@ -38,7 +39,7 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     continue;
                 }
 
-                var values = collection.Select(spec.CollectionFacetExtractor)
+                var values = collection.Select(spec.CollectionExtractor)
                     .Where(s => !string.IsNullOrWhiteSpace(s))
                     .Select(s => s!)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
