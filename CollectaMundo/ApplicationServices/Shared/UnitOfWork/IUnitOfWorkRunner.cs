@@ -1,6 +1,6 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.ApplicationServices.Shared
+namespace CollectaMundo.ApplicationServices.Shared.UnitOfWork
 {
     public interface IUnitOfWorkRunner
     {

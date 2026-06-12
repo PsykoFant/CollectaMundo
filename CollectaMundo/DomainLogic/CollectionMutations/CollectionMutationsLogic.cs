@@ -1,6 +1,8 @@
 ﻿using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.Shared.Models;
 
 namespace CollectaMundo.DomainLogic.CollectionMutations
 {
@@ -10,12 +12,12 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
         {
             var plan = new CollectionMutationPlan();
             var removedIds = new HashSet<int>();
-            var upsertsByIdentity = new Dictionary<CollectionIdentity, MyCollectionRow>();
-            var updatesByCardId = new Dictionary<int, UpdateCommand>();
+            var upsertsByIdentity = new Dictionary<CollectionIdentity, CollectionCardDbRow>();
+            var updatesByCardId = new Dictionary<int, UpdateMutation>();
 
             var workingById = new Dictionary<int, WorkingRow>();
             var workingByIdentity = new Dictionary<CollectionIdentity, WorkingRow>();
-            var insertsByIdentity = new Dictionary<CollectionIdentity, InsertCommand>();
+            var insertsByIdentity = new Dictionary<CollectionIdentity, InsertMutation>();
 
             SeedWorkingState(snapshot, workingById, workingByIdentity);
 
@@ -49,7 +51,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             plan.Updates.Clear();
             plan.Updates.AddRange(updatesByCardId.Values);
 
-            plan.ChangeSet = new CollectionChangeSet<MyCollectionRow>
+            plan.ChangeSet = new CollectionChangeSet<CollectionCardDbRow>
             {
                 RemovedIds = [.. removedIds],
                 AddedOrUpdated = [.. upsertsByIdentity.Values]
@@ -78,18 +80,18 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
         private static void PlanAdd(
             CollectionCardDraft card,
             CollectionIdentity identity,
-            Dictionary<int, UpdateCommand> updatesByCardId,
+            Dictionary<int, UpdateMutation> updatesByCardId,
             CollectionMutationPlan plan,
-            Dictionary<CollectionIdentity, MyCollectionRow> upsertsByIdentity,
+            Dictionary<CollectionIdentity, CollectionCardDbRow> upsertsByIdentity,
             Dictionary<CollectionIdentity, WorkingRow> workingByIdentity,
-            Dictionary<CollectionIdentity, InsertCommand> insertsByIdentity)
+            Dictionary<CollectionIdentity, InsertMutation> insertsByIdentity)
         {
             if (insertsByIdentity.TryGetValue(identity, out var existingInsert))
             {
                 var mergedOwned = existingInsert.CardsOwned + card.CardsOwned;
                 var mergedTrade = existingInsert.CardsForTrade + card.CardsForTrade;
 
-                var replacement = new InsertCommand(identity, mergedOwned, mergedTrade, card);
+                var replacement = new InsertMutation(identity, mergedOwned, mergedTrade, card);
 
                 var index = plan.Inserts.IndexOf(existingInsert);
                 if (index < 0)
@@ -118,7 +120,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 return;
             }
 
-            var insert = new InsertCommand(identity, card.CardsOwned, card.CardsForTrade, card);
+            var insert = new InsertMutation(identity, card.CardsOwned, card.CardsForTrade, card);
 
             plan.Inserts.Add(insert);
             insertsByIdentity[identity] = insert;
@@ -128,13 +130,13 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
         private static void PlanEdit(
             CollectionCardDraft card,
             CollectionIdentity targetIdentity,
-            Dictionary<int, UpdateCommand> updatesByCardId,
+            Dictionary<int, UpdateMutation> updatesByCardId,
             CollectionMutationPlan plan,
             HashSet<int> removedIds,
-            Dictionary<CollectionIdentity, MyCollectionRow> upsertsByIdentity,
+            Dictionary<CollectionIdentity, CollectionCardDbRow> upsertsByIdentity,
             Dictionary<int, WorkingRow> workingById,
             Dictionary<CollectionIdentity, WorkingRow> workingByIdentity,
-            Dictionary<CollectionIdentity, InsertCommand> insertsByIdentity)
+            Dictionary<CollectionIdentity, InsertMutation> insertsByIdentity)
         {
             var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId.");
 
@@ -246,7 +248,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             CollectionCardDraft card,
             CollectionMutationPlan plan,
             HashSet<int> removedIds,
-            Dictionary<CollectionIdentity, MyCollectionRow> upsertsByIdentity,
+            Dictionary<CollectionIdentity, CollectionCardDbRow> upsertsByIdentity,
             Dictionary<int, WorkingRow> workingById,
             Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
         {
@@ -266,13 +268,13 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             workingByIdentity.Remove(currentIdentity);
             upsertsByIdentity.Remove(currentIdentity);
         }
-        private static void SetUpdate(Dictionary<int, UpdateCommand> updatesByCardId, int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade)
+        private static void SetUpdate(Dictionary<int, UpdateMutation> updatesByCardId, int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade)
         {
-            updatesByCardId[cardId] = new UpdateCommand(cardId, identity, cardsOwned, cardsForTrade);
+            updatesByCardId[cardId] = new UpdateMutation(cardId, identity, cardsOwned, cardsForTrade);
         }
-        private static MyCollectionRow ToRow(int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade)
+        private static CollectionCardDbRow ToRow(int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade)
         {
-            return new MyCollectionRow
+            return new CollectionCardDbRow
             {
                 CardId = cardId,
                 Identity = identity,

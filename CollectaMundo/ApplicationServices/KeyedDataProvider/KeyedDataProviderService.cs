@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
-using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CollectaMundo.Infrastructure.KeyedDataProvider;
@@ -41,11 +41,10 @@ namespace CollectaMundo.ApplicationServices.KeyedDataProvider
         }
         public async Task ResetPricesMetaProviderAsync(string retailerKey)
         {
-            // Load the new map for the requested retailer
-            var dict = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.ReadPricesAsync(conn, retailerKey));
+            var dict = await _uowRunner.ExecuteReadOnlyAsync(
+                conn => _repo.ReadPricesAsync(conn, retailerKey));
 
-            // Swap the static provider (all CardSet getters read through this)
-            CardSet.PriceMetaProvider = new ValueProvider<string, PriceDto>(dict);
+            CardDataProviders.PriceMetaProvider = new ValueProvider<string, PriceDto>(dict);
         }
     }
 }

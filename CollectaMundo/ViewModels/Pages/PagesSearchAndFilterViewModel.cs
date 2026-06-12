@@ -1,6 +1,7 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Filtering;
+using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.SideMenuRight;

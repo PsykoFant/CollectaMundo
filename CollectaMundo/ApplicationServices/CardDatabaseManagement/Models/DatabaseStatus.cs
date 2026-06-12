@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices.Shared
+﻿namespace CollectaMundo.ApplicationServices.CardDatabaseManagement.Models
 {
     public enum DatabaseStatus
     {

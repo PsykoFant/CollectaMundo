@@ -1,6 +1,8 @@
-﻿namespace CollectaMundo.DomainLogic.Shared.Models
+﻿using CollectaMundo.DomainLogic.Shared.Models;
+
+namespace CollectaMundo.Infrastructure.Shared.Models
 {
-    public sealed class MyCollectionRow
+    public sealed class CollectionCardDbRow
     {
         public int CardId { get; init; }
         public CollectionIdentity Identity { get; init; } = default!;

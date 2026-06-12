@@ -3,7 +3,6 @@ using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
-using CollectaMundo.ApplicationServices.CollectionMaterialization;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Filtering;
@@ -13,16 +12,21 @@ using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
 using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
@@ -47,8 +51,6 @@ namespace CollectaMundo.ViewModels
         // Card list / card collection management services
         private readonly IModifyCollectionService _modifyService;
         private readonly ICardListService _cardListService;
-        private readonly ICollectionMaterializer _collectionMaterializer;
-        private readonly ICollectionChangeSetApplier _collectionChangeSetApplier;
         private readonly IImportService _importService;
         private readonly ICardLocationService _cardLocationService;
         private readonly ICardLocationLookupStore _cardLocationLookupStore;
@@ -147,8 +149,6 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
-            ICollectionMaterializer collectionMaterializer,
-            ICollectionChangeSetApplier collectionChangeSetApplier,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
             IDeckManagementStore deckManagementStore,
@@ -161,8 +161,6 @@ namespace CollectaMundo.ViewModels
             _operationOverlayController = operationOverlayController;
             _filteringService = new FilteringService();
             _cardListService = cardListService;
-            _collectionMaterializer = collectionMaterializer;
-            _collectionChangeSetApplier = collectionChangeSetApplier;
             _importService = importService;
             _cardLocationService = cardLocationService;
             _cardLocationLookupStore = cardLocationLookupStore;
@@ -243,8 +241,6 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
-            ICollectionMaterializer collectionMaterializer,
-            ICollectionChangeSetApplier collectionChangeSetApplier,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
             IDeckManagementStore deckManagementStore,
@@ -253,7 +249,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, collectionMaterializer, collectionChangeSetApplier, cardLocationService, cardLocationLookupStore, deckManagementStore, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
@@ -272,23 +268,27 @@ namespace CollectaMundo.ViewModels
         {
             ImportVM.CollectionMutationRequested += OnImportCollectionMutationRequested;
             ImportVM.CardImageSelectionRequested += OnCardImageSelectionRequested;
-            AddCardsVM.CollectionChanged += OnCollectionChanged;
-            EditCardsVM.CollectionChanged += OnCollectionChanged;
+
+            AddCardsVM.CollectionChanged += OnCollectionRowsChanged;
+            EditCardsVM.CollectionChanged += OnCollectionRowsChanged;
+            CardLocationVM.CollectionChanged += OnCollectionRowsChanged;
+            DeckManagementVM.CollectionChanged += OnCollectionRowsChanged;
+
             FilterVM.FilterChanged += OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged += OnLocationsChanged;
-            CardLocationVM.CollectionChanged += OnCollectionRowsChanged;
-            DeckManagementVM.CollectionChanged += OnCollectionChanged;
         }
         private void UnsubscribeChildVmEvents()
         {
             ImportVM.CollectionMutationRequested -= OnImportCollectionMutationRequested;
             ImportVM.CardImageSelectionRequested -= OnCardImageSelectionRequested;
-            AddCardsVM.CollectionChanged -= OnCollectionChanged;
-            EditCardsVM.CollectionChanged -= OnCollectionChanged;
+
+            AddCardsVM.CollectionChanged -= OnCollectionRowsChanged;
+            EditCardsVM.CollectionChanged -= OnCollectionRowsChanged;
+            CardLocationVM.CollectionChanged -= OnCollectionRowsChanged;
+            DeckManagementVM.CollectionChanged -= OnCollectionRowsChanged;
+
             FilterVM.FilterChanged -= OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged -= OnLocationsChanged;
-            CardLocationVM.CollectionChanged -= OnCollectionRowsChanged;
-            DeckManagementVM.CollectionChanged -= OnCollectionChanged;
         }
 
         #endregion
@@ -323,7 +323,15 @@ namespace CollectaMundo.ViewModels
                 }
 
                 // New row: hydrate collection identity data with the richer PrintingCard so the collection list has name, mana cost, set icon, prices, etc.
-                var card = _collectionMaterializer.MaterializeFromRow(row, printingByUuid);
+                //var card = _collectionMaterializer.MaterializeFromRow(row, printingByUuid);
+                if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
+                {
+                    throw new InvalidOperationException($"Cannot materialize collection card. Printing not found for UUID '{row.Identity.Uuid}'.");
+                }
+
+                var card = CollectionCardFactory.FromPrintingAndDbRow(printing, row);
+                addedOrUpdated.Add(card);
+
                 addedOrUpdated.Add(card);
             }
 
@@ -357,6 +365,16 @@ namespace CollectaMundo.ViewModels
                 card.RefreshLocationsFromProvider();
             }
 
+            foreach (var row in AddCardsVM.CardsToAddOrEdit)
+            {
+                row.CardToAddOrEdit.RefreshLocationsFromProvider();
+            }
+
+            foreach (var row in EditCardsVM.CardsToAddOrEdit)
+            {
+                row.CardToAddOrEdit.RefreshLocationsFromProvider();
+            }
+
             // Rebuild collection-backed filter options after location display names changed.
             _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters);
 
@@ -379,7 +397,7 @@ namespace CollectaMundo.ViewModels
             }
 
             // Apply DB-truth changes to the in-memory collection list.
-            _collectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
+            CollectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
 
             // Open add/edit staging rows may now be stale.
             // Reconcile them against the updated in-memory collection:
@@ -395,24 +413,28 @@ namespace CollectaMundo.ViewModels
             _facetScheduler.Cancel();
             _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
         }
-        private void OnCollectionRowsChanged(object? sender, CollectionChangeSet<MyCollectionRow> rowChangeSet)
-        {
-            var hydratedChangeSet = BuildCollectionChangeSetFromRows(rowChangeSet);
-            OnCollectionChanged(sender, hydratedChangeSet);
-        }
-        private CollectionChangeSet<CollectionCard> BuildCollectionChangeSetFromRows(CollectionChangeSet<MyCollectionRow> rowChangeSet)
+        private void OnCollectionRowsChanged(object? sender, CollectionChangeSet<CollectionCardDbRow> rowChangeSet)
         {
             var printingByUuid = AllCardsVM.Cards.Where(c => !string.IsNullOrWhiteSpace(c.Uuid)).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
 
-            return new CollectionChangeSet<CollectionCard>
+            var hydratedChangeSet = new CollectionChangeSet<CollectionCard>
             {
                 RemovedIds = rowChangeSet.RemovedIds,
                 AddedOrUpdated =
                 [
-                    .. rowChangeSet.AddedOrUpdated
-                .Select(row => _collectionMaterializer.MaterializeFromRow(row, printingByUuid))
+                    .. rowChangeSet.AddedOrUpdated.Select(row =>
+                    {
+                        if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
+                        {
+                            throw new InvalidOperationException($"Cannot materialize collection card. Printing not found for UUID '{row.Identity.Uuid}'.");
+                        }
+
+                        return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
+                    })
                 ]
             };
+
+            OnCollectionChanged(sender, hydratedChangeSet);
         }
 
         #endregion

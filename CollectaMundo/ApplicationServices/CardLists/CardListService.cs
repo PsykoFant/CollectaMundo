@@ -1,9 +1,10 @@
-﻿using CollectaMundo.ApplicationServices.CollectionMaterialization;
-using CollectaMundo.ApplicationServices.KeyedDataProvider;
-using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.KeyedDataProvider;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Filtering;
@@ -14,13 +15,12 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IUnitOfWorkRunner uowRunner, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService, ICollectionMaterializer collectionMaterializer) : ICardListService
+    public sealed class CardListService(IUnitOfWorkRunner uowRunner, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService) : ICardListService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterDefaultsLogic = filterDefaultsLogic;
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
-        private readonly ICollectionMaterializer _collectionMaterializer = collectionMaterializer;
         public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterPanelViewModel filterVM)
         {
             var dbIoSw = Stopwatch.StartNew();
@@ -77,9 +77,15 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             var myCollectionTask = Task.Run(() =>
             {
-                var myCollection = _collectionMaterializer
-                    .MaterializeRows(collectionRows, printingByUuid)
-                    .ToList();
+                var myCollection = collectionRows.Select(row =>
+                {
+                    if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
+                    {
+                        throw new InvalidOperationException($"Cannot materialize collection card. Printing not found for UUID '{row.Identity.Uuid}'.");
+                    }
+
+                    return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
+                }).ToList();
 
                 myCollectionVM.Cards = SortCards(myCollection);
                 myCollectionVM.FilteredCards = myCollectionVM.Cards;

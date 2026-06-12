@@ -1,12 +1,11 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
@@ -34,7 +33,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
             ? val?.Trim()
             : null).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
-            var allowedValues = new CardSet().Conditions;
+            var allowedValues = ConditionOptions.Values;
 
             foreach (var csvValue in csvValues)
             {

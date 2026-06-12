@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
 
-namespace CollectaMundo.ApplicationServices.Shared
+namespace CollectaMundo.ApplicationServices.Shared.UnitOfWork
 {
 
     public sealed class UnitOfWorkRunner(IDbConnectionFactory dbFactory) : IUnitOfWorkRunner

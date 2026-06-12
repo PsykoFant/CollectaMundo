@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Operation;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;

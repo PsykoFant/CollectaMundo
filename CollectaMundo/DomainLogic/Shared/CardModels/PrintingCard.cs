@@ -1,7 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardImages.Models;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Windows.Media;
 
-namespace CollectaMundo.DomainLogic.CardLists.Models
+namespace CollectaMundo.DomainLogic.Shared.CardModels
 {
     public sealed class PrintingCard : ICardListSortable, ICardImageSourceCard
     {

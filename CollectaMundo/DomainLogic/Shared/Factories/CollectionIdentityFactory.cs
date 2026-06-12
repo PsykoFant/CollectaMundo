@@ -1,10 +1,10 @@
 ﻿using CollectaMundo.DomainLogic.Shared.Models;
 
-namespace CollectaMundo.DomainLogic.Shared
+namespace CollectaMundo.DomainLogic.Shared.Factories
 {
     public static class CollectionIdentityFactory
     {
-        public static CollectionIdentity Create(string? uuid,string? condition,string? language,string? finish,int? locationId,string? comment)
+        public static CollectionIdentity Create(string? uuid, string? condition, string? language, string? finish, int? locationId, string? comment)
         {
             return new CollectionIdentity(
                 uuid ?? throw new InvalidOperationException("Uuid required"),

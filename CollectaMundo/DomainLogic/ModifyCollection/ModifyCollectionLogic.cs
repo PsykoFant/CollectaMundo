@@ -1,82 +1,84 @@
 ﻿using CollectaMundo.ApplicationServices.EditCollection.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 
 namespace CollectaMundo.DomainLogic.ModifyCollection
 {
     public class ModifyCollectionLogic() : IModifyCollectionLogic
     {
         private static readonly string _defaultLanguage = CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
-        public CardSet PrepareCardForList(CardSet selectedCard, CardToAddMetadataDto metadata, bool isEdit)
+        public CollectionCardDraft PrepareCardForList(PrintingCard printing, CollectionCard? existingCollectionCard, CardToAddMetadataDto metadata, bool isEdit)
         {
-            if (selectedCard.Core is null)
+            var draft = new CollectionCardDraft
             {
-                throw new InvalidOperationException("CardSet.Core must be set. Use CardSet.FromCore.");
-            }
+                Uuid = printing.Uuid,
+                Name = printing.Name,
+                SetName = printing.SetName,
 
-            var clone = CardSet.FromCore(selectedCard.Core);
-
-            // Carry over view-only fields from the source row
-            clone.SelectedFinish = selectedCard.SelectedFinish;
-            clone.SelectedCondition = selectedCard.SelectedCondition;
-            clone.Count = selectedCard.Count;
-
-            // Attach selectable metadata for the editor
-            clone.AvailableFinishes = [.. metadata.AvailableFinishes];
-            clone.OtherLanguages = NormalizeLanguages(metadata.AvailableLanguages, selectedCard.Language);
+                FinishOptions = [.. metadata.AvailableFinishes],
+                OtherLanguages = NormalizeLanguages(metadata.AvailableLanguages, existingCollectionCard?.Language ?? printing.Language)
+            };
 
             if (isEdit)
             {
-                // Preserve the full collection row state when editing
-                clone.CardId = selectedCard.CardId;
-                clone.CardsOwned = selectedCard.CardsOwned;
-                clone.CardsForTrade = selectedCard.CardsForTrade;
-                clone.Language = selectedCard.Language!;
-                clone.SelectedFinish = selectedCard.SelectedFinish!;
-                clone.SelectedCondition = selectedCard.SelectedCondition!;
-                clone.SelectedLocationId = selectedCard.SelectedLocationId;
-                clone.Comment = selectedCard.Comment;
-            }
-            else
-            {
-                // New rows start from collection defaults
-                ApplyNewDefaults(clone);
+                if (existingCollectionCard is null)
+                {
+                    throw new InvalidOperationException("Editing requires an existing collection card.");
+                }
+
+                draft.CardId = existingCollectionCard.CardId;
+                draft.CardsOwned = existingCollectionCard.CardsOwned;
+                draft.CardsForTrade = existingCollectionCard.CardsForTrade;
+                draft.Language = existingCollectionCard.Language;
+                draft.SelectedFinish = existingCollectionCard.SelectedFinish;
+                draft.SelectedCondition = existingCollectionCard.SelectedCondition;
+                draft.SelectedLocationId = existingCollectionCard.SelectedLocationId;
+                draft.Comment = existingCollectionCard.Comment;
+
+                return draft;
             }
 
-            clone.RecomputeCollectionPrice();
-            return clone;
+            ApplyNewDefaults(draft, printing);
+
+            return draft;
         }
-        public CardSet PrepareNewCardWithDefaults(CardSet selectedCard, CardToAddMetadataDto metadata)
+        public CollectionCardDraft PrepareNewCardWithDefaults(PrintingCard selectedCard, CardToAddMetadataDto metadata)
         {
-            if (selectedCard.Core is null)
+            var draft = new CollectionCardDraft
             {
-                throw new InvalidOperationException("CardSet.Core must be set. Use CardSet.FromCore.");
-            }
+                Uuid = selectedCard.Uuid,
+                Name = selectedCard.Name,
+                SetName = selectedCard.SetName,
 
-            var clone = CardSet.FromCore(selectedCard.Core);
+                FinishOptions = [.. metadata.AvailableFinishes],
+                OtherLanguages = NormalizeLanguages(
+                    metadata.AvailableLanguages,
+                    selectedCard.Language)
+            };
 
-            // Copy metadata lists so the edit row owns its own selections
-            clone.AvailableFinishes = metadata.AvailableFinishes.ToList();
-            clone.OtherLanguages = NormalizeLanguages(metadata.AvailableLanguages, selectedCard.Language);
+            ApplyNewDefaults(draft, selectedCard);
 
-            ApplyNewDefaults(clone);
-
-            clone.RecomputeCollectionPrice();
-            return clone;
+            return draft;
         }
-
         // Helper methods for PrepareCardForList
-        private static void ApplyNewDefaults(CardSet clone)
+        private static void ApplyNewDefaults(CollectionCardDraft draft, PrintingCard printing)
         {
-            clone.CardId = null;
-            clone.CardsOwned = CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsOwned);
-            clone.CardsForTrade = CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsForTrade);
-            clone.SelectedCondition = CollectionCardItemDefaults.GetDefaultString(ImportField.Condition);
-            clone.SelectedFinish = ChooseDefaultFinish(clone.AvailableFinishes);
-            clone.SelectedLocationId = null;
-            clone.Comment = null;
-            clone.Language = ChooseDefaultLanguage(clone.OtherLanguages);
+            draft.CardsOwned = 1;
+            draft.CardsForTrade = 0;
+
+            draft.SelectedCondition = "Near Mint";
+            draft.SelectedFinish =
+                ChooseDefaultFinish([.. draft.FinishOptions])
+                ?? "nonfoil";
+
+            draft.Language =
+                ChooseDefaultLanguage([.. draft.OtherLanguages]);
+
+            draft.SelectedLocationId = null;
+            draft.Comment = null;
         }
         private static string? ChooseDefaultFinish(List<string>? finishes)
         {
@@ -93,10 +95,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 _ => 3
             };
 
-            return finishes
-                .OrderBy(Rank)
-                .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
-                .First();
+            return finishes.OrderBy(Rank).ThenBy(s => s, StringComparer.OrdinalIgnoreCase).First();
         }
         private static string ChooseDefaultLanguage(List<string>? langs)
         {
@@ -105,8 +104,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 return _defaultLanguage;
             }
 
-            var english = langs.FirstOrDefault(l =>
-                l.Equals(_defaultLanguage, StringComparison.OrdinalIgnoreCase));
+            var english = langs.FirstOrDefault(l => l.Equals(_defaultLanguage, StringComparison.OrdinalIgnoreCase));
 
             return english ?? langs[0];
         }

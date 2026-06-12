@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using System.Diagnostics;
 

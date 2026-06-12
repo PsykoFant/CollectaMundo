@@ -11,6 +11,7 @@ using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.KeyedDataProvider;
 using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;

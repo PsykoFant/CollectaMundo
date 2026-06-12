@@ -1,9 +1,7 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-
-namespace CollectaMundo.DomainLogic.Filtering
+﻿namespace CollectaMundo.DomainLogic.Filtering
 {
-    public interface IFilteringLogic
+    public interface IFilteringLogic<TCard>
     {
-        bool Matches(CardSet card);
+        bool Matches(TCard card);
     }
 }

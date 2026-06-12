@@ -1,4 +1,6 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement.Models;
+using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using System.Diagnostics;
 using System.IO;

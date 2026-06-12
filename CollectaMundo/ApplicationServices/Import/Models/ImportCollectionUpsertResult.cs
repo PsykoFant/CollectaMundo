@@ -1,10 +1,10 @@
-﻿using CollectaMundo.DomainLogic.Shared.Models;
+﻿using CollectaMundo.Infrastructure.Shared.Models;
 
 namespace CollectaMundo.ApplicationServices.Import.Models
 {
     public sealed class ImportCollectionUpsertResult
     {
         // DB-truth rows: CardId + Identity + quantities
-        public IReadOnlyList<MyCollectionRow> UpsertedRows { get; init; } = [];
+        public IReadOnlyList<CollectionCardDbRow> UpsertedRows { get; init; } = [];
     }
 }

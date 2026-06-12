@@ -1,16 +1,19 @@
 ﻿using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
-using CollectaMundo.ViewModels.ModifyCollection;
+using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Text;
 
-namespace CollectaMundo.ViewModels
+namespace CollectaMundo.ViewModels.ModifyCollection
 {
     public partial class ModifyCollectionViewModel : ObservableObject
     {
@@ -19,8 +22,8 @@ namespace CollectaMundo.ViewModels
         private IReadOnlyList<CardLocation> _availableLocations = [];
         private readonly bool _removeCardWhenZero;
 
-        public event EventHandler<CollectionChangeSet<CollectionCard>>? CollectionChanged;
-        public ObservableCollection<CardSetEditRowViewModel> CardsToAddOrEdit { get; } = [];
+        public event EventHandler<CollectionChangeSet<CollectionCardDbRow>>? CollectionChanged;
+        public ObservableCollection<CollectionCardDraftRowViewModel> CardsToAddOrEdit { get; } = [];
         public bool HasStatus => !string.IsNullOrEmpty(StatusMessage);
         public bool ShowCounts => !HasStatus;
         public bool IsCollectionEditVisible => CardsToAddOrEdit.Count != 0 && !HasStatus;
@@ -132,24 +135,50 @@ namespace CollectaMundo.ViewModels
 
             var existingEditCardIds = CardsToAddOrEdit.Select(r => r.CardToAddOrEdit.CardId).Where(id => id.HasValue).Select(id => id!.Value).ToHashSet();
 
-            foreach (var selected in selectedItems.OfType<CardSet>())
+            foreach (var selected in selectedItems)
             {
-                if (isEdit && selected.CardId is int cardId && existingEditCardIds.Contains(cardId))
+                if (!TryGetSelectedCardInfo(selected, out var printing, out var collectionCard))
                 {
                     continue;
                 }
 
-                var editable = await _service.CreateCardForListAsync(selected, isEdit);
+                if (isEdit && collectionCard?.CardId is int cardId && existingEditCardIds.Contains(cardId))
+                {
+                    continue;
+                }
+
+                var editable = await _service.CreateCardForListAsync(printing, collectionCard, isEdit);
+
                 if (editable is null)
                 {
                     continue;
                 }
 
-                CardsToAddOrEdit.Add(new CardSetEditRowViewModel(editable, _availableLocations, RefreshColumnsCommand));
+                CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(editable, _availableLocations, RefreshColumnsCommand));
             }
 
             ClearSelectionTrigger++;
             RefreshColumnsTrigger++;
+        }
+        private static bool TryGetSelectedCardInfo(object selected, out PrintingCard printing, out CollectionCard? collectionCard)
+        {
+            switch (selected)
+            {
+                case PrintingCard selectedPrinting:
+                    printing = selectedPrinting;
+                    collectionCard = null;
+                    return true;
+
+                case CollectionCard selectedCollectionCard:
+                    printing = selectedCollectionCard.Printing;
+                    collectionCard = selectedCollectionCard;
+                    return true;
+
+                default:
+                    printing = default!;
+                    collectionCard = null;
+                    return false;
+            }
         }
 
         [RelayCommand]
@@ -166,7 +195,7 @@ namespace CollectaMundo.ViewModels
         }
 
         [RelayCommand]
-        private static void IncrementCount(CardSetEditRowViewModel? row)
+        private static void IncrementCount(CollectionCardDraftRowViewModel? row)
         {
             if (row is not null)
             {
@@ -175,7 +204,7 @@ namespace CollectaMundo.ViewModels
         }
 
         [RelayCommand]
-        private void DecrementCount(CardSetEditRowViewModel? row)
+        private void DecrementCount(CollectionCardDraftRowViewModel? row)
         {
             if (row is null || row.CardsOwned <= 0)
             {
@@ -199,7 +228,7 @@ namespace CollectaMundo.ViewModels
         }
 
         [RelayCommand]
-        private static void IncrementTrade(CardSetEditRowViewModel? row)
+        private static void IncrementTrade(CollectionCardDraftRowViewModel? row)
         {
             if (row is not null && row.CardsForTrade < row.CardsOwned)
             {
@@ -208,7 +237,7 @@ namespace CollectaMundo.ViewModels
         }
 
         [RelayCommand]
-        private static void DecrementTrade(CardSetEditRowViewModel? row)
+        private static void DecrementTrade(CollectionCardDraftRowViewModel? row)
         {
             if (row is not null && row.CardsForTrade > 0)
             {
@@ -217,7 +246,7 @@ namespace CollectaMundo.ViewModels
         }
 
         [RelayCommand]
-        private void SplitOneRowOut(CardSetEditRowViewModel? row)
+        private void SplitOneRowOut(CollectionCardDraftRowViewModel? row)
         {
             if (row is null)
             {
@@ -228,7 +257,7 @@ namespace CollectaMundo.ViewModels
         }
 
         [RelayCommand]
-        private void SplitAllRowsOut(CardSetEditRowViewModel? row)
+        private void SplitAllRowsOut(CollectionCardDraftRowViewModel? row)
         {
             if (row is null)
             {
@@ -240,7 +269,7 @@ namespace CollectaMundo.ViewModels
                 SplitOneRowOutInternal(row);
             }
         }
-        private void SplitOneRowOutInternal(CardSetEditRowViewModel row)
+        private void SplitOneRowOutInternal(CollectionCardDraftRowViewModel row)
         {
             if (row.CardsOwned <= 1)
             {
@@ -254,9 +283,9 @@ namespace CollectaMundo.ViewModels
 
             row.CardsOwned--;
 
-            var splitCard = CreateSplitCard(row.CardToAddOrEdit);
+            var splitDraft = CollectionCardDraftFactory.FromSplit(row.CardToAddOrEdit);
 
-            CardsToAddOrEdit.Add(new CardSetEditRowViewModel(splitCard, _availableLocations, RefreshColumnsCommand));
+            CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(splitDraft, _availableLocations, RefreshColumnsCommand));
 
             RefreshColumnsTrigger++;
         }
@@ -277,40 +306,35 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task SubmitNewCardsWithDefaults(object? param)
         {
-            if (param is not IEnumerable<object> sel)
+            if (param is not IEnumerable<object> selectedItems)
             {
                 return;
             }
 
-            var originals = sel.OfType<CardSet>().ToList();
-            if (originals.Count == 0)
+            var printings = selectedItems.OfType<PrintingCard>().ToList();
+
+            if (printings.Count == 0)
             {
                 return;
             }
 
-            await SubmitBatchAsync(originals, (cards, snapshot) => _service.SubmitNewCardsWithDefaultsBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Added the following cards with default values:");
+            var snapshot = _cardCollectionHost.CreateMyCollectionSnapshot();
+            var changeSet = await _service.SubmitNewCardsWithDefaultsBatchAsync(printings, snapshot);
+
+            CollectionChanged?.Invoke(this, changeSet);
+
+            StatusMessage = BuildSubmitSummary(changeSet, [.. printings.Select(CollectionCardDraftFactory.FromPrintingCard)], "Added the following cards with default values:");
         }
 
         [RelayCommand]
         private async Task DeleteSelectedCardsAsync(object? param)
         {
-            if (param is not IEnumerable<object> sel)
+            if (param is not IEnumerable<object> selectedItems)
             {
                 return;
             }
 
-            var sourceCards = sel.OfType<CardSetEditRowViewModel>().Select(r => r.CardToAddOrEdit).Cast<CardSet>().Concat(sel.OfType<CardSet>());
-
-            var toDelete = sourceCards
-                .Select(o => new CardSet
-                {
-                    CardId = o.CardId,
-                    Name = o.Name,
-                    SelectedCondition = o.SelectedCondition,
-                    Language = o.Language,
-                    SelectedFinish = o.SelectedFinish,
-                    CardsOwned = 0,
-                }).ToList();
+            var toDelete = selectedItems.OfType<CollectionCard>().Select(CollectionCardDraftFactory.FromCollectionCardForDelete).ToList();
 
             if (toDelete.Count == 0)
             {
@@ -323,46 +347,39 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task PutAllForTradeAsync(object? param)
         {
-            if (param is not IEnumerable<object> sel)
+            if (param is not IEnumerable<object> selectedItems)
             {
                 return;
             }
 
-            var rows = sel.OfType<CardSet>().ToList();
-            if (rows.Count == 0)
+            var drafts = selectedItems.OfType<CollectionCard>().Select(CollectionCardDraftFactory.FromCollectionCardForTradeAll).ToList();
+
+            if (drafts.Count == 0)
             {
                 return;
             }
 
-            foreach (var r in rows)
-            {
-                r.CardsForTrade = r.CardsOwned;
-            }
-
-            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
+            await SubmitBatchAsync(drafts, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
         }
 
         [RelayCommand]
         private async Task SetNoneForTradeAsync(object? param)
         {
-            if (param is not IEnumerable<object> sel)
+            if (param is not IEnumerable<object> selectedItems)
             {
                 return;
             }
 
-            var rows = sel.OfType<CardSet>().ToList();
-            if (rows.Count == 0)
+            var drafts = selectedItems.OfType<CollectionCard>().Select(CollectionCardDraftFactory.FromCollectionCardForTradeNone).ToList();
+
+            if (drafts.Count == 0)
             {
                 return;
-            }
-
-            foreach (var r in rows)
-            {
-                r.CardsForTrade = 0;
             }
 
             await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
         }
+
         [RelayCommand]
         private async Task SetLocationForSelectedCardsAsync(SetLocationForSelectedCardsParameter? parameter)
         {
@@ -371,40 +388,21 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var selectedCards = parameter.SelectedItems.OfType<CardSet>().ToList();
-
-            if (selectedCards.Count == 0)
-            {
-                return;
-            }
-
-            var edits = selectedCards.Where(c => c.CardId is not null).Select(c => new CardSet
-            {
-                CardId = c.CardId,
-                Uuid = c.Uuid,
-                SelectedCondition = c.SelectedCondition,
-                Language = c.Language,
-                SelectedFinish = c.SelectedFinish,
-                SelectedLocationId = parameter.LocationId,
-                Comment = c.Comment,
-                CardsOwned = c.CardsOwned,
-                CardsForTrade = c.CardsForTrade
-            }).ToList();
+            var edits = parameter.SelectedItems.OfType<CollectionCard>().Select(card => CollectionCardDraftFactory.FromCollectionCardWithLocation(card, parameter.LocationId)).ToList();
 
             if (edits.Count == 0)
             {
                 return;
             }
 
-            await SubmitBatchAsync(edits, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot),
-                clearAfter: false,
+            await SubmitBatchAsync(edits, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false,
                 summaryTitle: parameter.LocationId is null
                     ? "Removed location from the following cards:"
                     : "Updated location for the following cards:");
         }
 
         // Shared helpers 
-        private async Task SubmitBatchAsync(IEnumerable<CardSet> cards, Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit, bool clearAfter, string summaryTitle)
+        private async Task SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, Func<IEnumerable<CollectionCardDraft>, ICollectionSnapshot, Task<CollectionChangeSet<CollectionCardDbRow>>> submit, bool clearAfter, string summaryTitle)
         {
             var cardList = cards.ToList();
             var snapshot = _cardCollectionHost.CreateMyCollectionSnapshot();
@@ -421,7 +419,7 @@ namespace CollectaMundo.ViewModels
             CollectionChanged?.Invoke(this, changeSet);
             StatusMessage = BuildSubmitSummary(changeSet, cardList, summaryTitle);
         }
-        private static string BuildSubmitSummary(CollectionChangeSet<CardSet> changeSet, IReadOnlyList<CardSet> submittedCards, string summaryTitle)
+        private static string BuildSubmitSummary(CollectionChangeSet<CollectionCardDbRow> changeSet, IReadOnlyList<CollectionCardDraft> submittedCards, string summaryTitle)
         {
             var sb = new StringBuilder();
 
@@ -429,7 +427,10 @@ namespace CollectaMundo.ViewModels
             {
                 sb.AppendLine(summaryTitle).AppendLine();
 
-                foreach (var c in changeSet.AddedOrUpdated)
+                var addedOrUpdatedIdentities = changeSet.AddedOrUpdated.Select(row => row.Identity).ToHashSet();
+                var displayRows = submittedCards.Where(card => addedOrUpdatedIdentities.Contains(card.ToIdentity())).ToList();
+
+                foreach (var c in displayRows)
                 {
                     sb.AppendLine(
                         $"- {c.Name} " +
@@ -448,12 +449,9 @@ namespace CollectaMundo.ViewModels
                     sb.AppendLine();
                 }
 
-                sb.AppendLine("Deleted the following cards from your collection:")
-                  .AppendLine();
+                sb.AppendLine("Deleted the following cards from your collection:").AppendLine();
 
-                var deletedCards = submittedCards
-                    .Where(c => c.CardId.HasValue && changeSet.RemovedIds.Contains(c.CardId.Value))
-                    .ToList();
+                var deletedCards = submittedCards.Where(c => c.CardId.HasValue && changeSet.RemovedIds.Contains(c.CardId.Value)).ToList();
 
                 foreach (var c in deletedCards)
                 {
@@ -466,34 +464,6 @@ namespace CollectaMundo.ViewModels
             }
 
             return sb.ToString().TrimEnd();
-        }
-        private static CardSet CreateSplitCard(CardSet source)
-        {
-            if (source.Core is null)
-            {
-                throw new InvalidOperationException($"Cannot split card '{source.Name}' because it has no hydrated Core.");
-            }
-
-            var split = CardSet.FromCore(source.Core);
-
-            split.CardId = null;
-            split.CardsOwned = 1;
-
-            split.CardsForTrade = source.CardsOwned > source.CardsForTrade ? 0 : 1;
-
-            // Copy edit metadata used by combo boxes
-            split.OtherLanguages = [.. source.OtherLanguages];
-            split.AvailableFinishes = [.. source.AvailableFinishes];
-
-            split.SelectedCondition = source.SelectedCondition;
-            split.Language = source.Language;
-            split.SelectedFinish = source.SelectedFinish;
-            split.SelectedLocationId = source.SelectedLocationId;
-            split.Comment = source.Comment;
-
-            split.RecomputeCollectionPrice();
-
-            return split;
         }
         private static IReadOnlyList<LocationMenuItemViewModel> BuildLocationMenuItems(IReadOnlyList<CardLocation> locations)
         {

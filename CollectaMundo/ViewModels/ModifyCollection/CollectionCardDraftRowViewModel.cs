@@ -1,14 +1,14 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.CardLocations.Models;
+﻿using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.ViewModels.ModifyCollection.BindinViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.ModifyCollection;
 
-public sealed partial class CardSetEditRowViewModel : ObservableObject
+public sealed partial class CollectionCardDraftRowViewModel : ObservableObject
 {
-    public CollectionCard CardToAddOrEdit { get; }
+    public CollectionCardDraft CardToAddOrEdit { get; }
     public bool CanSplit => CardsOwned > 1;
 
     // Bindable properties for the combo boxes
@@ -20,10 +20,9 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
     // Bindable properties for the numeric inputs
     public NumericBindingViewModel Owned { get; }
     public NumericBindingViewModel Trade { get; }
-    public CardSetEditRowViewModel(CollectionCard cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand)
+    public CollectionCardDraftRowViewModel(CollectionCardDraft cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand)
     {
         CardToAddOrEdit = cardToAdd;
-        RefreshColumnsCommand = refreshColumnsCommand;
 
         ConditionCombo = new ComboBindingViewModel(
             items: cardToAdd.Conditions,
@@ -148,9 +147,6 @@ public sealed partial class CardSetEditRowViewModel : ObservableObject
             SelectedLocationId = null;
         }
     }
-
-    // Command to trigger column refresh 
-    private ICommand RefreshColumnsCommand { get; }
 
     // Helpers
     private bool SetModelValue<T>(T currentValue, T newValue, Action<T> assign, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)

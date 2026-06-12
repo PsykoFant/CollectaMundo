@@ -1,6 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Shared;
-using CollectaMundo.DomainLogic.Shared.Models;
-using CollectaMundo.Infrastructure.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.Shared.Factories;
+using CollectaMundo.Infrastructure.Shared.Models;
 using System.Data.Common;
 using System.Data.SQLite;
 
@@ -8,7 +7,7 @@ namespace CollectaMundo.Infrastructure.CardLists
 {
     public class CardListRepo : ICardListRepo
     {
-        public async Task<IReadOnlyList<CardPrintingDbRow>> ReadAllCardPrintingDbRowsAsync(SQLiteConnection conn)
+        public async Task<IReadOnlyList<PrintingCardDbRow>> ReadAllCardPrintingDbRowsAsync(SQLiteConnection conn)
         {
             const string query = """
                                 SELECT 
@@ -57,7 +56,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                                 """;
 
             using var cmd = new SQLiteCommand(query, conn);
-            var list = new List<CardPrintingDbRow>(capacity: 120000);
+            var list = new List<PrintingCardDbRow>(capacity: 120000);
 
             using var reader = await cmd.ExecuteReaderAsync();
 
@@ -68,9 +67,9 @@ namespace CollectaMundo.Infrastructure.CardLists
 
             return list;
         }
-        private static CardPrintingDbRow CardPrintingDbRowFromReader(DbDataReader r)
+        private static PrintingCardDbRow CardPrintingDbRowFromReader(DbDataReader r)
         {
-            return new CardPrintingDbRow
+            return new PrintingCardDbRow
             {
                 ScryfallOracleId = GetFieldValue<string>(r, "ScryfallOracleId"),
 
@@ -94,7 +93,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                 Finishes = GetFieldValue<string>(r, "Finishes")
             };
         }
-        public async Task<List<MyCollectionRow>> ReadMyCollectionAsync(SQLiteConnection conn)
+        public async Task<List<CollectionCardDbRow>> ReadMyCollectionAsync(SQLiteConnection conn)
         {
             const string sql = """
                                 SELECT
@@ -112,7 +111,7 @@ namespace CollectaMundo.Infrastructure.CardLists
 
             using var cmd = new SQLiteCommand(sql, conn);
 
-            var list = new List<MyCollectionRow>();
+            var list = new List<CollectionCardDbRow>();
             using var rdr = await cmd.ExecuteReaderAsync();
 
             while (await rdr.ReadAsync())
@@ -130,7 +129,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                     ? null
                     : rdr["comment"]?.ToString();
 
-                list.Add(new MyCollectionRow
+                list.Add(new CollectionCardDbRow
                 {
                     CardId = rdr["id"] is long idLong
                         ? (int)idLong

@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic.CollectionMutations;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.Shared.Models;
 
 namespace CollectaMundo.Tests.UnitTests
 {
@@ -10,13 +11,13 @@ namespace CollectaMundo.Tests.UnitTests
         // Snapshot stub for unit tests: represents an empty in-memory collection.
         private sealed class EmptySnapshot : ICollectionSnapshot
         {
-            public IReadOnlyCollection<MyCollectionRow> Rows { get; } = [];
-            public bool TryGetById(int cardId, out MyCollectionRow row)
+            public IReadOnlyCollection<CollectionCardDbRow> Rows { get; } = [];
+            public bool TryGetById(int cardId, out CollectionCardDbRow row)
             {
                 row = default!;
                 return false;
             }
-            public bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row)
+            public bool TryGetByIdentity(CollectionIdentity identity, out CollectionCardDbRow row)
             {
                 row = default!;
                 return false;
@@ -24,18 +25,18 @@ namespace CollectaMundo.Tests.UnitTests
         }
         private sealed class TestSnapshot : ICollectionSnapshot
         {
-            private readonly Dictionary<int, MyCollectionRow> _byId;
-            private readonly Dictionary<CollectionIdentity, MyCollectionRow> _byIdentity;
-            public IReadOnlyCollection<MyCollectionRow> Rows { get; }
-            public TestSnapshot(IEnumerable<MyCollectionRow> rows)
+            private readonly Dictionary<int, CollectionCardDbRow> _byId;
+            private readonly Dictionary<CollectionIdentity, CollectionCardDbRow> _byIdentity;
+            public IReadOnlyCollection<CollectionCardDbRow> Rows { get; }
+            public TestSnapshot(IEnumerable<CollectionCardDbRow> rows)
             {
                 var rowList = rows.ToList();
                 Rows = rowList;
                 _byId = rowList.ToDictionary(r => r.CardId);
                 _byIdentity = rowList.ToDictionary(r => r.Identity);
             }
-            public bool TryGetById(int cardId, out MyCollectionRow row) => _byId.TryGetValue(cardId, out row!);
-            public bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row) => _byIdentity.TryGetValue(identity, out row!);
+            public bool TryGetById(int cardId, out CollectionCardDbRow row) => _byId.TryGetValue(cardId, out row!);
+            public bool TryGetByIdentity(CollectionIdentity identity, out CollectionCardDbRow row) => _byIdentity.TryGetValue(identity, out row!);
         }
 
         [Fact]
@@ -101,7 +102,7 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new TestSnapshot(
                 rows:
                 [
-            new MyCollectionRow
+            new CollectionCardDbRow
             {
                 CardId = 123,
                 Identity = existingIdentity,
@@ -170,7 +171,7 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new TestSnapshot(
                 rows:
                 [
-            new MyCollectionRow
+            new CollectionCardDbRow
             {
                 CardId = 123,
                 Identity = existingIdentity,
@@ -227,7 +228,7 @@ namespace CollectaMundo.Tests.UnitTests
                 null);
 
             var snapshot = new TestSnapshot(rows:
-                [new MyCollectionRow
+                [new CollectionCardDbRow
                 {
                     CardId = 123,
                     Identity = identity,
@@ -295,7 +296,7 @@ namespace CollectaMundo.Tests.UnitTests
                 rows:
                 [
             // Survivor row
-            new MyCollectionRow
+            new CollectionCardDbRow
             {
                 CardId = 456,
                 Identity = survivorIdentity,
@@ -304,7 +305,7 @@ namespace CollectaMundo.Tests.UnitTests
             },
 
             // Current row being edited
-            new MyCollectionRow
+            new CollectionCardDbRow
             {
                 CardId = 123,
                 Identity = new CollectionIdentity(
@@ -386,7 +387,7 @@ namespace CollectaMundo.Tests.UnitTests
                 rows:
                 [
             // Survivor row (already in collection)
-            new MyCollectionRow
+            new CollectionCardDbRow
             {
                 CardId = 456,
                 Identity = identity,
@@ -395,7 +396,7 @@ namespace CollectaMundo.Tests.UnitTests
             },
 
             // Current row being edited
-            new MyCollectionRow
+            new CollectionCardDbRow
             {
                 CardId = 123,
                 Identity = new CollectionIdentity(
@@ -466,7 +467,7 @@ namespace CollectaMundo.Tests.UnitTests
                 null);
 
             var snapshot = new TestSnapshot(rows:
-                [new MyCollectionRow
+                [new CollectionCardDbRow
                 {
                     CardId = 101,
                     Identity = new CollectionIdentity(
@@ -479,7 +480,7 @@ namespace CollectaMundo.Tests.UnitTests
                     CardsOwned = 2,
                     CardsForTrade = 1
                 },
-                new MyCollectionRow
+                new CollectionCardDbRow
                 {
                     CardId = 202,
                     Identity = new CollectionIdentity(
@@ -693,14 +694,14 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new TestSnapshot(
                 rows:
                 [
-                    new MyCollectionRow
+                    new CollectionCardDbRow
             {
                 CardId = 100,
                 Identity = nullLocationIdentity,
                 CardsOwned = 2,
                 CardsForTrade = 1
             },
-            new MyCollectionRow
+            new CollectionCardDbRow
             {
                 CardId = 200,
                 Identity = locatedIdentity,
@@ -756,7 +757,7 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new TestSnapshot(
                 rows:
                 [
-                    new MyCollectionRow
+                    new CollectionCardDbRow
             {
                 CardId = 100,
                 Identity = existingIdentity,
@@ -828,7 +829,7 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new TestSnapshot(
                 rows:
                 [
-                    new MyCollectionRow
+                    new CollectionCardDbRow
             {
                 CardId = 100,
                 Identity = originalIdentity,

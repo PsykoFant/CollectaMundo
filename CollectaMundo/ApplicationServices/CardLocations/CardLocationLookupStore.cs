@@ -17,10 +17,6 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
             ];
         }
-        public CardLocation? Get(int id)
-        {
-            return _byId.GetValueOrDefault(id);
-        }
         public void ReplaceAll(IReadOnlyList<CardLocation> locations)
         {
             _byId.Clear();
@@ -45,17 +41,6 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             }
 
             LocationsChanged?.Invoke(this, EventArgs.Empty);
-        }
-        public bool Remove(int id)
-        {
-            var removed = _byId.Remove(id);
-
-            if (removed)
-            {
-                LocationsChanged?.Invoke(this, EventArgs.Empty);
-            }
-
-            return removed;
         }
         public void RemoveMany(IReadOnlyList<int> ids)
         {

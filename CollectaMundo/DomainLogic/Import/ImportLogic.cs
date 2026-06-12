@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
 using System.Globalization;

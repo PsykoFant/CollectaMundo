@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.Shared.CardModels;
 
 namespace CollectaMundo.DomainLogic.CardLists
 {
@@ -19,6 +19,16 @@ namespace CollectaMundo.DomainLogic.CardLists
                 var allTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var allTexts = new List<string>();
 
+                MergeFrom(printing.Oracle);
+
+                foreach (var otherId in printing.Oracle.OtherFaceIds)
+                {
+                    if (byUuid.TryGetValue(otherId, out var otherPrinting))
+                    {
+                        MergeFrom(otherPrinting.Oracle);
+                    }
+                }
+
                 void MergeFrom(OracleCard oracle)
                 {
                     AddCsvValues(oracle.Keywords, allKeywords);
@@ -28,16 +38,6 @@ namespace CollectaMundo.DomainLogic.CardLists
                     if (!string.IsNullOrWhiteSpace(oracle.Text))
                     {
                         allTexts.Add(oracle.Text.Trim());
-                    }
-                }
-
-                MergeFrom(printing.Oracle);
-
-                foreach (var otherId in printing.Oracle.OtherFaceIds)
-                {
-                    if (byUuid.TryGetValue(otherId, out var otherPrinting))
-                    {
-                        MergeFrom(otherPrinting.Oracle);
                     }
                 }
 

@@ -1,7 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.Import.Models;
-using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;

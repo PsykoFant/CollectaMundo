@@ -1,12 +1,13 @@
 ﻿using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.Shared.Models;
 
 namespace CollectaMundo.DomainLogic.CollectionMutations.Models
 {
     public sealed class CollectionMutationPlan
     {
         public List<int> DeleteIds { get; } = [];
-        public List<UpdateCommand> Updates { get; } = [];
-        public List<InsertCommand> Inserts { get; } = [];
-        public CollectionChangeSet<MyCollectionRow> ChangeSet { get; set; } = new();
+        public List<UpdateMutation> Updates { get; } = [];
+        public List<InsertMutation> Inserts { get; } = [];
+        public CollectionChangeSet<CollectionCardDbRow> ChangeSet { get; set; } = new();
     }
 }

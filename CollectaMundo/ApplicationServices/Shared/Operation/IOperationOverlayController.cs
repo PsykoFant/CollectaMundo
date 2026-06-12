@@ -1,10 +1,6 @@
 ﻿using CollectaMundo.Presentation;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
 
-namespace CollectaMundo.ApplicationServices.Shared
+namespace CollectaMundo.ApplicationServices.Shared.Operation
 {
     public interface IOperationOverlayController
     {
@@ -21,7 +17,7 @@ namespace CollectaMundo.ApplicationServices.Shared
         void ShowProgress(bool show);
 
         void ShowPrimaryButton(string text, Action<object?>? action = null);
-        void SetPrimaryButtonText(string text);        
+        void SetPrimaryButtonText(string text);
         void HidePrimaryButton();
 
         void ShowSecondaryButton(string text, Action<object?>? action = null);

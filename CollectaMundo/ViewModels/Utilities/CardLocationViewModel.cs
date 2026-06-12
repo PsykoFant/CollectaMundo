@@ -1,7 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
-using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -12,6 +13,9 @@ namespace CollectaMundo.ViewModels.Utilities
     public partial class CardLocationViewModel(ICardLocationService cardLocationService) : LocationManagementViewModel<CardLocation>
     {
         private readonly ICardLocationService _cardLocationService = cardLocationService;
+
+        // External notifications
+        public event EventHandler<CollectionChangeSet<CollectionCardDbRow>>? CollectionChanged;
 
         // UI text
         protected override LocationManagementText Text { get; } = new(
@@ -133,9 +137,6 @@ namespace CollectaMundo.ViewModels.Utilities
             },
             "Failed to load card locations");
         }
-
-        // External notifications
-        public event EventHandler<CollectionChangeSet<MyCollectionRow>>? CollectionChanged;
 
         // Commands
         [RelayCommand]

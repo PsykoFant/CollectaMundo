@@ -3,6 +3,7 @@ using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 

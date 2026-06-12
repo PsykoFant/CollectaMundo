@@ -1,13 +1,10 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Filtering.Enums;
+﻿using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
 using System.Diagnostics;
-using System.Reflection;
-using System.Windows;
 
 namespace CollectaMundo.DomainLogic.Filtering
 {
-    public class FilteringLogic(string criteriaKey, FilterType filterCategory, IEnumerable<string> selectedOptions, string? selectedSingleOption, int? selectedNumericValue, OperatorType operatorSelection, string defaultText) : IFilteringLogic
+    public class FilteringLogic<TCard>(string criteriaKey, FilterType filterCategory, IEnumerable<string> selectedOptions, string? selectedSingleOption, int? selectedNumericValue, OperatorType operatorSelection, string defaultText) : IFilteringLogic<TCard>
     {
         public string CriteriaKey { get; } = criteriaKey;
         public FilterType FilterCategory { get; } = filterCategory;
@@ -16,188 +13,191 @@ namespace CollectaMundo.DomainLogic.Filtering
         public int? SelectedNumericValue { get; } = selectedNumericValue;
         public OperatorType OperatorSelection { get; } = operatorSelection;
         public string DefaultText { get; } = defaultText;
-
-        public bool Matches(CardSet card)
+        public bool Matches(TCard card)
         {
             try
             {
-                // Look up the mapping for this filter.
                 if (!FilterCriteriaMappings.CriteriaMappings.TryGetValue(CriteriaKey, out var mapping))
-                {
-                    return true; // No mapping? Then don't filter on this criterion.
-                }
-
-                // Special case for color filtering
-                if (CriteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
-                {
-                    // CreateCollectionChangeSetFromEdits sets for mana cost and colors.
-                    var manaCostSymbols = new HashSet<string>(
-                        card.ManaCost != null ? card.ManaCost.Split(',').Select(s => s.Trim()) : [],
-                        StringComparer.OrdinalIgnoreCase);
-                    var colorSymbols = new HashSet<string>(
-                        card.Colors != null ? card.Colors.Split(',').Select(s => s.Trim()) : [],
-                        StringComparer.OrdinalIgnoreCase);
-
-                    // "Colorless" means no colors are specified.
-                    bool isColorless = string.IsNullOrWhiteSpace(card.Colors);
-
-                    // For multi-select color filtering, use the selected options.
-                    if (SelectedOptions == null || !SelectedOptions.Any())
-                    {
-                        return true;
-                    }
-
-                    return OperatorSelection switch
-                    {
-                        // Every selected color must be present (if "Colorless" is selected, card must be colorless).
-                        OperatorType.AND => SelectedOptions.All(opt =>
-                                                        opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
-                                                        manaCostSymbols.Contains(opt) ||
-                                                        colorSymbols.Contains(opt)
-                                                    ),
-                        // No selected color should be present.                        
-                        OperatorType.NOT => !SelectedOptions.Any(opt =>
-                                                        opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
-                                                        manaCostSymbols.Contains(opt) ||
-                                                        colorSymbols.Contains(opt)
-                                                    ),
-                        // OR case (or any other operator)                           
-                        _ => SelectedOptions.Any(opt =>
-                                                        opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
-                                                        manaCostSymbols.Contains(opt) ||
-                                                        colorSymbols.Contains(opt)
-                                                    ),
-                    };
-                }
-
-                // Special case for SelectedFinish: perform an exact match.
-                if (CriteriaKey.Equals("SelectedFinish", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (SelectedOptions == null || !SelectedOptions.Any())
-                    {
-                        return true;
-                    }
-
-                    // Use the card's finish value. Adjust this if your card uses a different property.
-                    string cardFinish = card.SelectedFinish ?? string.Empty;
-                    switch (OperatorSelection)
-                    {
-                        case OperatorType.OR:
-                            // Exact match required.
-                            return SelectedOptions.Any(opt => string.Equals(opt, cardFinish, StringComparison.OrdinalIgnoreCase));
-                        case OperatorType.NOT:
-                            return !SelectedOptions.Any(opt => string.Equals(opt, cardFinish, StringComparison.OrdinalIgnoreCase));
-                        default:
-                            return true;
-                    }
-                }
-
-                // Special case for location filtering.
-                // The UI displays location names, but selected filter values are stable location ids.
-                if (CriteriaKey.Equals("SelectedLocationDisplayName", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (SelectedOptions == null || !SelectedOptions.Any())
-                    {
-                        return true;
-                    }
-
-                    string cardLocationId = card.SelectedLocationId?.ToString() ?? string.Empty;
-
-                    return OperatorSelection switch
-                    {
-                        OperatorType.NOT => !SelectedOptions.Any(opt => string.Equals(opt, cardLocationId, StringComparison.OrdinalIgnoreCase)),
-                        _ => SelectedOptions.Any(opt => string.Equals(opt, cardLocationId, StringComparison.OrdinalIgnoreCase))
-                    };
-                }
-
-                // For other filter types, use your existing logic.
-                // First, try to get the property using the mapping's Property value.
-                string propertyName = CriteriaKey;
-                // Optionally also try this.CriteriaKey if necessary:
-                PropertyInfo? property = typeof(CardSet).GetProperty(propertyName)
-                                      ?? typeof(CardSet).GetProperty(CriteriaKey);
-
-                if (property == null)
                 {
                     return true;
                 }
 
-                object? value = property.GetValue(card);
-                string cardValue = value?.ToString() ?? "";
-
-                switch (FilterCategory)
+                if (CriteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
                 {
-                    case FilterType.Single:
-                        if (string.IsNullOrWhiteSpace(SelectedSingleOption) || SelectedSingleOption == DefaultText)
-                        {
-                            return true;
-                        }
-
-                        return OperatorSelection switch
-                        {
-                            OperatorType.EQUALS => cardValue.Equals(SelectedSingleOption, StringComparison.OrdinalIgnoreCase),
-                            OperatorType.CONTAINS => cardValue.Contains(SelectedSingleOption, StringComparison.OrdinalIgnoreCase),
-                            _ => cardValue.Contains(SelectedSingleOption, StringComparison.OrdinalIgnoreCase), // fallback
-                        };
-
-
-                    case FilterType.Multi:
-                        if (SelectedOptions == null || !SelectedOptions.Any())
-                        {
-                            return true;
-                        }
-
-                        if (OperatorSelection == OperatorType.AND)
-                        {
-                            return SelectedOptions.All(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
-                        }
-                        else if (OperatorSelection == OperatorType.NOT)
-                        {
-                            return !SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
-                        }
-                        else // default OR
-                        {
-                            return SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
-                        }
-
-                    case FilterType.Numeric:
-                        if (SelectedNumericValue == null)
-                        {
-                            return true;
-                        }
-
-                        if (double.TryParse(cardValue, out double cardNumeric))
-                        {
-                            switch (OperatorSelection)
-                            {
-                                case OperatorType.LESS_THAN:
-                                    return cardNumeric < SelectedNumericValue;
-                                case OperatorType.LESS_THAN_OR_EQUALS:
-                                    return cardNumeric <= SelectedNumericValue;
-                                case OperatorType.GREATER_THAN:
-                                    return cardNumeric > SelectedNumericValue;
-                                case OperatorType.GREATER_THAN_OR_EQUALS:
-                                    return cardNumeric >= SelectedNumericValue;
-                                case OperatorType.EQUALS:
-                                    return Math.Abs(cardNumeric - (double)SelectedNumericValue) < 0.0001;
-                                case OperatorType.NOT_EQUALS:
-                                    return Math.Abs(cardNumeric - (double)SelectedNumericValue) >= 0.0001;
-                                default:
-                                    return true;
-                            }
-                        }
-                        return true;
-
-                    default:
-                        return true;
+                    return MatchesColors(card);
                 }
+
+                if (CriteriaKey.Equals("SelectedFinish", StringComparison.OrdinalIgnoreCase))
+                {
+                    return MatchesExactStringOption(card, "SelectedFinish");
+                }
+
+                if (CriteriaKey.Equals("SelectedLocationDisplayName", StringComparison.OrdinalIgnoreCase))
+                {
+                    return MatchesLocation(card);
+                }
+
+                var property = typeof(TCard).GetProperty(CriteriaKey);
+
+                if (property is null)
+                {
+                    return true;
+                }
+
+                var value = property.GetValue(card);
+                var cardValue = value?.ToString() ?? string.Empty;
+
+                return FilterCategory switch
+                {
+                    FilterType.Single => MatchesSingle(cardValue),
+                    FilterType.Multi => MatchesMulti(cardValue),
+                    FilterType.Numeric => MatchesNumeric(cardValue),
+                    _ => true
+                };
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error getting matches: {ex.Message}");
-                MessageBox.Show($"Error getting matches: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
+        }
+        private bool MatchesColors(TCard card)
+        {
+            if (SelectedOptions == null || !SelectedOptions.Any())
+            {
+                return true;
+            }
+
+            var manaCost = GetPropertyValue(card, "ManaCost");
+            var colors = GetPropertyValue(card, "Colors");
+
+            var manaCostSymbols = new HashSet<string>(
+                !string.IsNullOrWhiteSpace(manaCost)
+                    ? manaCost.Split(',').Select(s => s.Trim())
+                    : [],
+                StringComparer.OrdinalIgnoreCase);
+
+            var colorSymbols = new HashSet<string>(
+                !string.IsNullOrWhiteSpace(colors)
+                    ? colors.Split(',').Select(s => s.Trim())
+                    : [],
+                StringComparer.OrdinalIgnoreCase);
+
+            var isColorless = string.IsNullOrWhiteSpace(colors);
+
+            return OperatorSelection switch
+            {
+                OperatorType.AND => SelectedOptions.All(opt =>
+                    opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
+                    manaCostSymbols.Contains(opt) ||
+                    colorSymbols.Contains(opt)),
+
+                OperatorType.NOT => !SelectedOptions.Any(opt =>
+                    opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
+                    manaCostSymbols.Contains(opt) ||
+                    colorSymbols.Contains(opt)),
+
+                _ => SelectedOptions.Any(opt =>
+                    opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
+                    manaCostSymbols.Contains(opt) ||
+                    colorSymbols.Contains(opt))
+            };
+        }
+        private bool MatchesExactStringOption(TCard card, string propertyName)
+        {
+            if (SelectedOptions == null || !SelectedOptions.Any())
+            {
+                return true;
+            }
+
+            var cardValue = GetPropertyValue(card, propertyName) ?? string.Empty;
+
+            return OperatorSelection switch
+            {
+                OperatorType.NOT => !SelectedOptions.Any(opt => string.Equals(opt, cardValue, StringComparison.OrdinalIgnoreCase)),
+
+                _ => SelectedOptions.Any(opt => string.Equals(opt, cardValue, StringComparison.OrdinalIgnoreCase))
+            };
+        }
+        private bool MatchesLocation(TCard card)
+        {
+            if (SelectedOptions == null || !SelectedOptions.Any())
+            {
+                return true;
+            }
+
+            var locationId = GetPropertyValue(card, "SelectedLocationId") ?? string.Empty;
+
+            return OperatorSelection switch
+            {
+                OperatorType.NOT => !SelectedOptions.Any(opt =>
+                    string.Equals(opt, locationId, StringComparison.OrdinalIgnoreCase)),
+
+                _ => SelectedOptions.Any(opt =>
+                    string.Equals(opt, locationId, StringComparison.OrdinalIgnoreCase))
+            };
+        }
+        private bool MatchesSingle(string cardValue)
+        {
+            if (string.IsNullOrWhiteSpace(SelectedSingleOption) || SelectedSingleOption == DefaultText)
+            {
+                return true;
+            }
+
+            return OperatorSelection switch
+            {
+                OperatorType.EQUALS => cardValue.Equals(SelectedSingleOption, StringComparison.OrdinalIgnoreCase),
+                OperatorType.CONTAINS => cardValue.Contains(SelectedSingleOption, StringComparison.OrdinalIgnoreCase),
+                _ => cardValue.Contains(SelectedSingleOption, StringComparison.OrdinalIgnoreCase)
+            };
+        }
+        private bool MatchesMulti(string cardValue)
+        {
+            if (SelectedOptions == null || !SelectedOptions.Any())
+            {
+                return true;
+            }
+
+            return OperatorSelection switch
+            {
+                OperatorType.AND => SelectedOptions.All(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase)),
+                OperatorType.NOT => !SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase)),
+                _ => SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase))
+            };
+        }
+        private bool MatchesNumeric(string cardValue)
+        {
+            if (SelectedNumericValue is null)
+            {
+                return true;
+            }
+
+            if (!double.TryParse(cardValue, out var cardNumeric))
+            {
+                return true;
+            }
+
+            return OperatorSelection switch
+            {
+                OperatorType.LESS_THAN => cardNumeric < SelectedNumericValue,
+                OperatorType.LESS_THAN_OR_EQUALS => cardNumeric <= SelectedNumericValue,
+                OperatorType.GREATER_THAN => cardNumeric > SelectedNumericValue,
+                OperatorType.GREATER_THAN_OR_EQUALS => cardNumeric >= SelectedNumericValue,
+                OperatorType.EQUALS => Math.Abs(cardNumeric - (double)SelectedNumericValue) < 0.0001,
+                OperatorType.NOT_EQUALS => Math.Abs(cardNumeric - (double)SelectedNumericValue) >= 0.0001,
+                _ => true
+            };
+        }
+        private static string? GetPropertyValue(TCard card, string propertyName)
+        {
+            var property = typeof(TCard).GetProperty(propertyName);
+
+            if (property is null)
+            {
+                return null;
+            }
+
+            return property.GetValue(card)?.ToString();
         }
     }
 }

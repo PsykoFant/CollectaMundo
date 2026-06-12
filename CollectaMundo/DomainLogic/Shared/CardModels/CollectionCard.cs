@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Media;
 
@@ -36,24 +37,12 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 
         [ObservableProperty]
         private string? selectedCondition;
-        public List<string> Conditions { get; } =
-            [
-            "Mint",
-            "Near Mint",
-            "Excellent",
-            "Good",
-            "Light Played",
-            "Played",
-            "Poor"
-            ];
 
         [ObservableProperty]
         private string? selectedFinish;
-        public IReadOnlyList<string> FinishOptions => Printing.FinishOptions;
 
         [ObservableProperty]
         private string? language;
-        public IReadOnlyList<string> OtherLanguages => Printing.OtherLanguages;
 
         [ObservableProperty]
         private int cardsOwned;

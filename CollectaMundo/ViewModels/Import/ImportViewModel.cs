@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.ViewModels.Import.ImportSteps;

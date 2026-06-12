@@ -1,6 +1,6 @@
-﻿namespace CollectaMundo.Infrastructure.CardLists.Models
+﻿namespace CollectaMundo.Infrastructure.Shared.Models
 {
-    public sealed class CardPrintingDbRow
+    public sealed class PrintingCardDbRow
     {
         public string? ScryfallOracleId { get; init; }
 

@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Filtering;
+using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.SideMenuRight;
 using CommunityToolkit.Mvvm.ComponentModel;

@@ -2,5 +2,5 @@
 
 namespace CollectaMundo.DomainLogic.CollectionMutations.Models
 {
-    public sealed record UpdateCommand(int CardId, CollectionIdentity Identity, int CardsOwned, int CardsForTrade);
+    public sealed record UpdateMutation(int CardId, CollectionIdentity Identity, int CardsOwned, int CardsForTrade);
 }

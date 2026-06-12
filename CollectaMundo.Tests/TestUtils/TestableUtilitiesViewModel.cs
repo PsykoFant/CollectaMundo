@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels.Shared;
 using CollectaMundo.ViewModels.Shell;

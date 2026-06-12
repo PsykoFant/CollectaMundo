@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.Infrastructure.CardImages;

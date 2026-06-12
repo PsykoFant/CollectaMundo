@@ -1,13 +1,26 @@
-﻿using CollectaMundo.DomainLogic.CollectionMutations.Models;
+﻿using CollectaMundo.DomainLogic.CollectionMutations;
+using CollectaMundo.DomainLogic.CollectionMutations.Models;
+using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CollectionMutations;
+using CollectaMundo.Infrastructure.Shared.Models;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CollectionMutations
 {
-    public class CollectionMutationsService(ICollectionMutationsRepo repo) : ICollectionMutationsService
+    public class CollectionMutationsService(ICollectionMutationsLogic logic, ICollectionMutationsRepo repo) : ICollectionMutationsService
     {
+        private readonly ICollectionMutationsLogic _logic = logic;
         private readonly ICollectionMutationsRepo _repo = repo;
-        public async Task ExecutePlanAsync(CollectionMutationPlan plan, SQLiteConnection connection, SQLiteTransaction transaction)
+        public async Task<CollectionChangeSet<CollectionCardDbRow>> SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, ICollectionSnapshot snapshot, SQLiteConnection connection, SQLiteTransaction transaction)
+        {
+            var plan = _logic.PlanIdentityRewriteBatch(cards, snapshot);
+
+            await ExecutePlanAsync(plan, connection, transaction);
+
+            return plan.ChangeSet;
+        }
+        private async Task ExecutePlanAsync(CollectionMutationPlan plan, SQLiteConnection connection, SQLiteTransaction transaction)
         {
             foreach (var deleteId in plan.DeleteIds)
             {
@@ -47,6 +60,7 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
             }
 
             var unbound = plan.Inserts.Where(i => i.AssignedCardId is null).ToList();
+
             if (unbound.Count > 0)
             {
                 throw new InvalidOperationException($"Unbound insert ids: {unbound.Count}");

@@ -1,24 +1,24 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations.Models;
 using CollectaMundo.ApplicationServices.CollectionMutations;
-using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Operation;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CardLocations.Models;
-using CollectaMundo.DomainLogic.CollectionMutations;
-using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLocations;
+using CollectaMundo.Infrastructure.Shared.Models;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CardLocations
 {
-    public sealed class CardLocationService(IUnitOfWorkRunner uowRunner, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic, ICardLocationLookupStore cardLocationLookupStore, ICollectionMutationsLogic mutationsLogic, ICollectionMutationsService mutationsService) : ICardLocationService
+    public sealed class CardLocationService(IUnitOfWorkRunner uowRunner, ICardLocationRepo cardLocationRepo, ICardLocationLogic cardLocationLogic, ICardLocationLookupStore cardLocationLookupStore, ICollectionMutationsService mutationsService) : ICardLocationService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ICardLocationRepo _cardLocationRepo = cardLocationRepo;
         private readonly ICardLocationLogic _cardLocationLogic = cardLocationLogic;
         private readonly ICardLocationLookupStore _cardLocationLookupStore = cardLocationLookupStore;
-        private readonly ICollectionMutationsLogic _mutationsLogic = mutationsLogic;
         private readonly ICollectionMutationsService _mutationsService = mutationsService;
 
         // CREATE
@@ -28,11 +28,11 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             {
                 var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
                 {
-                    var coreResult = await CreateCoreAsync(conn, tx, name, type);
+                    var locationMutation = await CreateAsync(conn, tx, name, type);
 
                     return (
-                        Result: coreResult,
-                        Commit: coreResult.Result.Code == OperationResultCode.Success
+                        Result: locationMutation,
+                        Commit: locationMutation.Result.Code == OperationResultCode.Success
                     );
                 });
 
@@ -54,7 +54,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             {
                 var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
                 {
-                    var locationMutation = await CreateCoreAsync(conn, tx, input.Name, CardLocationType.Deck);
+                    var locationMutation = await CreateAsync(conn, tx, input.Name, CardLocationType.Deck);
 
                     if (locationMutation.Result.Code != OperationResultCode.Success || locationMutation.Entity is null)
                     {
@@ -146,7 +146,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             return createdLocations;
         }
 
-        private async Task<MutationResult<CardLocation>> CreateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, CardLocationType type)
+        private async Task<MutationResult<CardLocation>> CreateAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, CardLocationType type)
         {
             var validation = _cardLocationLogic.ValidateNameAndType(name, type);
 
@@ -202,7 +202,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             {
                 var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
                 {
-                    var coreResult = await UpdateCoreAsync(conn, tx, id, name, type);
+                    var coreResult = await UpdateAsync(conn, tx, id, name, type);
 
                     return (
                         Result: coreResult,
@@ -228,7 +228,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             {
                 var result = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
                 {
-                    var locationMutation = await UpdateCoreAsync(conn, tx, locationId, input.Name, CardLocationType.Deck);
+                    var locationMutation = await UpdateAsync(conn, tx, locationId, input.Name, CardLocationType.Deck);
 
                     if (locationMutation.Result.Code != OperationResultCode.Success || locationMutation.Entity is null)
                     {
@@ -328,8 +328,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
             return updatedDecks;
         }
-
-        private async Task<MutationResult<CardLocation>> UpdateCoreAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, CardLocationType type)
+        private async Task<MutationResult<CardLocation>> UpdateAsync(SQLiteConnection conn, SQLiteTransaction tx, int id, string name, CardLocationType type)
         {
             string normalizedName = _cardLocationLogic.NormalizeName(name);
 
@@ -384,7 +383,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                             new OperationResult(
                                 OperationResultCode.Success,
                                 $"No {entityName} selected."),
-                            new CollectionChangeSet<MyCollectionRow>());
+                            new CollectionChangeSet<CollectionCardDbRow>());
                         return (Result: emptyResult, Commit: false);
                     }
 
@@ -396,7 +395,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                         var missingIds = distinctIds.Except(existingIds).ToList();
                         var notFoundResult = new CardLocationDeleteResult(new OperationResult(
                             OperationResultCode.NotFound, $"Could not find {entityName}: {string.Join(", ", missingIds)}."),
-                            new CollectionChangeSet<MyCollectionRow>());
+                            new CollectionChangeSet<CollectionCardDbRow>());
 
                         return (Result: notFoundResult, Commit: false);
                     }
@@ -407,10 +406,9 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                     // Step 3: build and execute one collection mutation plan for all affected cards.
                     var snapshot = CollectionSnapshot.FromRows(snapshotRows);
-                    var editedCards = affectedRows.Select(CreateDraftWithClearedLocation).ToList();
-                    var plan = _mutationsLogic.PlanIdentityRewriteBatch(editedCards, snapshot);
+                    var editedCards = affectedRows.Select(CollectionCardDraftFactory.FromDbRowWithClearedLocation).ToList();
 
-                    await _mutationsService.ExecutePlanAsync(plan, conn, tx);
+                    var changeSet = await _mutationsService.SubmitBatchAsync(editedCards, snapshot, conn, tx);
 
                     // Step 4: delete deck metadata for all deleted locations.
                     await _cardLocationRepo.DeleteDecksMetadataAsync(conn, tx, distinctIds, token);
@@ -418,12 +416,13 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     // Step 5: delete all selected locations.
                     int deletedLocationCount = await _cardLocationRepo.DeleteLocationsAsync(conn, tx, distinctIds, token);
 
-                    var successResult = new CardLocationDeleteResult(new OperationResult(
-                        OperationResultCode.Success,
-                        deletedLocationCount == 1
-                        ? $"{entityName} deleted successfully."
-                        : $"{deletedLocationCount} {entityName} deleted successfully."),
-                        plan.ChangeSet);
+                    var successResult = new CardLocationDeleteResult(
+                        new OperationResult(
+                            OperationResultCode.Success,
+                            deletedLocationCount == 1
+                                ? $"{entityName} deleted successfully."
+                                : $"{deletedLocationCount} {entityName} deleted successfully."),
+                        changeSet);
 
                     return (Result: successResult, Commit: deletedLocationCount > 0);
                 });
@@ -441,24 +440,10 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     new OperationResult(
                         OperationResultCode.Error,
                         $"Failed to delete {entityName}: {ex.Message}"),
-                    new CollectionChangeSet<MyCollectionRow>());
+                    new CollectionChangeSet<CollectionCardDbRow>());
             }
         }
-        private static CollectionCardDraft CreateDraftWithClearedLocation(MyCollectionRow row)
-        {
-            return new CollectionCardDraft
-            {
-                CardId = row.CardId,
-                Uuid = row.Identity.Uuid,
-                SelectedCondition = row.Identity.Condition,
-                Language = row.Identity.Language,
-                SelectedFinish = row.Identity.Finish,
-                SelectedLocationId = null,
-                Comment = row.Identity.Comment,
-                CardsOwned = row.CardsOwned,
-                CardsForTrade = row.CardsForTrade
-            };
-        }
+
 
         // Helpers
         private static DeckManagementRecord CreateDeckRecord(int locationId, string name, DeckManagementInput input)
@@ -480,7 +465,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 Type = type
             };
         }
-        private static CardLocation MapToDomain(CardLocationRecord record)
+        private static CardLocation MapToDomain(CardLocationDbRow record)
         {
             return CreateLocationObject(record.Id, record.Name, MapTypeFromDb(record.Type));
 

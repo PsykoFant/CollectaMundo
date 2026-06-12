@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices.Shared
+﻿namespace CollectaMundo.ApplicationServices.Shared.Operation
 {
     public record OperationResult(OperationResultCode Code, string Message = "");
     public enum OperationResultCode

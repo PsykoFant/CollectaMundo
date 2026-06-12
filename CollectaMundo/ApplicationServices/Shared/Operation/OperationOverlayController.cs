@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Shared;
 
-namespace CollectaMundo.ApplicationServices.Shared
+namespace CollectaMundo.ApplicationServices.Shared.Operation
 {
     public sealed class OperationOverlayController(OperationOverlayViewModel operationOverlayVm) : IOperationOverlayController
     {

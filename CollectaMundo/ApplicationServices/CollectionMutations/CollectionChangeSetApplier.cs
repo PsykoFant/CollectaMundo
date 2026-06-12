@@ -1,13 +1,11 @@
-﻿using CollectaMundo.ApplicationServices.CollectionMaterialization;
-using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared.Models;
 
 namespace CollectaMundo.ApplicationServices.CollectionMutations
 {
-    public sealed class CollectionChangeSetApplier(ICollectionMaterializer materializer) : ICollectionChangeSetApplier
+    public static class CollectionChangeSetApplier
     {
-        private readonly ICollectionMaterializer _materializer = materializer;
-        public void Apply(IList<CollectionCard> collection, CollectionChangeSet<CollectionCard> changes)
+        public static void Apply(IList<CollectionCard> collection, CollectionChangeSet<CollectionCard> changes)
         {
             if (collection is null || changes is null)
             {
@@ -16,11 +14,11 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
 
             if (changes.RemovedIds.Count > 0)
             {
+                var removedIds = changes.RemovedIds.ToHashSet();
+
                 for (int i = collection.Count - 1; i >= 0; i--)
                 {
-                    var card = collection[i];
-
-                    if (changes.RemovedIds.Contains(card.CardId))
+                    if (removedIds.Contains(collection[i].CardId))
                     {
                         collection.RemoveAt(i);
                     }
@@ -42,8 +40,7 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
 
                 if (index >= 0)
                 {
-                    collection[index] = _materializer.MergeIntoExisting(collection[index], incoming);
-
+                    collection[index] = incoming;
                     continue;
                 }
 

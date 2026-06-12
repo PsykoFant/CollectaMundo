@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.Shared.Operation;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {

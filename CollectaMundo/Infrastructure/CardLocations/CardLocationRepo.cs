@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations.Models;
-using CollectaMundo.DomainLogic.Shared;
-using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Models;
 using System.Data.Common;
 using System.Data.SQLite;
 
@@ -16,7 +16,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
             var created = await CreateLocationsAsync(conn, tx, [(name, type)], CancellationToken.None);
             return created.Single().Id;
         }
-        public async Task<IReadOnlyList<CardLocationRecord>> CreateLocationsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token)
+        public async Task<IReadOnlyList<CardLocationDbRow>> CreateLocationsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<(string Name, string Type)> locations, CancellationToken token)
         {
             const string sql = """
                                 INSERT INTO cardLocations (name, type)
@@ -25,7 +25,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                                 SELECT last_insert_rowid();
                                 """;
 
-            var created = new List<CardLocationRecord>(locations.Count);
+            var created = new List<CardLocationDbRow>(locations.Count);
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
             DbHelpers.AddString(cmd, "@name", "");
@@ -72,7 +72,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
         // READ
 
         // locations
-        public async Task<IReadOnlyList<CardLocationRecord>> GetAllLocationsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
+        public async Task<IReadOnlyList<CardLocationDbRow>> GetAllLocationsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
         {
             const string sql = """
                                 SELECT id, name, type
@@ -82,7 +82,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
 
-            var results = new List<CardLocationRecord>();
+            var results = new List<CardLocationDbRow>();
 
             using var reader = await cmd.ExecuteReaderAsync();
 
@@ -215,7 +215,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
         }
 
         // collection rows
-        public Task<IReadOnlyList<MyCollectionRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx)
+        public Task<IReadOnlyList<CollectionCardDbRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             const string sql = """
                                 SELECT id, uuid, language, finish, condition,
@@ -225,7 +225,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return ExecuteCollectionRowQueryAsync(conn, tx, sql);
         }
-        public async Task<IReadOnlyList<MyCollectionRow>> GetCollectionRowsByLocationIdsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, CancellationToken token = default)
+        public async Task<IReadOnlyList<CollectionCardDbRow>> GetCollectionRowsByLocationIdsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, CancellationToken token = default)
         {
             var distinctIds = GetDistinctIds(locationIds);
 
@@ -259,9 +259,9 @@ namespace CollectaMundo.Infrastructure.CardLocations
         }
 
 
-        private static async Task<IReadOnlyList<MyCollectionRow>> ExecuteCollectionRowQueryAsync(SQLiteConnection conn, SQLiteTransaction tx, string sql, Action<SQLiteCommand>? configureCommand = null, CancellationToken token = default)
+        private static async Task<IReadOnlyList<CollectionCardDbRow>> ExecuteCollectionRowQueryAsync(SQLiteConnection conn, SQLiteTransaction tx, string sql, Action<SQLiteCommand>? configureCommand = null, CancellationToken token = default)
         {
-            var rows = new List<MyCollectionRow>();
+            var rows = new List<CollectionCardDbRow>();
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
 
@@ -294,7 +294,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return await cmd.ExecuteNonQueryAsync();
         }
-        public async Task<IReadOnlyList<CardLocationRecord>> UpdateLocationTypesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> ids, string type, CancellationToken token = default)
+        public async Task<IReadOnlyList<CardLocationDbRow>> UpdateLocationTypesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> ids, string type, CancellationToken token = default)
         {
             var distinctIds = GetDistinctIds(ids);
 
@@ -336,7 +336,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 DbHelpers.AddInt32(selectCmd, parameters.Names[i], distinctIds[i]);
             }
 
-            var results = new List<CardLocationRecord>();
+            var results = new List<CardLocationDbRow>();
 
             using var reader = await selectCmd.ExecuteReaderAsync(token);
 
@@ -430,16 +430,16 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
 
         // Helpers
-        private static CardLocationRecord CreateCardLocationRecord(int locationId, string name, string type)
+        private static CardLocationDbRow CreateCardLocationRecord(int locationId, string name, string type)
         {
-            return new CardLocationRecord
+            return new CardLocationDbRow
             {
                 Id = locationId,
                 Name = name,
                 Type = type
             };
         }
-        private static MyCollectionRow MapCollectionRow(DbDataReader reader)
+        private static CollectionCardDbRow MapCollectionRow(DbDataReader reader)
         {
             var id = reader.GetInt32(reader.GetOrdinal("id"));
             var uuid = reader.GetString(reader.GetOrdinal("uuid"));
@@ -458,7 +458,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 ? null
                 : reader.GetString(commentOrdinal);
 
-            return new MyCollectionRow
+            return new CollectionCardDbRow
             {
                 CardId = id,
                 Identity = CollectionIdentityFactory.Create(uuid, condition, language, finish, locationId, comment),

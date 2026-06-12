@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using CollectaMundo.ApplicationServices.Shared.Operation;
+using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.Shared
 {

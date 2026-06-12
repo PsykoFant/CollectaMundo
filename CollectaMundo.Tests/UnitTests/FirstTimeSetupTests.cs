@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Tests.TestUtils;
 using Moq;

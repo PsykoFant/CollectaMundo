@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Shared;
-using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Models;
 using System.Data;
 using System.Data.SQLite;
 using System.Text;
@@ -557,7 +557,7 @@ namespace CollectaMundo.Infrastructure.Import
 
 
         // Final upsert step that inserts/updates myCollection based on the imported data, returning the resulting rows with their assigned CardIds. This is where we apply the "additive" logic for owned/trade counts.
-        public async Task<IReadOnlyList<MyCollectionRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token)
+        public async Task<IReadOnlyList<CollectionCardDbRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token)
         {
             const string insertSql = """
                             INSERT INTO myCollection
@@ -590,7 +590,7 @@ namespace CollectaMundo.Infrastructure.Import
                                 LIMIT 1;
                                 """;
 
-            var result = new List<MyCollectionRow>(items.Count);
+            var result = new List<CollectionCardDbRow>(items.Count);
 
             for (int i = 0; i < items.Count; i++)
             {
@@ -638,7 +638,7 @@ namespace CollectaMundo.Infrastructure.Import
 
                 var id = Convert.ToInt32(idObj);
 
-                result.Add(new MyCollectionRow
+                result.Add(new CollectionCardDbRow
                 {
                     CardId = id,
                     Identity = CollectionIdentityFactory.Create(

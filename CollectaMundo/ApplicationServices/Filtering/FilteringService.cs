@@ -17,14 +17,16 @@ namespace CollectaMundo.ApplicationServices.Filtering
                 return [.. cards];
             }
 
-            var criteria = vmFilters.Select(vm => new FilteringLogic(
-                vm.CriteriaKey,
-                vm.FilterCategory,
-                vm.SelectedOptions,
-                vm.SelectedSingleOption,
-                vm.SelectedNumericValue,
-                vm.OperatorSelection,
-                vm.DefaultText)).ToList();
+            var criteria = vmFilters
+                .Select(vm => new FilteringLogic<TCard>(
+                    vm.CriteriaKey,
+                    vm.FilterCategory,
+                    vm.SelectedOptions,
+                    vm.SelectedSingleOption,
+                    vm.SelectedNumericValue,
+                    vm.OperatorSelection,
+                    vm.DefaultText))
+                .ToList();
 
             if (criteria.Count == 0)
             {

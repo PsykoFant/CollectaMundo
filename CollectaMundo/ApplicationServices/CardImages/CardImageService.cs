@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardImages.Models.CollectaMundo.DomainLogic.CardImages.Models;

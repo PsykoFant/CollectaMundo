@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ViewModels.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows;

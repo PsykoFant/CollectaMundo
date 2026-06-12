@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.Shared.Models;
 using System.Data;
 using System.Data.SQLite;
 
@@ -23,6 +23,6 @@ namespace CollectaMundo.Infrastructure.Import
         // Tier 2: foreign languages lookup (subset uuids)
         Task<IReadOnlyDictionary<string, HashSet<string>>> FetchForeignLanguagesAsync(IReadOnlyCollection<string> uuids, IDbConnection connection, IDbTransaction? tx, CancellationToken token);
 
-        Task<IReadOnlyList<MyCollectionRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token);
+        Task<IReadOnlyList<CollectionCardDbRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token);
     }
 }

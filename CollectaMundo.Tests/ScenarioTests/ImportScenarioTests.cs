@@ -1,8 +1,8 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Import.ImportSteps;
@@ -1475,11 +1475,11 @@ namespace CollectaMundo.Tests.ScenarioTests
                     """;
             using var locationCmd = new SQLiteCommand(locationSql, uow.CurrentConnection);
             using var locationReader = await locationCmd.ExecuteReaderAsync();
-            var cardLocations = new List<CardLocationRecord>();
+            var cardLocations = new List<CardLocationDbRow>();
 
             while (await locationReader.ReadAsync())
             {
-                cardLocations.Add(new CardLocationRecord
+                cardLocations.Add(new CardLocationDbRow
                 {
                     Id = locationReader.GetInt32(0),
                     Name = locationReader.GetString(1),
