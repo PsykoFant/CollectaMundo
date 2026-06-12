@@ -11,48 +11,52 @@ namespace CollectaMundo.Infrastructure.CardLists
         {
             const string query = """
                                 SELECT 
-                                    c.scryfallOracleId AS ScryfallOracleId,
-                                    c.name             AS Name,
-                                    c.setCode          AS SetCode,
-                                    c.manaCost         AS ManaCost,
-                                    c.types            AS Types,
-                                    c.colors           AS Colors,
-                                    c.supertypes       AS SuperTypes,
-                                    c.subtypes         AS SubTypes,
-                                    c.type             AS Type,
-                                    c.keywords         AS Keywords,
-                                    c.text             AS RulesText,
-                                    c.manaValue        AS ManaValue,
-                                    c.language         AS Language,
-                                    c.uuid             AS Uuid,
-                                    c.otherFaceIds     AS OtherFaceIds,
-                                    c.finishes         AS Finishes,
-                                    c.side             AS Side,
-                                    c.rarity           AS Rarity
+                                    ci.scryfallOracleId AS ScryfallOracleId,
+                                    c.name              AS Name,
+                                    c.setCode           AS SetCode,
+                                    c.manaCost          AS ManaCost,
+                                    c.types             AS Types,
+                                    c.colors            AS Colors,
+                                    c.supertypes        AS SuperTypes,
+                                    c.subtypes          AS SubTypes,
+                                    c.type              AS Type,
+                                    c.keywords          AS Keywords,
+                                    c.text              AS RulesText,
+                                    c.manaValue         AS ManaValue,
+                                    c.language          AS Language,
+                                    c.uuid              AS Uuid,
+                                    c.otherFaceIds      AS OtherFaceIds,
+                                    c.finishes          AS Finishes,
+                                    c.side              AS Side,
+                                    c.rarity            AS Rarity
                                 FROM cards c
+                                LEFT JOIN cardIdentifiers ci
+                                    ON ci.uuid = c.uuid
 
                                 UNION ALL
 
                                 SELECT 
-                                    t.scryfallOracleId AS ScryfallOracleId,
-                                    t.name             AS Name,
-                                    t.setCode          AS SetCode,
-                                    t.manaCost         AS ManaCost,
-                                    t.types            AS Types,
-                                    t.colors           AS Colors,
-                                    t.supertypes       AS SuperTypes,
-                                    t.subtypes         AS SubTypes,
-                                    t.type             AS Type,
-                                    t.keywords         AS Keywords,
-                                    t.text             AS RulesText,
-                                    NULL               AS ManaValue,
-                                    t.language         AS Language,
-                                    t.uuid             AS Uuid,
-                                    t.otherFaceIds     AS OtherFaceIds,
-                                    t.finishes         AS Finishes,
-                                    t.side             AS Side,
-                                    NULL               AS Rarity
+                                    ti.scryfallOracleId AS ScryfallOracleId,
+                                    t.name              AS Name,
+                                    t.setCode           AS SetCode,
+                                    t.manaCost          AS ManaCost,
+                                    t.types             AS Types,
+                                    t.colors            AS Colors,
+                                    t.supertypes        AS SuperTypes,
+                                    t.subtypes          AS SubTypes,
+                                    t.type              AS Type,
+                                    t.keywords          AS Keywords,
+                                    t.text              AS RulesText,
+                                    NULL                AS ManaValue,
+                                    t.language          AS Language,
+                                    t.uuid              AS Uuid,
+                                    t.otherFaceIds      AS OtherFaceIds,
+                                    t.finishes          AS Finishes,
+                                    t.side              AS Side,
+                                    NULL                AS Rarity
                                 FROM tokens t
+                                LEFT JOIN tokenIdentifiers ti
+                                    ON ti.uuid = t.uuid
                                 """;
 
             using var cmd = new SQLiteCommand(query, conn);
