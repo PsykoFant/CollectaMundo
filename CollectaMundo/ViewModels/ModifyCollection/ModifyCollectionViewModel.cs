@@ -322,7 +322,6 @@ namespace CollectaMundo.ViewModels.ModifyCollection
             var changeSet = await _service.SubmitNewCardsWithDefaultsBatchAsync(printings, snapshot);
 
             CollectionChanged?.Invoke(this, changeSet);
-
             StatusMessage = BuildSubmitSummary(changeSet, [.. printings.Select(CollectionCardDraftFactory.FromPrintingCard)], "Added the following cards with default values:");
         }
 
@@ -421,24 +420,40 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         }
         private static string BuildSubmitSummary(CollectionChangeSet<CollectionCardDbRow> changeSet, IReadOnlyList<CollectionCardDraft> submittedCards, string summaryTitle)
         {
+            var nameByUuid = submittedCards
+                .Where(c => !string.IsNullOrWhiteSpace(c.Name))
+                .GroupBy(c => c.Uuid, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().Name!, StringComparer.OrdinalIgnoreCase);
+
+            var locationByUuid = submittedCards
+                .Where(c => c.SelectedLocationId.HasValue)
+                .GroupBy(c => c.Uuid, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().SelectedLocationDisplayName, StringComparer.OrdinalIgnoreCase);
+
             var sb = new StringBuilder();
 
             if (changeSet.AddedOrUpdated.Count > 0)
             {
                 sb.AppendLine(summaryTitle).AppendLine();
 
-                var addedOrUpdatedIdentities = changeSet.AddedOrUpdated.Select(row => row.Identity).ToHashSet();
-                var displayRows = submittedCards.Where(card => addedOrUpdatedIdentities.Contains(card.ToIdentity())).ToList();
-
-                foreach (var c in displayRows)
+                foreach (var row in changeSet.AddedOrUpdated)
                 {
+                    var identity = row.Identity;
+                    var name = nameByUuid.TryGetValue(identity.Uuid, out var cardName)
+                        ? cardName
+                        : identity.Uuid;
+                    var locationDisplayName = locationByUuid.TryGetValue(identity.Uuid, out var locationName)
+                        ? locationName
+                        : "No location";
+
                     sb.AppendLine(
-                        $"- {c.Name} " +
-                        $"(Condition: {c.SelectedCondition}, " +
-                        $"Language: {c.Language}, " +
-                        $"Finish: {c.SelectedFinish}, " +
-                        $"Owned: {c.CardsOwned}, " +
-                        $"Trade: {c.CardsForTrade})");
+                        $"- {name} " +
+                        $"(Condition: {identity.Condition}, " +
+                        $"Language: {identity.Language}, " +
+                        $"Finish: {identity.Finish}, " +
+                        $"Location: {locationDisplayName}, " +
+                        $"Owned: {row.CardsOwned}, " +
+                        $"Trade: {row.CardsForTrade})");
                 }
             }
 
@@ -449,14 +464,13 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                     sb.AppendLine();
                 }
 
-                sb.AppendLine("Deleted the following cards from your collection:").AppendLine();
+                sb.AppendLine("Deleted the following cards from your collection:")
+                  .AppendLine();
 
-                var deletedCards = submittedCards.Where(c => c.CardId.HasValue && changeSet.RemovedIds.Contains(c.CardId.Value)).ToList();
-
-                foreach (var c in deletedCards)
+                foreach (var c in submittedCards.Where(c => c.CardId.HasValue && changeSet.RemovedIds.Contains(c.CardId.Value)))
                 {
                     sb.AppendLine(
-                        $"- {c.Name} " +
+                        $"- {c.Name ?? c.Uuid} " +
                         $"(Condition: {c.SelectedCondition}, " +
                         $"Language: {c.Language}, " +
                         $"Finish: {c.SelectedFinish})");

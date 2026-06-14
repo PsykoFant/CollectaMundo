@@ -54,9 +54,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 SetName = selectedCard.SetName,
 
                 FinishOptions = [.. metadata.AvailableFinishes],
-                OtherLanguages = NormalizeLanguages(
-                    metadata.AvailableLanguages,
-                    selectedCard.Language)
+                OtherLanguages = NormalizeLanguages(metadata.AvailableLanguages, selectedCard.Language)
             };
 
             ApplyNewDefaults(draft, selectedCard);
@@ -73,9 +71,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
             draft.SelectedFinish =
                 ChooseDefaultFinish([.. draft.FinishOptions])
                 ?? "nonfoil";
-
-            draft.Language =
-                ChooseDefaultLanguage([.. draft.OtherLanguages]);
+            draft.Language = ChooseDefaultLanguage([.. draft.OtherLanguages]);
 
             draft.SelectedLocationId = null;
             draft.Comment = null;

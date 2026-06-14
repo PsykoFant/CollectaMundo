@@ -53,6 +53,11 @@ namespace CollectaMundo.Data.Filtering
         }
         private static FilterDefaults BuildCollectionDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<CollectionCard> cards)
         {
+            if (!mapping.GenerateFilterOptions)
+            {
+                return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues: [], explicitOptions: null);
+            }
+
             if (criteriaKey.Equals("SelectedLocationDisplayName", StringComparison.OrdinalIgnoreCase))
             {
                 var explicitOptions = cards
@@ -66,19 +71,20 @@ namespace CollectaMundo.Data.Filtering
                     .OrderBy(o => o.DisplayName, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
-                return BuildDefaultFromRawValues(
-                    criteriaKey,
-                    mapping,
-                    rawValues: [],
-                    explicitOptions);
+                return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues: [], explicitOptions);
             }
 
-            if (mapping.CollectionExtractor is null)
+            if (mapping.CollectionOptionExtractor is null)
             {
-                throw new Exception($"Collection criteria key '{criteriaKey}' is missing CollectionExtractor.");
+                throw new Exception(
+                    $"Collection criteria key '{criteriaKey}' generates options but has no CollectionOptionExtractor.");
             }
 
-            var rawValues = cards.Select(mapping.CollectionExtractor).Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v!).ToList();
+            var rawValues = cards
+                .Select(mapping.CollectionOptionExtractor)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v!)
+                .ToList();
 
             return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues, explicitOptions: null);
         }

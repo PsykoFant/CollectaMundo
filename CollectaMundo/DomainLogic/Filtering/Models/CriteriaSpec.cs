@@ -10,5 +10,6 @@ namespace CollectaMundo.DomainLogic.Filtering.Models
         OperatorType[]? Operators,
         bool ShouldNotSplit,
         FilterDataSource DataSource,
-        Func<CollectionCard, string?>? CollectionExtractor = null);
+        bool GenerateFilterOptions = true,
+        Func<CollectionCard, string?>? CollectionOptionExtractor = null);
 }

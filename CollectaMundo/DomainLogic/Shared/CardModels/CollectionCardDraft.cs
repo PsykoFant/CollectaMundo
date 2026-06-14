@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
-using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -59,9 +58,5 @@ namespace CollectaMundo.DomainLogic.CollectionMutations.Models
 
         [ObservableProperty]
         private string? comment;
-        public CollectionIdentity ToIdentity()
-        {
-            return CollectionIdentityFactory.Create(Uuid, SelectedCondition, Language, SelectedFinish, SelectedLocationId, Comment);
-        }
     }
 }

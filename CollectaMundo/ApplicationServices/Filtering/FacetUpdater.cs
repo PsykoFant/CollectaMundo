@@ -13,7 +13,7 @@ namespace CollectaMundo.ApplicationServices.Filtering
         {
             foreach (var (key, spec) in FilterCriteriaMappings.CriteriaMappings)
             {
-                if (spec.DataSource != FilterDataSource.Collection || spec.CollectionExtractor is null)
+                if (spec.DataSource != FilterDataSource.Collection || spec.CollectionOptionExtractor is null)
                 {
                     continue;
                 }
@@ -39,7 +39,7 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     continue;
                 }
 
-                var values = collection.Select(spec.CollectionExtractor)
+                var values = collection.Select(spec.CollectionOptionExtractor)
                     .Where(s => !string.IsNullOrWhiteSpace(s))
                     .Select(s => s!)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
