@@ -1,16 +1,12 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace CollectaMundo.Presentation.Behaviors
 {
     public static class ListViewColumnRefreshBehavior
     {
-        public static readonly DependencyProperty RefreshTriggerProperty =
-            DependencyProperty.RegisterAttached(
-                "RefreshTrigger",
-                typeof(int),
-                typeof(ListViewColumnRefreshBehavior),
-                new PropertyMetadata(0, OnRefreshTriggerChanged));
+        public static readonly DependencyProperty RefreshTriggerProperty = DependencyProperty.RegisterAttached("RefreshTrigger", typeof(int), typeof(ListViewColumnRefreshBehavior), new PropertyMetadata(0, OnRefreshTriggerChanged));
 
         public static void SetRefreshTrigger(DependencyObject element, int value)
         {
@@ -24,12 +20,13 @@ namespace CollectaMundo.Presentation.Behaviors
 
         private static void OnRefreshTriggerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is ListView listView)
+            if (d is not ListView listView)
             {
-                AdjustColumnWidths(listView);
+                return;
             }
-        }
 
+            listView.Dispatcher.BeginInvoke(() => AdjustColumnWidths(listView), DispatcherPriority.Loaded);
+        }
         private static void AdjustColumnWidths(ListView listView)
         {
             if (listView.View is GridView gridView)

@@ -4,7 +4,7 @@ using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.ModifyCollection.BindinViewModels
 {
-    public sealed partial class ComboBindingViewModel(IEnumerable items,Func<object?> getter,Action<object?> setter,ICommand refreshCommand) : ObservableObject
+    public sealed partial class ComboBindingViewModel(IEnumerable items, Func<object?> getter, Action<object?> setter, ICommand refreshCommand) : ObservableObject
     {
         public IEnumerable Items { get; } = items;
 

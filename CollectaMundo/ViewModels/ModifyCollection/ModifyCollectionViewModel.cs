@@ -42,8 +42,6 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 OnPropertyChanged(nameof(IsCollectionEditVisible));
                 OnPropertyChanged(nameof(ShowCounts));
             };
-
-            RefreshColumnsTrigger++;
         }
         partial void OnStatusMessageChanged(string? oldValue, string newValue)
         {
