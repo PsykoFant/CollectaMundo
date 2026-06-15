@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.Tests.TestUtils;
@@ -406,85 +407,114 @@ namespace CollectaMundo.Tests.ScenarioTests
             await uow.BeginReadOnlyAsync();
 
             const string sql = @"
-            SELECT uuid AS Uuids,
-                   condition AS Conditions,
-                   finish AS Finishes,
-                   language AS Languages,
-                   cardsOwned AS CardsOwned,
-                   cardsForTrade AS CardsForTrade
+            SELECT id,
+                   uuid,
+                   condition,
+                   finish,
+                   language,
+                   locationId,
+                   comment,
+                   cardsOwned,
+                   cardsForTrade
             FROM myCollection;
             ";
 
             using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
-
             using var reader = await cmd.ExecuteReaderAsync();
 
-            var myCollectionDB = new List<CardSet>();
+            var myCollectionDb = new List<CollectionCardDbRow>();
 
             while (await reader.ReadAsync())
             {
-                myCollectionDB.Add(new CardSet
+                int? locationId = reader["locationId"] == DBNull.Value
+                    ? null
+                    : Convert.ToInt32(reader["locationId"]);
+
+                string? comment = reader["comment"] == DBNull.Value
+                    ? null
+                    : reader["comment"]?.ToString();
+
+                var identity = CollectionIdentityFactory.Create(uuid: reader.GetString(1), condition: reader.GetString(2), language: reader.GetString(4), finish: reader.GetString(3), locationId: locationId, comment: comment);
+
+                myCollectionDb.Add(new CollectionCardDbRow
                 {
-                    Uuid = reader.GetString(0),
-                    SelectedCondition = reader.GetString(1),
-                    SelectedFinish = reader.GetString(2),
-                    Language = reader.GetString(3),
-                    CardsOwned = reader.GetInt32(4),
-                    CardsForTrade = reader.GetInt32(5)
+                    CardId = reader.GetInt32(0),
+                    Identity = identity,
+                    CardsOwned = reader.GetInt32(7),
+                    CardsForTrade = reader.GetInt32(8)
                 });
             }
 
             await uow.CommitAsync();
 
-            myCollectionInMemory.Should().HaveCount(myCollectionDB.Count);
+            myCollectionInMemory.Should().HaveCount(myCollectionDb.Count);
 
-            var prismaticEndingDb = myCollectionDB.Single(c =>
-                c.Uuid == prismaticEnding.Uuid &&
-                c.SelectedCondition == prismaticEnding.SelectedCondition &&
-                c.SelectedFinish == prismaticEnding.SelectedFinish &&
-                c.Language == prismaticEnding.Language &&
-                c.SelectedLocationId == prismaticEnding.SelectedLocationId &&
-                c.Comment == prismaticEnding.Comment);
+            // Prismatic Ending
+            var expectedIdentity = CollectionIdentityFactory.Create(
+                prismaticEnding.Uuid,
+                prismaticEnding.SelectedCondition,
+                prismaticEnding.Language,
+                prismaticEnding.SelectedFinish,
+                prismaticEnding.SelectedLocationId,
+                prismaticEnding.Comment);
+
+            var prismaticEndingDb = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             prismaticEndingDb.CardsOwned.Should().Be(prismaticEnding.CardsOwned);
             prismaticEndingDb.CardsForTrade.Should().Be(prismaticEnding.CardsForTrade);
 
-            var vexingArcanixDb = myCollectionDB.Single(c =>
-                c.Uuid == vexingArcanix.Uuid &&
-                c.SelectedCondition == vexingArcanix.SelectedCondition &&
-                c.SelectedFinish == vexingArcanix.SelectedFinish &&
-                c.Language == vexingArcanix.Language &&
-                c.SelectedLocationId == vexingArcanix.SelectedLocationId &&
-                c.Comment == vexingArcanix.Comment);
+            // Vexing Arcanix
+            expectedIdentity = CollectionIdentityFactory.Create(
+                vexingArcanix.Uuid,
+                vexingArcanix.SelectedCondition,
+                vexingArcanix.Language,
+                vexingArcanix.SelectedFinish,
+                vexingArcanix.SelectedLocationId,
+                vexingArcanix.Comment);
+
+            var vexingArcanixDb = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             vexingArcanixDb.CardsOwned.Should().Be(vexingArcanix.CardsOwned);
             vexingArcanixDb.CardsForTrade.Should().Be(vexingArcanix.CardsForTrade);
 
-            var sokratesDb = myCollectionDB.Single(c =>
-                c.Uuid == sokrates.Uuid &&
-                c.SelectedCondition == sokrates.SelectedCondition &&
-                c.SelectedFinish == sokrates.SelectedFinish &&
-                c.Language == sokrates.Language &&
-                c.SelectedLocationId == sokrates.SelectedLocationId &&
-                c.Comment == sokrates.Comment);
+            // Sokrates
+            expectedIdentity = CollectionIdentityFactory.Create(
+                sokrates.Uuid,
+                sokrates.SelectedCondition,
+                sokrates.Language,
+                sokrates.SelectedFinish,
+                sokrates.SelectedLocationId,
+                sokrates.Comment);
+
+            var sokratesDb = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             sokratesDb.CardsOwned.Should().Be(sokrates.CardsOwned);
             sokratesDb.CardsForTrade.Should().Be(sokrates.CardsForTrade);
 
-            var syphonNearMintDb = myCollectionDB.Single(c =>
-                c.Uuid == nearMint.Uuid &&
-                c.SelectedCondition == nearMint.SelectedCondition &&
-                c.SelectedFinish == nearMint.SelectedFinish &&
-                c.Language == nearMint.Language &&
-                c.SelectedLocationId == nearMint.SelectedLocationId &&
-                c.Comment == nearMint.Comment);
+            // Syphon Soul - check both versions
+
+            expectedIdentity = CollectionIdentityFactory.Create(
+                nearMint.Uuid,
+                nearMint.SelectedCondition,
+                nearMint.Language,
+                nearMint.SelectedFinish,
+                nearMint.SelectedLocationId,
+                nearMint.Comment);
+
+            var syphonNearMintDb = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             syphonNearMintDb.CardsOwned.Should().Be(nearMint.CardsOwned);
             syphonNearMintDb.CardsForTrade.Should().Be(nearMint.CardsForTrade);
 
-            var syphonMintDb = myCollectionDB.Single(c =>
-                c.Uuid == mint.Uuid &&
-                c.SelectedCondition == mint.SelectedCondition &&
-                c.SelectedFinish == mint.SelectedFinish &&
-                c.Language == mint.Language &&
-                c.SelectedLocationId == mint.SelectedLocationId &&
-                c.Comment == mint.Comment);
+            expectedIdentity = CollectionIdentityFactory.Create(
+                mint.Uuid,
+                mint.SelectedCondition,
+                mint.Language,
+                mint.SelectedFinish,
+                mint.SelectedLocationId,
+                mint.Comment);
+
+            var syphonMintDb = myCollectionDb.Single(c => c.Identity == expectedIdentity);
             syphonMintDb.CardsOwned.Should().Be(mint.CardsOwned);
             syphonMintDb.CardsForTrade.Should().Be(mint.CardsForTrade);
 
@@ -808,62 +838,86 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
             using var reader = await cmd.ExecuteReaderAsync();
-            var myCollectionDB = new List<CardSet>();
+            var myCollectionDb = new List<CollectionCardDbRow>();
 
             while (await reader.ReadAsync())
             {
-                myCollectionDB.Add(new CardSet
+                int? locationId = reader["locationId"] == DBNull.Value
+                    ? null
+                    : Convert.ToInt32(reader["locationId"]);
+
+                string? comment = reader["comment"] == DBNull.Value
+                    ? null
+                    : reader["comment"]?.ToString();
+
+                var identity = CollectionIdentityFactory.Create(uuid: reader.GetString(1), condition: reader.GetString(2), language: reader.GetString(4), finish: reader.GetString(3), locationId: locationId, comment: comment);
+
+                myCollectionDb.Add(new CollectionCardDbRow
                 {
-                    Uuid = reader.GetString(0),
-                    SelectedCondition = reader.GetString(1),
-                    SelectedFinish = reader.GetString(2),
-                    Language = reader.GetString(3),
-                    CardsOwned = reader.GetInt32(4),
-                    CardsForTrade = reader.GetInt32(5)
+                    CardId = reader.GetInt32(0),
+                    Identity = identity,
+                    CardsOwned = reader.GetInt32(7),
+                    CardsForTrade = reader.GetInt32(8)
                 });
             }
 
             await uow.CommitAsync();
 
-            myCollectionInMemory.Should().HaveCount(myCollectionDB.Count);
+            myCollectionInMemory.Should().HaveCount(myCollectionDb.Count);
 
-            var chillarpillarDb = myCollectionDB.Single(c =>
-                c.Uuid == chillarpillar.Uuid &&
-                c.SelectedCondition == chillarpillar.SelectedCondition &&
-                c.SelectedFinish == chillarpillar.SelectedFinish &&
-                c.Language == chillarpillar.Language &&
-                c.SelectedLocationId == chillarpillar.SelectedLocationId &&
-                c.Comment == chillarpillar.Comment);
+            // Chillarpillar
+            var expectedIdentity = CollectionIdentityFactory.Create(
+                chillarpillar.Uuid,
+                chillarpillar.SelectedCondition,
+                chillarpillar.Language,
+                chillarpillar.SelectedFinish,
+                chillarpillar.SelectedLocationId,
+                chillarpillar.Comment);
+
+            var chillarpillarDb = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             chillarpillarDb.CardsOwned.Should().Be(chillarpillar.CardsOwned);
             chillarpillarDb.CardsForTrade.Should().Be(chillarpillar.CardsForTrade);
 
-            var realmWalkerDb = myCollectionDB.Single(c =>
-                c.Uuid == realmwalker.Uuid &&
-                c.SelectedCondition == realmwalker.SelectedCondition &&
-                c.SelectedFinish == realmwalker.SelectedFinish &&
-                c.Language == realmwalker.Language &&
-                c.SelectedLocationId == realmwalker.SelectedLocationId &&
-                c.Comment == realmwalker.Comment);
-            realmWalkerDb.CardsOwned.Should().Be(realmwalker.CardsOwned);
-            realmWalkerDb.CardsForTrade.Should().Be(realmwalker.CardsForTrade);
+            // Realmwalker
+            expectedIdentity = CollectionIdentityFactory.Create(
+               realmwalker.Uuid,
+               realmwalker.SelectedCondition,
+               realmwalker.Language,
+               realmwalker.SelectedFinish,
+               realmwalker.SelectedLocationId,
+               realmwalker.Comment);
 
-            var zombieDb = myCollectionDB.Single(c =>
-                c.Uuid == zombie.Uuid &&
-                c.SelectedCondition == zombie.SelectedCondition &&
-                c.SelectedFinish == zombie.SelectedFinish &&
-                c.Language == zombie.Language &&
-                c.SelectedLocationId == zombie.SelectedLocationId &&
-                c.Comment == zombie.Comment);
+            var realmwalkerDb = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
+            realmwalkerDb.CardsOwned.Should().Be(realmwalker.CardsOwned);
+            realmwalkerDb.CardsForTrade.Should().Be(realmwalker.CardsForTrade);
+
+            // Zombie
+            expectedIdentity = CollectionIdentityFactory.Create(
+               zombie.Uuid,
+               zombie.SelectedCondition,
+               zombie.Language,
+               zombie.SelectedFinish,
+               zombie.SelectedLocationId,
+               zombie.Comment);
+
+            var zombieDb = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             zombieDb.CardsOwned.Should().Be(zombie.CardsOwned);
             zombieDb.CardsForTrade.Should().Be(zombie.CardsForTrade);
 
-            var neverReturnDb = myCollectionDB.Single(c =>
-                c.Uuid == neverReturn.Uuid &&
-                c.SelectedCondition == neverReturn.SelectedCondition &&
-                c.SelectedFinish == neverReturn.SelectedFinish &&
-                c.Language == neverReturn.Language &&
-                c.SelectedLocationId == neverReturn.SelectedLocationId &&
-                c.Comment == neverReturn.Comment);
+            // Never // Return
+            expectedIdentity = CollectionIdentityFactory.Create(
+                neverReturn.Uuid,
+                neverReturn.SelectedCondition,
+                neverReturn.Language,
+                neverReturn.SelectedFinish,
+                neverReturn.SelectedLocationId,
+                neverReturn.Comment);
+
+            var neverReturnDb = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             neverReturnDb.CardsOwned.Should().Be(neverReturn.CardsOwned);
             neverReturnDb.CardsForTrade.Should().Be(neverReturn.CardsForTrade);
 
@@ -1121,53 +1175,72 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
             using var reader = await cmd.ExecuteReaderAsync();
-            var myCollectionDB = new List<CardSet>();
+            var myCollectionDb = new List<CollectionCardDbRow>();
 
             while (await reader.ReadAsync())
             {
-                myCollectionDB.Add(new CardSet
+                int? locationId = reader["locationId"] == DBNull.Value
+                    ? null
+                    : Convert.ToInt32(reader["locationId"]);
+
+                string? comment = reader["comment"] == DBNull.Value
+                    ? null
+                    : reader["comment"]?.ToString();
+
+                var identity = CollectionIdentityFactory.Create(uuid: reader.GetString(1), condition: reader.GetString(2), language: reader.GetString(4), finish: reader.GetString(3), locationId: locationId, comment: comment);
+
+                myCollectionDb.Add(new CollectionCardDbRow
                 {
-                    Uuid = reader.GetString(0),
-                    SelectedCondition = reader.GetString(1),
-                    SelectedFinish = reader.GetString(2),
-                    Language = reader.GetString(3),
-                    SelectedLocationId = reader.IsDBNull(4) ? null : reader.GetInt32(4),
-                    CardsOwned = reader.GetInt32(5),
-                    CardsForTrade = reader.GetInt32(6)
+                    CardId = reader.GetInt32(0),
+                    Identity = identity,
+                    CardsOwned = reader.GetInt32(7),
+                    CardsForTrade = reader.GetInt32(8)
                 });
             }
 
             await uow.CommitAsync();
 
-            myCollectionInMemory.Should().HaveCount(myCollectionDB.Count);
+            myCollectionInMemory.Should().HaveCount(myCollectionDb.Count);
 
-            var angel1Db = myCollectionDB.Single(c =>
-                c.Uuid == angel1.Uuid &&
-                c.SelectedCondition == angel1.SelectedCondition &&
-                c.SelectedFinish == angel1.SelectedFinish &&
-                c.Language == angel1.Language &&
-                c.SelectedLocationId == angel1.SelectedLocationId &&
-                c.Comment == angel1.Comment);
+            // Angel 1
+            var expectedIdentity = CollectionIdentityFactory.Create(
+                angel1.Uuid,
+                angel1.SelectedCondition,
+                angel1.Language,
+                angel1.SelectedFinish,
+                angel1.SelectedLocationId,
+                angel1.Comment);
+
+            var angel1Db = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             angel1Db.CardsOwned.Should().Be(angel1.CardsOwned);
             angel1Db.CardsForTrade.Should().Be(angel1.CardsForTrade);
 
-            var angel2Db = myCollectionDB.Single(c =>
-                c.Uuid == angel2.Uuid &&
-                c.SelectedCondition == angel2.SelectedCondition &&
-                c.SelectedFinish == angel2.SelectedFinish &&
-                c.Language == angel2.Language &&
-                c.SelectedLocationId == angel2.SelectedLocationId &&
-                c.Comment == angel2.Comment);
+            // Angel 2
+            expectedIdentity = CollectionIdentityFactory.Create(
+                angel2.Uuid,
+                angel2.SelectedCondition,
+                angel2.Language,
+                angel2.SelectedFinish,
+                angel2.SelectedLocationId,
+                angel2.Comment);
+
+            var angel2Db = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             angel2Db.CardsOwned.Should().Be(angel2.CardsOwned);
             angel2Db.CardsForTrade.Should().Be(angel2.CardsForTrade);
 
-            var angel3Db = myCollectionDB.Single(c =>
-                c.Uuid == angel3.Uuid &&
-                c.SelectedCondition == angel3.SelectedCondition &&
-                c.SelectedFinish == angel3.SelectedFinish &&
-                c.Language == angel3.Language &&
-                c.SelectedLocationId == angel3.SelectedLocationId &&
-                c.Comment == angel3.Comment);
+            // Angel 3
+            expectedIdentity = CollectionIdentityFactory.Create(
+                angel3.Uuid,
+                angel3.SelectedCondition,
+                angel3.Language,
+                angel3.SelectedFinish,
+                angel3.SelectedLocationId,
+                angel3.Comment);
+
+            var angel3Db = myCollectionDb.Single(c => c.Identity == expectedIdentity);
+
             angel3Db.CardsOwned.Should().Be(angel3.CardsOwned);
             angel3Db.CardsForTrade.Should().Be(angel3.CardsForTrade);
 
@@ -1452,20 +1525,26 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
             using var reader = await cmd.ExecuteReaderAsync();
-            var myCollectionDB = new List<CardSet>();
+            var myCollectionDb = new List<CollectionCardDbRow>();
 
             while (await reader.ReadAsync())
             {
-                myCollectionDB.Add(new CardSet
+                int? locationId = reader["locationId"] == DBNull.Value
+                    ? null
+                    : Convert.ToInt32(reader["locationId"]);
+
+                string? comment = reader["comment"] == DBNull.Value
+                    ? null
+                    : reader["comment"]?.ToString();
+
+                var identity = CollectionIdentityFactory.Create(uuid: reader.GetString(1), condition: reader.GetString(2), language: reader.GetString(4), finish: reader.GetString(3), locationId: locationId, comment: comment);
+
+                myCollectionDb.Add(new CollectionCardDbRow
                 {
-                    Uuid = reader.GetString(0),
-                    SelectedCondition = reader.GetString(1),
-                    SelectedFinish = reader.GetString(2),
-                    Language = reader.GetString(3),
-                    SelectedLocationId = reader.IsDBNull(4) ? null : reader.GetInt32(4),
-                    Comment = reader.IsDBNull(5) ? null : reader.GetString(5),
-                    CardsOwned = reader.GetInt32(6),
-                    CardsForTrade = reader.GetInt32(7)
+                    CardId = reader.GetInt32(0),
+                    Identity = identity,
+                    CardsOwned = reader.GetInt32(7),
+                    CardsForTrade = reader.GetInt32(8)
                 });
             }
 
@@ -1489,59 +1568,74 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             await uow.CommitAsync();
 
-            myCollectionInMemory.Should().HaveCount(myCollectionDB.Count);
+            myCollectionInMemory.Should().HaveCount(myCollectionDb.Count);
 
-            var angel1Db = myCollectionDB.Single(c =>
-                c.Uuid == angel1.Uuid &&
-                c.SelectedCondition == angel1.SelectedCondition &&
-                c.SelectedFinish == angel1.SelectedFinish &&
-                c.Language == angel1.Language &&
-                c.SelectedLocationId == angel1.SelectedLocationId &&
-                c.Comment == angel1.Comment);
+            // Angel 1
+            var expectedIdentity = CollectionIdentityFactory.Create(
+                angel1.Uuid,
+                angel1.SelectedCondition,
+                angel1.Language,
+                angel1.SelectedFinish,
+                angel1.SelectedLocationId,
+                angel1.Comment);
+
+            var angel1Db = myCollectionDb.Single(c => c.Identity == expectedIdentity);
 
             angel1Db.CardsOwned.Should().Be(angel1.CardsOwned);
             angel1Db.CardsForTrade.Should().Be(angel1.CardsForTrade);
 
-            var angel2Db = myCollectionDB.Single(c =>
-                c.Uuid == angel2.Uuid &&
-                c.SelectedCondition == angel2.SelectedCondition &&
-                c.SelectedFinish == angel2.SelectedFinish &&
-                c.Language == angel2.Language &&
-                c.SelectedLocationId == angel2.SelectedLocationId &&
-                c.Comment == angel2.Comment);
+            // Angel 2
+            expectedIdentity = CollectionIdentityFactory.Create(
+                angel2.Uuid,
+                angel2.SelectedCondition,
+                angel2.Language,
+                angel2.SelectedFinish,
+                angel2.SelectedLocationId,
+                angel2.Comment);
+
+            var angel2Db = myCollectionDb.Single(c => c.Identity == expectedIdentity);
 
             angel2Db.CardsOwned.Should().Be(angel2.CardsOwned);
             angel2Db.CardsForTrade.Should().Be(angel2.CardsForTrade);
 
-            var sailBack3Db = myCollectionDB.Single(c =>
-                c.Uuid == sailback3.Uuid &&
-                c.SelectedCondition == sailback3.SelectedCondition &&
-                c.SelectedFinish == sailback3.SelectedFinish &&
-                c.Language == sailback3.Language &&
-                c.SelectedLocationId == sailback3.SelectedLocationId &&
-                c.Comment == sailback3.Comment);
+            // Sailback 3
+            expectedIdentity = CollectionIdentityFactory.Create(
+               sailback3.Uuid,
+               sailback3.SelectedCondition,
+               sailback3.Language,
+               sailback3.SelectedFinish,
+               sailback3.SelectedLocationId,
+               sailback3.Comment);
+
+            var sailBack3Db = myCollectionDb.Single(c => c.Identity == expectedIdentity);
 
             sailBack3Db.CardsOwned.Should().Be(sailback3.CardsOwned);
             sailBack3Db.CardsForTrade.Should().Be(sailback3.CardsForTrade);
 
-            var sailBack4Db = myCollectionDB.Single(c =>
-                c.Uuid == sailback4.Uuid &&
-                c.SelectedCondition == sailback4.SelectedCondition &&
-                c.SelectedFinish == sailback4.SelectedFinish &&
-                c.Language == sailback4.Language &&
-                c.SelectedLocationId == sailback4.SelectedLocationId &&
-                c.Comment == sailback4.Comment);
+            // Sailback 4
+            expectedIdentity = CollectionIdentityFactory.Create(
+               sailback4.Uuid,
+               sailback4.SelectedCondition,
+               sailback4.Language,
+               sailback4.SelectedFinish,
+               sailback4.SelectedLocationId,
+               sailback4.Comment);
+
+            var sailBack4Db = myCollectionDb.Single(c => c.Identity == expectedIdentity);
 
             sailBack4Db.CardsOwned.Should().Be(sailback4.CardsOwned);
             sailBack4Db.CardsForTrade.Should().Be(sailback4.CardsForTrade);
 
-            var sailBack5Db = myCollectionDB.Single(c =>
-                c.Uuid == sailback5.Uuid &&
-                c.SelectedCondition == sailback5.SelectedCondition &&
-                c.SelectedFinish == sailback5.SelectedFinish &&
-                c.Language == sailback5.Language &&
-                c.SelectedLocationId == sailback5.SelectedLocationId &&
-                c.Comment == sailback5.Comment);
+            // Sailback 5
+            expectedIdentity = CollectionIdentityFactory.Create(
+               sailback5.Uuid,
+               sailback5.SelectedCondition,
+               sailback5.Language,
+               sailback5.SelectedFinish,
+               sailback5.SelectedLocationId,
+               sailback5.Comment);
+
+            var sailBack5Db = myCollectionDb.Single(c => c.Identity == expectedIdentity);
 
             sailBack5Db.CardsOwned.Should().Be(sailback5.CardsOwned);
             sailBack5Db.CardsForTrade.Should().Be(sailback5.CardsForTrade);
