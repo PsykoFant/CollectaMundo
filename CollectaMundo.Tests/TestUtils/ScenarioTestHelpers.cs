@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
-using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
 using System.Data.Common;
@@ -21,7 +22,12 @@ namespace CollectaMundo.Tests.TestUtils
             Assert.Equal(22, mainVM.MyCollectionVM.FilteredCards.Count);
             Assert.True(string.IsNullOrEmpty(mainVM.FilterVM.FilterSummary));
         }
-        public static CardSet FindCard(IEnumerable<CardSet> source, string uuid)
+        public static PrintingCard FindCard(IEnumerable<PrintingCard> source, string uuid)
+        {
+            return source.Single(c => string.Equals(c.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static CollectionCard FindCard(IEnumerable<CollectionCard> source, string uuid)
         {
             return source.Single(c => string.Equals(c.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
         }

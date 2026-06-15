@@ -1,6 +1,7 @@
-﻿using CollectaMundo.Presentation.Converters;
+﻿using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.Presentation.Converters;
 using CollectaMundo.Tests.TestUtils;
-using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.CardLists;
 using System.Globalization;
 
 namespace CollectaMundo.Tests.UnitTests
@@ -12,8 +13,8 @@ namespace CollectaMundo.Tests.UnitTests
         public void Converter_Reflects_ViewModel_Counts()
         {
             // Arrange – populate the view‑model exactly as you already do in other tests
-            var vm = new CardListViewModel();
-            vm.Cards.AddRange(TestCardFactory.GetTestCards());
+            var vm = new CardListViewModel<PrintingCard>();
+            vm.Cards.AddRange(TestCardFactory.GetTestPrintings());
 
             // pretend the user applied a filter that left 7 cards
             vm.FilteredCards = [.. vm.Cards.Take(7)];

@@ -3,7 +3,6 @@ using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
-using CollectaMundo.ApplicationServices.CollectionMaterialization;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
@@ -13,10 +12,9 @@ using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
-using CollectaMundo.DomainLogic.CardLists.Aggregation;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CollectionMutations;
 using CollectaMundo.DomainLogic.Filtering;
@@ -37,6 +35,7 @@ using CollectaMundo.Infrastructure.KeyedDataProvider;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.Tests.ScenarioTests;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
@@ -48,7 +47,7 @@ public static class TestAppBuilder
     public static async Task<(MainWindowViewModel VM, OperationOverlayViewModel OperationOverlayVM)> BuildAsync(
         InMemoryDatabaseFixture fixture,
         IDbConnectionFactory dbFactory,
-        List<CollectionChangeSet<CardSet>>? eventSink = null,
+        List<CollectionChangeSet<CollectionCardDbRow>>? eventSink = null,
         IUserPromptService? promptOverride = null,
         IFileSystemPicker? filePickerOverride = null)
     {
@@ -89,39 +88,24 @@ public static class TestAppBuilder
             new KeyedDataProviderRepo(),
             getRetailer);
 
-        var collectionMaterializer = new CollectionMaterializer();
-
         var cardListService = new CardListService(
             uowRunner,
             new CardListRepo(),
             new FilterDefaultsLogic(),
-            keyedDataProviderService,
-            new CardCoreAggregator(),
-            collectionMaterializer);
+            keyedDataProviderService);
 
         var collectionMutationsLogic = new CollectionMutationsLogic();
         var collectionMutationsRepo = new CollectionMutationsRepo();
-        var collectionMutationsService = new CollectionMutationsService(collectionMutationsRepo);
-        var collectionChangeSetApplier = new CollectionChangeSetApplier(collectionMaterializer);
+        var collectionMutationsService = new CollectionMutationsService(collectionMutationsLogic, collectionMutationsRepo);
 
         var cardLocationLookupStore = new CardLocationLookupStore();
         var cardLocationRepo = new CardLocationRepo();
-        var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsLogic, collectionMutationsService);
+        var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
         var deckManagementStore = new DeckManagementStore(cardLocationService);
 
-        var modifyService = new ModifyCollectionService(
-            uowRunner,
-            new ModifyCollectionLogic(),
-            new ModifyCollectionRepo(),
-            collectionMutationsService,
-            collectionMutationsLogic);
+        var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
 
-        var cardImageService = new CardImageService(
-            uowRunner,
-            remoteLookups,
-            new CardImageLogic(),
-            new CardImageRepo(),
-            new CardImageDownloader(settings));
+        var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), new CardImageDownloader(settings));
 
         var picker = filePickerOverride ?? new FileSystemPicker();
 
@@ -143,8 +127,6 @@ public static class TestAppBuilder
             userPromptService,
             picker,
             cardListService,
-            collectionMaterializer,
-            collectionChangeSetApplier,
             cardLocationService,
             cardLocationLookupStore,
             deckManagementStore,

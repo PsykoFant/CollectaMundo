@@ -6,6 +6,8 @@ using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels.ModifyCollection;
 using System.Diagnostics;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.Tests.ScenarioTests
 {
@@ -314,18 +316,22 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             foreach (var card in _ctx.MainVM.AllCardsVM.Cards)
             {
-                var setCode = card.Core?.SetCode ?? card.SetCode ?? string.Empty;
-                if (!string.IsNullOrEmpty(setCode) && validSetCodes.Contains(setCode))
+                var setCode = card.SetCode ?? string.Empty;
+
+                if (!string.IsNullOrEmpty(setCode) &&
+                    validSetCodes.Contains(setCode))
                 {
                     var image = card.KeyRuneImage;
+
                     if (image == null)
                     {
                         Debug.WriteLine($"Missing SetIconImage for card '{card.Name}' set '{setCode}'");
                     }
-                    Assert.NotNull(image);
-                    Assert.IsAssignableFrom<System.Windows.Media.ImageSource>(image);
 
-                    if (image is System.Windows.Media.Imaging.BitmapImage bmp)
+                    Assert.NotNull(image);
+                    Assert.IsAssignableFrom<ImageSource>(image);
+
+                    if (image is BitmapImage bmp)
                     {
                         Assert.True(bmp.IsFrozen, "Bitmap should be frozen for thread safety.");
                     }
@@ -334,7 +340,8 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             foreach (var card in _ctx.MainVM.MyCollectionVM.Cards)
             {
-                var setCode = card.Core?.SetCode ?? card.SetCode ?? string.Empty;
+                var setCode = card.SetCode ?? string.Empty;
+
                 if (!string.IsNullOrEmpty(setCode) && validSetCodes.Contains(setCode))
                 {
                     var image = card.KeyRuneImage;
@@ -947,7 +954,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             const string lang = "English";
             const string finish = "nonfoil";
 
-            int OwnedTotal(IEnumerable<CardSet> list) =>
+            static int OwnedTotal(IEnumerable<CollectionCard> list) =>
                 list.Where(c => c.Uuid == uuidMerge &&
                                 string.Equals(c.SelectedCondition, cond, StringComparison.OrdinalIgnoreCase) &&
                                 string.Equals(c.Language, lang, StringComparison.OrdinalIgnoreCase) &&
@@ -1036,8 +1043,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(CardLocationType.Deck, scenarioLocation.Type);
 
             // Arrange: choose a stable existing collection card
-            var targetCard = _ctx.MainVM.MyCollectionVM.Cards.First(c => c.CardId.HasValue);
-            var targetCardId = targetCard.CardId!.Value;
+            var targetCard = _ctx.MainVM.MyCollectionVM.Cards.First();
+            var targetCardId = targetCard.CardId;
 
             // Act: set location through existing collection mutation pipeline
             var param = new SetLocationForSelectedCardsParameter(new object[] { targetCard }, scenarioLocation.Id);
@@ -1163,8 +1170,8 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             var otterNoLocationBefore = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment));
 
-            var otterBox1Id = otterBox1.CardId!.Value;
-            var otterNoLocationId = otterNoLocationBefore.CardId!.Value;
+            var otterBox1Id = otterBox1.CardId;
+            var otterNoLocationId = otterNoLocationBefore.CardId;
             var expectedMergedOwned = otterBox1.CardsOwned + otterNoLocationBefore.CardsOwned;
             var expectedMergedTrade = otterBox1.CardsForTrade + otterNoLocationBefore.CardsForTrade;
 
@@ -1211,8 +1218,8 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             var otterBox2Smudge = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId == box2.Id && c.Comment == "smudgemark");
 
-            var otterBox2NoCommentId = otterBox2NoComment.CardId!.Value;
-            var otterBox2SmudgeId = otterBox2Smudge.CardId!.Value;
+            var otterBox2NoCommentId = otterBox2NoComment.CardId;
+            var otterBox2SmudgeId = otterBox2Smudge.CardId;
 
             var expectedBox1Owned = otterBox2NoComment.CardsOwned + otterBox2Smudge.CardsOwned;
             var expectedBox1Trade = otterBox2NoComment.CardsForTrade + otterBox2Smudge.CardsForTrade;
@@ -1296,11 +1303,11 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Arrange: stage Deck Awesome otter for edit
             var otterDeckAwesome = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId == deckAwesome.Id && string.IsNullOrWhiteSpace(c.Comment));
 
-            var otterDeckAwesomeId = otterDeckAwesome.CardId!.Value;
+            var otterDeckAwesomeId = otterDeckAwesome.CardId;
 
             var otterNoLocationBeforeDelete = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment));
 
-            otterNoLocationId = otterNoLocationBeforeDelete.CardId!.Value;
+            otterNoLocationId = otterNoLocationBeforeDelete.CardId;
             var expectedNoLocationOwnedAfterDelete = otterNoLocationBeforeDelete.CardsOwned + otterDeckAwesome.CardsOwned;
             var expectedNoLocationTradeAfterDelete = otterNoLocationBeforeDelete.CardsForTrade + otterDeckAwesome.CardsForTrade;
 

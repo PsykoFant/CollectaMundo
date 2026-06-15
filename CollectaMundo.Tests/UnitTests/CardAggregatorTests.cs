@@ -1,33 +1,25 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Aggregation;
-using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.CardLists;
+using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.Tests.TestUtils;
 
 namespace CollectaMundo.Tests.UnitTests
 {
     public class CardAggregatorTests
     {
-        private readonly CardCoreAggregator _aggregator = new();
-
         [Fact]
         public void Aggregates_SingleCard_NoMergeRequired()
         {
-            var input = new List<CardCore>
-                {
-                    new()
-                    {
-                        Uuid = "card1",
-                        Name = "Test Card",
-                        Keywords = "Flying",
-                        Colors = "W",
-                        Types = "Creature",
-                        Text = "Some ability",
-                        Side = "a"
-                    }
-                };
+            var input = new List<PrintingCard>
+            {
+                TestCardFactory.CreatePrinting(uuid: "card1",keywords: "Flying",colors: "W",types: "Creature",text: "Some ability",side: "a")
+            };
 
-            var result = _aggregator.Aggregate(input);
+            var result = PrintingCardAggregator.Aggregate(input);
 
             Assert.Single(result);
+
             var card = result[0];
+
             Assert.Equal("Flying", card.Keywords);
             Assert.Equal("W", card.Colors);
             Assert.Equal("Creature", card.Types);
@@ -37,32 +29,13 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public void Aggregates_MultiFaceCards_MergesCorrectly()
         {
-            var input = new List<CardCore>
-                {
-                    new()
-                    {
-                        Uuid = "front",
-                        Name = "Front Face",
-                        Keywords = "Flying, Haste",
-                        Colors = "W, R",
-                        Types = "Creature",
-                        Text = "Front text",
-                        Side = "a",
-                        OtherFaceIds = ["back"]
-                    },
-                    new()
-                    {
-                        Uuid = "back",
-                        Name = "Back Face",
-                        Keywords = "Haste, Trample",
-                        Colors = "R, G",
-                        Types = "Artifact",
-                        Text = "Back text",
-                        Side = "b"
-                    }
-                };
+            var input = new List<PrintingCard>
+            {
+                TestCardFactory.CreatePrinting(uuid: "front",keywords: "Flying, Haste",colors: "W, R",types: "Creature",text: "Front text",side: "a",otherFaceIds: ["back"]),
+                TestCardFactory.CreatePrinting(uuid: "back",keywords: "Haste, Trample",colors: "R, G",types: "Artifact",text: "Back text",side: "b",otherFaceIds: ["front"])
+            };
 
-            var result = _aggregator.Aggregate(input);
+            var result = PrintingCardAggregator.Aggregate(input);
 
             Assert.Single(result);
             var card = result[0];
@@ -76,17 +49,12 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public void Ignores_NonPrimaryFaces_InOutput()
         {
-            var input = new List<CardCore>
-                {
-                    new()
-                    {
-                        Uuid = "back",
-                        Side = "b",
-                        Name = "Back Only"
-                    }
-                };
+            var input = new List<PrintingCard>
+            {
+                TestCardFactory.CreatePrinting(name: "Back Only", uuid: "back", side: "b")
+            };
 
-            var result = _aggregator.Aggregate(input);
+            var result = PrintingCardAggregator.Aggregate(input);
 
             Assert.Empty(result);
         }
@@ -94,20 +62,12 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public void Deduplication_Is_CaseInsensitive()
         {
-            var input = new List<CardCore>
+            var input = new List<PrintingCard>
                 {
-                    new()
-                    {
-                        Name = "Test Card",
-                        Uuid = "card1",
-                        Side = "a",
-                        Keywords = "Flying, flying, FLYING",
-                        Colors = "W, w, W",
-                        Types = "Creature, creature"
-                    }
+                    TestCardFactory.CreatePrinting(name: "Test Card", uuid: "card1", side: "a", keywords: "Flying, flying, FLYING", colors: "W, w, W", types: "Creature, creature")
                 };
 
-            var result = _aggregator.Aggregate(input);
+            var result = PrintingCardAggregator.Aggregate(input);
             Assert.Single(result);
 
             var card = result[0];
@@ -119,29 +79,13 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public void Handles_MissingTextOrKeywordsOrColors_Gracefully()
         {
-            var input = new List<CardCore>
+            var input = new List<PrintingCard>
                 {
-                    new()
-                    {
-                        Name = "Test Card1",
-                        Uuid = "card1",
-                        Side = "a",
-                        Text = null,
-                        Keywords = null,
-                        Colors = null
-                    },
-                    new()
-                    {
-                        Name = "Test Card2",
-                        Uuid = "card2",
-                        Side = "a",
-                        Text = "",
-                        Keywords = "",
-                        Colors = ""
-                    }
+                    TestCardFactory.CreatePrinting(name: "Test Card1", uuid: "card1", side: "a"),
+                    TestCardFactory.CreatePrinting(name: "Test Card2", uuid: "card2", side: "a")
                 };
 
-            var result = _aggregator.Aggregate(input);
+            var result = PrintingCardAggregator.Aggregate(input);
             Assert.Equal(2, result.Count);
         }
     }

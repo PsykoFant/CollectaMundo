@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared.Operation;
-using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Infrastructure.Shared.Models;

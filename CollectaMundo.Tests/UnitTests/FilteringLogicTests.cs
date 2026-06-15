@@ -1,13 +1,13 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Filtering;
+﻿using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Tests.TestUtils;
 
 namespace CollectaMundo.Tests.UnitTests
 {
     public class FilteringLogicTests
     {
-        private readonly static List<CardSet> cards = TestCardFactory.GetTestCards();
+        private static readonly List<PrintingCard> cards = TestCardFactory.GetTestPrintings();
 
         static FilteringLogicTests()
         {
@@ -21,7 +21,7 @@ namespace CollectaMundo.Tests.UnitTests
             public void Test_NumericFilter_ManaValueGreaterThan3()
             {
                 // Arrange: build the domain filterLogic right here
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "ManaValue",
                     filterCategory: FilterType.Numeric,
                     selectedOptions: [],
@@ -42,7 +42,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_NumericFilter_ManaValueEqual_To_Zero()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "ManaValue",
                     filterCategory: FilterType.Numeric,
                     selectedOptions: [],
@@ -65,7 +65,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_SingleNameContains_Part_Of_Name()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Name",
                     filterCategory: FilterType.Single,
                     selectedOptions: [],
@@ -87,7 +87,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_SingleNameContains_Whole_Name()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Name",
                     filterCategory: FilterType.Single,
                     selectedOptions: [],
@@ -111,7 +111,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_MultiSelect_OR()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Types",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["Sorcery", "Instant"],
@@ -129,7 +129,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_MultiSelect_AND()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Types",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["Artifact", "Creature"],
@@ -147,7 +147,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_MultiSelect_NOT()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Rarity",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["uncommon", "rare"],
@@ -168,7 +168,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_SingleColor_OR_Red()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["R"],
@@ -186,7 +186,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_TwoColors_OR_G_R()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["R", "G"],
@@ -204,7 +204,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_TwoColors_NOT_W_R()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["R", "W"],
@@ -223,7 +223,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_TwoColors_AND_G_U()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["G", "U"],
@@ -241,7 +241,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_SingleColor_OR_C()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["R", "C"],
@@ -259,7 +259,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_NOT_R_NOT_C()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["R", "C"],
@@ -277,7 +277,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_SingleColor_AND_X()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["B", "X"],
@@ -295,7 +295,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_TwoColors_AND_X()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["G", "U", "X"],
@@ -313,7 +313,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_ThreeColors_AND_X()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["G", "U", "B", "X"],
@@ -331,7 +331,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_Colorless_OR()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["Colorless"],
@@ -349,7 +349,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_Colorless_X_NOT()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["Colorless", "X"],
@@ -367,7 +367,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_Colorless_AND_C()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["Colorless", "C"],
@@ -385,7 +385,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_Colorless_AND_R()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["Colorless", "R"],
@@ -403,7 +403,7 @@ namespace CollectaMundo.Tests.UnitTests
             [Fact]
             public void Test_Colorless_AND_C_AND_X()
             {
-                var filterLogic = new FilteringLogic(
+                var filterLogic = new FilteringLogic<PrintingCard>(
                     criteriaKey: "Colors",
                     filterCategory: FilterType.Multi,
                     selectedOptions: ["Colorless", "C", "X"],
