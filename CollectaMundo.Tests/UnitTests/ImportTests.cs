@@ -1,8 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Import;
-using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CollectionMutations;
 using CollectaMundo.DomainLogic.Import;
@@ -27,7 +27,7 @@ namespace CollectaMundo.Tests.UnitTests
             var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fixture.DbName);
             var uowRunner = new UnitOfWorkRunner(dbFactory);
 
-            var cardLocationService = new CardLocationService(uowRunner, new CardLocationRepo(), new CardLocationLogic(), new CardLocationLookupStore(), new CollectionMutationsLogic(), new CollectionMutationsService(new CollectionMutationsRepo())); ;
+            var cardLocationService = new CardLocationService(uowRunner, new CardLocationRepo(), new CardLocationLogic(), new CardLocationLookupStore(), new CollectionMutationsService(new CollectionMutationsLogic(), new CollectionMutationsRepo())); ;
 
             _service = new ImportService(
                 uowRunner,

@@ -1,5 +1,5 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.CollectionMutations;
+﻿using CollectaMundo.DomainLogic.CollectionMutations;
+using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared.Models;
@@ -47,7 +47,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var newCard = new CardSet
+            var newCard = new CollectionCardDraft
             {
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
@@ -79,10 +79,10 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Same(newCard, survivor); // important: plan uses the same object for apply
             Assert.Null(survivor.CardId);
 
-            Assert.Equal("foo-uuid", survivor.Uuid);
-            Assert.Equal("Near Mint", survivor.SelectedCondition);
-            Assert.Equal("nonfoil", survivor.SelectedFinish);
-            Assert.Equal("German", survivor.Language);
+            Assert.Equal("foo-uuid", survivor.Identity.Uuid);
+            Assert.Equal("Near Mint", survivor.Identity.Condition);
+            Assert.Equal("nonfoil", survivor.Identity.Finish);
+            Assert.Equal("German", survivor.Identity.Language);
             Assert.Equal(2, survivor.CardsOwned);
             Assert.Equal(1, survivor.CardsForTrade);
         }
@@ -113,7 +113,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var newCard = new CardSet
+            var newCard = new CollectionCardDraft
             {
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
@@ -148,10 +148,10 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Same(newCard, survivor);
 
             Assert.Equal(123, survivor.CardId);
-            Assert.Equal("foo-uuid", survivor.Uuid);
-            Assert.Equal("Near Mint", survivor.SelectedCondition);
-            Assert.Equal("nonfoil", survivor.SelectedFinish);
-            Assert.Equal("German", survivor.Language);
+            Assert.Equal("foo-uuid", survivor.Identity.Uuid);
+            Assert.Equal("Near Mint", survivor.Identity.Condition);
+            Assert.Equal("nonfoil", survivor.Identity.Finish);
+            Assert.Equal("German", survivor.Identity.Language);
             Assert.Equal(8, survivor.CardsOwned);
             Assert.Equal(5, survivor.CardsForTrade);
         }
@@ -182,7 +182,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var card = new CardSet
+            var card = new CollectionCardDraft
             {
                 CardId = 123,
                 // NOTE: identity technically does not matter for delete-by-zero,
@@ -196,9 +196,7 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanIdentityRewriteBatch(
-                [card],
-                snapshot);
+            var plan = logic.PlanIdentityRewriteBatch([card], snapshot);
 
             // Assert: delete scheduled
             var deletedId = Assert.Single(plan.DeleteIds);
@@ -239,7 +237,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var card = new CardSet
+            var card = new CollectionCardDraft
             {
                 CardId = 123,
                 Uuid = "foo-uuid",
@@ -272,10 +270,10 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Same(card, survivor);
 
             Assert.Equal(123, survivor.CardId);
-            Assert.Equal("foo-uuid", survivor.Uuid);
-            Assert.Equal("Near Mint", survivor.SelectedCondition);
-            Assert.Equal("nonfoil", survivor.SelectedFinish);
-            Assert.Equal("German", survivor.Language);
+            Assert.Equal("foo-uuid", survivor.Identity.Uuid);
+            Assert.Equal("Near Mint", survivor.Identity.Condition);
+            Assert.Equal("nonfoil", survivor.Identity.Finish);
+            Assert.Equal("German", survivor.Identity.Language);
             Assert.Equal(3, survivor.CardsOwned);
             Assert.Equal(1, survivor.CardsForTrade);
         }
@@ -322,7 +320,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var editedCard = new CardSet
+            var editedCard = new CollectionCardDraft
             {
                 CardId = 123,
                 Uuid = "foo-uuid",
@@ -363,10 +361,10 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Same(editedCard, survivor);
 
             Assert.Equal(456, survivor.CardId);
-            Assert.Equal("foo-uuid", survivor.Uuid);
-            Assert.Equal("Near Mint", survivor.SelectedCondition);
-            Assert.Equal("German", survivor.Language);
-            Assert.Equal("nonfoil", survivor.SelectedFinish);
+            Assert.Equal("foo-uuid", survivor.Identity.Uuid);
+            Assert.Equal("Near Mint", survivor.Identity.Condition);
+            Assert.Equal("German", survivor.Identity.Language);
+            Assert.Equal("nonfoil", survivor.Identity.Finish);
             Assert.Equal(9, survivor.CardsOwned);
             Assert.Equal(5, survivor.CardsForTrade);
         }
@@ -413,7 +411,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var editedCard = new CardSet
+            var editedCard = new CollectionCardDraft
             {
                 CardId = 123,
                 Uuid = "foo-uuid",
@@ -497,7 +495,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var editedA = new CardSet
+            var editedA = new CollectionCardDraft
             {
                 CardId = 101,
                 Uuid = "foo-uuid",
@@ -508,7 +506,7 @@ namespace CollectaMundo.Tests.UnitTests
                 CardsForTrade = 1
             };
 
-            var editedB = new CardSet
+            var editedB = new CollectionCardDraft
             {
                 CardId = 202,
                 Uuid = "foo-uuid",
@@ -540,10 +538,10 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Same(editedB, survivor);
 
             Assert.Equal(101, survivor.CardId);
-            Assert.Equal("foo-uuid", survivor.Uuid);
-            Assert.Equal("Near Mint", survivor.SelectedCondition);
-            Assert.Equal("German", survivor.Language);
-            Assert.Equal("nonfoil", survivor.SelectedFinish);
+            Assert.Equal("foo-uuid", survivor.Identity.Uuid);
+            Assert.Equal("Near Mint", survivor.Identity.Condition);
+            Assert.Equal("German", survivor.Identity.Language);
+            Assert.Equal("nonfoil", survivor.Identity.Finish);
             Assert.Equal(5, survivor.CardsOwned);
             Assert.Equal(2, survivor.CardsForTrade);
         }
@@ -554,7 +552,7 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new EmptySnapshot();
             var logic = new CollectionMutationsLogic();
 
-            var cardA = new CardSet
+            var cardA = new CollectionCardDraft
             {
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
@@ -564,7 +562,7 @@ namespace CollectaMundo.Tests.UnitTests
                 CardsForTrade = 0
             };
 
-            var cardB = new CardSet
+            var cardB = new CollectionCardDraft
             {
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
@@ -600,7 +598,7 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new EmptySnapshot();
             var logic = new CollectionMutationsLogic();
 
-            var cardA = new CardSet
+            var cardA = new CollectionCardDraft
             {
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
@@ -611,7 +609,7 @@ namespace CollectaMundo.Tests.UnitTests
                 CardsForTrade = 0
             };
 
-            var cardB = new CardSet
+            var cardB = new CollectionCardDraft
             {
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
@@ -639,7 +637,7 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new EmptySnapshot();
             var logic = new CollectionMutationsLogic();
 
-            var cardA = new CardSet
+            var cardA = new CollectionCardDraft
             {
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
@@ -650,7 +648,7 @@ namespace CollectaMundo.Tests.UnitTests
                 CardsForTrade = 0
             };
 
-            var cardB = new CardSet
+            var cardB = new CollectionCardDraft
             {
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
@@ -712,7 +710,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var editedCard = new CardSet
+            var editedCard = new CollectionCardDraft
             {
                 CardId = 200,
                 Uuid = "foo-uuid",
@@ -739,7 +737,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
             Assert.Equal(100, survivor.CardId);
-            Assert.Null(survivor.SelectedLocationId);
+            Assert.Null(survivor.Identity.LocationId);
             Assert.Equal(5, survivor.CardsOwned);
             Assert.Equal(2, survivor.CardsForTrade);
         }
@@ -768,7 +766,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var existingEdit = new CardSet
+            var existingEdit = new CollectionCardDraft
             {
                 CardId = 100,
                 Uuid = "existing-uuid",
@@ -779,7 +777,7 @@ namespace CollectaMundo.Tests.UnitTests
                 CardsForTrade = 1
             };
 
-            var newSplitRow = new CardSet
+            var newSplitRow = new CollectionCardDraft
             {
                 CardId = null,
                 Uuid = "new-uuid",
@@ -840,7 +838,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new CollectionMutationsLogic();
 
-            var newRow = new CardSet
+            var newRow = new CollectionCardDraft
             {
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
@@ -850,7 +848,7 @@ namespace CollectaMundo.Tests.UnitTests
                 CardsForTrade = 0
             };
 
-            var editedExisting = new CardSet
+            var editedExisting = new CollectionCardDraft
             {
                 CardId = 100,
                 Uuid = "foo-uuid",

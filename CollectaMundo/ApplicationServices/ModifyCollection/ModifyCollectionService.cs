@@ -32,11 +32,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                     AvailableLanguages = languages ?? []
                 };
 
-                return _logic.PrepareCardForList(
-                    printing,
-                    existingCollectionCard,
-                    metadata,
-                    isEdit);
+                return _logic.PrepareCardForList(printing, existingCollectionCard, metadata, isEdit);
             });
         }
 

@@ -7,8 +7,9 @@
              xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors" 
              xmlns:sharedelements="clr-namespace:CollectaMundo.ViewModels.Pages.SharedElements" 
+             xmlns:bindingViewModels="clr-namespace:CollectaMundo.ViewModels.ModifyCollection.BindinViewModels" 
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance Type=sharedelements:NumericBindingViewModel}">
+             d:DataContext="{d:DesignInstance Type=bindingViewModels:NumericBindingViewModel}">
 
     <TextBox HorizontalAlignment="Center" Background="White">
         <TextBox.Text>

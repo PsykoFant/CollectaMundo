@@ -2,7 +2,7 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardImages;
-using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Tests.TestUtils;
@@ -19,7 +19,7 @@ namespace CollectaMundo.Tests.UnitTests
         public async Task GetImageForCardAsync_ReturnsNull_WhenUuidAndNameAreMissing()
         {
             var svc = BuildService(); // uses default mocks
-            var card = new CardSet(); // no uuid or name
+            var card = new CardImageRequest(); // no uuid or name
 
             var result = await svc.GetImageForCardAsync(card);
 
@@ -35,7 +35,7 @@ namespace CollectaMundo.Tests.UnitTests
             var uowRunner = new UnitOfWorkRunner(dbFactory);
 
             // Prepare the card
-            var card = new CardSet { Uuid = "abc", Side = "a", Name = "Foo" };
+            var card = new CardImageRequest { Uuid = "abc", Side = "a", Name = "Foo" };
 
             // Mock repository so we don’t care about actual DB contents
             var repo = new Mock<ICardImageRepo>();

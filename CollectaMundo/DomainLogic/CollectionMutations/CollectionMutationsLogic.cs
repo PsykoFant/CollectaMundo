@@ -3,6 +3,7 @@ using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared.Models;
+using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.CollectionMutations
 {
@@ -27,6 +28,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
                 if (isExistingRow && card.CardsOwned == 0)
                 {
+                    Debug.WriteLine($"Planning delete for CardId {card.CardId} because CardsOwned is 0.");
                     PlanEditDelete(card, plan, removedIds, upsertsByIdentity, workingById, workingByIdentity);
                     continue;
                 }
@@ -56,6 +58,11 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 RemovedIds = [.. removedIds],
                 AddedOrUpdated = [.. upsertsByIdentity.Values]
             };
+
+            foreach (var deletes in plan.ChangeSet.RemovedIds)
+            {
+                Debug.WriteLine($"Planned delete of CardId {deletes}");
+            }
 
             return plan;
         }
@@ -138,7 +145,8 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             Dictionary<CollectionIdentity, WorkingRow> workingByIdentity,
             Dictionary<CollectionIdentity, InsertMutation> insertsByIdentity)
         {
-            var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId.");
+            var currentId = card.CardId
+                ?? throw new InvalidOperationException("Edit requires CardId.");
 
             if (!workingById.TryGetValue(currentId, out var currentRow))
             {
@@ -147,6 +155,8 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
             var currentIdentity = currentRow.Identity;
 
+            // Branch 1:
+            // Identity did not change. Only quantity fields may have changed.
             if (targetIdentity.Equals(currentIdentity))
             {
                 SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
@@ -159,6 +169,9 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 return;
             }
 
+            // Branch 2:
+            // Target identity is currently a planned insert from this same batch.
+            // Cancel that insert and fold its quantities into this existing row update.
             if (insertsByIdentity.TryGetValue(targetIdentity, out var plannedInsert))
             {
                 var mergedOwned = card.CardsOwned + plannedInsert.CardsOwned;
@@ -184,13 +197,20 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 card.CardsOwned = mergedOwned;
                 card.CardsForTrade = mergedTrade;
 
+                upsertsByIdentity.Remove(currentIdentity);
                 upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, mergedOwned, mergedTrade);
 
                 return;
             }
 
+            // Branch 3:
+            // Target identity already exists in the working collection state.
+            // This edit either updates the same row defensively, or merges the current row
+            // into the existing survivor row and deletes the current row.
             if (workingByIdentity.TryGetValue(targetIdentity, out var survivor))
             {
+                // Branch 3a:
+                // Defensive case: target identity maps back to the same row.
                 if (survivor.CardId == currentId)
                 {
                     SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
@@ -202,22 +222,29 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                     workingByIdentity.Remove(currentIdentity);
                     workingByIdentity[targetIdentity] = currentRow;
 
+                    upsertsByIdentity.Remove(currentIdentity);
                     upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
 
                     return;
                 }
 
+                // Branch 3b:
+                // Target identity belongs to another row. Current row is absorbed into
+                // the survivor row, so current row must be deleted and survivor updated.
                 var mergedOwned = survivor.CardsOwned + card.CardsOwned;
                 var mergedTrade = survivor.CardsForTrade + card.CardsForTrade;
 
                 plan.DeleteIds.Add(currentId);
                 removedIds.Add(currentId);
+
+                // The current row disappears, so any prior update for it is no longer valid.
                 updatesByCardId.Remove(currentId);
 
                 SetUpdate(updatesByCardId, survivor.CardId, targetIdentity, mergedOwned, mergedTrade);
 
                 workingById.Remove(currentId);
                 workingByIdentity.Remove(currentIdentity);
+                upsertsByIdentity.Remove(currentIdentity);
 
                 survivor.CardsOwned = mergedOwned;
                 survivor.CardsForTrade = mergedTrade;
@@ -231,6 +258,9 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 return;
             }
 
+            // Branch 4:
+            // Identity changed, but no collision exists.
+            // Update this row in place from current identity to target identity.
             SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
 
             workingByIdentity.Remove(currentIdentity);
@@ -241,8 +271,8 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
             workingByIdentity[targetIdentity] = currentRow;
 
-            upsertsByIdentity[targetIdentity] =
-                ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
+            upsertsByIdentity.Remove(currentIdentity);
+            upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
         }
         private static void PlanEditDelete(
             CollectionCardDraft card,
