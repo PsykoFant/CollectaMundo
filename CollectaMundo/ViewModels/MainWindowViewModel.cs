@@ -391,8 +391,17 @@ namespace CollectaMundo.ViewModels
         {
             // Newly materialized CollectionCards need access to location lookups
             // for SelectedLocationName / SelectedLocationType / SelectedLocationDisplayName.
+
+            Debug.WriteLine($"Applying collection change set with {changeSet.AddedOrUpdated.Count} added/updated cards and {changeSet.RemovedIds.Count} removed cards.");
+
+            foreach (var removedId in changeSet.RemovedIds)
+            {
+                Debug.WriteLine($"Card removed with CardId {removedId}");
+            }
+
             foreach (var card in changeSet.AddedOrUpdated)
             {
+                Debug.WriteLine($"Card added/updated: {card.Name} ({card.SetCode}), CardId {card.CardId}");
                 card.RefreshLocationsFromProvider();
             }
 

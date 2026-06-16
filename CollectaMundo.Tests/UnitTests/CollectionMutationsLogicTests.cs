@@ -75,9 +75,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Assert: ChangeSet represents the in-memory upsert (CardId is still null at plan time)
             Assert.Empty(plan.ChangeSet.RemovedIds);
 
-            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
-            Assert.Same(newCard, survivor); // important: plan uses the same object for apply
-            Assert.Null(survivor.CardId);
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
 
             Assert.Equal("foo-uuid", survivor.Identity.Uuid);
             Assert.Equal("Near Mint", survivor.Identity.Condition);
@@ -144,8 +142,7 @@ namespace CollectaMundo.Tests.UnitTests
             // ChangeSet reflects survivor
             Assert.Empty(plan.ChangeSet.RemovedIds);
 
-            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
-            Assert.Same(newCard, survivor);
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
 
             Assert.Equal(123, survivor.CardId);
             Assert.Equal("foo-uuid", survivor.Identity.Uuid);
@@ -196,21 +193,18 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var plan = logic.PlanIdentityRewriteBatch([card], snapshot);
+            var plan = logic.PlanIdentityRewriteBatch(
+                [card],
+                snapshot);
 
             // Assert: delete scheduled
             var deletedId = Assert.Single(plan.DeleteIds);
             Assert.Equal(123, deletedId);
 
-            // No updates or inserts
+            // No updates, inserts, or upserts
             Assert.Empty(plan.Updates);
             Assert.Empty(plan.Inserts);
-
-            // ChangeSet reflects deletion
-            Assert.Empty(plan.ChangeSet.AddedOrUpdated);
-
-            var removed = Assert.Single(plan.ChangeSet.RemovedIds);
-            Assert.Equal(123, removed);
+            Assert.Empty(plan.UpsertsByIdentity);
         }
 
         [Fact]
@@ -266,8 +260,7 @@ namespace CollectaMundo.Tests.UnitTests
             // ChangeSet: one upsert, no removals
             Assert.Empty(plan.ChangeSet.RemovedIds);
 
-            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
-            Assert.Same(card, survivor);
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
 
             Assert.Equal(123, survivor.CardId);
             Assert.Equal("foo-uuid", survivor.Identity.Uuid);
@@ -354,11 +347,7 @@ namespace CollectaMundo.Tests.UnitTests
             // No inserts
             Assert.Empty(plan.Inserts);
 
-            // ChangeSet
-            Assert.Equal([123], plan.ChangeSet.RemovedIds);
-
-            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
-            Assert.Same(editedCard, survivor);
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
 
             Assert.Equal(456, survivor.CardId);
             Assert.Equal("foo-uuid", survivor.Identity.Uuid);
@@ -443,10 +432,8 @@ namespace CollectaMundo.Tests.UnitTests
             // No inserts
             Assert.Empty(plan.Inserts);
 
-            // ChangeSet
-            Assert.Equal([123], plan.ChangeSet.RemovedIds);
-
-            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
+            // Planned in-memory upsert target
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
             Assert.Equal(456, survivor.CardId);
             Assert.Equal(7, survivor.CardsOwned);
             Assert.Equal(3, survivor.CardsForTrade);
@@ -532,10 +519,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             Assert.Empty(plan.Inserts);
 
-            Assert.Equal([202], plan.ChangeSet.RemovedIds);
-
-            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
-            Assert.Same(editedB, survivor);
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
 
             Assert.Equal(101, survivor.CardId);
             Assert.Equal("foo-uuid", survivor.Identity.Uuid);
@@ -588,7 +572,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(3, insert.CardsOwned);
             Assert.Equal(1, insert.CardsForTrade);
 
-            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
             Assert.Equal(3, survivor.CardsOwned);
             Assert.Equal(1, survivor.CardsForTrade);
         }
@@ -629,7 +613,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Contains(plan.Inserts, x => x.Identity.Comment == "signed");
             Assert.Contains(plan.Inserts, x => x.Identity.Comment == "altered");
 
-            Assert.Equal(2, plan.ChangeSet.AddedOrUpdated.Count);
+            Assert.Equal(2, plan.UpsertsByIdentity.Values.Count);
         }
         [Fact]
         public void PlanIdentityRewriteBatch_NewRowsSameCardDifferentLocation_CreatesSeparateInserts()
@@ -668,7 +652,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Contains(plan.Inserts, x => x.Identity.LocationId == 10);
             Assert.Contains(plan.Inserts, x => x.Identity.LocationId == 20);
 
-            Assert.Equal(2, plan.ChangeSet.AddedOrUpdated.Count);
+            Assert.Equal(2, plan.UpsertsByIdentity.Values.Count);
         }
         [Fact]
         public void PlanIdentityRewriteBatch_ExistingRowLocationClearedToNull_WhenNullIdentityExists_Merges()
@@ -733,9 +717,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(5, update.CardsOwned);
             Assert.Equal(2, update.CardsForTrade);
 
-            Assert.Equal([200], plan.ChangeSet.RemovedIds);
-
-            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
             Assert.Equal(100, survivor.CardId);
             Assert.Null(survivor.Identity.LocationId);
             Assert.Equal(5, survivor.CardsOwned);
@@ -803,7 +785,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(0, insert.CardsForTrade);
 
             Assert.Empty(plan.ChangeSet.RemovedIds);
-            Assert.Equal(2, plan.ChangeSet.AddedOrUpdated.Count);
+            Assert.Equal(2, plan.UpsertsByIdentity.Values.Count);
         }
         [Fact]
         public void PlanIdentityRewriteBatch_NewRowThenExistingRowEditedToSameIdentity_MergesIntoExistingRow()
@@ -870,7 +852,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(3, update.CardsOwned);
             Assert.Equal(0, update.CardsForTrade);
 
-            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
             Assert.Equal(100, survivor.CardId);
             Assert.Equal(3, survivor.CardsOwned);
         }

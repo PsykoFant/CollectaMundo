@@ -827,13 +827,16 @@ namespace CollectaMundo.Tests.ScenarioTests
             await uow.BeginReadOnlyAsync();
 
             const string sql = @"
-            SELECT uuid AS Uuids,
-                   condition AS Conditions,
-                   finish AS Finishes,
-                   language AS Languages,
-                   cardsOwned AS CardsOwned,
-                   cardsForTrade AS CardsForTrade
-            FROM myCollection;
+                SELECT id,
+                       uuid,
+                       condition,
+                       finish,
+                       language,
+                       locationId,
+                       comment,
+                       cardsOwned,
+                       cardsForTrade
+                FROM myCollection;
             ";
 
             using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
@@ -850,7 +853,13 @@ namespace CollectaMundo.Tests.ScenarioTests
                     ? null
                     : reader["comment"]?.ToString();
 
-                var identity = CollectionIdentityFactory.Create(uuid: reader.GetString(1), condition: reader.GetString(2), language: reader.GetString(4), finish: reader.GetString(3), locationId: locationId, comment: comment);
+                var identity = CollectionIdentityFactory.Create(
+                    uuid: reader.GetString(1),
+                    condition: reader.GetString(2),
+                    language: reader.GetString(4),
+                    finish: reader.GetString(3),
+                    locationId: locationId,
+                    comment: comment);
 
                 myCollectionDb.Add(new CollectionCardDbRow
                 {
@@ -1163,14 +1172,16 @@ namespace CollectaMundo.Tests.ScenarioTests
             await uow.BeginReadOnlyAsync();
 
             const string sql = @"
-            SELECT uuid AS Uuids,
-                   condition AS Conditions,
-                   finish AS Finishes,
-                   language AS Languages,
-                   locationId AS LocationIds,
-                   cardsOwned AS CardsOwned,
-                   cardsForTrade AS CardsForTrade
-            FROM myCollection;
+                SELECT id,
+                       uuid,
+                       condition,
+                       finish,
+                       language,
+                       locationId,
+                       comment,
+                       cardsOwned,
+                       cardsForTrade
+                FROM myCollection;
             ";
 
             using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
@@ -1187,7 +1198,7 @@ namespace CollectaMundo.Tests.ScenarioTests
                     ? null
                     : reader["comment"]?.ToString();
 
-                var identity = CollectionIdentityFactory.Create(uuid: reader.GetString(1), condition: reader.GetString(2), language: reader.GetString(4), finish: reader.GetString(3), locationId: locationId, comment: comment);
+                var identity = CollectionIdentityFactory.Create(uuid: reader.GetString(1), condition: reader.GetString(2), finish: reader.GetString(3), language: reader.GetString(4), locationId: locationId, comment: comment);
 
                 myCollectionDb.Add(new CollectionCardDbRow
                 {
@@ -1512,15 +1523,16 @@ namespace CollectaMundo.Tests.ScenarioTests
             await uow.BeginReadOnlyAsync();
 
             const string sql = @"
-            SELECT uuid AS Uuids,
-                   condition AS Conditions,
-                   finish AS Finishes,
-                   language AS Languages,
-                   locationId AS LocationIds,
-                   comment AS Comment,
-                   cardsOwned AS CardsOwned,
-                   cardsForTrade AS CardsForTrade
-            FROM myCollection;
+                SELECT id,
+                       uuid,
+                       condition,
+                       finish,
+                       language,
+                       locationId,
+                       comment,
+                       cardsOwned,
+                       cardsForTrade
+                FROM myCollection;
             ";
 
             using var cmd = new SQLiteCommand(sql, uow.CurrentConnection);
@@ -1537,7 +1549,7 @@ namespace CollectaMundo.Tests.ScenarioTests
                     ? null
                     : reader["comment"]?.ToString();
 
-                var identity = CollectionIdentityFactory.Create(uuid: reader.GetString(1), condition: reader.GetString(2), language: reader.GetString(4), finish: reader.GetString(3), locationId: locationId, comment: comment);
+                var identity = CollectionIdentityFactory.Create(uuid: reader.GetString(1), condition: reader.GetString(2), finish: reader.GetString(3), language: reader.GetString(4), locationId: locationId, comment: comment);
 
                 myCollectionDb.Add(new CollectionCardDbRow
                 {

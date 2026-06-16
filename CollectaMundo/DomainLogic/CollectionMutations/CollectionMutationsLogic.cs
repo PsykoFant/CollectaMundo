@@ -13,7 +13,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
         {
             var plan = new CollectionMutationPlan();
             var removedIds = new HashSet<int>();
-            var upsertsByIdentity = new Dictionary<CollectionIdentity, CollectionCardDbRow>();
+            var upsertsByIdentity = plan.UpsertsByIdentity;
             var updatesByCardId = new Dictionary<int, UpdateMutation>();
 
             var workingById = new Dictionary<int, WorkingRow>();
@@ -52,12 +52,6 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
             plan.Updates.Clear();
             plan.Updates.AddRange(updatesByCardId.Values);
-
-            plan.ChangeSet = new CollectionChangeSet<CollectionCardDbRow>
-            {
-                RemovedIds = [.. removedIds],
-                AddedOrUpdated = [.. upsertsByIdentity.Values]
-            };
 
             foreach (var deletes in plan.ChangeSet.RemovedIds)
             {
