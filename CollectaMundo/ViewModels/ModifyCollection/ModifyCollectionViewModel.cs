@@ -11,7 +11,6 @@ using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Text;
 
 namespace CollectaMundo.ViewModels.ModifyCollection
@@ -299,7 +298,6 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         [RelayCommand]
         private async Task SubmitCardEditsAsync()
         {
-            Debug.WriteLine($"[ModifyCollectionViewModel] Submitting {CardsToAddOrEdit.Count} card edits");
             await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Updated the following cards with these values:");
         }
 
@@ -403,7 +401,6 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         // Shared helpers 
         private async Task SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, Func<IEnumerable<CollectionCardDraft>, ICollectionSnapshot, Task<CollectionChangeSet<CollectionCardDbRow>>> submit, bool clearAfter, string summaryTitle)
         {
-            Debug.WriteLine($"[ModifyCollectionViewModel] Submitting batch of {cards.Count()} cards with clearAfter={clearAfter}");
             var cardList = cards.ToList();
             var snapshot = _cardCollectionHost.CreateMyCollectionSnapshot();
 

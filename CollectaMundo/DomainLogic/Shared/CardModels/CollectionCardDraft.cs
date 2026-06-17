@@ -1,5 +1,5 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.CardLocations.Models;
+﻿using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -32,18 +32,19 @@ namespace CollectaMundo.DomainLogic.CollectionMutations.Models
 
         [ObservableProperty]
         private int? selectedLocationId;
-        public string? SelectedLocationName => SelectedLocationId is int id
-            ? CardDataProviders.CardLocationProvider?.Get(id)?.Name
-            : null;
-
-        public string? SelectedLocationDisplayName => SelectedLocationId is int id
-            ? CardDataProviders.CardLocationProvider?.Get(id)?.DisplayName
-            : null;
-
-        public CardLocationType? SelectedLocationType => SelectedLocationId is int id
-            ? CardDataProviders.CardLocationProvider?.Get(id)?.Type
-            : null;
-
+        public IKeyedDataProvider<int, CardLocation>? CardLocationProvider { get; set; }
+        public string? SelectedLocationName =>
+            SelectedLocationId is int id
+                ? CardLocationProvider?.Get(id)?.Name
+                : null;
+        public string? SelectedLocationDisplayName =>
+            SelectedLocationId is int id
+                ? CardLocationProvider?.Get(id)?.DisplayName
+                : null;
+        public CardLocationType? SelectedLocationType =>
+            SelectedLocationId is int id
+                ? CardLocationProvider?.Get(id)?.Type
+                : null;
         partial void OnSelectedLocationIdChanged(int? value)
         {
             RefreshLocationsFromProvider();

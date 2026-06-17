@@ -39,8 +39,6 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         // Submitting new cards or card edits
         public async Task<CollectionChangeSet<CollectionCardDbRow>> SubmitCardBatchAsync(IEnumerable<CollectionCardDraft> cards, ICollectionSnapshot snapshot)
         {
-            Debug.WriteLine($"[ModifyCollectionService.SubmitCardBatchAsync] Submitting batch of {cards.Count()} cards");
-
             try
             {
                 var cardList = cards.ToList();

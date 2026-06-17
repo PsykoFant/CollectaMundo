@@ -24,12 +24,11 @@ namespace CollectaMundo.ViewModels.Decks
         // UI text
         protected override LocationManagementText Text { get; } = new(
             CreateText: "Add deck",
-            EditText: "Edit deck",
+            EditText: "Edit name/description",
             SaveText: "Save changes",
             BulkUpdateText: "Update selected",
             CreateMode: "Add a new deck",
             SelectedReadOnlyMode: string.Empty,
-            EditSingleMode: "Edit selected deck",
             EditMultipleMode: "Edit selected decks");
 
         [ObservableProperty]

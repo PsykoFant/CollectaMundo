@@ -15,6 +15,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.Factories;
@@ -54,6 +55,7 @@ namespace CollectaMundo.ViewModels
         private readonly IImportService _importService;
         private readonly ICardLocationService _cardLocationService;
         private readonly ICardLocationLookupStore _cardLocationLookupStore;
+        private IKeyedDataProvider<int, CardLocation>? _cardLocationProvider;
 
         // Deck management service
         private readonly IDeckManagementStore _deckManagementStore;
@@ -358,20 +360,26 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.SetAvailableLocations(locations);
             EditCardsVM.SetAvailableLocations(locations);
 
-            CardDataProviders.CardLocationProvider = new ValueProvider<int, CardLocation>(locations.ToDictionary(x => x.Id));
+            _cardLocationProvider = new ValueProvider<int, CardLocation>(
+                locations.ToDictionary(x => x.Id));
 
+            // Refresh all collection cards with new location provider and updated location info.
             foreach (var card in MyCollectionVM.Cards)
             {
-                card.RefreshLocationsFromProvider();
+                AttachCardLocationProvider(card);
             }
 
+            // Refresh all open add/edit rows with new location provider and updated location info.
             foreach (var row in AddCardsVM.CardsToAddOrEdit)
             {
+                row.CardToAddOrEdit.CardLocationProvider = _cardLocationProvider;
                 row.CardToAddOrEdit.RefreshLocationsFromProvider();
             }
 
+            // Refresh all open add/edit rows with new location provider and updated location info.
             foreach (var row in EditCardsVM.CardsToAddOrEdit)
             {
+                row.CardToAddOrEdit.CardLocationProvider = _cardLocationProvider;
                 row.CardToAddOrEdit.RefreshLocationsFromProvider();
             }
 
@@ -392,18 +400,12 @@ namespace CollectaMundo.ViewModels
             // Newly materialized CollectionCards need access to location lookups
             // for SelectedLocationName / SelectedLocationType / SelectedLocationDisplayName.
 
-            Debug.WriteLine($"Applying collection change set with {changeSet.AddedOrUpdated.Count} added/updated cards and {changeSet.RemovedIds.Count} removed cards.");
-
-            foreach (var removedId in changeSet.RemovedIds)
-            {
-                Debug.WriteLine($"Card removed with CardId {removedId}");
-            }
-
             foreach (var card in changeSet.AddedOrUpdated)
             {
-                Debug.WriteLine($"Card added/updated: {card.Name} ({card.SetCode}), CardId {card.CardId}");
-                card.RefreshLocationsFromProvider();
+                AttachCardLocationProvider(card);
             }
+
+            CollectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
 
             // Apply DB-truth changes to the in-memory collection list.
             CollectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
@@ -444,6 +446,11 @@ namespace CollectaMundo.ViewModels
             };
 
             OnCollectionChanged(sender, hydratedChangeSet);
+        }
+        private void AttachCardLocationProvider(CollectionCard card)
+        {
+            card.CardLocationProvider = _cardLocationProvider;
+            card.RefreshLocationsFromProvider();
         }
 
         #endregion

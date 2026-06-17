@@ -3,7 +3,6 @@ using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared.Models;
-using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.CollectionMutations
 {
@@ -28,7 +27,6 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
                 if (isExistingRow && card.CardsOwned == 0)
                 {
-                    Debug.WriteLine($"Planning delete for CardId {card.CardId} because CardsOwned is 0.");
                     PlanEditDelete(card, plan, removedIds, upsertsByIdentity, workingById, workingByIdentity);
                     continue;
                 }
@@ -53,10 +51,6 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             plan.Updates.Clear();
             plan.Updates.AddRange(updatesByCardId.Values);
 
-            foreach (var deletes in plan.ChangeSet.RemovedIds)
-            {
-                Debug.WriteLine($"Planned delete of CardId {deletes}");
-            }
 
             return plan;
         }

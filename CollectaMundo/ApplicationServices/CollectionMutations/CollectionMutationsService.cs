@@ -5,7 +5,6 @@ using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CollectionMutations;
 using CollectaMundo.Infrastructure.Shared.Models;
 using System.Data.SQLite;
-using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.CollectionMutations
 {
@@ -15,22 +14,11 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
         private readonly ICollectionMutationsRepo _repo = repo;
         public async Task<CollectionChangeSet<CollectionCardDbRow>> SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, ICollectionSnapshot snapshot, SQLiteConnection connection, SQLiteTransaction transaction)
         {
-            Debug.WriteLine($"Submitting batch of {cards.Count()} cards with snapshot of {snapshot.Rows.Count} cards");
-            foreach (var card in cards)
-            {
-                Debug.WriteLine($"Card draft: {card.Uuid} - {card.SelectedCondition} - {card.Language} - {card.SelectedFinish} - {card.CardId} - {card.Comment} - Owned: {card.CardsOwned} - ForTrade: {card.CardsForTrade}");
-            }
-
             var plan = _logic.PlanIdentityRewriteBatch(cards, snapshot);
 
             await ExecutePlanAsync(plan, connection, transaction);
 
             plan.ChangeSet = BuildExecutedChangeSet(plan);
-
-            foreach (var row in plan.ChangeSet.AddedOrUpdated)
-            {
-                Debug.WriteLine($"ChangeSet row: CardId={row.CardId}, Identity={row.Identity}");
-            }
 
             return plan.ChangeSet;
         }
@@ -99,7 +87,6 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
                     transaction);
 
                 insert.BindCardId(newId);
-                Debug.WriteLine($"Insert bound. NewId={newId}, Draft.CardId={insert.Draft.CardId}");
             }
 
             var unbound = plan.Inserts.Where(i => i.AssignedCardId is null).ToList();
