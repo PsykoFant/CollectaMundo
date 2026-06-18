@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Navigation;
+using CollectaMundo.ViewModels.Decks;
 using CollectaMundo.ViewModels.Pages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -33,8 +34,12 @@ namespace CollectaMundo.ViewModels.Shell
             PagesUtilitiesHostVM = pagesUtilitiesHostVM;
 
             _shellNavigationHost.PropertyChanged += Host_PropertyChanged;
-        }
 
+            if (PagesDecksHostVM is PagesDecksHostViewModel decksHost)
+            {
+                decksHost.PropertyChanged += DecksHost_PropertyChanged;
+            }
+        }
         public bool IsTopMenuEnabled => _shellNavigationHost.IsTopMenuEnabled;
         public bool IsAllCardsPageActive => _shellNavigationHost.CurrentPage == ShellPageEnum.SearchAndFilter;
         public bool IsMyCollectionPageActive => _shellNavigationHost.CurrentPage == ShellPageEnum.MyCollection;
@@ -85,10 +90,9 @@ namespace CollectaMundo.ViewModels.Shell
 
             if (ReferenceEquals(pageViewModel, PagesDecksHostVM))
             {
-                return null;
+                return ResolveDecksSideMenu();
             }
 
-            // all current card-list pages use filtering side menu
             return FilteringSideMenuViewModel;
         }
         private void Host_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -105,6 +109,31 @@ namespace CollectaMundo.ViewModels.Shell
             {
                 OnPropertyChanged(nameof(IsTopMenuEnabled));
             }
+        }
+        private void DecksHost_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(PagesDecksHostViewModel.CurrentDecksContentViewModel))
+            {
+                return;
+            }
+
+            if (_shellNavigationHost.CurrentPage != ShellPageEnum.Decks)
+            {
+                return;
+            }
+
+            _shellNavigationHost.CurrentSideMenuLeftViewModel = ResolveDecksSideMenu();
+        }
+        private object? ResolveDecksSideMenu()
+        {
+            if (PagesDecksHostVM is not PagesDecksHostViewModel decksHost)
+            {
+                return null;
+            }
+
+            return decksHost.CurrentDecksContentViewModel is DeckEditorViewModel
+                ? FilteringSideMenuViewModel
+                : null;
         }
     }
 }

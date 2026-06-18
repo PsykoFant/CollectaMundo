@@ -380,11 +380,11 @@ namespace CollectaMundo.Tests.ScenarioTests
         [Fact]
         public void FilterViewModel_Object_Creation_Initialization()
         {
-            var nameFilter = _ctx.MainVM.FilterVM.Filters["Name"];
+            var nameFilter = _ctx.MainVM.FilterPanelVM.Filters["Name"];
             Assert.NotEmpty(nameFilter.FilterOptions);
 
-            Assert.True(_ctx.MainVM.FilterVM.Filters.ContainsKey("SetName"), "Expected filter key 'SetName' not found.");
-            var setNameFilter = _ctx.MainVM.FilterVM.Filters["SetName"];
+            Assert.True(_ctx.MainVM.FilterPanelVM.Filters.ContainsKey("SetName"), "Expected filter key 'SetName' not found.");
+            var setNameFilter = _ctx.MainVM.FilterPanelVM.Filters["SetName"];
             Assert.NotEmpty(setNameFilter.FilterOptions);
 
             // Hardcoded lists of all expected names for the test.
@@ -467,7 +467,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
 
             // Rarity:
-            var rarityFilter = _ctx.MainVM.FilterVM.Filters["Rarity"];
+            var rarityFilter = _ctx.MainVM.FilterPanelVM.Filters["Rarity"];
             var expectedRarityOptions = new List<string> { "common", "uncommon", "rare", "mythic" };
 
             var actualRarityOptions = rarityFilter.FilterOptions
@@ -480,7 +480,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
 
             // Keywords:
-            var keywordsFilter = _ctx.MainVM.FilterVM.Filters["Keywords"];
+            var keywordsFilter = _ctx.MainVM.FilterPanelVM.Filters["Keywords"];
             var expectedKeywordsOptions = new List<string>
             {
                 "Aftermath","Changeling","Converge","Defender","Devoid","Enchant","Enrage","Evoke","Fight","First strike","Flash","Flying","Haste","Ingest","Kicker","Landfall","Lifelink","Meld","Menace","Paradox","Provoke","Prowess","Radiance","Reach","Scry","Sokratic Dialogue","Team TARDIS","Vigilance"
@@ -502,7 +502,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(expectedKeyWordsOperators, [.. keywordsFilter.AvailableOperators!]);
 
             // Subtypes:
-            var subTypesFilter = _ctx.MainVM.FilterVM.Filters["SubTypes"];
+            var subTypesFilter = _ctx.MainVM.FilterPanelVM.Filters["SubTypes"];
             var expectedSubtypesOptions = new List<string>
             {
                 "Advisor",
@@ -549,12 +549,12 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(sortedExpectedSubTypesOptions, actualSubTypesOptions);
 
             // Assert: the readable label for the "SubTypes" filter is "Subtypes"
-            var subTypesLabelFilter = _ctx.MainVM.FilterVM.Filters["SubTypes"];
+            var subTypesLabelFilter = _ctx.MainVM.FilterPanelVM.Filters["SubTypes"];
             Assert.Equal("Subtypes", subTypesLabelFilter.ReadableLabel);
 
 
             // SelectedCondition:
-            var selectedConditionFilter = _ctx.MainVM.FilterVM.Filters["SelectedCondition"];
+            var selectedConditionFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedCondition"];
             var expectedSelectedConditionsOptions = new List<string>
             {
                 "Near Mint",
@@ -574,7 +574,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(sortedExpectedSelectedConditionsOptions, actualSelectedConditionsOptions);
 
             // SelectedFinish:
-            var selectedFinishFilter = _ctx.MainVM.FilterVM.Filters["SelectedFinish"];
+            var selectedFinishFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedFinish"];
             var expectedSelectedFinishOptions = new List<string>
             {
                 "nonfoil",
@@ -590,11 +590,11 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(sortedExpectedSelectedFinishOptions, actualSelectedFinishOptions);
 
             // Assert: the readable label for the "SelectedFinish" filter is "Chosen finish"
-            var selectedFinishLabelFilter = _ctx.MainVM.FilterVM.Filters["SelectedFinish"];
+            var selectedFinishLabelFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedFinish"];
             Assert.Equal("Chosen finish", selectedFinishLabelFilter.ReadableLabel);
 
             // Language:
-            var selectedLanguageFilter = _ctx.MainVM.FilterVM.Filters["Language"];
+            var selectedLanguageFilter = _ctx.MainVM.FilterPanelVM.Filters["Language"];
             var expectedLanguageOptions = new List<string>
             {
                 "French",
@@ -611,7 +611,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(sortedExpectedLanguageOptions, actualLanguageOptions);
 
             // Colors:
-            var colorFilter = _ctx.MainVM.FilterVM.Filters["Colors"];
+            var colorFilter = _ctx.MainVM.FilterPanelVM.Filters["Colors"];
             var expectedColorOptions = new List<string>
             {
                 "W", "U", "B", "R", "G", "C", "X", "Colorless"
@@ -626,7 +626,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(sortedExpectedColorOptions, actualColorOptions);
 
             // ManaValue:
-            var manaValueFilter = _ctx.MainVM.FilterVM.Filters["ManaValue"];
+            var manaValueFilter = _ctx.MainVM.FilterPanelVM.Filters["ManaValue"];
             var expectedManaValueOptions = new List<string>
             {
                 "0", "1", "2", "3", "4", "5", "6", "7"
@@ -669,12 +669,12 @@ namespace CollectaMundo.Tests.ScenarioTests
             #region ===== Section A: "Simple" test =====
 
             // Arrange: ManaValue > 1
-            var numericFilter = _ctx.MainVM.FilterVM.Filters["ManaValue"];
+            var numericFilter = _ctx.MainVM.FilterPanelVM.Filters["ManaValue"];
             numericFilter.SelectedNumericValue = 1;
             numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
 
             // Arrange: Rarity NOT (mythic OR rare)
-            var rarityFilter = _ctx.MainVM.FilterVM.Filters["Rarity"];
+            var rarityFilter = _ctx.MainVM.FilterPanelVM.Filters["Rarity"];
             foreach (var opt in rarityFilter.FilterOptions.Where(o => o.OptionName is "mythic" or "rare"))
             {
                 opt.IsSelected = true;
@@ -687,12 +687,12 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Assert
             var expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
-            Assert.Equal(expectedSummary, _ctx.MainVM.FilterVM.FilterSummary);
+            Assert.Equal(expectedSummary, _ctx.MainVM.FilterPanelVM.FilterSummary);
             Assert.Equal(23, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(17, _ctx.MainVM.MyCollectionVM.FilteredCards.Count);
 
             // Arrange: Colors {R OR G}
-            var colorFilter = _ctx.MainVM.FilterVM.Filters["Colors"];
+            var colorFilter = _ctx.MainVM.FilterPanelVM.Filters["Colors"];
             foreach (var opt in colorFilter.FilterOptions.Where(o => o.OptionName is "R" or "G"))
             {
                 opt.IsSelected = true;
@@ -705,18 +705,18 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Assert
             expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
-            Assert.Equal(expectedSummary, _ctx.MainVM.FilterVM.FilterSummary);
+            Assert.Equal(expectedSummary, _ctx.MainVM.FilterPanelVM.FilterSummary);
             Assert.Equal(13, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(10, _ctx.MainVM.MyCollectionVM.FilteredCards.Count);
 
             // Reset for main scenario
-            _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+            _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null);
             #endregion
 
             #region ===== Section B: text search by Name and setname =====
 
             // Act
-            var nameFilter = _ctx.MainVM.FilterVM.Filters["Name"];
+            var nameFilter = _ctx.MainVM.FilterPanelVM.Filters["Name"];
             nameFilter.SelectedSingleOption = "Ranger";
 
             // Assert
@@ -735,7 +735,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
 
             // Act: type "modern horizons" into SetName free text search
-            var setNameFilter = (TestableFilterItemViewModel)_ctx.MainVM.FilterVM.Filters["SetName"];
+            var setNameFilter = (TestableFilterItemViewModel)_ctx.MainVM.FilterPanelVM.Filters["SetName"];
             setNameFilter.FreetextSearch = "modern horizons";
             setNameFilter.SimulateTypingComplete();
 
@@ -754,14 +754,14 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Assert
             Assert.Equal(3, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
 
-            _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+            _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null);
             ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
             #endregion
 
             #region ===== Section C: text + set filters =====
 
             // Arrange
-            var rulesFilter = _ctx.MainVM.FilterVM.Filters["Text"];
+            var rulesFilter = _ctx.MainVM.FilterPanelVM.Filters["Text"];
 
             // Act: Text contains nonsense string
             rulesFilter.SelectedSingleOption = "asdfasdf";
@@ -782,7 +782,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Assert
             Assert.Equal(46, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
-            Assert.Equal("Rulestext: \"a\"", _ctx.MainVM.FilterVM.FilterSummary);
+            Assert.Equal("Rulestext: \"a\"", _ctx.MainVM.FilterPanelVM.FilterSummary);
             Assert.Equal(21, _ctx.MainVM.MyCollectionVM.FilteredCards.Count);
 
             // Act: Press Backspace to remove "a"
@@ -797,17 +797,17 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(2, _ctx.MainVM.MyCollectionVM.FilteredCards.Count);
 
             // Act: SetName contains "The List"
-            var setFilter = _ctx.MainVM.FilterVM.Filters["SetName"];
+            var setFilter = _ctx.MainVM.FilterPanelVM.Filters["SetName"];
             setFilter.SelectedSingleOption = "The List";
-            _ctx.MainVM.FilterVM.NotifyFilterChanged();
+            _ctx.MainVM.FilterPanelVM.NotifyFilterChanged();
 
             // Assert
             Assert.Equal(2, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(2, _ctx.MainVM.MyCollectionVM.FilteredCards.Count);
-            Assert.Equal("Set Name: \"The List\" AND Rulestext: \"+1/+1 counter\"", _ctx.MainVM.FilterVM.FilterSummary);
+            Assert.Equal("Set Name: \"The List\" AND Rulestext: \"+1/+1 counter\"", _ctx.MainVM.FilterPanelVM.FilterSummary);
 
             // Reset
-            _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+            _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null);
 
             ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
             #endregion
@@ -815,7 +815,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             #region ===== Section D: types + supertypes =====
 
             // Arrange: Types {Creature OR Planeswalker}
-            var typesFilter = _ctx.MainVM.FilterVM.Filters["Types"];
+            var typesFilter = _ctx.MainVM.FilterPanelVM.Filters["Types"];
             foreach (var opt in typesFilter.FilterOptions.Where(o => o.OptionName is "Creature" or "Planeswalker"))
             {
                 opt.IsSelected = true;
@@ -828,7 +828,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(10, _ctx.MainVM.MyCollectionVM.FilteredCards.Count);
 
             // Arrange: SuperTypes {Legendary}
-            var superTypesFilter = _ctx.MainVM.FilterVM.Filters["SuperTypes"];
+            var superTypesFilter = _ctx.MainVM.FilterPanelVM.Filters["SuperTypes"];
             foreach (var opt in superTypesFilter.FilterOptions.Where(o => o.OptionName is "Legendary"))
             {
                 opt.IsSelected = true;
@@ -837,7 +837,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Assert
             Assert.Equal(6, _ctx.MainVM.AllCardsVM.FilteredCards.Count);
             Assert.Empty(_ctx.MainVM.MyCollectionVM.FilteredCards);
-            Assert.Equal("Supertypes: {Legendary} AND Card type: {Creature OR Planeswalker}", _ctx.MainVM.FilterVM.FilterSummary);
+            Assert.Equal("Supertypes: {Legendary} AND Card type: {Creature OR Planeswalker}", _ctx.MainVM.FilterPanelVM.FilterSummary);
             #endregion
 
             #region ===== Section E: add one card (Karox) via AddSelectedCards =====
@@ -898,10 +898,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Empty(_ctx.MainVM.AddCardsVM.CardsToAddOrEdit);
 
             //// Assert: filter facets include new values
-            var conditionFilter = _ctx.MainVM.FilterVM.Filters["SelectedCondition"];
+            var conditionFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedCondition"];
             Assert.Contains("Played", conditionFilter.AvailableOptions);
 
-            var languageFilter = _ctx.MainVM.FilterVM.Filters["Language"];
+            var languageFilter = _ctx.MainVM.FilterPanelVM.Filters["Language"];
             Assert.Contains("Ancient Greek", languageFilter.AvailableOptions);
             #endregion
 
@@ -926,10 +926,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.DoesNotContain(_ctx.MainVM.MyCollectionVM.Cards, c => c.Uuid == uuidEtched);
             Assert.DoesNotContain(_ctx.MainVM.MyCollectionVM.Cards, c => c.Uuid == uuidGerman);
             // Assert: facets updated (ImmediateScheduler makes this synchronous)
-            var finishFilter = _ctx.MainVM.FilterVM.Filters["SelectedFinish"];
+            var finishFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedFinish"];
             Assert.DoesNotContain(finishFilter.AvailableOptions, s => string.Equals(s, "etched", StringComparison.OrdinalIgnoreCase));
 
-            var langFilter = _ctx.MainVM.FilterVM.Filters["Language"];
+            var langFilter = _ctx.MainVM.FilterPanelVM.Filters["Language"];
             Assert.DoesNotContain(langFilter.AvailableOptions, s => string.Equals(s, "German", StringComparison.OrdinalIgnoreCase));
 
             // Assert: count back to 22
@@ -1010,12 +1010,12 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             #region ===== Section I: Check keyword aggregation from b-side of card =====
             // Reset
-            _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+            _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null);
 
             ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
 
             // Arrange
-            _ctx.MainVM.FilterVM.Filters["Keywords"].FilterOptions.FirstOrDefault(o => o.OptionName == "Vigilance")!.IsSelected = true;
+            _ctx.MainVM.FilterPanelVM.Filters["Keywords"].FilterOptions.FirstOrDefault(o => o.OptionName == "Vigilance")!.IsSelected = true;
             expectedNames = [.. new List<string> { "Bruna, the Fading Light // Brisela, Voice of Nightmares", "Gisela, the Broken Blade // Brisela, Voice of Nightmares" }.OrderBy(n => n)];
             actualNames = [.. _ctx.MainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n)];
 
@@ -1028,7 +1028,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             #region ===== Section J: location CRUD + assign/remove location through collection mutation flow =====
 
             // Arrange
-            _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+            _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null);
             ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
 
             var locationVm = _ctx.MainVM.CardLocationVM;
@@ -1525,9 +1525,9 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(createdLocation.Id, updatedCard.SelectedLocationId);
 
             // Filter on deck location
-            _ctx.MainVM.FilterVM.ClearFiltersCommand?.Execute(null); // clear other filters to isolate location filter behavior
+            _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null); // clear other filters to isolate location filter behavior
 
-            var locationFilter = _ctx.MainVM.FilterVM.Filters["SelectedLocationDisplayName"];
+            var locationFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
 
             locationFilter.FilterOptions.Single(o => o.OptionName == "Deck: Control Shell").IsSelected = true;
             ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
@@ -1617,7 +1617,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal("Casual control pile", _ctx.MainVM.DeckManagementVM.Description);
 
             // Assert filter option still exists after update and filtering is preserved after update
-            var updatedLocationFilter = _ctx.MainVM.FilterVM.Filters["SelectedLocationDisplayName"];
+            var updatedLocationFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
             Assert.Contains(updatedLocationFilter.FilterOptions, o => o.OptionName == "Deck: Control Pile");
 
             filteredCard = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
@@ -1989,7 +1989,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(0, collectionReferenceCount);
 
             // Assert location filter option removed
-            var locationFilterAfterDelete = _ctx.MainVM.FilterVM.Filters["SelectedLocationDisplayName"];
+            var locationFilterAfterDelete = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
 
             Assert.DoesNotContain(locationFilterAfterDelete.FilterOptions, o => o.Value == aggroFishLocationId.ToString());
             Assert.DoesNotContain(locationFilterAfterDelete.FilterOptions, o => o.DisplayName == "Deck: Aggro Fish");
@@ -2110,7 +2110,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(0, deletedCollectionReferenceCount);
 
             // Assert location filter options removed
-            var locationFilterAfterBulkDelete = _ctx.MainVM.FilterVM.Filters["SelectedLocationDisplayName"];
+            var locationFilterAfterBulkDelete = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
 
             Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.Value == tokenSwarmLocationId.ToString());
             Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.Value == controlPileLocationId.ToString());

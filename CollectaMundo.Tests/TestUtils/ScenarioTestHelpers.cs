@@ -13,14 +13,14 @@ namespace CollectaMundo.Tests.TestUtils
     {
         public static void ApplyAllFilters(MainWindowViewModel mainVM, FilteringService filteringService)
         {
-            mainVM.AllCardsVM.FilteredCards = filteringService.ApplyFilters(mainVM.AllCardsVM.Cards, mainVM.FilterVM.Filters.Values);
-            mainVM.MyCollectionVM.FilteredCards = filteringService.ApplyFilters(mainVM.MyCollectionVM.Cards, mainVM.FilterVM.Filters.Values);
+            mainVM.AllCardsVM.FilteredCards = filteringService.ApplyFilters(mainVM.AllCardsVM.Cards, mainVM.FilterPanelVM.Filters.Values);
+            mainVM.MyCollectionVM.FilteredCards = filteringService.ApplyFilters(mainVM.MyCollectionVM.Cards, mainVM.FilterPanelVM.Filters.Values);
         }
         public static void AssertFiltersCleared(MainWindowViewModel mainVM)
         {
             Assert.Equal(65, mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(22, mainVM.MyCollectionVM.FilteredCards.Count);
-            Assert.True(string.IsNullOrEmpty(mainVM.FilterVM.FilterSummary));
+            Assert.True(string.IsNullOrEmpty(mainVM.FilterPanelVM.FilterSummary));
         }
         public static PrintingCard FindCard(IEnumerable<PrintingCard> source, string uuid)
         {

@@ -9,7 +9,6 @@ using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Filtering;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 
 namespace CollectaMundo.ApplicationServices.CardLists
@@ -21,7 +20,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterDefaultsLogic = filterDefaultsLogic;
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
-        public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterPanelViewModel filterVM)
+        public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, CardListViewModel<OracleCard> oracleCardsVM, Dictionary<string, FilterItemViewModel> filters, FilterPanelViewModel filterVM)
         {
             var dbIoSw = Stopwatch.StartNew();
 
@@ -93,10 +92,25 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 return myCollection;
             });
 
-            await Task.WhenAll(allCardsTask, myCollectionTask);
+            var oracleCardsTask = Task.Run(() =>
+            {
+                var oracleCards = aggregatedPrintings
+                    .Select(p => p.Oracle)
+                    .Where(o => !string.IsNullOrWhiteSpace(o.ScryfallOracleId))
+                    .GroupBy(o => o.ScryfallOracleId, StringComparer.OrdinalIgnoreCase)
+                    .Select(g => g.First())
+                    .ToList();
+
+                oracleCardsVM.Cards = SortOracleCards(oracleCards);
+                oracleCardsVM.FilteredCards = oracleCardsVM.Cards;
+
+                return oracleCards;
+            });
+
+            await Task.WhenAll(allCardsTask, myCollectionTask, oracleCardsTask);
 
             phase3abSw.Stop();
-            Debug.WriteLine($"[InitializeCardListsAsync] phase 3a and 3b (build AllCards and MyCollection objects): {phase3abSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"[InitializeCardListsAsync] phase 3a and 3b (build AllCards, MyCollection, and OracleCards objects): {phase3abSw.ElapsedMilliseconds} ms");
 
             var phase3cSw = Stopwatch.StartNew();
 
@@ -124,34 +138,8 @@ namespace CollectaMundo.ApplicationServices.CardLists
             await _keyedDataProviderService.ResetPricesMetaProviderAsync(retailerKey);
         }
 
-        // helper to sort cards in the desired order
         private static List<TCard> SortCards<TCard>(IEnumerable<TCard> cards) where TCard : ICardListSortable
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            static int ColorRankFast(string? colors)
-            {
-                // W(0), U(1), B(2), R(3), G(4), MULTI(5), C(6), Unknown(7)
-                if (colors is null)
-                {
-                    return 7;
-                }
-
-                if (colors.Length == 1)
-                {
-                    return colors[0] switch
-                    {
-                        'W' => 0,
-                        'U' => 1,
-                        'B' => 2,
-                        'R' => 3,
-                        'G' => 4,
-                        _ => 7,
-                    };
-                }
-
-                return 5;
-            }
-
             return
             [
                 .. cards
@@ -160,6 +148,40 @@ namespace CollectaMundo.ApplicationServices.CardLists
             .ThenBy(c => ColorRankFast(c.Colors))
             .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)
             ];
+        }
+
+        private static List<OracleCard> SortOracleCards(IEnumerable<OracleCard> cards)
+        {
+            return
+            [
+                .. cards
+            .OrderBy(c => ColorRankFast(c.Colors))
+            .ThenBy(c => c.ManaValue)
+            .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)
+            ];
+        }
+        private static int ColorRankFast(string? colors)
+        {
+            if (string.IsNullOrWhiteSpace(colors))
+            {
+                return 6; // colorless
+            }
+
+            if (colors.Length == 1)
+            {
+                return colors[0] switch
+                {
+                    'W' => 0,
+                    'U' => 1,
+                    'B' => 2,
+                    'R' => 3,
+                    'G' => 4,
+                    _ => 7
+                };
+            }
+
+            return 5; // multicolor
         }
     }
 }

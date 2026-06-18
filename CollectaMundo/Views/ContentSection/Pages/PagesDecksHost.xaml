@@ -7,8 +7,7 @@
              xmlns:deckVms="clr-namespace:CollectaMundo.ViewModels.Decks"
              xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages"
              mc:Ignorable="d" 
-             d:DataContext="{d:DesignInstance Type=pagesVm:PagesDecksHostViewModel}"
-             
+             d:DataContext="{d:DesignInstance Type=pagesVm:PagesDecksHostViewModel}"             
              d:DesignHeight="500" d:DesignWidth="800">
 
     <Grid>

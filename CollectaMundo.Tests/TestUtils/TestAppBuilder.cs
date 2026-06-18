@@ -141,7 +141,7 @@ public static class TestAppBuilder
 
         var searchLogic = new FilterItemSearchLogic();
 
-        foreach (var kvp in mainVM.FilterVM.Filters.ToList())
+        foreach (var kvp in mainVM.FilterPanelVM.Filters.ToList())
         {
             var old = kvp.Value;
 
@@ -152,18 +152,18 @@ public static class TestAppBuilder
                     old.FilterOptions,
                     old.DefaultText,
                     old.ReadableLabel ?? old.CriteriaKey,
-                    mainVM.FilterVM,
+                    mainVM.FilterPanelVM,
                     searchLogic,
                     numericOptions: null)
                 {
                     OperatorSelection = old.OperatorSelection
                 };
 
-                mainVM.FilterVM.Filters[kvp.Key] = testable;
+                mainVM.FilterPanelVM.Filters[kvp.Key] = testable;
             }
         }
 
-        mainVM.FilterVM.NotifyFilterChanged();
+        mainVM.FilterPanelVM.NotifyFilterChanged();
 
         SpinWait.SpinUntil(() =>
             mainVM.AllCardsVM.Cards.Count >= 61 &&

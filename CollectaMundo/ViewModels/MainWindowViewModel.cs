@@ -90,15 +90,16 @@ namespace CollectaMundo.ViewModels
         public SideMenuFilteringViewModel FilteringSideMenuVM { get; }
         public SideMenuUtilitiesViewModel UtilitiesSideMenuVM { get; }
 
+        // Content
         public CardListViewModel<PrintingCard> AllCardsVM { get; }
         public CardListViewModel<CollectionCard> MyCollectionVM { get; }
-        public CardListViewModel<OracleCard> AllCardsForDecksVM { get; }
+        public CardListViewModel<OracleCard> OracleCardsVM { get; }
         public CardListViewModel<ManaSymbolViewModel> ColorIconsViewModel { get; }
         public ModifyCollectionViewModel AddCardsVM { get; }
         public ModifyCollectionViewModel EditCardsVM { get; }
         public DeckManagementViewModel DeckManagementVM { get; }
         public DeckEditorViewModel DeckEdititorVM { get; }
-        public FilterPanelViewModel FilterVM { get; }
+        public FilterPanelViewModel FilterPanelVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public UtilitiesViewModel UtilitiesVM { get; }
         public ImportViewModel ImportVM { get; }
@@ -175,7 +176,7 @@ namespace CollectaMundo.ViewModels
             // cardlist viewmodels
             AllCardsVM = new CardListViewModel<PrintingCard>();
             MyCollectionVM = new CardListViewModel<CollectionCard>();
-            AllCardsForDecksVM = new CardListViewModel<OracleCard>();
+            OracleCardsVM = new CardListViewModel<OracleCard>();
 
             List<string> manaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
             var manaSymbols = manaKeys.Select(key => new ManaSymbolViewModel { ManaCostRaw = key }).ToList();
@@ -185,15 +186,15 @@ namespace CollectaMundo.ViewModels
             AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true);
             EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false);
 
-            // Deck management viewmodels
-            DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
-            DeckEdititorVM = new DeckEditorViewModel();
-
             // filtering viewmodel
-            FilterVM = new FilterPanelViewModel(_filteringService);
+            FilterPanelVM = new FilterPanelViewModel(_filteringService);
 
             // card image viewmodel
             CardImageVM = new CardImageViewModel(cardImageService);
+
+            // Deck management viewmodels
+            DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
+            DeckEdititorVM = new DeckEditorViewModel(OracleCardsVM, CardImageVM, FilterPanelVM);
 
             var cardCollectionHost = this;
             var shellUiState = this;
@@ -209,13 +210,13 @@ namespace CollectaMundo.ViewModels
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "Search and Filter Cards", cardListPage: ShellPageEnum.SearchAndFilter, primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
-            MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterVM, pageTitle: "My Collection", cardListPage: ShellPageEnum.MyCollection, primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
+            SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterPanelVM, pageTitle: "Search and Filter Cards", cardListPage: ShellPageEnum.SearchAndFilter, primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
+            MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterPanelVM, pageTitle: "My Collection", cardListPage: ShellPageEnum.MyCollection, primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
             PagesDecksHostVM = new PagesDecksHostViewModel(DeckManagementVM, DeckEdititorVM);
             PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, utilitiesNavigator);
 
             // Side menu viewmodels
-            FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterVM, ColorIconsViewModel, shellUiState);
+            FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterPanelVM, ColorIconsViewModel, shellUiState);
             UtilitiesSideMenuVM = new SideMenuUtilitiesViewModel(UtilitiesVM, PricesVM);
 
             // Set initial page and menu
@@ -276,7 +277,7 @@ namespace CollectaMundo.ViewModels
             CardLocationVM.CollectionChanged += OnCollectionRowsChanged;
             DeckManagementVM.CollectionChanged += OnCollectionRowsChanged;
 
-            FilterVM.FilterChanged += OnFilterChanged;
+            FilterPanelVM.FilterChanged += OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged += OnLocationsChanged;
         }
         private void UnsubscribeChildVmEvents()
@@ -289,7 +290,7 @@ namespace CollectaMundo.ViewModels
             CardLocationVM.CollectionChanged -= OnCollectionRowsChanged;
             DeckManagementVM.CollectionChanged -= OnCollectionRowsChanged;
 
-            FilterVM.FilterChanged -= OnFilterChanged;
+            FilterPanelVM.FilterChanged -= OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged -= OnLocationsChanged;
         }
 
@@ -384,16 +385,16 @@ namespace CollectaMundo.ViewModels
             }
 
             // Rebuild collection-backed filter options after location display names changed.
-            _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters);
+            _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterPanelVM.Filters);
 
             // Reapply active filters because selected/display values may have changed.
             OnFilterChanged(this, EventArgs.Empty);
         }
         private void OnFilterChanged(object? sender, EventArgs e)
         {
-            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
-            AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
+            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterPanelVM.Filters.Values);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterPanelVM.Filters.Values);
+            OracleCardsVM.FilteredCards = _filteringService.ApplyFilters(OracleCardsVM.Cards, FilterPanelVM.Filters.Values);
         }
         private void OnCollectionChanged(object? sender, CollectionChangeSet<CollectionCard> changeSet)
         {
@@ -418,11 +419,11 @@ namespace CollectaMundo.ViewModels
             EditCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
 
             // Reapply active filters to the updated collection list.
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterPanelVM.Filters.Values);
 
             // Refresh collection-derived filter facets after mutation.
             _facetScheduler.Cancel();
-            _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
+            _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterPanelVM.Filters));
         }
         private void OnCollectionRowsChanged(object? sender, CollectionChangeSet<CollectionCardDbRow> rowChangeSet)
         {
@@ -461,9 +462,9 @@ namespace CollectaMundo.ViewModels
             var sw = Stopwatch.StartNew();
 
             Debug.WriteLine("[ReloadAllCardListsAsync] Initializing card lists");
-            await _cardListService.InitializeCardListsAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
-            FilterVM.NotifyFiltersRebuilt();
-            FilterVM.NotifyFilterChanged();
+            await _cardListService.InitializeCardListsAsync(AllCardsVM, MyCollectionVM, OracleCardsVM, FilterPanelVM.Filters, FilterPanelVM);
+            FilterPanelVM.NotifyFiltersRebuilt();
+            FilterPanelVM.NotifyFilterChanged();
             Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}");
             PricesVM.RefreshLatestPriceDate();
             sw.Stop();

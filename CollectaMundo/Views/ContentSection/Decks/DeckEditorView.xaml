@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:deckViewModels="clr-namespace:CollectaMundo.ViewModels.Decks"
+             xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"             
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=deckViewModels:DeckEditorViewModel}"
              d:Style="{StaticResource {x:Type UserControl}}"
@@ -105,29 +106,37 @@
         <!-- Bottom: Filterable oracle card source -->
         <GroupBox Grid.Row="3" Header="Add Cards">
             <DataGrid x:Name="AvailableCardsDataGrid"
+                      ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
+                      SelectedItem="{Binding CardImageVM.SelectedCard, Mode=TwoWay}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
                       IsReadOnly="True"
                       Style="{StaticResource CardGridBaseStyle}">
 
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="Card Name"
-                                            Width="*"
-                                            SortMemberPath="Name">
+                    <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
+                        <DataGridTemplateColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <sharedElements:FilterHeaderUserControl DataContext="{Binding DataContext.NameFilter, ElementName=AvailableCardsDataGrid}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.HeaderTemplate>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-
-                    <DataGridTemplateColumn Header="Mana Cost"
-                                            Width="Auto"
-                                            SortMemberPath="ManaValue">
+                    <DataGridTemplateColumn Header="Mana Cost" Width="Auto" IsReadOnly="True" SortMemberPath="ManaValue">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Image Height="20"
-                                       HorizontalAlignment="Right"/>
+                                <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Type">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Type}" TextWrapping="Wrap" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

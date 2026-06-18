@@ -3,7 +3,6 @@ using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.ComponentModel;
-using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.SideMenuLeft
 {
@@ -28,7 +27,6 @@ namespace CollectaMundo.ViewModels.SideMenuLeft
         {
             if (e.PropertyName == nameof(IShellUiState.CurrentPage))
             {
-                Debug.WriteLine($"[FilteringSideMenu] CurrentPage changed. IsMyCollectionPageActive={IsMyCollectionPageActive}");
                 OnPropertyChanged(nameof(IsMyCollectionPageActive));
             }
         }
