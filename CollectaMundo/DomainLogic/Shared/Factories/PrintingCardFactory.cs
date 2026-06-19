@@ -28,6 +28,7 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
 
             return new PrintingCard
             {
+                IsOnlineOnly = row.IsOnlineOnly == 1,
                 Oracle = oracle,
                 Uuid = row.Uuid ?? string.Empty,
                 SetCode = row.SetCode,

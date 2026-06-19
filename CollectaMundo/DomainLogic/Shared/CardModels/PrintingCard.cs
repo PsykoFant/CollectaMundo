@@ -7,32 +7,15 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
     public sealed class PrintingCard : ICardListSortable, ICardImageSourceCard
     {
         public required OracleCard Oracle { get; init; }
-        public required string Uuid { get; init; }
-        public string? SetCode { get; init; }
-        public string? Language { get; init; }
+
+        public string? Colors => Oracle.Colors;
+        public decimal? EtchedPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.EtchedPrice;
         public string? Finishes { get; init; }
         public IReadOnlyList<string> FinishOptions =>
             string.IsNullOrWhiteSpace(Finishes)
                 ? []
                 : Finishes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
-
-        public List<string> OtherLanguages { get; set; } = [];
-        public string? Rarity { get; init; }
-        public string Name => Oracle.Name;
-        public string? ScryfallOracleId => Oracle.ScryfallOracleId;
-        public string? ManaCost => Oracle.ManaCost;
-        public string? ManaCostRaw => Oracle.ManaCostRaw;
-        public string? Colors => Oracle.Colors;
-        public string? Type => Oracle.Type;
-        public string? Types => Oracle.Types;
-        public string? SuperTypes => Oracle.SuperTypes;
-        public string? SubTypes => Oracle.SubTypes;
-        public string? Keywords => Oracle.Keywords;
-        public string? Text => Oracle.Text;
-        public string? Side => Oracle.Side;
-        public IReadOnlyList<string> OtherFaceIds => Oracle.OtherFaceIds;
-        public double ManaValue => Oracle.ManaValue;
-        public ImageSource? ManaCostImage => Oracle.ManaCostImage;
+        public decimal? FoilPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.FoilPrice;
 
         private ImageSource? _keyRuneImage;
         public ImageSource? KeyRuneImage
@@ -47,9 +30,42 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
                 return _keyRuneImage;
             }
         }
+        public bool IsOnlineOnly { get; init; }
+        public string? Keywords => Oracle.Keywords;
+        public string? Language { get; init; }
+        public string? ManaCost => Oracle.ManaCost;
+        public ImageSource? ManaCostImage => Oracle.ManaCostImage;
+        public string? ManaCostRaw => Oracle.ManaCostRaw;
+        public double ManaValue => Oracle.ManaValue;
+        public string Name => Oracle.Name;
+        public decimal? NormalPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.NormalPrice;
+        public IReadOnlyList<string> OtherFaceIds => Oracle.OtherFaceIds;
+        public List<string> OtherLanguages { get; set; } = [];
+        public string? Rarity { get; init; }
+
+        private DateTime? _releaseDate;
+        public DateTime? ReleaseDate
+        {
+            get
+            {
+                if (_releaseDate.HasValue)
+                {
+                    return _releaseDate;
+                }
+
+                if (string.IsNullOrWhiteSpace(SetCode))
+                {
+                    return null;
+                }
+
+                _releaseDate = CardDataProviders.SetMetaProvider?.Get(SetCode)?.ReleaseDate;
+                return _releaseDate;
+            }
+        }
+        public string? ScryfallOracleId => Oracle.ScryfallOracleId;
+        public string? SetCode { get; init; }
 
         private string? _setName;
-
         private bool _setNameCached;
         public string? SetName
         {
@@ -71,28 +87,12 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
                 return _setName;
             }
         }
-
-        private DateTime? _releaseDate;
-        public DateTime? ReleaseDate
-        {
-            get
-            {
-                if (_releaseDate.HasValue)
-                {
-                    return _releaseDate;
-                }
-
-                if (string.IsNullOrWhiteSpace(SetCode))
-                {
-                    return null;
-                }
-
-                _releaseDate = CardDataProviders.SetMetaProvider?.Get(SetCode)?.ReleaseDate;
-                return _releaseDate;
-            }
-        }
-        public decimal? NormalPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.NormalPrice;
-        public decimal? FoilPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.FoilPrice;
-        public decimal? EtchedPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.EtchedPrice;
+        public string? Side => Oracle.Side;
+        public string? SubTypes => Oracle.SubTypes;
+        public string? SuperTypes => Oracle.SuperTypes;
+        public string? Text => Oracle.Text;
+        public string? Type => Oracle.Type;
+        public string? Types => Oracle.Types;
+        public required string Uuid { get; init; }
     }
 }

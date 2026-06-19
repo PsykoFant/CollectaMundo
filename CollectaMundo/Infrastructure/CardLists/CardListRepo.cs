@@ -26,6 +26,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                                     c.language          AS Language,
                                     c.uuid              AS Uuid,
                                     c.otherFaceIds      AS OtherFaceIds,
+                                    c.isOnlineOnly      AS IsOnlineOnly,
                                     c.finishes          AS Finishes,
                                     c.side              AS Side,
                                     c.rarity            AS Rarity
@@ -51,6 +52,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                                     t.language          AS Language,
                                     t.uuid              AS Uuid,
                                     t.otherFaceIds      AS OtherFaceIds,
+                                    0                   AS IsOnlineOnly,
                                     t.finishes          AS Finishes,
                                     t.side              AS Side,
                                     NULL                AS Rarity
@@ -89,7 +91,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                 Side = GetFieldValue<string>(r, "Side"),
                 OtherFaceIds = GetFieldValue<string>(r, "OtherFaceIds"),
                 ManaValue = GetFieldValue<double?>(r, "ManaValue"),
-
+                IsOnlineOnly = GetFieldValue<int>(r, "IsOnlineOnly"),
                 Uuid = GetFieldValue<string>(r, "Uuid"),
                 Language = GetFieldValue<string>(r, "Language"),
                 SetCode = GetFieldValue<string>(r, "SetCode"),
@@ -155,16 +157,21 @@ namespace CollectaMundo.Infrastructure.CardLists
         }
         private static T? GetFieldValue<T>(DbDataReader reader, string columnName)
         {
-            if (reader[columnName] == DBNull.Value)
+            var value = reader[columnName];
+
+            if (value == DBNull.Value)
             {
                 return default;
             }
 
-            var value = reader[columnName];
-
-            if (typeof(T) == typeof(int?) && value is long longValue)
+            if (typeof(T) == typeof(int) && value is long longValue)
             {
-                return (T)(object)(int?)longValue;
+                return (T)(object)(int)longValue;
+            }
+
+            if (typeof(T) == typeof(int?) && value is long nullableLongValue)
+            {
+                return (T)(object)(int?)nullableLongValue;
             }
 
             if (typeof(T) == typeof(double?) && value is double doubleValue)
