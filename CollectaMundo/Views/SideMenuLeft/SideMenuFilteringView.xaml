@@ -12,85 +12,85 @@
              d:DesignHeight="700" d:DesignWidth="250">
     <Grid Margin="10,0,0,0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="20"/> <!-- 0 - clear filters button -->
-            <RowDefinition Height="*"/> <!-- 1 - oracle card propeties -->
+            <RowDefinition Height="20"/>        <!-- 0 - clear filters button -->
+            <RowDefinition Height="Auto"/>      <!-- 1 - oracle card propeties -->
+            <RowDefinition Height="Auto"/>      <!-- 2 - printing card propeties -->
+            <RowDefinition Height="Auto"/>      <!-- 3 - collection card propeties -->
         </Grid.RowDefinitions>
 
         <!-- 0 - clear filters button -->
         <Button Grid.Row="0" Content="Clear filters" VerticalAlignment="Top" Height="20" Command="{Binding FilterVM.ClearFiltersCommand}"/>
 
         <!-- 1 - oracle card propeties -->
-        <StackPanel Grid.Row="1">
-            <Grid>
+        <StackPanel Grid.Row="1" Margin="0,10,0,0">
+
             <!--Color filtering-->
-            <ListBox ItemsSource="{Binding FilterVM.Filters[Colors].FilterOptions}"
-                             SelectionMode="Extended" Width="120" HorizontalAlignment="Left"
-                             Height="170" VerticalAlignment="Top" Background="{x:Null}" 
-                             BorderBrush="{x:Null}" Foreground="{x:Null}">
-                <ListBox.Resources>
-                    <Style TargetType="{x:Type ListBoxItem}">
-                        <Setter Property="SnapsToDevicePixels" Value="true" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <CheckBox Margin="5,2"
-                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                          Content="{Binding OptionName}"
-                                                          FontSize="{Binding ., Converter={StaticResource ColorlessFontConverter}, ConverterParameter=30}"/>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ListBox.Resources>
-            </ListBox>
-
-            <ListBox ItemsSource="{Binding ColorIconsViewModel.Cards}"
-                                 Margin="20,0,0,0" Width="50" HorizontalAlignment="Left"
-                                 Height="160" VerticalAlignment="Top" Background="{x:Null}" 
+            <Grid>                
+                <ListBox ItemsSource="{Binding FilterVM.Filters[Colors].FilterOptions}"
+                                 SelectionMode="Extended" HorizontalAlignment="Left"
+                                 Height="170" VerticalAlignment="Top" Background="{x:Null}" 
                                  BorderBrush="{x:Null}" Foreground="{x:Null}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <Image Source="{Binding ManaCostImage}" Height="15" HorizontalAlignment="Right"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                    <ListBox.Resources>
+                        <Style TargetType="{x:Type ListBoxItem}">
+                            <Setter Property="SnapsToDevicePixels" Value="true" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                        <CheckBox Margin="5,2"
+                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                              Content="{Binding OptionName}"
+                                                              FontSize="{Binding ., Converter={StaticResource ColorlessFontConverter}, ConverterParameter=30}"/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.Resources>
+                </ListBox>
 
-            <ComboBox DataContext="{Binding FilterVM.Filters[Colors]}"
-                                  Width="60"
-                                  Margin="190,0,0,0"
-                                  VerticalAlignment="Top"
-                                  HorizontalAlignment="Right"
-                                  ItemsSource="{Binding AvailableOperators}"
-                                  SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
-            </ComboBox>
+                <ListBox ItemsSource="{Binding ColorIconsViewModel.Cards}"
+                                     Margin="20,0,0,0" HorizontalAlignment="Left"
+                                     Height="160" VerticalAlignment="Top" Background="{x:Null}" 
+                                     BorderBrush="{x:Null}" Foreground="{x:Null}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="{Binding ManaCostImage}" Height="15" HorizontalAlignment="Right"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <ComboBox DataContext="{Binding FilterVM.Filters[Colors]}"
+                                      Width="60"
+                                      VerticalAlignment="Top"
+                                      HorizontalAlignment="Right"
+                                      ItemsSource="{Binding AvailableOperators}"
+                                      SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
+                </ComboBox>
             </Grid>
-        <!--Mana value filtering-->
-        <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" Margin="0,190,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-        <Grid Margin="10,215,0,0" VerticalAlignment="Top" Height="20" Width="240">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <!-- Operator Selection -->
-            <ComboBox Grid.Column="0"
-                                  ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOperators}"
-                                  SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay}">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Converter={StaticResource OperatorToSymbolConverter}}" />
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            <!-- Numeric Value Selection -->
-            <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableNumericOptions}"
-                                  SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay}"
-                                  HorizontalAlignment="Right"
-                                  Width="80"/>
-        </Grid>
+            
+            <!--Mana value filtering-->
+            <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
 
+            <Grid Margin="0,0,0,10">
+                <!-- Operator Selection -->
+                <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOperators}"
+                          SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay}"
+                          HorizontalAlignment="Left"
+                          Width="150">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource OperatorToSymbolConverter}}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                
+                <!-- Numeric Value Selection -->
+                <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableNumericOptions}"
+                          SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay}"
+                          HorizontalAlignment="Right"
+                          Width="80"/>
+            </Grid>
 
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Rarity]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SuperTypes]}" />
@@ -101,12 +101,10 @@
             
             <!--Rulestext filtering-->
             <TextBox DataContext="{Binding FilterVM.Filters[Text]}"
-                 Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                 HorizontalAlignment="Left" 
+                 Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
                  TextWrapping="Wrap" 
                  Foreground="{Binding TextForeground, Mode=TwoWay}" 
-                 VerticalAlignment="Top" 
-                 Width="240" Height="45">
+                 Height="45">
                 <i:Interaction.Triggers>
                     <!-- Enter + Escape key binding -->
                     <i:EventTrigger EventName="PreviewKeyDown">
@@ -125,29 +123,25 @@
             </TextBox>
         </StackPanel>
 
-        <StackPanel Margin="10,245,0,0">
+        <!-- 2 - printing card propeties -->
+        <StackPanel Grid.Row="2" Margin="0,10,0,0" Visibility="{Binding IsPrintingCardFilteringVisble, Converter={StaticResource BoolToVisibilityConverter}}">
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Finishes]}" />
         </StackPanel>
 
-
-        <StackPanel Margin="10,480,0,0" Visibility="{Binding IsMyCollectionPageActive, Converter={StaticResource BoolToVisibilityConverter}}">            
+        <!-- 3 - collection card propeties -->
+        <StackPanel Grid.Row="3" Visibility="{Binding IsCollectionCardFilteringVisble, Converter={StaticResource BoolToVisibilityConverter}}">
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedCondition]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedFinish]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Language]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedLocationDisplayName]}" />
-            <CheckBox  Content="Filter on cards for trade"
-                       IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"
-                   HorizontalAlignment="Left" VerticalAlignment="Top"/>
-            <CheckBox Content="Filter on cards NOT for trade"
-                      IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"
-                      HorizontalAlignment="Left" VerticalAlignment="Top"/>
-            <TextBox DataContext="{Binding FilterVM.Filters[Comment]}"
-                     Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                     HorizontalAlignment="Left" 
+            <CheckBox  Content="Filter on cards for trade" IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"/>
+            <CheckBox Content="Filter on cards NOT for trade" IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"/>
+            <TextBox Margin="0,10,0,0"
+                     DataContext="{Binding FilterVM.Filters[Comment]}"
+                     Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
                      TextWrapping="Wrap" 
                      Foreground="{Binding TextForeground, Mode=TwoWay}" 
-                     VerticalAlignment="Top" 
-                     Width="240" Height="20">
+                     Height="20">
                 <i:Interaction.Triggers>
                     <!-- Enter + Escape key binding -->
                     <i:EventTrigger EventName="PreviewKeyDown">
