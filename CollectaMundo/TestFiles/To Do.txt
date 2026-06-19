@@ -2,7 +2,9 @@ TO DO
 
 Deck editor!
 
- Så er det sku selve deck editor!
+ - Filter på gameplay only
+ - Filter på print only
+
 
 
 

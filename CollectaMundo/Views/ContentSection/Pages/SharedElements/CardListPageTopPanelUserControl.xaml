@@ -3,10 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages.SharedElements"             
+             xmlns:pagesVm="clr-namespace:CollectaMundo.ViewModels.Pages"             
              xmlns:pagespecificElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.PagespecificElements"             
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance Type=pagesVm:CardListPageViewModel, IsDesignTimeCreatable=False}"
+             d:DataContext="{d:DesignInstance Type=pagesVm:PagesSearchAndFilterViewModel, IsDesignTimeCreatable=False}"
              d:Style="{StaticResource {x:Type UserControl}}"
              d:DesignHeight="450"
              d:DesignWidth="600">
