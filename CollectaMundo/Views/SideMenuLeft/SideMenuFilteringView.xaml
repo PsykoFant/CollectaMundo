@@ -10,53 +10,62 @@
              d:Style="{StaticResource {x:Type UserControl}}"
              d:DataContext="{d:DesignInstance Type=sideMenuVm:SideMenuFilteringViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="700" d:DesignWidth="250">
-    <Grid x:Name="GridFiltering">
+    <Grid Margin="10,0,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20"/> <!-- 0 - clear filters button -->
+            <RowDefinition Height="*"/> <!-- 1 - oracle card propeties -->
+        </Grid.RowDefinitions>
 
-        <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Command="{Binding FilterVM.ClearFiltersCommand}"/>
+        <!-- 0 - clear filters button -->
+        <Button Grid.Row="0" Content="Clear filters" VerticalAlignment="Top" Height="20" Command="{Binding FilterVM.ClearFiltersCommand}"/>
 
-        <!--Color filtering-->
-        <ListBox ItemsSource="{Binding FilterVM.Filters[Colors].FilterOptions}"
-                             SelectionMode="Extended" Margin="0,30,0,0" Width="120" HorizontalAlignment="Left"
+        <!-- 1 - oracle card propeties -->
+        <StackPanel Grid.Row="1">
+            <Grid>
+            <!--Color filtering-->
+            <ListBox ItemsSource="{Binding FilterVM.Filters[Colors].FilterOptions}"
+                             SelectionMode="Extended" Width="120" HorizontalAlignment="Left"
                              Height="170" VerticalAlignment="Top" Background="{x:Null}" 
                              BorderBrush="{x:Null}" Foreground="{x:Null}">
-            <ListBox.Resources>
-                <Style TargetType="{x:Type ListBoxItem}">
-                    <Setter Property="SnapsToDevicePixels" Value="true" />
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                <CheckBox Margin="5,2"
-                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                      Content="{Binding OptionName}"
-                                                      FontSize="{Binding ., Converter={StaticResource ColorlessFontConverter}, ConverterParameter=30}"/>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ListBox.Resources>
-        </ListBox>
-        <ListBox ItemsSource="{Binding ColorIconsViewModel.Cards}"
-                             Margin="20,30,0,0" Width="50" HorizontalAlignment="Left"
-                             Height="160" VerticalAlignment="Top" Background="{x:Null}" 
-                             BorderBrush="{x:Null}" Foreground="{x:Null}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <Image Source="{Binding ManaCostImage}" Height="15" HorizontalAlignment="Right"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+                <ListBox.Resources>
+                    <Style TargetType="{x:Type ListBoxItem}">
+                        <Setter Property="SnapsToDevicePixels" Value="true" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <CheckBox Margin="5,2"
+                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                          Content="{Binding OptionName}"
+                                                          FontSize="{Binding ., Converter={StaticResource ColorlessFontConverter}, ConverterParameter=30}"/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.Resources>
+            </ListBox>
 
-        <ComboBox DataContext="{Binding FilterVM.Filters[Colors]}"
-                              Width="60"
-                              Margin="190,35,0,0"
-                              VerticalAlignment="Top"
-                              HorizontalAlignment="Right"
-                              ItemsSource="{Binding AvailableOperators}"
-                              SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
-        </ComboBox>
+            <ListBox ItemsSource="{Binding ColorIconsViewModel.Cards}"
+                                 Margin="20,0,0,0" Width="50" HorizontalAlignment="Left"
+                                 Height="160" VerticalAlignment="Top" Background="{x:Null}" 
+                                 BorderBrush="{x:Null}" Foreground="{x:Null}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{Binding ManaCostImage}" Height="15" HorizontalAlignment="Right"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
 
+            <ComboBox DataContext="{Binding FilterVM.Filters[Colors]}"
+                                  Width="60"
+                                  Margin="190,0,0,0"
+                                  VerticalAlignment="Top"
+                                  HorizontalAlignment="Right"
+                                  ItemsSource="{Binding AvailableOperators}"
+                                  SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
+            </ComboBox>
+            </Grid>
         <!--Mana value filtering-->
         <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" Margin="0,190,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
         <Grid Margin="10,215,0,0" VerticalAlignment="Top" Height="20" Width="240">
@@ -82,7 +91,7 @@
                                   Width="80"/>
         </Grid>
 
-        <StackPanel Margin="10,245,0,0">
+
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Rarity]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SuperTypes]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Types]}" />
@@ -115,32 +124,11 @@
                 </i:Interaction.Triggers>
             </TextBox>
         </StackPanel>
-        
-        <!--Rulestext filtering-->
-        <TextBox DataContext="{Binding FilterVM.Filters[Text]}"
-                 Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                 HorizontalAlignment="Left" 
-                 Margin="10,425,0,0" 
-                 TextWrapping="Wrap" 
-                 Foreground="{Binding TextForeground, Mode=TwoWay}" 
-                 VerticalAlignment="Top" 
-                 Width="240" Height="45">
-            <i:Interaction.Triggers>
-                <!-- Enter + Escape key binding -->
-                <i:EventTrigger EventName="PreviewKeyDown">
-                    <i:InvokeCommandAction Command="{Binding KeyPressedCommand}"
-                           PassEventArgsToCommand="True"/>
-                </i:EventTrigger>
 
-                <!-- Focus behavior (unchanged) -->
-                <i:EventTrigger EventName="GotFocus">
-                    <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
-                </i:EventTrigger>
-                <i:EventTrigger EventName="LostFocus">
-                    <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-        </TextBox>
+        <StackPanel Margin="10,245,0,0">
+            <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Finishes]}" />
+        </StackPanel>
+
 
         <StackPanel Margin="10,480,0,0" Visibility="{Binding IsMyCollectionPageActive, Converter={StaticResource BoolToVisibilityConverter}}">            
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedCondition]}" />

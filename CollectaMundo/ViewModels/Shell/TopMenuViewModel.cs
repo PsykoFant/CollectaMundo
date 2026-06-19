@@ -97,17 +97,18 @@ namespace CollectaMundo.ViewModels.Shell
         }
         private void Host_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(IShellUiState.CurrentPage))
+            switch (e.PropertyName)
             {
-                OnPropertyChanged(nameof(IsAllCardsPageActive));
-                OnPropertyChanged(nameof(IsMyCollectionPageActive));
-                OnPropertyChanged(nameof(IsDecksPageActive));
-                OnPropertyChanged(nameof(IsUtilitiesPageActive));
-            }
+                case nameof(IShellUiState.CurrentPage):
+                    OnPropertyChanged(nameof(IsAllCardsPageActive));
+                    OnPropertyChanged(nameof(IsMyCollectionPageActive));
+                    OnPropertyChanged(nameof(IsDecksPageActive));
+                    OnPropertyChanged(nameof(IsUtilitiesPageActive));
+                    break;
 
-            if (e.PropertyName == nameof(IShellUiState.IsTopMenuEnabled))
-            {
-                OnPropertyChanged(nameof(IsTopMenuEnabled));
+                case nameof(IShellUiState.IsTopMenuEnabled):
+                    OnPropertyChanged(nameof(IsTopMenuEnabled));
+                    break;
             }
         }
         private void DecksHost_PropertyChanged(object? sender, PropertyChangedEventArgs e)
