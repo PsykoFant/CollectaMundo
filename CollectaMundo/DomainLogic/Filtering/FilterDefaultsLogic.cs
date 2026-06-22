@@ -45,6 +45,7 @@ namespace CollectaMundo.Data.Filtering
                 "SubTypes" => ExtractValues(cards, c => c.SubTypes),
                 "Keywords" => ExtractValues(cards, c => c.Keywords),
                 "Finishes" => ExtractValues(cards, c => c.Finishes),
+                "Availability" => ExtractValues(cards, c => c.Availability),
 
                 _ => throw new Exception($"Unhandled printing criteria key: {criteriaKey}")
             };
@@ -116,7 +117,7 @@ namespace CollectaMundo.Data.Filtering
             }
 
             var filterOptions = explicitOptions
-                ?? cleanedValues.Select(v => new FilterOption(v, v)).ToList();
+                ?? [.. cleanedValues.Select(v => new FilterOption(v, v))];
 
             var defaultText = string.Empty;
 

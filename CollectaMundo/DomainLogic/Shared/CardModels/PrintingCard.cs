@@ -8,6 +8,7 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
     {
         public required OracleCard Oracle { get; init; }
 
+        public string? Availability { get; init; }
         public string? Colors => Oracle.Colors;
         public decimal? EtchedPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.EtchedPrice;
         public string? Finishes { get; init; }
@@ -30,7 +31,6 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
                 return _keyRuneImage;
             }
         }
-        public bool IsOnlineOnly { get; init; }
         public string? Keywords => Oracle.Keywords;
         public string? Language { get; init; }
         public string? ManaCost => Oracle.ManaCost;

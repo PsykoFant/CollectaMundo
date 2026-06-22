@@ -44,13 +44,9 @@ namespace CollectaMundo.DomainLogic.Filtering
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)];
 
-
-
-
         public IEnumerable<FilterOption> BuildOptions(IEnumerable<FilterOption> options)
         {
-            return options.Select(option =>
-                new FilterOption(option.Value, option.DisplayName));
+            return options.Select(option => new FilterOption(option.Value, option.DisplayName));
         }
         public bool IsEquivalentOptionList(IEnumerable<FilterOption> existing, IEnumerable<FilterOption> incoming)
         {

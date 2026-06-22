@@ -97,7 +97,6 @@
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Types]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SubTypes]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Keywords]}" />
-            <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Finishes]}" />
             
             <!--Rulestext filtering-->
             <TextBox DataContext="{Binding FilterVM.Filters[Text]}"
@@ -126,7 +125,8 @@
         <!-- 2 - printing card propeties -->
         <StackPanel Grid.Row="2" Margin="0,10,0,0" Visibility="{Binding IsPrintingCardFilteringVisble, Converter={StaticResource BoolToVisibilityConverter}}">
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Finishes]}" />
-        </StackPanel>
+            <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Availability]}" />
+        </StackPanel>        
 
         <!-- 3 - collection card propeties -->
         <StackPanel Grid.Row="3" Visibility="{Binding IsCollectionCardFilteringVisble, Converter={StaticResource BoolToVisibilityConverter}}">

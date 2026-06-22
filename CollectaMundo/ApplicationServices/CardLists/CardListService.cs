@@ -128,10 +128,23 @@ namespace CollectaMundo.ApplicationServices.CardLists
                     filterVM,
                     new FilterItemSearchLogic(),
                     def.NumericCriteria);
+
+
+
+                if (def.CriteriaKey == "Availability")
+                {
+                    Debug.WriteLine($"Options for {def.CriteriaKey}:");
+                    foreach (var option in def.FilterOptions)
+                    {
+                        Debug.WriteLine(option.Value);
+                    }
+                }
             }
 
             phase3cSw.Stop();
             Debug.WriteLine($"[InitializeCardListsAsync] phase 3c (build filters): {phase3cSw.ElapsedMilliseconds} ms");
+
+
         }
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {

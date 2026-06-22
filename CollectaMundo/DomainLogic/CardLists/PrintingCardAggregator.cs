@@ -68,7 +68,8 @@ namespace CollectaMundo.DomainLogic.CardLists
                     SetCode = printing.SetCode,
                     Language = printing.Language,
                     Rarity = printing.Rarity,
-                    Finishes = printing.Finishes
+                    Finishes = printing.Finishes,
+                    Availability = printing.Availability
                 });
             }
 

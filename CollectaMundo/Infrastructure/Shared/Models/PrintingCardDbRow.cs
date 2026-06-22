@@ -2,9 +2,9 @@
 {
     public sealed class PrintingCardDbRow
     {
+        public string? Availability { get; init; }
         public string? Colors { get; init; }
         public string? Finishes { get; init; }
-        public int? IsOnlineOnly { get; init; } // SQLite NUM/INTEGER: 0 = false, 1 = true
         public string? Keywords { get; init; }
         public string? Language { get; init; }
         public string? ManaCostRaw { get; init; }
