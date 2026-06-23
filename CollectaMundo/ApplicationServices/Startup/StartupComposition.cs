@@ -113,7 +113,6 @@ namespace CollectaMundo.ApplicationServices.Startup
                 // CreateCollectionChangeSetFromEdits view model off UI thread
                 var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, settings));
 
-                mainVM.FilterPanelVM.NotifyFilterChanged();
                 operationOverlayController.Hide();
                 return new RootViewModel(mainVM, operationOverlayViewModel);
             }

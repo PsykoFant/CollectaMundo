@@ -74,6 +74,7 @@ namespace CollectaMundo.ViewModels.Shared
             {
                 SelectionEditorMode.Create => Text.CreateMode,
                 SelectionEditorMode.SelectedReadOnly => Text.SelectedReadOnlyMode,
+                SelectionEditorMode.EditSingle => Text.EditSingleMode,
                 SelectionEditorMode.EditMultiple => Text.EditMultipleMode,
                 _ => string.Empty
             };
@@ -107,6 +108,7 @@ namespace CollectaMundo.ViewModels.Shared
             string BulkUpdateText,
             string CreateMode,
             string SelectedReadOnlyMode,
+            string EditSingleMode,
             string EditMultipleMode,
             string DeleteConfirmation = "Confirm delete",
             string SubmitFailure = "Failed to submit changes");

@@ -96,7 +96,7 @@ namespace CollectaMundo.Data.Filtering
             if (explicitOptions is null)
             {
                 var removeItems = GetUnwantedItems(criteriaKey);
-                cleanedValues = CleanAndFilter(rawValues, removeItems, mapping.ShouldNotSplit);
+                cleanedValues = CleanAndFilter(criteriaKey, rawValues, removeItems, mapping.ShouldNotSplit);
 
                 if (criteriaKey.Equals("SetName", StringComparison.OrdinalIgnoreCase))
                 {
@@ -178,7 +178,7 @@ namespace CollectaMundo.Data.Filtering
                 : DateTime.MinValue)
             ];
         }
-        private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems, bool shouldNotSplit)
+        private static List<string> CleanAndFilter(string criteriaKey, IEnumerable<string> input, HashSet<string>? removeItems, bool shouldNotSplit)
         {
             var unique = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -203,7 +203,7 @@ namespace CollectaMundo.Data.Filtering
 
                 foreach (var p in parts)
                 {
-                    string trimmed = p.Trim();
+                    string trimmed = NormalizeFilterOptionValue(criteriaKey, p.Trim());
                     if (string.IsNullOrEmpty(trimmed))
                     {
                         continue;
@@ -249,6 +249,17 @@ namespace CollectaMundo.Data.Filtering
                 { "(creature", "and/or", "type)|Judge", "The", "pLAnE" },
                 _ => null
             };
+        }
+
+        // Special case handling for Plane and pLAne
+        private static string NormalizeFilterOptionValue(string criteriaKey, string value)
+        {
+            if (criteriaKey.Equals("Types", StringComparison.OrdinalIgnoreCase) && value.Equals("Plane", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Plane";
+            }
+
+            return value;
         }
 
         // Comma NOT followed by exactly 3 digits at word boundary. To catch keywords with comma in them. E.g. "Flying, vigilance" should split, but "10,000" should not.

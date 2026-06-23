@@ -1,6 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace CollectaMundo.ViewModels.Filtering
 {
@@ -10,8 +12,21 @@ namespace CollectaMundo.ViewModels.Filtering
 
         public event EventHandler? FilterChanged;
         public event EventHandler? FiltersRebuilt;
-
+        private bool _suppressFilterChanged;
         public Dictionary<string, FilterItemViewModel> Filters { get; } = [];
+        public void BeginFilterChangeSuppression()
+        {
+            _suppressFilterChanged = true;
+        }
+        public void EndFilterChangeSuppression(bool notifyOnce = true)
+        {
+            _suppressFilterChanged = false;
+
+            if (notifyOnce)
+            {
+                NotifyFilterChanged();
+            }
+        }
 
         [ObservableProperty]
         private string? filterSummary;
@@ -24,11 +39,24 @@ namespace CollectaMundo.ViewModels.Filtering
         }
         public void NotifyFiltersRebuilt()
         {
+            if (_suppressFilterChanged)
+            {
+                return;
+            }
+
             FiltersRebuilt?.Invoke(this, EventArgs.Empty);
         }
-        public void NotifyFilterChanged()
+        public void NotifyFilterChanged([CallerMemberName] string caller = "")
         {
+            Debug.WriteLine($"[Filter] NotifyFilterChanged from {caller}");
+
             FilterSummary = _filteringService.BuildSummary(Filters.Values);
+
+            if (_suppressFilterChanged)
+            {
+                return;
+            }
+
             FilterChanged?.Invoke(this, EventArgs.Empty);
         }
     }

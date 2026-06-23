@@ -131,7 +131,6 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private bool isTopMenuEnabled = true;
-
         public void SetUiBusy(bool isBusy)
         {
             IsTopMenuEnabled = !isBusy;
@@ -257,8 +256,17 @@ namespace CollectaMundo.ViewModels
                 OnStartupComplete = onStartupComplete
             };
 
-            await vm.ReloadAllCardListsAndFiltersAsync();
-            await vm.ReloadAvailableLocationsAsync();
+            vm.FilterPanelVM.BeginFilterChangeSuppression();
+
+            try
+            {
+                await vm.ReloadAllCardListsAndFiltersAsync();
+                await vm.ReloadAvailableLocationsAsync();
+            }
+            finally
+            {
+                vm.FilterPanelVM.EndFilterChangeSuppression(notifyOnce: true);
+            }
 
             vm.OnStartupComplete?.Invoke();
             return vm;
@@ -361,8 +369,7 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.SetAvailableLocations(locations);
             EditCardsVM.SetAvailableLocations(locations);
 
-            _cardLocationProvider = new ValueProvider<int, CardLocation>(
-                locations.ToDictionary(x => x.Id));
+            _cardLocationProvider = new ValueProvider<int, CardLocation>(locations.ToDictionary(x => x.Id));
 
             // Refresh all collection cards with new location provider and updated location info.
             foreach (var card in MyCollectionVM.Cards)
@@ -388,13 +395,32 @@ namespace CollectaMundo.ViewModels
             _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterPanelVM.Filters);
 
             // Reapply active filters because selected/display values may have changed.
-            OnFilterChanged(this, EventArgs.Empty);
+            // Route through FilterPanelVM so startup/reload suppression can coalesce this.
+            FilterPanelVM.NotifyFilterChanged();
         }
         private void OnFilterChanged(object? sender, EventArgs e)
         {
-            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterPanelVM.Filters.Values);
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterPanelVM.Filters.Values);
-            OracleCardsVM.FilteredCards = _filteringService.ApplyFilters(OracleCardsVM.Cards, FilterPanelVM.Filters.Values);
+            var sw = Stopwatch.StartNew();
+
+            var filters = FilterPanelVM.Filters.Values;
+
+            if (!FilteringService.HasActiveFilters(filters))
+            {
+                AllCardsVM.FilteredCards = AllCardsVM.Cards;
+                MyCollectionVM.FilteredCards = MyCollectionVM.Cards;
+                OracleCardsVM.FilteredCards = OracleCardsVM.Cards;
+
+                sw.Stop();
+                Debug.WriteLine($"[Filter] OnFilterChanged skipped filtering in {sw.ElapsedMilliseconds} ms");
+                return;
+            }
+
+            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, filters);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, filters);
+            OracleCardsVM.FilteredCards = _filteringService.ApplyFilters(OracleCardsVM.Cards, filters);
+
+            sw.Stop();
+            Debug.WriteLine($"[Filter] OnFilterChanged took {sw.ElapsedMilliseconds} ms");
         }
         private void OnCollectionChanged(object? sender, CollectionChangeSet<CollectionCard> changeSet)
         {
@@ -462,22 +488,23 @@ namespace CollectaMundo.ViewModels
             var sw = Stopwatch.StartNew();
 
             Debug.WriteLine("[ReloadAllCardListsAsync] Initializing card lists");
+
             await _cardListService.InitializeCardListsAsync(AllCardsVM, MyCollectionVM, OracleCardsVM, FilterPanelVM.Filters, FilterPanelVM);
+
             FilterPanelVM.NotifyFiltersRebuilt();
-            FilterPanelVM.NotifyFilterChanged();
+
             Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}");
             PricesVM.RefreshLatestPriceDate();
+
             sw.Stop();
             Debug.WriteLine($"[ReloadAllCardListsAsync] M1 finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
         }
         public async Task ReloadAvailableLocationsAsync()
         {
             var sw = Stopwatch.StartNew();
-
             Debug.WriteLine("[ReloadAvailableLocationsAsync] Loading card locations");
 
             var locations = await _cardLocationService.GetAllLocationsAsync();
-
             _cardLocationLookupStore.ReplaceAll(locations);
 
             sw.Stop();

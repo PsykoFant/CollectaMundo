@@ -1552,12 +1552,12 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Assert deck editor state after selecting existing deck for edit
             Assert.Equal(string.Empty, _ctx.MainVM.DeckManagementVM.ModeMessage);
-            Assert.Equal("Edit deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            Assert.Equal("Edit deck metadata", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
             await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Click edit
 
             // ... then assert strings update
-            Assert.Equal("Edit selected deck", _ctx.MainVM.DeckManagementVM.ModeMessage);
+            Assert.Equal("Edit selected deck metadata", _ctx.MainVM.DeckManagementVM.ModeMessage);
             Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
             _ctx.MainVM.DeckManagementVM.DeckName = "Control Pile";
@@ -1627,7 +1627,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal("Deck: Control Pile", filteredCard.SelectedLocationDisplayName);
 
             // Act: clear format through single edit
-            Assert.Equal("Edit deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            Assert.Equal("Edit deck metadata", _ctx.MainVM.DeckManagementVM.ActionButtonText);
             await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Click edit
             Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
@@ -1690,7 +1690,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Act: add metadata to existing deck location
             _ctx.MainVM.DeckManagementVM.SelectedItem = aggroFish;
 
-            Assert.Equal("Edit deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            Assert.Equal("Edit deck metadata", _ctx.MainVM.DeckManagementVM.ActionButtonText);
             await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
             Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 

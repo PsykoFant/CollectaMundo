@@ -25,6 +25,7 @@ namespace CollectaMundo.ViewModels.Utilities
             BulkUpdateText: "Update selected",
             CreateMode: "Add a new card location",
             SelectedReadOnlyMode: string.Empty,
+            EditSingleMode: "Edit selected card location",
             EditMultipleMode: "Edit selected card locations");
 
         [ObservableProperty]

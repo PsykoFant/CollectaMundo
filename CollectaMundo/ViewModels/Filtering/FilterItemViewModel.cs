@@ -17,6 +17,19 @@ namespace CollectaMundo.ViewModels.Filtering
 {
     public partial class FilterItemViewModel : ObservableObject
     {
+        // Handle bulk updates
+        private bool _isBulkUpdating;
+        public void BeginBulkUpdate()
+        {
+            _isBulkUpdating = true;
+        }
+        public void EndBulkUpdate(bool notifyFilterChanged = true)
+        {
+            _isBulkUpdating = false;
+
+            UpdateSelectedOptions(notifyFilterChanged);
+        }
+
         // Core properties
         public string CriteriaKey { get; }
         public FilterType FilterCategory { get; }
@@ -36,16 +49,23 @@ namespace CollectaMundo.ViewModels.Filtering
 
         [ObservableProperty]
         private bool clearComboBoxSelectionTrigger;
-        partial void OnSelectedNumericValueChanged(int? value) => _filterViewModel.NotifyFilterChanged();
+        partial void OnSelectedNumericValueChanged(int? value) => NotifyFilterChanged();
 
         [ObservableProperty]
         private OperatorType operatorSelection;
-        partial void OnOperatorSelectionChanged(OperatorType value) => _filterViewModel.NotifyFilterChanged();
+        partial void OnOperatorSelectionChanged(OperatorType value) => NotifyFilterChanged();
 
         [ObservableProperty]
         private string? selectedSingleOption;
-        partial void OnSelectedSingleOptionChanged(string? value)
+        partial void OnSelectedSingleOptionChanged(string? value) => NotifyFilterChanged();
+
+        private void NotifyFilterChanged()
         {
+            if (_isBulkUpdating)
+            {
+                return;
+            }
+
             _filterViewModel.NotifyFilterChanged();
         }
 
@@ -113,6 +133,67 @@ namespace CollectaMundo.ViewModels.Filtering
 
             ApplyTradeFilter();
         }
+
+        [ObservableProperty]
+        private bool isGameplayCardsOnlyChecked;
+        partial void OnIsGameplayCardsOnlyCheckedChanged(bool value)
+        {
+            if (CriteriaKey != "Types")
+            {
+                return;
+            }
+
+            ApplyGameplayCardsOnlyFilter(value);
+        }
+        private void ApplyGameplayCardsOnlyFilter(bool enabled)
+        {
+            BeginBulkUpdate();
+
+            try
+            {
+                if (enabled)
+                {
+                    // Remove any existing Types selections first.
+                    foreach (var option in FilterOptions)
+                    {
+                        option.IsSelected = false;
+                    }
+                }
+
+                SetOptionSelected("Token", enabled);
+                SetOptionSelected("Emblem", enabled);
+                SetOptionSelected("Card", enabled);
+                SetOptionSelected("Conspiracy", enabled);
+                SetOptionSelected("Event", enabled);
+                SetOptionSelected("Phenome-nom", enabled);
+                SetOptionSelected("Phenomenon", enabled);
+                SetOptionSelected("Plane", enabled);
+                SetOptionSelected("Scheme", enabled);
+                SetOptionSelected("Stickers", enabled);
+                SetOptionSelected("Vanguard", enabled);
+                SetOptionSelected("Boss", enabled);
+
+                OperatorSelection = enabled
+                    ? OperatorType.NOT
+                    : AvailableOperators?.FirstOrDefault() ?? OperatorType.OR;
+            }
+            finally
+            {
+                EndBulkUpdate();
+            }
+
+            void SetOptionSelected(string displayName, bool selected)
+            {
+                var option = FilterOptions.FirstOrDefault(o =>
+                    string.Equals(o.DisplayName, displayName, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(o.Value, displayName, StringComparison.OrdinalIgnoreCase));
+
+                if (option is not null)
+                {
+                    option.IsSelected = selected;
+                }
+            }
+        }
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<FilterOption> FilteredOptions { get; private set; }
         public ObservableCollection<string> SelectedOptions { get; } = [];
@@ -137,10 +218,7 @@ namespace CollectaMundo.ViewModels.Filtering
                 return;
             }
 
-            var selectedValues = FilterOptions
-                .Where(o => o.IsSelected)
-                .Select(o => o.Value)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var selectedValues = FilterOptions.Where(o => o.IsSelected).Select(o => o.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var opt in FilterOptions)
             {
@@ -213,13 +291,22 @@ namespace CollectaMundo.ViewModels.Filtering
         // Update SelectedOptions when checkboxes change
         private void FilterOption_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(FilterOption.IsSelected))
+            if (e.PropertyName != nameof(FilterOption.IsSelected))
             {
-                UpdateSelectedOptions();
+                return;
             }
+
+            if (_isBulkUpdating)
+            {
+                return;
+            }
+
+            UpdateSelectedOptions();
         }
-        private void UpdateSelectedOptions()
+        private void UpdateSelectedOptions(bool notifyFilterChanged = true)
         {
+            Debug.WriteLine($"[Filter] UpdateSelectedOptions for {CriteriaKey}");
+
             SelectedOptions.Clear();
 
             foreach (var opt in _filterItemSearchLogic.ExtractSelectedOptions(FilterOptions))
@@ -227,8 +314,12 @@ namespace CollectaMundo.ViewModels.Filtering
                 SelectedOptions.Add(opt);
             }
 
-            _filterViewModel.NotifyFilterChanged();
+            if (notifyFilterChanged)
+            {
+                NotifyFilterChanged();
+            }
         }
+
         private void ApplyTextFilter()
         {
             var effectiveFilterText =
@@ -257,7 +348,7 @@ namespace CollectaMundo.ViewModels.Filtering
                 SelectedNumericValue = null;
             }
 
-            _filterViewModel.NotifyFilterChanged();
+            NotifyFilterChanged();
         }
         private void ResetTypingDelay()
         {

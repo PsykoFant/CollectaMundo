@@ -120,6 +120,8 @@
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
             </TextBox>
+
+            <CheckBox Content="Gameplay cards only (no tokens etc.)" IsChecked="{Binding FilterVM.Filters[Types].IsGameplayCardsOnlyChecked, Mode=TwoWay}" Margin="0,10,0,10" />
         </StackPanel>
 
         <!-- 2 - printing card propeties -->
@@ -134,7 +136,7 @@
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedFinish]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Language]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedLocationDisplayName]}" />
-            <CheckBox  Content="Filter on cards for trade" IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"/>
+            <CheckBox Content="Filter on cards for trade" IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"/>
             <CheckBox Content="Filter on cards NOT for trade" IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"/>
             <TextBox Margin="0,10,0,0"
                      DataContext="{Binding FilterVM.Filters[Comment]}"

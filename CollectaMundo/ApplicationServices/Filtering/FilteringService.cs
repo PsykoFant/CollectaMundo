@@ -10,6 +10,24 @@ namespace CollectaMundo.ApplicationServices.Filtering
 {
     public class FilteringService : IFilteringService
     {
+        public static bool HasActiveFilters(IEnumerable<FilterItemViewModel> filters)
+        {
+            return filters.Any(f =>
+                f.FilterCategory switch
+                {
+                    FilterType.Single =>
+                        !string.IsNullOrWhiteSpace(f.SelectedSingleOption) &&
+                        f.SelectedSingleOption != f.DefaultText,
+
+                    FilterType.Multi =>
+                        f.SelectedOptions.Count > 0,
+
+                    FilterType.Numeric =>
+                        f.SelectedNumericValue is not null,
+
+                    _ => false
+                });
+        }
         public List<TCard> ApplyFilters<TCard>(IEnumerable<TCard> cards, IEnumerable<FilterItemViewModel> vmFilters)
         {
             if (vmFilters == null || !vmFilters.Any())
@@ -46,57 +64,83 @@ namespace CollectaMundo.ApplicationServices.Filtering
         }
         public void ResetAllFilters(IEnumerable<FilterItemViewModel> allFilters)
         {
-            foreach (var filter in allFilters)
+            var filters = allFilters.ToList();
+
+            foreach (var filter in filters)
             {
-                switch (filter.FilterCategory)
+                filter.BeginBulkUpdate();
+            }
+
+            try
+            {
+                foreach (var filter in filters)
                 {
-                    case FilterType.Single:
-                        filter.FreetextSearch = filter.DefaultText;
-                        filter.FilterText = filter.DefaultText;
-                        filter.SelectedSingleOption = null;
-                        filter.TextForeground = Brushes.Gray;
-                        break;
-
-
-                    case FilterType.Multi:
-                        // Uncheck each option so that the UI updates and SelectedOptions is recalculated.
-                        foreach (var option in filter.FilterOptions)
-                        {
-                            option.IsSelected = false;
-                        }
-
-                        // Reset options filter textbox
-                        filter.FilterText = filter.DefaultText;
-                        filter.TextForeground = Brushes.Gray;
-
-                        // Clear the SelectedOptions collection
-                        filter.SelectedOptions.Clear();
-                        if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
-                        {
-                            filter.OperatorSelection = filter.AvailableOperators.First();
-                        }
-                        break;
-
-
-                    case FilterType.Numeric:
-                        filter.SelectedNumericValue = null;
-                        if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
-                        {
-                            filter.OperatorSelection = filter.AvailableOperators.First();
-                        }
-                        // For filters that use checkboxes (e.g. CardsForTrade),
-                        // explicitly reset the trade-related properties.
-                        if (filter.CriteriaKey == "CardsForTrade")
-                        {
-                            filter.IsTradeChecked = false;
-                            filter.IsNotTradeChecked = false;
-                        }
-                        if (filter.CriteriaKey == "ManaValue")
-                        {
-                            filter.OperatorSelection = OperatorType.GREATER_THAN;
-                        }
-                        break;
+                    ResetFilter(filter);
                 }
+            }
+            finally
+            {
+                foreach (var filter in filters)
+                {
+                    filter.EndBulkUpdate(notifyFilterChanged: false);
+                }
+            }
+        }
+        private static void ResetFilter(FilterItemViewModel filter)
+        {
+            if (filter.CriteriaKey == "Types")
+            {
+                filter.IsGameplayCardsOnlyChecked = false;
+            }
+
+            switch (filter.FilterCategory)
+            {
+                case FilterType.Single:
+                    filter.FreetextSearch = filter.DefaultText;
+                    filter.FilterText = filter.DefaultText;
+                    filter.SelectedSingleOption = null;
+                    filter.TextForeground = Brushes.Gray;
+                    break;
+
+
+                case FilterType.Multi:
+                    // Uncheck each option so that the UI updates and SelectedOptions is recalculated.
+                    foreach (var option in filter.FilterOptions)
+                    {
+                        option.IsSelected = false;
+                    }
+
+                    // Reset options filter textbox
+                    filter.FilterText = filter.DefaultText;
+                    filter.TextForeground = Brushes.Gray;
+
+                    // Clear the SelectedOptions collection
+                    filter.SelectedOptions.Clear();
+                    if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
+                    {
+                        filter.OperatorSelection = filter.AvailableOperators.First();
+                    }
+                    break;
+
+
+                case FilterType.Numeric:
+                    filter.SelectedNumericValue = null;
+                    if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
+                    {
+                        filter.OperatorSelection = filter.AvailableOperators.First();
+                    }
+                    // For filters that use checkboxes (e.g. CardsForTrade),
+                    // explicitly reset the trade-related properties.
+                    if (filter.CriteriaKey == "CardsForTrade")
+                    {
+                        filter.IsTradeChecked = false;
+                        filter.IsNotTradeChecked = false;
+                    }
+                    if (filter.CriteriaKey == "ManaValue")
+                    {
+                        filter.OperatorSelection = OperatorType.GREATER_THAN;
+                    }
+                    break;
             }
         }
         public string BuildSummary(IEnumerable<FilterItemViewModel> filters)

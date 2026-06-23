@@ -10,9 +10,12 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
     public sealed partial class CollectionCard : ObservableObject, ICardListSortable, ICardImageSourceCard
     {
         public required PrintingCard Printing { get; init; }
+        public OracleCard Oracle => Printing.Oracle;
+
+
         public int CardId { get; init; }
         public string Uuid => Printing.Uuid;
-        public OracleCard Oracle => Printing.Oracle;
+
         public string Name => Printing.Name;
         public string? ScryfallOracleId => Printing.ScryfallOracleId;
         public string? ManaCost => Printing.ManaCost;
@@ -28,6 +31,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public double ManaValue => Printing.ManaValue;
         public string? SetCode => Printing.SetCode;
         public string? Rarity => Printing.Rarity;
+        public string? Availability => Printing.Availability;
         public ImageSource? ManaCostImage => Printing.ManaCostImage;
         public ImageSource? KeyRuneImage => Printing.KeyRuneImage;
         public string? SetName => Printing.SetName;
@@ -58,12 +62,10 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             SelectedLocationId is int id
                 ? CardLocationProvider?.Get(id)?.Name
                 : null;
-
         public string? SelectedLocationDisplayName =>
             SelectedLocationId is int id
                 ? CardLocationProvider?.Get(id)?.DisplayName
                 : null;
-
         public CardLocationType? SelectedLocationType =>
             SelectedLocationId is int id
                 ? CardLocationProvider?.Get(id)?.Type
