@@ -183,7 +183,7 @@ namespace CollectaMundo.ViewModels.Decks
         }
 
         [RelayCommand]
-        private void EditSelectedDeck()
+        private void EnterDeckBuilder()
         {
             if (SelectedItem is null)
             {

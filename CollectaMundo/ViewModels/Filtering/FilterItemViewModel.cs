@@ -17,8 +17,15 @@ namespace CollectaMundo.ViewModels.Filtering
 {
     public partial class FilterItemViewModel : ObservableObject
     {
-        // Handle bulk updates
+        private readonly FilterPanelViewModel _filterViewModel;
+        private readonly IFilterItemSearchLogic _filterItemSearchLogic;
+        private readonly Timer? _typingTimer;
+        private readonly bool _initialized = false;
+        private bool _isSelectionInProgress = false;
+        private bool _ignoreNextSelectionChanged;
         private bool _isBulkUpdating;
+
+        // Handle bulk updates
         public void BeginBulkUpdate()
         {
             _isBulkUpdating = true;
@@ -27,7 +34,16 @@ namespace CollectaMundo.ViewModels.Filtering
         {
             _isBulkUpdating = false;
 
-            UpdateSelectedOptions(notifyFilterChanged);
+            if (FilterCategory == FilterType.Multi)
+            {
+                UpdateSelectedOptions(notifyFilterChanged);
+                return;
+            }
+
+            if (notifyFilterChanged)
+            {
+                NotifyFilterChanged();
+            }
         }
 
         // Core properties
@@ -104,7 +120,7 @@ namespace CollectaMundo.ViewModels.Filtering
         private string filterText;
         partial void OnFilterTextChanged(string value)
         {
-            if (_initialized && !_suppressFiltering)
+            if (_initialized && !_isBulkUpdating)
             {
                 ApplyTextFilter();
             }
@@ -178,13 +194,6 @@ namespace CollectaMundo.ViewModels.Filtering
             OnPropertyChanged(nameof(AvailableOptions));
         }
 
-        private readonly FilterPanelViewModel _filterViewModel;
-        private readonly IFilterItemSearchLogic _filterItemSearchLogic;
-        private readonly Timer? _typingTimer;
-        private bool _isSelectionInProgress = false;
-        private bool _ignoreNextSelectionChanged;
-        private readonly bool _initialized = false;
-        private bool _suppressFiltering = false; // Used to temporarily suppress filter update
 
         // Constructor
         public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterPanelViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null)
@@ -362,9 +371,9 @@ namespace CollectaMundo.ViewModels.Filtering
         {
             if (string.IsNullOrWhiteSpace(FilterText))
             {
-                _suppressFiltering = true;
+                _isBulkUpdating = true;
                 FilterText = DefaultText;
-                _suppressFiltering = false;
+                _isBulkUpdating = false;
                 TextForeground = Brushes.Gray;
             }
         }
@@ -382,9 +391,9 @@ namespace CollectaMundo.ViewModels.Filtering
         {
             if (string.IsNullOrWhiteSpace(FreetextSearch))
             {
-                _suppressFiltering = true;
+                _isBulkUpdating = true;
                 FreetextSearch = DefaultText;
-                _suppressFiltering = false;
+                _isBulkUpdating = false;
                 TextForeground = Brushes.Gray;
             }
         }
