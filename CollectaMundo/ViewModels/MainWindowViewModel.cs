@@ -308,7 +308,7 @@ namespace CollectaMundo.ViewModels
         private void OnImportCollectionMutationRequested(object? sender, ImportCollectionUpsertResult mutation)
         {
             var changeSet = BuildCollectionChangeSetFromMutation(mutation);
-            OnCollectionChanged(sender, changeSet);
+            OnCollectionChanged(changeSet);
         }
         private CollectionChangeSet<CollectionCard> BuildCollectionChangeSetFromMutation(ImportCollectionUpsertResult mutation)
         {
@@ -400,54 +400,36 @@ namespace CollectaMundo.ViewModels
         }
         private void OnFilterChanged(object? sender, EventArgs e)
         {
-            var sw = Stopwatch.StartNew();
-
             var filters = FilterPanelVM.Filters.Values;
+            var gameplayCardsOnly = FilterPanelVM.IsGameplayCardsOnlyChecked;
 
-            if (!FilteringService.HasActiveFilters(filters))
+            if (!gameplayCardsOnly && !FilteringService.HasActiveFilters(filters))
             {
                 AllCardsVM.FilteredCards = AllCardsVM.Cards;
                 MyCollectionVM.FilteredCards = MyCollectionVM.Cards;
                 OracleCardsVM.FilteredCards = OracleCardsVM.Cards;
-
-                sw.Stop();
-                Debug.WriteLine($"[Filter] OnFilterChanged skipped filtering in {sw.ElapsedMilliseconds} ms");
                 return;
             }
 
-            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, filters);
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, filters);
-            OracleCardsVM.FilteredCards = _filteringService.ApplyFilters(OracleCardsVM.Cards, filters);
-
-            sw.Stop();
-            Debug.WriteLine($"[Filter] OnFilterChanged took {sw.ElapsedMilliseconds} ms");
+            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, filters, gameplayCardsOnly);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, filters, gameplayCardsOnly);
+            OracleCardsVM.FilteredCards = _filteringService.ApplyFilters(OracleCardsVM.Cards, filters, gameplayCardsOnly);
         }
-        private void OnCollectionChanged(object? sender, CollectionChangeSet<CollectionCard> changeSet)
+        private void OnCollectionChanged(CollectionChangeSet<CollectionCard> changeSet)
         {
-            // Newly materialized CollectionCards need access to location lookups
-            // for SelectedLocationName / SelectedLocationType / SelectedLocationDisplayName.
-
             foreach (var card in changeSet.AddedOrUpdated)
             {
                 AttachCardLocationProvider(card);
             }
 
-            CollectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
-
             // Apply DB-truth changes to the in-memory collection list.
             CollectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
 
-            // Open add/edit staging rows may now be stale.
-            // Reconcile them against the updated in-memory collection:
-            // - remove draft rows whose source CardId no longer exists
-            // - refresh draft rows whose source CardId still exists
             AddCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
             EditCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
 
-            // Reapply active filters to the updated collection list.
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterPanelVM.Filters.Values);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterPanelVM.Filters.Values, FilterPanelVM.IsGameplayCardsOnlyChecked);
 
-            // Refresh collection-derived filter facets after mutation.
             _facetScheduler.Cancel();
             _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterPanelVM.Filters));
         }
@@ -472,7 +454,7 @@ namespace CollectaMundo.ViewModels
                 ]
             };
 
-            OnCollectionChanged(sender, hydratedChangeSet);
+            OnCollectionChanged(hydratedChangeSet);
         }
         private void AttachCardLocationProvider(CollectionCard card)
         {

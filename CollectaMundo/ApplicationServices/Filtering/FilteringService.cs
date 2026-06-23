@@ -28,11 +28,18 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     _ => false
                 });
         }
-        public List<TCard> ApplyFilters<TCard>(IEnumerable<TCard> cards, IEnumerable<FilterItemViewModel> vmFilters)
+        public List<TCard> ApplyFilters<TCard>(IEnumerable<TCard> cards, IEnumerable<FilterItemViewModel> vmFilters, bool gameplayCardsOnly)
         {
             if (vmFilters == null || !vmFilters.Any())
             {
                 return [.. cards];
+            }
+
+            var filtered = cards;
+
+            if (gameplayCardsOnly)
+            {
+                filtered = filtered.Where(IsGameplayCard);
             }
 
             var criteria = vmFilters
@@ -48,12 +55,12 @@ namespace CollectaMundo.ApplicationServices.Filtering
 
             if (criteria.Count == 0)
             {
-                return [.. cards];
+                return [.. filtered];
             }
 
             try
             {
-                return [.. cards.Where(card => criteria.All(c => c.Matches(card)))];
+                return [.. filtered.Where(card => criteria.All(c => c.Matches(card)))];
             }
             catch (Exception ex)
             {
@@ -61,6 +68,34 @@ namespace CollectaMundo.ApplicationServices.Filtering
                 Debug.WriteLine($"[Filter] ERROR during filtering: {ex}");
                 return [.. cards]; // fallback
             }
+        }
+        private static bool IsGameplayCard<TCard>(TCard card)
+        {
+            var types = typeof(TCard).GetProperty("Types")?.GetValue(card)?.ToString();
+
+            if (string.IsNullOrWhiteSpace(types))
+            {
+                return true;
+            }
+
+            var nonGameplayTypes = new[]
+            {
+                "Boss",
+                "Card",
+                "Conspiracy",
+                "Emblem",
+                "Event",
+                "Phenome-nom",
+                "Phenomenon",
+                "Plane",
+                "Scheme",
+                "Stickers",
+                "Token",
+                "Vanguard"
+            };
+
+            return !nonGameplayTypes.Any(t =>
+                types.Contains(t, StringComparison.OrdinalIgnoreCase));
         }
         public void ResetAllFilters(IEnumerable<FilterItemViewModel> allFilters)
         {
@@ -88,11 +123,6 @@ namespace CollectaMundo.ApplicationServices.Filtering
         }
         private static void ResetFilter(FilterItemViewModel filter)
         {
-            if (filter.CriteriaKey == "Types")
-            {
-                filter.IsGameplayCardsOnlyChecked = false;
-            }
-
             switch (filter.FilterCategory)
             {
                 case FilterType.Single:
@@ -143,11 +173,16 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     break;
             }
         }
-        public string BuildSummary(IEnumerable<FilterItemViewModel> filters)
+        public string BuildSummary(IEnumerable<FilterItemViewModel> filters, bool gameplayCardsOnly)
         {
             try
             {
                 var summary = new StringBuilder();
+
+                if (gameplayCardsOnly)
+                {
+                    summary.Append("Card type: {Gameplay cards only} AND ");
+                }
 
                 foreach (var filter in filters)
                 {
@@ -163,12 +198,6 @@ namespace CollectaMundo.ApplicationServices.Filtering
                         case FilterType.Multi:
                             if (filter.SelectedOptions != null && filter.SelectedOptions.Any())
                             {
-                                if (filter.CriteriaKey == "Types" && filter.IsGameplayCardsOnlyChecked)
-                                {
-                                    summary.Append($"{filter.ReadableLabel}: {{Gameplay cards only}} AND ");
-                                    break;
-                                }
-
                                 string operatorSymbol = filter.OperatorSelection switch
                                 {
                                     OperatorType.OR => "OR",

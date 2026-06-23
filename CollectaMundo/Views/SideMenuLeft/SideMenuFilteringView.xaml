@@ -121,7 +121,7 @@
                 </i:Interaction.Triggers>
             </TextBox>
 
-            <CheckBox Content="Gameplay cards only (no tokens etc.)" IsChecked="{Binding FilterVM.Filters[Types].IsGameplayCardsOnlyChecked, Mode=TwoWay}" Margin="0,10,0,10" />
+            <CheckBox Content="Gameplay cards only (no tokens etc.)" IsChecked="{Binding FilterVM.IsGameplayCardsOnlyChecked, Mode=TwoWay}" Margin="0,10,0,10" />
         </StackPanel>
 
         <!-- 2 - printing card propeties -->

@@ -1,8 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace CollectaMundo.ViewModels.Filtering
 {
@@ -31,11 +29,27 @@ namespace CollectaMundo.ViewModels.Filtering
         [ObservableProperty]
         private string? filterSummary;
 
+        [ObservableProperty]
+        private bool isGameplayCardsOnlyChecked;
+        partial void OnIsGameplayCardsOnlyCheckedChanged(bool value)
+        {
+            NotifyFilterChanged();
+        }
+
         [RelayCommand]
         private void ClearFilters()
         {
-            _filteringService.ResetAllFilters(Filters.Values);
-            NotifyFilterChanged();
+            BeginFilterChangeSuppression();
+
+            try
+            {
+                IsGameplayCardsOnlyChecked = false;
+                _filteringService.ResetAllFilters(Filters.Values);
+            }
+            finally
+            {
+                EndFilterChangeSuppression(notifyOnce: true);
+            }
         }
         public void NotifyFiltersRebuilt()
         {
@@ -46,17 +60,14 @@ namespace CollectaMundo.ViewModels.Filtering
 
             FiltersRebuilt?.Invoke(this, EventArgs.Empty);
         }
-        public void NotifyFilterChanged([CallerMemberName] string caller = "")
+        public void NotifyFilterChanged()
         {
-            Debug.WriteLine($"[Filter] NotifyFilterChanged from {caller}");
-
             if (_suppressFilterChanged)
             {
                 return;
             }
 
-            FilterSummary = _filteringService.BuildSummary(Filters.Values);
-
+            FilterSummary = _filteringService.BuildSummary(Filters.Values, IsGameplayCardsOnlyChecked);
             FilterChanged?.Invoke(this, EventArgs.Empty);
         }
     }

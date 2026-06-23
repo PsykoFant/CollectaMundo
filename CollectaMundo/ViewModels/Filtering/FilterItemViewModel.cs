@@ -133,67 +133,6 @@ namespace CollectaMundo.ViewModels.Filtering
 
             ApplyTradeFilter();
         }
-
-        [ObservableProperty]
-        private bool isGameplayCardsOnlyChecked;
-        partial void OnIsGameplayCardsOnlyCheckedChanged(bool value)
-        {
-            if (CriteriaKey != "Types")
-            {
-                return;
-            }
-
-            ApplyGameplayCardsOnlyFilter(value);
-        }
-        private void ApplyGameplayCardsOnlyFilter(bool enabled)
-        {
-            BeginBulkUpdate();
-
-            try
-            {
-                if (enabled)
-                {
-                    // Remove any existing Types selections first.
-                    foreach (var option in FilterOptions)
-                    {
-                        option.IsSelected = false;
-                    }
-                }
-
-                SetOptionSelected("Token", enabled);
-                SetOptionSelected("Emblem", enabled);
-                SetOptionSelected("Card", enabled);
-                SetOptionSelected("Conspiracy", enabled);
-                SetOptionSelected("Event", enabled);
-                SetOptionSelected("Phenome-nom", enabled);
-                SetOptionSelected("Phenomenon", enabled);
-                SetOptionSelected("Plane", enabled);
-                SetOptionSelected("Scheme", enabled);
-                SetOptionSelected("Stickers", enabled);
-                SetOptionSelected("Vanguard", enabled);
-                SetOptionSelected("Boss", enabled);
-
-                OperatorSelection = enabled
-                    ? OperatorType.NOT
-                    : AvailableOperators?.FirstOrDefault() ?? OperatorType.OR;
-            }
-            finally
-            {
-                EndBulkUpdate();
-            }
-
-            void SetOptionSelected(string displayName, bool selected)
-            {
-                var option = FilterOptions.FirstOrDefault(o =>
-                    string.Equals(o.DisplayName, displayName, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(o.Value, displayName, StringComparison.OrdinalIgnoreCase));
-
-                if (option is not null)
-                {
-                    option.IsSelected = selected;
-                }
-            }
-        }
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<FilterOption> FilteredOptions { get; private set; }
         public ObservableCollection<string> SelectedOptions { get; } = [];
