@@ -5,6 +5,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;
@@ -86,7 +87,7 @@ namespace CollectaMundo.ViewModels.Import
             CancelEnabled = new Progress<bool>(_ => { })
         };
         public event EventHandler<ImportCollectionUpsertResult>? CollectionMutationRequested; // To notify parent VM of collection changes
-        public event EventHandler<string?>? CardImageSelectionRequested; // To notify parent VM to show card image for given UUID
+        public event EventHandler<OracleCardImageSelectionRequest?>? CardImageSelectionRequested; // To notify parent VM to show card image for given UUID
 
         [ObservableProperty]
         private string? progressHeadline;
@@ -140,7 +141,7 @@ namespace CollectaMundo.ViewModels.Import
         // Method to request card image display for given UUID
         public void RequestCardImage(string uuid)
         {
-            CardImageSelectionRequested?.Invoke(this, uuid);
+            CardImageSelectionRequested?.Invoke(this, new OracleCardImageSelectionRequest(Uuid: uuid));
         }
         public async Task PrepareSummaryAsync()
         {

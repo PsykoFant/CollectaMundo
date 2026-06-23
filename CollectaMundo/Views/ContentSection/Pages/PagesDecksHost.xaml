@@ -14,7 +14,7 @@
         <ContentControl Content="{Binding CurrentDecksContentViewModel}">
             <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type deckVms:DeckManagementViewModel}"><deckViews:DeckManagementView/></DataTemplate>
-                <DataTemplate DataType="{x:Type deckVms:DeckEditorViewModel}"><deckViews:DeckEditorView /></DataTemplate>
+                <DataTemplate DataType="{x:Type deckVms:DeckBuilderViewModel}"><deckViews:DeckBuilderView /></DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
     </Grid>

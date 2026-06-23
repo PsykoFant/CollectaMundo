@@ -132,7 +132,7 @@ namespace CollectaMundo.ViewModels.Shell
                 return null;
             }
 
-            return decksHost.CurrentDecksContentViewModel is DeckEditorViewModel
+            return decksHost.CurrentDecksContentViewModel is DeckBuilderViewModel
                 ? FilteringSideMenuViewModel
                 : null;
         }

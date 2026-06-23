@@ -25,6 +25,7 @@ using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks;
+using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.ModifyCollection;
@@ -98,7 +99,7 @@ namespace CollectaMundo.ViewModels
         public ModifyCollectionViewModel AddCardsVM { get; }
         public ModifyCollectionViewModel EditCardsVM { get; }
         public DeckManagementViewModel DeckManagementVM { get; }
-        public DeckEditorViewModel DeckEdititorVM { get; }
+        public DeckBuilderViewModel DeckEdititorVM { get; }
         public FilterPanelViewModel FilterPanelVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public UtilitiesViewModel UtilitiesVM { get; }
@@ -193,7 +194,7 @@ namespace CollectaMundo.ViewModels
 
             // Deck management viewmodels
             DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
-            DeckEdititorVM = new DeckEditorViewModel(OracleCardsVM, CardImageVM, FilterPanelVM);
+            DeckEdititorVM = new DeckBuilderViewModel(OracleCardsVM, CardImageVM, FilterPanelVM);
 
             var cardCollectionHost = this;
             var shellUiState = this;
@@ -352,15 +353,36 @@ namespace CollectaMundo.ViewModels
                 AddedOrUpdated = addedOrUpdated
             };
         }
-        private void OnCardImageSelectionRequested(object? sender, string? uuid)
+        private void OnCardImageSelectionRequested(object? sender, OracleCardImageSelectionRequest? request)
         {
-            if (string.IsNullOrWhiteSpace(uuid))
+            if (request is null)
             {
                 CardImageVM.SelectedCard = null;
                 return;
             }
 
-            CardImageVM.SelectedCard = AllCardsVM.Cards.FirstOrDefault(card => string.Equals(card.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(request.Uuid))
+            {
+                CardImageVM.SelectedCard = AllCardsVM.Cards.FirstOrDefault(p =>
+                    string.Equals(p.Uuid, request.Uuid, StringComparison.OrdinalIgnoreCase));
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.OracleId))
+            {
+                CardImageVM.SelectedCard = AllCardsVM.Cards
+                    .Where(p => string.Equals(
+                        p.Oracle.ScryfallOracleId,
+                        request.OracleId,
+                        StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(p => p.ReleaseDate ?? DateTime.MaxValue)
+                    .ThenBy(p => p.SetCode, StringComparer.OrdinalIgnoreCase)
+                    .FirstOrDefault();
+
+                return;
+            }
+
+            CardImageVM.SelectedCard = null;
         }
         private void OnLocationsChanged(object? sender, EventArgs e)
         {

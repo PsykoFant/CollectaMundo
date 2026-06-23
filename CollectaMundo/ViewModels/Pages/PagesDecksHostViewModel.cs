@@ -6,8 +6,8 @@ namespace CollectaMundo.ViewModels.Pages
     public partial class PagesDecksHostViewModel : ObservableObject
     {
         public DeckManagementViewModel DeckManagementVM { get; }
-        public DeckEditorViewModel DeckEditorVM { get; }
-        public PagesDecksHostViewModel(DeckManagementViewModel deckManagementVM, DeckEditorViewModel deckEditorVM)
+        public DeckBuilderViewModel DeckEditorVM { get; }
+        public PagesDecksHostViewModel(DeckManagementViewModel deckManagementVM, DeckBuilderViewModel deckEditorVM)
         {
             DeckManagementVM = deckManagementVM;
             DeckEditorVM = deckEditorVM;

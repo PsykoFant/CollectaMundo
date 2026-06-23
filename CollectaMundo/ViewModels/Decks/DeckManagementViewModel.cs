@@ -1,10 +1,10 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardLocations.Models;
 using CollectaMundo.ApplicationServices.Decks;
-using CollectaMundo.ApplicationServices.Decks.Models;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

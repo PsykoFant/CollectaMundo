@@ -20,19 +20,18 @@ namespace CollectaMundo.ViewModels.Filtering
         private readonly FilterPanelViewModel _filterViewModel;
         private readonly IFilterItemSearchLogic _filterItemSearchLogic;
         private readonly Timer? _typingTimer;
-        private readonly bool _initialized = false;
         private bool _isSelectionInProgress = false;
         private bool _ignoreNextSelectionChanged;
-        private bool _isBulkUpdating;
+        private bool _isFilteringSuspended = true;
 
         // Handle bulk updates
         public void BeginBulkUpdate()
         {
-            _isBulkUpdating = true;
+            _isFilteringSuspended = true;
         }
         public void EndBulkUpdate(bool notifyFilterChanged = true)
         {
-            _isBulkUpdating = false;
+            _isFilteringSuspended = false;
 
             if (FilterCategory == FilterType.Multi)
             {
@@ -77,7 +76,7 @@ namespace CollectaMundo.ViewModels.Filtering
 
         private void NotifyFilterChanged()
         {
-            if (_isBulkUpdating)
+            if (_isFilteringSuspended)
             {
                 return;
             }
@@ -120,7 +119,7 @@ namespace CollectaMundo.ViewModels.Filtering
         private string filterText;
         partial void OnFilterTextChanged(string value)
         {
-            if (_initialized && !_isBulkUpdating)
+            if (!_isFilteringSuspended)
             {
                 ApplyTextFilter();
             }
@@ -233,7 +232,7 @@ namespace CollectaMundo.ViewModels.Filtering
                     _typingTimer.Elapsed += TypingTimer_Elapsed;
                 }
             }
-            _initialized = true; // allow ApplyTextFilter to trigger from now on
+            _isFilteringSuspended = false; // allow ApplyTextFilter to trigger from now on
         }
 
         // Update SelectedOptions when checkboxes change
@@ -244,7 +243,7 @@ namespace CollectaMundo.ViewModels.Filtering
                 return;
             }
 
-            if (_isBulkUpdating)
+            if (_isFilteringSuspended)
             {
                 return;
             }
@@ -371,9 +370,9 @@ namespace CollectaMundo.ViewModels.Filtering
         {
             if (string.IsNullOrWhiteSpace(FilterText))
             {
-                _isBulkUpdating = true;
+                _isFilteringSuspended = true;
                 FilterText = DefaultText;
-                _isBulkUpdating = false;
+                _isFilteringSuspended = false;
                 TextForeground = Brushes.Gray;
             }
         }
@@ -391,9 +390,9 @@ namespace CollectaMundo.ViewModels.Filtering
         {
             if (string.IsNullOrWhiteSpace(FreetextSearch))
             {
-                _isBulkUpdating = true;
+                _isFilteringSuspended = true;
                 FreetextSearch = DefaultText;
-                _isBulkUpdating = false;
+                _isFilteringSuspended = false;
                 TextForeground = Brushes.Gray;
             }
         }
