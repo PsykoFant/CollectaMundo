@@ -163,6 +163,12 @@ namespace CollectaMundo.ApplicationServices.Filtering
                         case FilterType.Multi:
                             if (filter.SelectedOptions != null && filter.SelectedOptions.Any())
                             {
+                                if (filter.CriteriaKey == "Types" && filter.IsGameplayCardsOnlyChecked)
+                                {
+                                    summary.Append($"{filter.ReadableLabel}: {{Gameplay cards only}} AND ");
+                                    break;
+                                }
+
                                 string operatorSymbol = filter.OperatorSelection switch
                                 {
                                     OperatorType.OR => "OR",

@@ -50,12 +50,12 @@ namespace CollectaMundo.ViewModels.Filtering
         {
             Debug.WriteLine($"[Filter] NotifyFilterChanged from {caller}");
 
-            FilterSummary = _filteringService.BuildSummary(Filters.Values);
-
             if (_suppressFilterChanged)
             {
                 return;
             }
+
+            FilterSummary = _filteringService.BuildSummary(Filters.Values);
 
             FilterChanged?.Invoke(this, EventArgs.Empty);
         }
