@@ -192,7 +192,7 @@ namespace CollectaMundo.ViewModels
 
             // Deck management viewmodels
             DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
-            DeckBuilderVM = new DeckBuilderViewModel(OracleCardsVM, CardImageVM, FilterPanelVM);
+            DeckBuilderVM = new DeckBuilderViewModel(OracleCardsVM, FilterPanelVM);
 
             var cardCollectionHost = this;
 
@@ -274,8 +274,8 @@ namespace CollectaMundo.ViewModels
             TopMenuVM.NavigationRequested += OnNavigationRequested;
             PagesDecksHostVM.DecksContentChanged += OnDecksContentChanged;
 
-            SearchAndFilterPageVM.CardImageSelectionRequested += OnCardImageRequestRequested;
-            MyCollectionPageVM.CardImageSelectionRequested += OnCardImageRequestRequested;
+            SearchAndFilterPageVM.CardImageSelectionRequested += OnCardImageRequest;
+            MyCollectionPageVM.CardImageSelectionRequested += OnCardImageRequest;
 
             UtilitiesVM.BusyStateRequested += OnBusyStateRequested;
 
@@ -299,8 +299,8 @@ namespace CollectaMundo.ViewModels
             TopMenuVM.NavigationRequested -= OnNavigationRequested;
             PagesDecksHostVM.DecksContentChanged -= OnDecksContentChanged;
 
-            SearchAndFilterPageVM.CardImageSelectionRequested -= OnCardImageRequestRequested;
-            MyCollectionPageVM.CardImageSelectionRequested -= OnCardImageRequestRequested;
+            SearchAndFilterPageVM.CardImageSelectionRequested -= OnCardImageRequest;
+            MyCollectionPageVM.CardImageSelectionRequested -= OnCardImageRequest;
 
             UtilitiesVM.BusyStateRequested -= OnBusyStateRequested;
 
@@ -338,12 +338,12 @@ namespace CollectaMundo.ViewModels
             CurrentPageViewModel = pageVm;
             CurrentPage = page;
 
-            ApplyShellLayout(page);
-
             if (page == ShellPageEnum.Decks && PagesDecksHostVM is PagesDecksHostViewModel decksHost)
             {
                 await decksHost.BeginAsync();
             }
+
+            ApplyShellLayout(page);
         }
         private void CleanupBeforePageChange(object? oldPageViewModel, object? newPageViewModel)
         {
@@ -362,6 +362,19 @@ namespace CollectaMundo.ViewModels
             _userPromptService.ResetInteractionState();
             _operationOverlayController.Hide();
         }
+        private object ResolvePage(ShellPageEnum page)
+        {
+            return page switch
+            {
+                ShellPageEnum.SearchAndFilter => SearchAndFilterPageVM,
+                ShellPageEnum.MyCollection => MyCollectionPageVM,
+                ShellPageEnum.Decks => PagesDecksHostVM,
+                ShellPageEnum.Utilities => PagesUtilitiesHostVM,
+                _ => throw new ArgumentOutOfRangeException(nameof(page), page, null)
+            };
+        }
+
+        // Shell layout
         private void ApplyShellLayout(ShellPageEnum page)
         {
             CurrentPage = page;
@@ -398,17 +411,6 @@ namespace CollectaMundo.ViewModels
                     break;
             }
         }
-        private object ResolvePage(ShellPageEnum page)
-        {
-            return page switch
-            {
-                ShellPageEnum.SearchAndFilter => SearchAndFilterPageVM,
-                ShellPageEnum.MyCollection => MyCollectionPageVM,
-                ShellPageEnum.Decks => PagesDecksHostVM,
-                ShellPageEnum.Utilities => PagesUtilitiesHostVM,
-                _ => throw new ArgumentOutOfRangeException(nameof(page), page, null)
-            };
-        }
         private void ApplyDecksShellLayout()
         {
             if (PagesDecksHostVM is not PagesDecksHostViewModel decksHost)
@@ -439,6 +441,15 @@ namespace CollectaMundo.ViewModels
             IsSideMenuRightVisible = false;
             CardImageVM.ClearImages();
         }
+        private void OnDecksContentChanged(object? sender, EventArgs e)
+        {
+            if (CurrentPage != ShellPageEnum.Decks)
+            {
+                return;
+            }
+
+            ApplyDecksShellLayout();
+        }
         private void OnBusyStateRequested(object? sender, bool isBusy)
         {
             IsTopMenuEnabled = !isBusy;
@@ -449,17 +460,8 @@ namespace CollectaMundo.ViewModels
         {
             IsSideMenuRightVisible = isVisible;
         }
-        private void OnDecksContentChanged(object? sender, EventArgs e)
-        {
-            if (CurrentPage != ShellPageEnum.Decks)
-            {
-                return;
-            }
 
-            ApplyDecksShellLayout();
-        }
-
-        // Collection change handlers
+        // Collection synchronization
         private void OnCollectionChanged(CollectionChangeSet<CollectionCard> changeSet)
         {
             foreach (var card in changeSet.AddedOrUpdated)
@@ -477,6 +479,34 @@ namespace CollectaMundo.ViewModels
 
             _facetScheduler.Cancel();
             _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterPanelVM.Filters));
+        }
+        private void OnCollectionRowsChanged(object? sender, CollectionChangeSet<CollectionCardDbRow> rowChangeSet)
+        {
+            var printingByUuid = AllCardsVM.Cards.Where(c => !string.IsNullOrWhiteSpace(c.Uuid)).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+
+            var hydratedChangeSet = new CollectionChangeSet<CollectionCard>
+            {
+                RemovedIds = rowChangeSet.RemovedIds,
+                AddedOrUpdated =
+                [
+                    .. rowChangeSet.AddedOrUpdated.Select(row =>
+                    {
+                        if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
+                        {
+                            throw new InvalidOperationException($"Cannot materialize collection card. Printing not found for UUID '{row.Identity.Uuid}'.");
+                        }
+
+                        return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
+                    })
+                ]
+            };
+
+            OnCollectionChanged(hydratedChangeSet);
+        }
+        private void OnImportCollectionMutationRequested(object? sender, ImportCollectionUpsertResult mutation)
+        {
+            var changeSet = BuildCollectionChangeSetFromMutation(mutation);
+            OnCollectionChanged(changeSet);
         }
         private CollectionChangeSet<CollectionCard> BuildCollectionChangeSetFromMutation(ImportCollectionUpsertResult mutation)
         {
@@ -510,8 +540,6 @@ namespace CollectaMundo.ViewModels
 
                 var card = CollectionCardFactory.FromPrintingAndDbRow(printing, row);
                 addedOrUpdated.Add(card);
-
-                addedOrUpdated.Add(card);
             }
 
             return new CollectionChangeSet<CollectionCard>
@@ -520,36 +548,8 @@ namespace CollectaMundo.ViewModels
                 AddedOrUpdated = addedOrUpdated
             };
         }
-        private void OnCollectionRowsChanged(object? sender, CollectionChangeSet<CollectionCardDbRow> rowChangeSet)
-        {
-            var printingByUuid = AllCardsVM.Cards.Where(c => !string.IsNullOrWhiteSpace(c.Uuid)).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
 
-            var hydratedChangeSet = new CollectionChangeSet<CollectionCard>
-            {
-                RemovedIds = rowChangeSet.RemovedIds,
-                AddedOrUpdated =
-                [
-                    .. rowChangeSet.AddedOrUpdated.Select(row =>
-                    {
-                        if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
-                        {
-                            throw new InvalidOperationException($"Cannot materialize collection card. Printing not found for UUID '{row.Identity.Uuid}'.");
-                        }
-
-                        return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
-                    })
-                ]
-            };
-
-            OnCollectionChanged(hydratedChangeSet);
-        }
-        private void OnImportCollectionMutationRequested(object? sender, ImportCollectionUpsertResult mutation)
-        {
-            var changeSet = BuildCollectionChangeSetFromMutation(mutation);
-            OnCollectionChanged(changeSet);
-        }
-
-        // Location handlers
+        // Location synchronization
         private void OnLocationsChanged(object? sender, EventArgs e)
         {
             var locations = _cardLocationLookupStore.GetAll();
@@ -611,8 +611,8 @@ namespace CollectaMundo.ViewModels
             OracleCardsVM.FilteredCards = _filteringService.ApplyFilters(OracleCardsVM.Cards, filters, gameplayCardsOnly);
         }
 
-        // Card image handlers
-        private void OnCardImageRequestRequested(object? sender, CardImageRequest? request)
+        // Card images
+        private void OnCardImageRequest(object? sender, CardImageRequest? request)
         {
             CardImageVM.SelectedCard = ResolveImageSourceCard(uuid: request?.Uuid, oracleId: null);
         }

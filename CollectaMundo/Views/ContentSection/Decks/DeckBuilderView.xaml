@@ -15,9 +15,10 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- 0 - Header -->
-            <RowDefinition Height="2*"/>    <!-- 1- Top: Deck list + Stats -->
-            <RowDefinition Height="Auto"/>  <!-- 2 - Filter criteria summary -->
-            <RowDefinition Height="3*"/>    <!-- 3- Bottom: Filterable oracle card source -->
+            <RowDefinition Height="Auto"/>    <!-- 1 - Deck name -->
+            <RowDefinition Height="2*"/>    <!-- 2- Top: Deck list + Stats -->
+            <RowDefinition Height="Auto"/>  <!-- 3 - Filter criteria summary -->
+            <RowDefinition Height="3*"/>    <!-- 4- Bottom: Filterable oracle card source -->
         </Grid.RowDefinitions>
 
         <!-- 0 - Header -->
@@ -34,8 +35,11 @@
                     Command="{Binding BackToDeckManagementCommand}"/>
         </DockPanel>
 
-        <!-- 1- Top: Deck list + Stats -->
-        <Grid Grid.Row="1">
+        <!-- 1 - Deck name -->
+        <Label Grid.Row="1" Content="{Binding DeckName}" Style="{StaticResource MediumHeaderLabelStyle}"/>
+        
+        <!-- 2- Top: Deck list + Stats -->
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="10"/>
@@ -45,43 +49,32 @@
             <!-- Deck rows -->
             <GroupBox Grid.Column="0" Header="Deck">
                 <DataGrid x:Name="DeckCardsDataGrid"
+                          ItemsSource="{Binding DeckCards}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="False"
                           Style="{StaticResource CardGridBaseStyle}">
 
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Qty"
-                                            Width="50"/>
-
-                        <DataGridTemplateColumn Header="Card Name"
-                                                Width="*"
-                                                SortMemberPath="CardName">
+                        <DataGridTextColumn Header="Qty" Width="50" Binding="{Binding DesiredQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding CardName}" TextWrapping="Wrap"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="Mana Cost"
-                                                Width="Auto"
-                                                SortMemberPath="ManaValue">
+                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Image Height="20"
-                                           HorizontalAlignment="Right"/>
+                                    <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTextColumn Header="Owned"
-                                            Width="70"
-                                            IsReadOnly="True"/>
-
-                        <DataGridTextColumn Header="Allocated"
-                                            Width="80"
-                                            IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Owned" Width="70" Binding="{Binding OwnedQuantity}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Allocated" Width="80" Binding="{Binding AllocatedQuantity}" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </GroupBox>
@@ -103,14 +96,13 @@
             </GroupBox>
         </Grid>
 
-
-        <!-- 2 - Filter criteria summary -->
-        <ScrollViewer Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <!-- 3 - Filter criteria summary -->
+        <ScrollViewer Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
             <TextBlock HorizontalAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
         </ScrollViewer>
 
-        <!-- 3- Bottom: Filterable oracle card source -->
-        <GroupBox Grid.Row="3" Header="Add Cards">
+        <!-- 4- Bottom: Filterable oracle card source -->
+        <GroupBox Grid.Row="4" Header="Add Cards">
             <DataGrid x:Name="AvailableCardsDataGrid"
                       ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
                       SelectedItem="{Binding SelectedOracleCard, Mode=TwoWay}"
@@ -118,7 +110,13 @@
                       CanUserAddRows="False"
                       IsReadOnly="True"
                       Style="{StaticResource CardGridBaseStyle}">
-
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseDoubleClick">
+                        <i:InvokeCommandAction Command="{Binding AddOracleCardToDeckCommand}"
+                               CommandParameter="{Binding SelectedItem, ElementName=AvailableCardsDataGrid}"/>
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+                
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                         <DataGridTemplateColumn.HeaderTemplate>
