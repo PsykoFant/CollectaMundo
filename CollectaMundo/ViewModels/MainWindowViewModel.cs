@@ -32,6 +32,7 @@ using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Pages;
 using CollectaMundo.ViewModels.Pages.SharedElements;
 using CollectaMundo.ViewModels.Shell;
+using CollectaMundo.ViewModels.Shell.Models;
 using CollectaMundo.ViewModels.SideMenuLeft;
 using CollectaMundo.ViewModels.SideMenuRight;
 using CollectaMundo.ViewModels.Utilities;
@@ -41,7 +42,7 @@ using System.Diagnostics;
 namespace CollectaMundo.ViewModels
 {
     #endregion
-    public partial class MainWindowViewModel : ObservableObject, ICardCollectionHost, IShellNavigationHost
+    public partial class MainWindowViewModel : ObservableObject, ICardCollectionHost
     {
         #region readonly dependencies
         // App settings
@@ -88,8 +89,8 @@ namespace CollectaMundo.ViewModels
 
 
         // Menus
-        public SideMenuFilteringViewModel FilteringSideMenuVM { get; }
-        public SideMenuUtilitiesViewModel UtilitiesSideMenuVM { get; }
+        public SideMenuFilteringViewModel SideMenuFilteringVM { get; }
+        public SideMenuUtilitiesViewModel SideMenuUtilitiesVM { get; }
 
         // Content
         public CardListViewModel<PrintingCard> AllCardsVM { get; }
@@ -215,12 +216,12 @@ namespace CollectaMundo.ViewModels
             PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, utilitiesNavigator);
 
             // Side menu viewmodels
-            FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterPanelVM, ColorIconsViewModel);
-            UtilitiesSideMenuVM = new SideMenuUtilitiesViewModel(UtilitiesVM, PricesVM);
+            SideMenuFilteringVM = new SideMenuFilteringViewModel(FilterPanelVM, ColorIconsViewModel);
+            SideMenuUtilitiesVM = new SideMenuUtilitiesViewModel(UtilitiesVM, PricesVM);
 
             // Set initial page and menu
             CurrentPageViewModel = SearchAndFilterPageVM;
-            CurrentSideMenuLeftViewModel = FilteringSideMenuVM;
+            CurrentSideMenuLeftViewModel = SideMenuFilteringVM;
             CurrentSideMenuRightViewModel = CardImageVM;
             CurrentPage = ShellPageEnum.SearchAndFilter;
 
@@ -228,7 +229,8 @@ namespace CollectaMundo.ViewModels
             _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, utilitiesNavigator);
 
             // Set up top menu with references to page VMs
-            TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, sideMenuFilteringViewModel: FilteringSideMenuVM, sideMenuUtilitiesViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, pagesDecksHostViewModel: PagesDecksHostVM, pagesUtilitiesHostVM: PagesUtilitiesHostVM);
+            TopMenuVM = new TopMenuViewModel();
+            ApplyShellLayout(ShellPageEnum.SearchAndFilter);
 
             // event wiring
             SubscribeChildVmEvents();
@@ -277,6 +279,9 @@ namespace CollectaMundo.ViewModels
         #region event wiring (subscribe/unsubscribe)
         private void SubscribeChildVmEvents()
         {
+            TopMenuVM.NavigationRequested += OnNavigationRequested;
+            PagesDecksHostVM.DecksContentChanged += OnDecksContentChanged;
+
             UtilitiesVM.BusyStateRequested += OnBusyStateRequested;
 
             ImportVM.BusyStateRequested += OnBusyStateRequested;
@@ -294,6 +299,9 @@ namespace CollectaMundo.ViewModels
         }
         private void UnsubscribeChildVmEvents()
         {
+            TopMenuVM.NavigationRequested -= OnNavigationRequested;
+            PagesDecksHostVM.DecksContentChanged -= OnDecksContentChanged;
+
             UtilitiesVM.BusyStateRequested -= OnBusyStateRequested;
 
             ImportVM.BusyStateRequested -= OnBusyStateRequested;
@@ -315,6 +323,104 @@ namespace CollectaMundo.ViewModels
         #region event handlers (FilterChanged, CardChanged, CollectionChanged)
 
         // Navigation handlers
+        private async void OnNavigationRequested(object? sender, ShellPageEnum page)
+        {
+            await NavigateToAsync(page);
+        }
+        private async Task NavigateToAsync(ShellPageEnum page)
+        {
+            var pageVm = ResolvePage(page);
+
+            _navigationCleanupService.CleanupBeforePageChange(CurrentPageViewModel, pageVm);
+
+            CurrentPageViewModel = pageVm;
+            CurrentPage = page;
+
+            ApplyShellLayout(page);
+
+            if (page == ShellPageEnum.Decks && PagesDecksHostVM is PagesDecksHostViewModel decksHost)
+            {
+                await decksHost.BeginAsync();
+            }
+        }
+        private void ApplyShellLayout(ShellPageEnum page)
+        {
+            CurrentPage = page;
+            TopMenuVM.CurrentPage = page;
+
+            switch (page)
+            {
+                case ShellPageEnum.SearchAndFilter:
+                    CurrentSideMenuLeftViewModel = SideMenuFilteringVM;
+                    SideMenuFilteringVM.SetContext(page);
+                    CurrentSideMenuRightViewModel = CardImageVM;
+                    IsSideMenuLeftVisible = true;
+                    IsSideMenuRightVisible = true;
+                    break;
+
+                case ShellPageEnum.MyCollection:
+                    CurrentSideMenuLeftViewModel = SideMenuFilteringVM;
+                    SideMenuFilteringVM.SetContext(page);
+                    CurrentSideMenuRightViewModel = CardImageVM;
+                    IsSideMenuLeftVisible = true;
+                    IsSideMenuRightVisible = true;
+                    break;
+
+                case ShellPageEnum.Decks:
+                    ApplyDecksShellLayout();
+                    break;
+
+                case ShellPageEnum.Utilities:
+                    CurrentSideMenuLeftViewModel = SideMenuUtilitiesVM;
+                    CurrentSideMenuRightViewModel = null;
+                    CardImageVM.ClearImages();
+                    IsSideMenuLeftVisible = true;
+                    IsSideMenuRightVisible = false;
+                    break;
+            }
+        }
+        private object ResolvePage(ShellPageEnum page)
+        {
+            return page switch
+            {
+                ShellPageEnum.SearchAndFilter => SearchAndFilterPageVM,
+                ShellPageEnum.MyCollection => MyCollectionPageVM,
+                ShellPageEnum.Decks => PagesDecksHostVM,
+                ShellPageEnum.Utilities => PagesUtilitiesHostVM,
+                _ => throw new ArgumentOutOfRangeException(nameof(page), page, null)
+            };
+        }
+        private void ApplyDecksShellLayout()
+        {
+            if (PagesDecksHostVM is not PagesDecksHostViewModel decksHost)
+            {
+                CurrentSideMenuLeftViewModel = null;
+                CurrentSideMenuRightViewModel = null;
+                IsSideMenuLeftVisible = false;
+                IsSideMenuRightVisible = false;
+                CardImageVM.ClearImages();
+                return;
+            }
+
+            if (decksHost.CurrentDecksContentViewModel is DeckBuilderViewModel)
+            {
+                SideMenuFilteringVM.SetContext(ShellPageEnum.Decks);
+
+                CurrentSideMenuLeftViewModel = SideMenuFilteringVM;
+                CurrentSideMenuRightViewModel = CardImageVM;
+                IsSideMenuLeftVisible = true;
+                IsSideMenuRightVisible = true;
+                return;
+            }
+
+            // Deck management/default deck page.
+            CurrentSideMenuLeftViewModel = null;
+            CurrentSideMenuRightViewModel = null;
+            IsSideMenuLeftVisible = false;
+            IsSideMenuRightVisible = false;
+            CardImageVM.ClearImages();
+        }
+
         private void OnBusyStateRequested(object? sender, bool isBusy)
         {
             SetUiBusy(isBusy);
@@ -322,6 +428,15 @@ namespace CollectaMundo.ViewModels
         private void OnSideMenuRightVisibilityRequested(bool isVisible)
         {
             IsSideMenuRightVisible = isVisible;
+        }
+        private void OnDecksContentChanged(object? sender, EventArgs e)
+        {
+            if (CurrentPage != ShellPageEnum.Decks)
+            {
+                return;
+            }
+
+            ApplyDecksShellLayout();
         }
 
         // Collection change handlers

@@ -3,7 +3,7 @@ using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Pages.SharedElements;
-using CollectaMundo.ViewModels.Shell;
+using CollectaMundo.ViewModels.Shell.Models;
 using CollectaMundo.ViewModels.SideMenuRight;
 using System.Windows.Input;
 

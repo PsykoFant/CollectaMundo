@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Filtering;
-using CollectaMundo.ViewModels.Shell;
+using CollectaMundo.ViewModels.Shell.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CollectaMundo.ViewModels.SideMenuLeft
