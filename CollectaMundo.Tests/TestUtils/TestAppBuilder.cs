@@ -83,16 +83,9 @@ public static class TestAppBuilder
             missingPngSvc,
             remoteLookups);
 
-        var keyedDataProviderService = new KeyedDataProviderService(
-            uowRunner,
-            new KeyedDataProviderRepo(),
-            getRetailer);
+        var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
 
-        var cardListService = new CardListService(
-            uowRunner,
-            new CardListRepo(),
-            new FilterDefaultsLogic(),
-            keyedDataProviderService);
+        var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService);
 
         var collectionMutationsLogic = new CollectionMutationsLogic();
         var collectionMutationsRepo = new CollectionMutationsRepo();

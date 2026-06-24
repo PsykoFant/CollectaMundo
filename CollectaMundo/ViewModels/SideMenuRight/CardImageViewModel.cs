@@ -88,6 +88,8 @@ namespace CollectaMundo.ViewModels.SideMenuRight
         {
             FrontImageSource = null;
             BackImageSource = null;
+            ImageSet = null;
+            ImagePromoType = null;
         }
     }
 }

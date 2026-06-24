@@ -37,6 +37,7 @@ namespace CollectaMundo.ViewModels.Decks
         [RelayCommand]
         private void BackToDeckManagement()
         {
+            SelectedOracleCard = null;
             ExitEditorRequested?.Invoke(this, EventArgs.Empty);
         }
     }

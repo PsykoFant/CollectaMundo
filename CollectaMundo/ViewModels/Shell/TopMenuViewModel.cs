@@ -24,19 +24,15 @@ namespace CollectaMundo.ViewModels.Shell
         public bool IsUtilitiesPageActive => CurrentPage == ShellPageEnum.Utilities;
 
         [RelayCommand]
-        private void ShowMyCollectionPage() =>
-            NavigationRequested?.Invoke(this, ShellPageEnum.MyCollection);
+        private void ShowMyCollectionPage() => NavigationRequested?.Invoke(this, ShellPageEnum.MyCollection);
 
         [RelayCommand]
-        private void ShowAllCardsPage() =>
-            NavigationRequested?.Invoke(this, ShellPageEnum.SearchAndFilter);
+        private void ShowAllCardsPage() => NavigationRequested?.Invoke(this, ShellPageEnum.SearchAndFilter);
 
         [RelayCommand]
-        private void ShowDecksPage() =>
-            NavigationRequested?.Invoke(this, ShellPageEnum.Decks);
+        private void ShowDecksPage() => NavigationRequested?.Invoke(this, ShellPageEnum.Decks);
 
         [RelayCommand]
-        private void ShowUtilitiesPage() =>
-            NavigationRequested?.Invoke(this, ShellPageEnum.Utilities);
+        private void ShowUtilitiesPage() => NavigationRequested?.Invoke(this, ShellPageEnum.Utilities);
     }
 }

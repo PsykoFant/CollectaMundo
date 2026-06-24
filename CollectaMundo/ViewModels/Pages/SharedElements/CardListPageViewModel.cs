@@ -1,19 +1,19 @@
-﻿using CollectaMundo.ViewModels.CardLists;
+﻿using CollectaMundo.ApplicationServices.CardImages.Models;
+using CollectaMundo.DomainLogic.CardImages.Models;
+using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.ModifyCollection;
 using CollectaMundo.ViewModels.Shell.Models;
-using CollectaMundo.ViewModels.SideMenuRight;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.ComponentModel;
 using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.Pages.SharedElements
 {
-    public abstract class CardListPageViewModel<TCard> : ObservableObject, IClearPageStatus
+    public abstract partial class CardListPageViewModel<TCard> : ObservableObject, IClearPageStatus
     {
         // Child VMs passed down from MainWindowViewModel
         public CardListViewModel<TCard> CardsVM { get; }
-        public CardImageViewModel CardImageVM { get; }
         public FilterPanelViewModel FilterVM { get; }
         public ModifyCollectionViewModel? ModifyCollectionViewModel { get; }
         public PricesViewModel? PricesVM { get; }
@@ -40,10 +40,33 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
         public ICommand? PrimarySubmitCommand { get; }
         public ICommand? ClearPendingChangesCommand => ModifyCollectionViewModel?.ClearCardsToAddCommand;
 
-        public CardListPageViewModel(CardListViewModel<TCard> cardsVM, CardImageViewModel cardImageVM, FilterPanelViewModel filterVM, string pageTitle, ShellPageEnum cardListPage, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
+        public event EventHandler<CardImageRequest?>? CardImageSelectionRequested;
+
+        // Card image viewing
+        [ObservableProperty]
+        private TCard? selectedCard;
+        partial void OnSelectedCardChanged(TCard? value)
+        {
+            if (value is null)
+            {
+                CardImageSelectionRequested?.Invoke(this, null);
+                return;
+            }
+
+            if (value is ICardImageSourceCard imageSource)
+            {
+                CardImageSelectionRequested?.Invoke(this, new CardImageRequest
+                {
+                    Uuid = imageSource.Uuid,
+                    Name = imageSource.Name,
+                    Side = imageSource.Side
+                });
+            }
+        }
+
+        public CardListPageViewModel(CardListViewModel<TCard> cardsVM, FilterPanelViewModel filterVM, string pageTitle, ShellPageEnum cardListPage, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
         {
             CardsVM = cardsVM;
-            CardImageVM = cardImageVM;
             FilterVM = filterVM;
             PricesVM = pricesVM;
             ModifyCollectionViewModel = modifyCollectionVM;

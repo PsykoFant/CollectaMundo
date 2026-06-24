@@ -13,6 +13,7 @@ using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
+using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.KeyedDataProvider;
@@ -73,7 +74,8 @@ namespace CollectaMundo.ViewModels
         // File system picker
         private readonly IFileSystemPicker _filesystemPicker;
 
-        private readonly NavigationCleanupService _navigationCleanupService;
+        // Utilities navigator
+        private readonly UtilitiesNavigator _utilitiesNavigator;
 
         #endregion
 
@@ -100,7 +102,7 @@ namespace CollectaMundo.ViewModels
         public ModifyCollectionViewModel AddCardsVM { get; }
         public ModifyCollectionViewModel EditCardsVM { get; }
         public DeckManagementViewModel DeckManagementVM { get; }
-        public DeckBuilderViewModel DeckEdititorVM { get; }
+        public DeckBuilderViewModel DeckBuilderVM { get; }
         public FilterPanelViewModel FilterPanelVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public UtilitiesViewModel UtilitiesVM { get; }
@@ -133,12 +135,6 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private bool isTopMenuEnabled = true;
-        public void SetUiBusy(bool isBusy)
-        {
-            IsTopMenuEnabled = !isBusy;
-            IsSideMenuLeftVisible = !isBusy;
-            IsSideMenuRightVisible = !isBusy;
-        }
 
         #endregion
 
@@ -173,6 +169,7 @@ namespace CollectaMundo.ViewModels
             _facetUpdater = facetUpdater ?? new FacetUpdater();
             _userPromptService = userPromptService;
             _filesystemPicker = fileSystemPicker;
+            _utilitiesNavigator = new UtilitiesNavigator();
 
             // cardlist viewmodels
             AllCardsVM = new CardListViewModel<PrintingCard>();
@@ -195,25 +192,23 @@ namespace CollectaMundo.ViewModels
 
             // Deck management viewmodels
             DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
-            DeckEdititorVM = new DeckBuilderViewModel(OracleCardsVM, CardImageVM, FilterPanelVM);
+            DeckBuilderVM = new DeckBuilderViewModel(OracleCardsVM, CardImageVM, FilterPanelVM);
 
             var cardCollectionHost = this;
-            var utilitiesNavigator = new UtilitiesNavigator();
-
 
             // Utility viewmodels
-            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
-            ImportVM = new ImportViewModel(_importService, utilitiesNavigator, _userPromptService);
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, _utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
+            ImportVM = new ImportViewModel(_importService, _utilitiesNavigator, _userPromptService);
             CardLocationVM = new CardLocationViewModel(_cardLocationService);
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, cardImageVM: CardImageVM, filterVM: FilterPanelVM, pageTitle: "Search and Filter Cards", cardListPage: ShellPageEnum.SearchAndFilter, primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
-            MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, cardImageVM: CardImageVM, filterVM: FilterPanelVM, pageTitle: "My Collection", cardListPage: ShellPageEnum.MyCollection, primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
-            PagesDecksHostVM = new PagesDecksHostViewModel(DeckManagementVM, DeckEdititorVM);
-            PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, utilitiesNavigator);
+            SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, filterVM: FilterPanelVM, pageTitle: "Search and Filter Cards", cardListPage: ShellPageEnum.SearchAndFilter, primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
+            MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, filterVM: FilterPanelVM, pageTitle: "My Collection", cardListPage: ShellPageEnum.MyCollection, primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
+            PagesDecksHostVM = new PagesDecksHostViewModel(DeckManagementVM, DeckBuilderVM);
+            PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, _utilitiesNavigator);
 
             // Side menu viewmodels
             SideMenuFilteringVM = new SideMenuFilteringViewModel(FilterPanelVM, ColorIconsViewModel);
@@ -224,9 +219,6 @@ namespace CollectaMundo.ViewModels
             CurrentSideMenuLeftViewModel = SideMenuFilteringVM;
             CurrentSideMenuRightViewModel = CardImageVM;
             CurrentPage = ShellPageEnum.SearchAndFilter;
-
-            // Navigation cleanup service
-            _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, utilitiesNavigator);
 
             // Set up top menu with references to page VMs
             TopMenuVM = new TopMenuViewModel();
@@ -282,6 +274,9 @@ namespace CollectaMundo.ViewModels
             TopMenuVM.NavigationRequested += OnNavigationRequested;
             PagesDecksHostVM.DecksContentChanged += OnDecksContentChanged;
 
+            SearchAndFilterPageVM.CardImageSelectionRequested += OnCardImageRequestRequested;
+            MyCollectionPageVM.CardImageSelectionRequested += OnCardImageRequestRequested;
+
             UtilitiesVM.BusyStateRequested += OnBusyStateRequested;
 
             ImportVM.BusyStateRequested += OnBusyStateRequested;
@@ -292,7 +287,9 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.CollectionChanged += OnCollectionRowsChanged;
             EditCardsVM.CollectionChanged += OnCollectionRowsChanged;
             CardLocationVM.CollectionChanged += OnCollectionRowsChanged;
+
             DeckManagementVM.CollectionChanged += OnCollectionRowsChanged;
+            DeckBuilderVM.CardImageSelectionRequested += OnCardImageSelectionRequested;
 
             FilterPanelVM.FilterChanged += OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged += OnLocationsChanged;
@@ -301,6 +298,9 @@ namespace CollectaMundo.ViewModels
         {
             TopMenuVM.NavigationRequested -= OnNavigationRequested;
             PagesDecksHostVM.DecksContentChanged -= OnDecksContentChanged;
+
+            SearchAndFilterPageVM.CardImageSelectionRequested -= OnCardImageRequestRequested;
+            MyCollectionPageVM.CardImageSelectionRequested -= OnCardImageRequestRequested;
 
             UtilitiesVM.BusyStateRequested -= OnBusyStateRequested;
 
@@ -312,7 +312,9 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.CollectionChanged -= OnCollectionRowsChanged;
             EditCardsVM.CollectionChanged -= OnCollectionRowsChanged;
             CardLocationVM.CollectionChanged -= OnCollectionRowsChanged;
+
             DeckManagementVM.CollectionChanged -= OnCollectionRowsChanged;
+            DeckBuilderVM.CardImageSelectionRequested -= OnCardImageSelectionRequested;
 
             FilterPanelVM.FilterChanged -= OnFilterChanged;
             _cardLocationLookupStore.LocationsChanged -= OnLocationsChanged;
@@ -331,7 +333,7 @@ namespace CollectaMundo.ViewModels
         {
             var pageVm = ResolvePage(page);
 
-            _navigationCleanupService.CleanupBeforePageChange(CurrentPageViewModel, pageVm);
+            CleanupBeforePageChange(CurrentPageViewModel, pageVm);
 
             CurrentPageViewModel = pageVm;
             CurrentPage = page;
@@ -342,6 +344,23 @@ namespace CollectaMundo.ViewModels
             {
                 await decksHost.BeginAsync();
             }
+        }
+        private void CleanupBeforePageChange(object? oldPageViewModel, object? newPageViewModel)
+        {
+            if (ReferenceEquals(oldPageViewModel, newPageViewModel))
+            {
+                return;
+            }
+
+            if (oldPageViewModel is IClearPageStatus clearPageStatus)
+            {
+                Debug.WriteLine($"[NavCleanup] Calling ClearPageStatus on {oldPageViewModel!.GetType().FullName}");
+                clearPageStatus.ClearPageStatus();
+            }
+
+            _utilitiesNavigator.ShowHome();
+            _userPromptService.ResetInteractionState();
+            _operationOverlayController.Hide();
         }
         private void ApplyShellLayout(ShellPageEnum page)
         {
@@ -420,10 +439,11 @@ namespace CollectaMundo.ViewModels
             IsSideMenuRightVisible = false;
             CardImageVM.ClearImages();
         }
-
         private void OnBusyStateRequested(object? sender, bool isBusy)
         {
-            SetUiBusy(isBusy);
+            IsTopMenuEnabled = !isBusy;
+            IsSideMenuLeftVisible = !isBusy;
+            IsSideMenuRightVisible = !isBusy;
         }
         private void OnSideMenuRightVisibilityRequested(bool isVisible)
         {
@@ -592,36 +612,34 @@ namespace CollectaMundo.ViewModels
         }
 
         // Card image handlers
+        private void OnCardImageRequestRequested(object? sender, CardImageRequest? request)
+        {
+            CardImageVM.SelectedCard = ResolveImageSourceCard(uuid: request?.Uuid, oracleId: null);
+        }
         private void OnCardImageSelectionRequested(object? sender, OracleCardImageSelectionRequest? request)
         {
-            if (request is null)
+            CardImageVM.SelectedCard = ResolveImageSourceCard(uuid: request?.Uuid, oracleId: request?.OracleId);
+        }
+        private PrintingCard? ResolveImageSourceCard(string? uuid, string? oracleId)
+        {
+            if (!string.IsNullOrWhiteSpace(uuid))
             {
-                CardImageVM.SelectedCard = null;
-                return;
+                return AllCardsVM.Cards.FirstOrDefault(card => string.Equals(card.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Uuid))
+            if (!string.IsNullOrWhiteSpace(oracleId))
             {
-                CardImageVM.SelectedCard = AllCardsVM.Cards.FirstOrDefault(p =>
-                    string.Equals(p.Uuid, request.Uuid, StringComparison.OrdinalIgnoreCase));
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.OracleId))
-            {
-                CardImageVM.SelectedCard = AllCardsVM.Cards
-                    .Where(p => string.Equals(
-                        p.Oracle.ScryfallOracleId,
-                        request.OracleId,
+                return AllCardsVM.Cards
+                    .Where(card => string.Equals(
+                        card.Oracle.ScryfallOracleId,
+                        oracleId,
                         StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(p => p.ReleaseDate ?? DateTime.MaxValue)
-                    .ThenBy(p => p.SetCode, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(card => card.ReleaseDate ?? DateTime.MaxValue)
+                    .ThenBy(card => card.SetCode, StringComparer.OrdinalIgnoreCase)
                     .FirstOrDefault();
-
-                return;
             }
 
-            CardImageVM.SelectedCard = null;
+            return null;
         }
         private void OnCardImagePanelVisibilityRequested(object? sender, bool isVisible)
         {

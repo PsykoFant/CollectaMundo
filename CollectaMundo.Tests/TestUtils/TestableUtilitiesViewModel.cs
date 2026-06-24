@@ -12,7 +12,6 @@ using System.Diagnostics;
 namespace CollectaMundo.Tests.TestUtils
 {
     public class TestableUtilitiesViewModel(
-    IShellUiState shellUiState,
     ICardDatabaseManagementService dbService,
     IOperationOverlayController operationOverlayController,
     IUtilitiesNavigator utilitiesNavigator,
@@ -21,7 +20,6 @@ namespace CollectaMundo.Tests.TestUtils
     Func<int> getMyCollectionCount,
     IFileSystemPicker fileSystemPicker)
     : UtilitiesViewModel(
-        shellUiState,
         dbService,
         operationOverlayController,
         utilitiesNavigator,
@@ -53,7 +51,6 @@ namespace CollectaMundo.Tests.TestUtils
         public IUserPromptService UserPromptService { get; set; } = null!;
         public Mock<ICardDatabaseManagementService> DbServiceMock { get; set; } = null!;
         public Mock<ICardCollectionHost> CardCollectionHostMock { get; set; } = null!;
-        public Mock<IShellUiState> ShellUiStateMock { get; set; } = null!;
     }
     public class UpdateTestContextBuilder
     {
@@ -120,7 +117,6 @@ namespace CollectaMundo.Tests.TestUtils
                     .ReturnsAsync(_updateResult);
             }
 
-            var shellUiState = new Mock<IShellUiState>();
             var utilitiesNavigator = new Mock<IUtilitiesNavigator>();
             var parentCtx = new Mock<ICardCollectionHost>();
             var userPromptService = new UserPromptService();
@@ -129,7 +125,6 @@ namespace CollectaMundo.Tests.TestUtils
             var overlayController = new OperationOverlayController(overlayVm);
 
             var utilitiesVM = new TestableUtilitiesViewModel(
-                shellUiState.Object,
                 dbService.Object,
                 overlayController,
                 utilitiesNavigator.Object,
@@ -146,7 +141,6 @@ namespace CollectaMundo.Tests.TestUtils
                 UserPromptService = userPromptService,
                 DbServiceMock = dbService,
                 CardCollectionHostMock = parentCtx,
-                ShellUiStateMock = shellUiState
             };
         }
         public static UpdateTestContextBuilder Builder => new();
@@ -154,7 +148,7 @@ namespace CollectaMundo.Tests.TestUtils
 
     public static class StatusTestDriver
     {
-        public static async Task WaitUntilPrimaryButtonTextAsync(OperationOverlayViewModel overlayVm,string expectedText,TimeSpan? timeout = null)
+        public static async Task WaitUntilPrimaryButtonTextAsync(OperationOverlayViewModel overlayVm, string expectedText, TimeSpan? timeout = null)
         {
             timeout ??= TimeSpan.FromSeconds(5);
             var sw = Stopwatch.StartNew();
@@ -203,6 +197,6 @@ namespace CollectaMundo.Tests.TestUtils
             }
 
             overlayVm.SecondaryActionCommand.Execute(null);
-        }   
+        }
     }
 }

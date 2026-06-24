@@ -1446,7 +1446,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             #region Test 1 - Happy path create
 
             // Arrange: load managers used by this scenario
-            await _ctx.MainVM.TopMenuVM.ShowDecksPageCommand.ExecuteAsync(null);
+            _ctx.MainVM.TopMenuVM.ShowDecksPageCommand.Execute(null);
             await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
 
             // Assert initial state
