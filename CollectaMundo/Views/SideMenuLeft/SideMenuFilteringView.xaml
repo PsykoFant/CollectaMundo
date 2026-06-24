@@ -125,13 +125,13 @@
         </StackPanel>
 
         <!-- 2 - printing card propeties -->
-        <StackPanel Grid.Row="2" Margin="0,10,0,0" Visibility="{Binding IsPrintingCardFilteringVisble, Converter={StaticResource BoolToVisibilityConverter}}">
+        <StackPanel Grid.Row="2" Margin="0,10,0,0" Visibility="{Binding IsPrintingCardFilteringVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Finishes]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Availability]}" />
         </StackPanel>        
 
         <!-- 3 - collection card propeties -->
-        <StackPanel Grid.Row="3" Visibility="{Binding IsCollectionCardFilteringVisble, Converter={StaticResource BoolToVisibilityConverter}}">
+        <StackPanel Grid.Row="3" Visibility="{Binding IsCollectionCardFilteringVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedCondition]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SelectedFinish]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Language]}" />

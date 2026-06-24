@@ -9,7 +9,6 @@ using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;
-using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -19,12 +18,14 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import
 {
-    public partial class ImportViewModel(IImportService importService, IShellUiState shellUiState, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IImportService _importService = importService;
-        private readonly IShellUiState _shellUiState = shellUiState;
         private readonly IUtilitiesNavigator _utilitiesNavigator = utilitiesNavigator;
         private readonly IUserPromptService _userPromptService = userPromptService;
+
+        public event EventHandler<bool>? BusyStateRequested;
+        public event EventHandler<bool>? CardImagePanelVisibilityRequested;
 
         #region Data collections for import process
         public ObservableCollection<TempCardItem> ImportCardList { get; } = []; // The master list of items being imported, generated from CSV
@@ -309,7 +310,7 @@ namespace CollectaMundo.ViewModels.Import
         }
         public async Task<OperationResult> AfterStep1Action()
         {
-            _shellUiState.SetUiBusy(true);
+            BusyStateRequested?.Invoke(this, true);
 
             // Let the user pick the CSV file
             var filePath = _importService.PromptForCsvFile();
@@ -391,7 +392,7 @@ namespace CollectaMundo.ViewModels.Import
 
             if (result.ItemsWithMultipleUuids > 0)
             {
-                _shellUiState.IsSideMenuRightVisible = true;
+                CardImagePanelVisibilityRequested?.Invoke(this, true);
                 GoToStep(ImportStep.MultipleUuidsSelection);
             }
             else
@@ -402,7 +403,7 @@ namespace CollectaMundo.ViewModels.Import
         }
         public async Task<OperationResult> AfterStep4Action()
         {
-            _shellUiState.IsSideMenuRightVisible = false;
+            CardImagePanelVisibilityRequested?.Invoke(this, false);
 
             // Pass user choices to service layer
             var result = await Task.Run(() => _importService.ApplyUserSelectedUuids(ImportCardList, GetStep4Selections(), Progress));
@@ -585,7 +586,7 @@ namespace CollectaMundo.ViewModels.Import
         {
             Debug.WriteLine("ImportViewModel: Cancelling import operation as per user request.");
             IsCancelVisible = false;
-            _shellUiState.IsSideMenuRightVisible = false;
+            CardImagePanelVisibilityRequested?.Invoke(this, false);
             _userPromptService.CancelActiveOperation();
             IsImportFailVisible = true;
             Progress.Headline.Report("Import cancelled");
@@ -615,8 +616,7 @@ namespace CollectaMundo.ViewModels.Import
             ClearProgress();
 
             // Reset card image view model
-            _shellUiState.IsSideMenuRightVisible = false;
-            CardImageSelectionRequested?.Invoke(this, null);
+            CardImagePanelVisibilityRequested?.Invoke(this, false);
 
             // Reset resolved import state
             ResolvedImportItems = [];
@@ -637,7 +637,7 @@ namespace CollectaMundo.ViewModels.Import
             IsCancelVisible = false;
 
             _utilitiesNavigator.ShowHome();
-            _shellUiState.SetUiBusy(false);
+            BusyStateRequested?.Invoke(this, false);
         }
 
         #endregion

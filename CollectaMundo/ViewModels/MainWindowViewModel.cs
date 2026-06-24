@@ -197,13 +197,12 @@ namespace CollectaMundo.ViewModels
             DeckEdititorVM = new DeckBuilderViewModel(OracleCardsVM, CardImageVM, FilterPanelVM);
 
             var cardCollectionHost = this;
-            var shellUiState = this;
             var utilitiesNavigator = new UtilitiesNavigator();
 
 
             // Utility viewmodels
-            UtilitiesVM = new UtilitiesViewModel(shellUiState, cardDbManagementService, _operationOverlayController, utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
-            ImportVM = new ImportViewModel(_importService, shellUiState, utilitiesNavigator, _userPromptService);
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
+            ImportVM = new ImportViewModel(_importService, utilitiesNavigator, _userPromptService);
             CardLocationVM = new CardLocationViewModel(_cardLocationService);
 
             // prices viewmodel
@@ -216,7 +215,7 @@ namespace CollectaMundo.ViewModels
             PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, utilitiesNavigator);
 
             // Side menu viewmodels
-            FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterPanelVM, ColorIconsViewModel, shellUiState);
+            FilteringSideMenuVM = new SideMenuFilteringViewModel(FilterPanelVM, ColorIconsViewModel);
             UtilitiesSideMenuVM = new SideMenuUtilitiesViewModel(UtilitiesVM, PricesVM);
 
             // Set initial page and menu
@@ -229,7 +228,7 @@ namespace CollectaMundo.ViewModels
             _navigationCleanupService = new NavigationCleanupService(_userPromptService, _operationOverlayController, utilitiesNavigator);
 
             // Set up top menu with references to page VMs
-            TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, filteringSideMenuViewModel: FilteringSideMenuVM, utilitiesSideMenuViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, pagesDecksHostViewModel: PagesDecksHostVM, pagesUtilitiesHostVM: PagesUtilitiesHostVM);
+            TopMenuVM = new TopMenuViewModel(shellNavigationHost: this, _navigationCleanupService, sideMenuFilteringViewModel: FilteringSideMenuVM, sideMenuUtilitiesViewModel: UtilitiesSideMenuVM, allCardsPageViewModel: SearchAndFilterPageVM, myCollectionPageViewModel: MyCollectionPageVM, pagesDecksHostViewModel: PagesDecksHostVM, pagesUtilitiesHostVM: PagesUtilitiesHostVM);
 
             // event wiring
             SubscribeChildVmEvents();
@@ -278,8 +277,12 @@ namespace CollectaMundo.ViewModels
         #region event wiring (subscribe/unsubscribe)
         private void SubscribeChildVmEvents()
         {
+            UtilitiesVM.BusyStateRequested += OnBusyStateRequested;
+
+            ImportVM.BusyStateRequested += OnBusyStateRequested;
             ImportVM.CollectionMutationRequested += OnImportCollectionMutationRequested;
             ImportVM.CardImageSelectionRequested += OnCardImageSelectionRequested;
+            ImportVM.CardImagePanelVisibilityRequested += OnCardImagePanelVisibilityRequested;
 
             AddCardsVM.CollectionChanged += OnCollectionRowsChanged;
             EditCardsVM.CollectionChanged += OnCollectionRowsChanged;
@@ -291,8 +294,12 @@ namespace CollectaMundo.ViewModels
         }
         private void UnsubscribeChildVmEvents()
         {
+            UtilitiesVM.BusyStateRequested -= OnBusyStateRequested;
+
+            ImportVM.BusyStateRequested -= OnBusyStateRequested;
             ImportVM.CollectionMutationRequested -= OnImportCollectionMutationRequested;
             ImportVM.CardImageSelectionRequested -= OnCardImageSelectionRequested;
+            ImportVM.CardImagePanelVisibilityRequested -= OnCardImagePanelVisibilityRequested;
 
             AddCardsVM.CollectionChanged -= OnCollectionRowsChanged;
             EditCardsVM.CollectionChanged -= OnCollectionRowsChanged;
@@ -306,10 +313,35 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region event handlers (FilterChanged, CardChanged, CollectionChanged)
-        private void OnImportCollectionMutationRequested(object? sender, ImportCollectionUpsertResult mutation)
+
+        // Navigation handlers
+        private void OnBusyStateRequested(object? sender, bool isBusy)
         {
-            var changeSet = BuildCollectionChangeSetFromMutation(mutation);
-            OnCollectionChanged(changeSet);
+            SetUiBusy(isBusy);
+        }
+        private void OnSideMenuRightVisibilityRequested(bool isVisible)
+        {
+            IsSideMenuRightVisible = isVisible;
+        }
+
+        // Collection change handlers
+        private void OnCollectionChanged(CollectionChangeSet<CollectionCard> changeSet)
+        {
+            foreach (var card in changeSet.AddedOrUpdated)
+            {
+                AttachCardLocationProvider(card);
+            }
+
+            // Apply DB-truth changes to the in-memory collection list.
+            CollectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
+
+            AddCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
+            EditCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
+
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterPanelVM.Filters.Values, FilterPanelVM.IsGameplayCardsOnlyChecked);
+
+            _facetScheduler.Cancel();
+            _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterPanelVM.Filters));
         }
         private CollectionChangeSet<CollectionCard> BuildCollectionChangeSetFromMutation(ImportCollectionUpsertResult mutation)
         {
@@ -353,37 +385,36 @@ namespace CollectaMundo.ViewModels
                 AddedOrUpdated = addedOrUpdated
             };
         }
-        private void OnCardImageSelectionRequested(object? sender, OracleCardImageSelectionRequest? request)
+        private void OnCollectionRowsChanged(object? sender, CollectionChangeSet<CollectionCardDbRow> rowChangeSet)
         {
-            if (request is null)
+            var printingByUuid = AllCardsVM.Cards.Where(c => !string.IsNullOrWhiteSpace(c.Uuid)).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+
+            var hydratedChangeSet = new CollectionChangeSet<CollectionCard>
             {
-                CardImageVM.SelectedCard = null;
-                return;
-            }
+                RemovedIds = rowChangeSet.RemovedIds,
+                AddedOrUpdated =
+                [
+                    .. rowChangeSet.AddedOrUpdated.Select(row =>
+                    {
+                        if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
+                        {
+                            throw new InvalidOperationException($"Cannot materialize collection card. Printing not found for UUID '{row.Identity.Uuid}'.");
+                        }
 
-            if (!string.IsNullOrWhiteSpace(request.Uuid))
-            {
-                CardImageVM.SelectedCard = AllCardsVM.Cards.FirstOrDefault(p =>
-                    string.Equals(p.Uuid, request.Uuid, StringComparison.OrdinalIgnoreCase));
-                return;
-            }
+                        return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
+                    })
+                ]
+            };
 
-            if (!string.IsNullOrWhiteSpace(request.OracleId))
-            {
-                CardImageVM.SelectedCard = AllCardsVM.Cards
-                    .Where(p => string.Equals(
-                        p.Oracle.ScryfallOracleId,
-                        request.OracleId,
-                        StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(p => p.ReleaseDate ?? DateTime.MaxValue)
-                    .ThenBy(p => p.SetCode, StringComparer.OrdinalIgnoreCase)
-                    .FirstOrDefault();
-
-                return;
-            }
-
-            CardImageVM.SelectedCard = null;
+            OnCollectionChanged(hydratedChangeSet);
         }
+        private void OnImportCollectionMutationRequested(object? sender, ImportCollectionUpsertResult mutation)
+        {
+            var changeSet = BuildCollectionChangeSetFromMutation(mutation);
+            OnCollectionChanged(changeSet);
+        }
+
+        // Location handlers
         private void OnLocationsChanged(object? sender, EventArgs e)
         {
             var locations = _cardLocationLookupStore.GetAll();
@@ -420,6 +451,13 @@ namespace CollectaMundo.ViewModels
             // Route through FilterPanelVM so startup/reload suppression can coalesce this.
             FilterPanelVM.NotifyFilterChanged();
         }
+        private void AttachCardLocationProvider(CollectionCard card)
+        {
+            card.CardLocationProvider = _cardLocationProvider;
+            card.RefreshLocationsFromProvider();
+        }
+
+        // Filter handlers
         private void OnFilterChanged(object? sender, EventArgs e)
         {
             var filters = FilterPanelVM.Filters.Values;
@@ -437,51 +475,43 @@ namespace CollectaMundo.ViewModels
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, filters, gameplayCardsOnly);
             OracleCardsVM.FilteredCards = _filteringService.ApplyFilters(OracleCardsVM.Cards, filters, gameplayCardsOnly);
         }
-        private void OnCollectionChanged(CollectionChangeSet<CollectionCard> changeSet)
+
+        // Card image handlers
+        private void OnCardImageSelectionRequested(object? sender, OracleCardImageSelectionRequest? request)
         {
-            foreach (var card in changeSet.AddedOrUpdated)
+            if (request is null)
             {
-                AttachCardLocationProvider(card);
+                CardImageVM.SelectedCard = null;
+                return;
             }
 
-            // Apply DB-truth changes to the in-memory collection list.
-            CollectionChangeSetApplier.Apply(MyCollectionVM.Cards, changeSet);
-
-            AddCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
-            EditCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
-
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterPanelVM.Filters.Values, FilterPanelVM.IsGameplayCardsOnlyChecked);
-
-            _facetScheduler.Cancel();
-            _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterPanelVM.Filters));
-        }
-        private void OnCollectionRowsChanged(object? sender, CollectionChangeSet<CollectionCardDbRow> rowChangeSet)
-        {
-            var printingByUuid = AllCardsVM.Cards.Where(c => !string.IsNullOrWhiteSpace(c.Uuid)).ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
-
-            var hydratedChangeSet = new CollectionChangeSet<CollectionCard>
+            if (!string.IsNullOrWhiteSpace(request.Uuid))
             {
-                RemovedIds = rowChangeSet.RemovedIds,
-                AddedOrUpdated =
-                [
-                    .. rowChangeSet.AddedOrUpdated.Select(row =>
-                    {
-                        if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
-                        {
-                            throw new InvalidOperationException($"Cannot materialize collection card. Printing not found for UUID '{row.Identity.Uuid}'.");
-                        }
+                CardImageVM.SelectedCard = AllCardsVM.Cards.FirstOrDefault(p =>
+                    string.Equals(p.Uuid, request.Uuid, StringComparison.OrdinalIgnoreCase));
+                return;
+            }
 
-                        return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
-                    })
-                ]
-            };
+            if (!string.IsNullOrWhiteSpace(request.OracleId))
+            {
+                CardImageVM.SelectedCard = AllCardsVM.Cards
+                    .Where(p => string.Equals(
+                        p.Oracle.ScryfallOracleId,
+                        request.OracleId,
+                        StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(p => p.ReleaseDate ?? DateTime.MaxValue)
+                    .ThenBy(p => p.SetCode, StringComparer.OrdinalIgnoreCase)
+                    .FirstOrDefault();
 
-            OnCollectionChanged(hydratedChangeSet);
+                return;
+            }
+
+            CardImageVM.SelectedCard = null;
         }
-        private void AttachCardLocationProvider(CollectionCard card)
+        private void OnCardImagePanelVisibilityRequested(object? sender, bool isVisible)
         {
-            card.CardLocationProvider = _cardLocationProvider;
-            card.RefreshLocationsFromProvider();
+            CardImageVM.ClearImages();
+            OnSideMenuRightVisibilityRequested(isVisible);
         }
 
         #endregion

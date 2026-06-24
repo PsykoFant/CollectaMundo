@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ViewModels.Decks;
 using CollectaMundo.ViewModels.Pages;
+using CollectaMundo.ViewModels.SideMenuLeft;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.ComponentModel;
@@ -19,15 +20,15 @@ namespace CollectaMundo.ViewModels.Shell
         public object? PagesUtilitiesHostVM { get; }
 
         // Sidemenu viewmodels
-        public object FilteringSideMenuViewModel { get; }
-        public object UtilitiesSideMenuViewModel { get; }
+        public SideMenuFilteringViewModel SideMenuFilteringVM { get; }
+        public SideMenuUtilitiesViewModel SideMenuUtilitiesVM { get; }
 
-        public TopMenuViewModel(IShellNavigationHost shellNavigationHost, INavigationCleanupService navigationCleanupService, object filteringSideMenuViewModel, object utilitiesSideMenuViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object pagesDecksHostViewModel, object pagesUtilitiesHostVM)
+        public TopMenuViewModel(IShellNavigationHost shellNavigationHost, INavigationCleanupService navigationCleanupService, SideMenuFilteringViewModel sideMenuFilteringViewModel, SideMenuUtilitiesViewModel sideMenuUtilitiesViewModel, object allCardsPageViewModel, object myCollectionPageViewModel, object pagesDecksHostViewModel, object pagesUtilitiesHostVM)
         {
             _shellNavigationHost = shellNavigationHost;
             _navigationCleanupService = navigationCleanupService;
-            FilteringSideMenuViewModel = filteringSideMenuViewModel;
-            UtilitiesSideMenuViewModel = utilitiesSideMenuViewModel;
+            SideMenuFilteringVM = sideMenuFilteringViewModel;
+            SideMenuUtilitiesVM = sideMenuUtilitiesViewModel;
             AllCardsPageVM = allCardsPageViewModel;
             MyCollectionPageVM = myCollectionPageViewModel;
             PagesDecksHostVM = pagesDecksHostViewModel;
@@ -65,7 +66,6 @@ namespace CollectaMundo.ViewModels.Shell
 
         [RelayCommand]
         private void ShowUtilitiesPage() => NavigateTo(PagesUtilitiesHostVM, ShellPageEnum.Utilities);
-
         private void NavigateTo(object? pageViewModel, ShellPageEnum page)
         {
             if (pageViewModel is null)
@@ -78,14 +78,14 @@ namespace CollectaMundo.ViewModels.Shell
             _navigationCleanupService.CleanupBeforePageChange(oldPage, pageViewModel);
 
             _shellNavigationHost.CurrentPageViewModel = pageViewModel;
-            _shellNavigationHost.CurrentSideMenuLeftViewModel = ResolveSideMenu(pageViewModel);
             _shellNavigationHost.CurrentPage = page;
+            _shellNavigationHost.CurrentSideMenuLeftViewModel = ResolveSideMenu(pageViewModel, page);
         }
-        private object? ResolveSideMenu(object pageViewModel)
+        private object? ResolveSideMenu(object pageViewModel, ShellPageEnum page)
         {
             if (ReferenceEquals(pageViewModel, PagesUtilitiesHostVM))
             {
-                return UtilitiesSideMenuViewModel;
+                return SideMenuUtilitiesVM;
             }
 
             if (ReferenceEquals(pageViewModel, PagesDecksHostVM))
@@ -93,7 +93,8 @@ namespace CollectaMundo.ViewModels.Shell
                 return ResolveDecksSideMenu();
             }
 
-            return FilteringSideMenuViewModel;
+            SideMenuFilteringVM.SetContext(page);
+            return SideMenuFilteringVM;
         }
         private void Host_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -125,15 +126,17 @@ namespace CollectaMundo.ViewModels.Shell
 
             _shellNavigationHost.CurrentSideMenuLeftViewModel = ResolveDecksSideMenu();
         }
-        private object? ResolveDecksSideMenu()
+        private SideMenuFilteringViewModel? ResolveDecksSideMenu()
         {
             if (PagesDecksHostVM is not PagesDecksHostViewModel decksHost)
             {
                 return null;
             }
 
+            SideMenuFilteringVM.SetContext(ShellPageEnum.Decks);
+
             return decksHost.CurrentDecksContentViewModel is DeckBuilderViewModel
-                ? FilteringSideMenuViewModel
+                ? SideMenuFilteringVM
                 : null;
         }
     }

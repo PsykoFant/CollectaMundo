@@ -83,6 +83,12 @@ namespace CollectaMundo.ViewModels.SideMenuRight
             image.Freeze(); // for thread safety
             return image;
         }
+
+        public void ClearImages()
+        {
+            FrontImageSource = null;
+            BackImageSource = null;
+        }
     }
 }
 

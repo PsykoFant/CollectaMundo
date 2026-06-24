@@ -11,9 +11,8 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Utilities
 {
-    public partial class UtilitiesViewModel(IShellUiState shellUiState, ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
+    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
     {
-        private readonly IShellUiState _shellUiState = shellUiState;
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
         private readonly IOperationOverlayController _operationOverlayController = operationOverlayController;
         private readonly IUtilitiesNavigator _utilitiesNavigator = utilitiesNavigator;
@@ -21,6 +20,8 @@ namespace CollectaMundo.ViewModels.Utilities
         private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
         private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
         private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
+
+        public event EventHandler<bool>? BusyStateRequested;
 
         // Visibility property
         [ObservableProperty]
@@ -63,7 +64,7 @@ namespace CollectaMundo.ViewModels.Utilities
                 }
 
                 // UI state preparation AFTER user clicked
-                _shellUiState.SetUiBusy(true);
+                BusyStateRequested?.Invoke(this, true);
                 _operationOverlayController.Reset();
                 _operationOverlayController.SetHeadline("Please wait - backing up up your collection ... ");
 
@@ -120,7 +121,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
             // UI state preparation AFTER user clicked
             _operationOverlayController.Reset();
-            _shellUiState.SetUiBusy(true);
+            BusyStateRequested?.Invoke(this, true);
             _operationOverlayController.Show("Updating card prices, please wait...", true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
 
@@ -157,7 +158,7 @@ namespace CollectaMundo.ViewModels.Utilities
                     break;
             }
 
-            _shellUiState.SetUiBusy(false);
+            BusyStateRequested?.Invoke(this, false);
         }
 
         // Use case: Check for database updates
@@ -165,7 +166,7 @@ namespace CollectaMundo.ViewModels.Utilities
         private async Task CheckForDbUpdates()
         {
             PrepareUIForActionCommands("One moment - checking for updates...");
-            _shellUiState.SetUiBusy(true);
+            BusyStateRequested?.Invoke(this, true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
 
             // Run check
@@ -230,7 +231,7 @@ namespace CollectaMundo.ViewModels.Utilities
 
             // UI state preparation AFTER user clicked
             _operationOverlayController.Reset();
-            _shellUiState.SetUiBusy(true);
+            BusyStateRequested?.Invoke(this, true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
 
             if (includeBackup)
@@ -300,7 +301,7 @@ namespace CollectaMundo.ViewModels.Utilities
                     break;
             }
 
-            _shellUiState.SetUiBusy(false);
+            BusyStateRequested?.Invoke(this, false);
         }
 
         // Use case: Manage card locations
@@ -323,7 +324,7 @@ namespace CollectaMundo.ViewModels.Utilities
         private void CompleteActionCommandUIFlow()
         {
             _operationOverlayController.Reset();
-            _shellUiState.SetUiBusy(false);
+            BusyStateRequested?.Invoke(this, false);
         }
     }
 }

@@ -2,36 +2,28 @@
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
-using System.ComponentModel;
 
 namespace CollectaMundo.ViewModels.SideMenuLeft
 {
-    public sealed partial class SideMenuFilteringViewModel : ObservableObject
+    public sealed partial class SideMenuFilteringViewModel(FilterPanelViewModel filterVM, CardListViewModel<ManaSymbolViewModel> colorIconsViewModel) : ObservableObject
     {
-        private readonly IShellUiState _shellUiState;
+        private ShellPageEnum currentShellPageContext;
 
-        public SideMenuFilteringViewModel(FilterPanelViewModel filterVM, CardListViewModel<ManaSymbolViewModel> colorIconsViewModel, IShellUiState shellUiState)
+        public FilterPanelViewModel FilterVM { get; } = filterVM;
+        public CardListViewModel<ManaSymbolViewModel> ColorIconsViewModel { get; } = colorIconsViewModel;
+        public void SetContext(ShellPageEnum context)
         {
-            FilterVM = filterVM;
-            ColorIconsViewModel = colorIconsViewModel;
-
-            _shellUiState = shellUiState;
-            _shellUiState.PropertyChanged += ShellUiState_PropertyChanged;
-        }
-
-        public FilterPanelViewModel FilterVM { get; }
-        public CardListViewModel<ManaSymbolViewModel> ColorIconsViewModel { get; }
-
-        public bool IsPrintingCardFilteringVisble => (_shellUiState.CurrentPage == ShellPageEnum.SearchAndFilter || _shellUiState.CurrentPage == ShellPageEnum.MyCollection);
-        public bool IsCollectionCardFilteringVisble => _shellUiState.CurrentPage == ShellPageEnum.MyCollection;
-
-        private void ShellUiState_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(IShellUiState.CurrentPage))
+            if (currentShellPageContext == context)
             {
-                OnPropertyChanged(nameof(IsCollectionCardFilteringVisble));
-                OnPropertyChanged(nameof(IsPrintingCardFilteringVisble));
+                return;
             }
+
+            currentShellPageContext = context;
+
+            OnPropertyChanged(nameof(IsPrintingCardFilteringVisible));
+            OnPropertyChanged(nameof(IsCollectionCardFilteringVisible));
         }
+        public bool IsPrintingCardFilteringVisible => currentShellPageContext is ShellPageEnum.SearchAndFilter or ShellPageEnum.MyCollection;
+        public bool IsCollectionCardFilteringVisible => currentShellPageContext is ShellPageEnum.MyCollection;
     }
 }
