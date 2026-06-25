@@ -28,6 +28,7 @@ using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Infrastructure.CollectionMutations;
+using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.KeyedDataProvider;
@@ -106,12 +107,14 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardLocationLookupStore = new CardLocationLookupStore();
                 var cardLocationRepo = new CardLocationRepo();
                 var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
+
                 var deckManagementStore = new DeckManagementStore(cardLocationService);
+                var deckBuilderService = new DeckBuilderService(uowRunner, new DeckBuilderRepo());
 
                 var importService = new ImportService(uowRunner, new ImportRepo(), fileSystemPicker, new ImportLogic(), cardLocationService);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, settings));
 
                 operationOverlayController.Hide();
                 return new RootViewModel(mainVM, operationOverlayViewModel);

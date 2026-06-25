@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardLocations.Models;
+﻿using CollectaMundo.ApplicationServices.Decks.Models;
 using CollectaMundo.ViewModels.Decks.Models;
 using System.Collections.ObjectModel;
 

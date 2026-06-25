@@ -47,14 +47,25 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     "name TEXT NOT NULL COLLATE NOCASE UNIQUE, " +
                     "type TEXT NOT NULL CHECK (type IN ('Storage', 'Deck'))" +
                     ");",
-				
-				["myDecks"] =				
-					"CREATE TABLE myDecks ( " +
-					"locationId INTEGER PRIMARY KEY, " +
-					"format TEXT NULL, " +
-					"description TEXT NULL, " +
-					"FOREIGN KEY (locationId) REFERENCES cardLocations(id)" +
-					");"
+
+                ["myDecks"] =
+                    "CREATE TABLE myDecks ( " +
+                    "locationId INTEGER PRIMARY KEY, " +
+                    "format TEXT NULL, " +
+                    "description TEXT NULL, " +
+                    "FOREIGN KEY (locationId) REFERENCES cardLocations(id)" +
+                    ");",
+
+                ["myDeckCards"] =
+                    "CREATE TABLE IF NOT EXISTS myDeckCards (" +
+                    "locationId INTEGER NOT NULL, " +
+                    "oracleId TEXT NOT NULL, " +
+                    "cardName TEXT NOT NULL, " +
+                    "desiredQuantity INTEGER NOT NULL CHECK (desiredQuantity >= 0), " +
+                    "section TEXT NOT NULL CHECK (section IN ('Mainboard', 'Sideboard', 'Commander', 'Companion', 'Maybeboard')), " +
+                    "PRIMARY KEY (locationId, oracleId, section), " +
+                    "FOREIGN KEY (locationId) REFERENCES cardLocations(id) ON DELETE CASCADE" +
+                    ");"
             };
 
         // Dynamic because price columns depend on retailer/finish definitions
