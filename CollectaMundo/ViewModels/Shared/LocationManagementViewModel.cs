@@ -235,7 +235,6 @@ namespace CollectaMundo.ViewModels.Shared
         }
 
         // Shared workflow helpers
-
         protected async Task RunBusyOperationAsync(Func<Task> operation, string failureMessage)
         {
             if (IsBusy)

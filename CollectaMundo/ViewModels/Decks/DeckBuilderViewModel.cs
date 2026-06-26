@@ -59,12 +59,7 @@ namespace CollectaMundo.ViewModels.Decks
                     continue;
                 }
 
-                rows.Add(new DeckCardEntryViewModel
-                {
-                    OracleCard = oracleCard,
-                    DesiredQuantity = entry.DesiredQuantity,
-                    Section = entry.Section
-                });
+                rows.Add(CreateDeckRow(oracleCard, entry.DesiredQuantity, entry.Section));
             }
 
             DeckLocationId = deck.LocationId;
@@ -107,6 +102,8 @@ namespace CollectaMundo.ViewModels.Decks
                     OracleId: value.OracleId,
                     Name: value.CardName));
         }
+
+        // Adding a card
 
         [RelayCommand]
         private async Task AddOracleCardToDeckAsync(object? param)
@@ -180,13 +177,7 @@ namespace CollectaMundo.ViewModels.Decks
                 }
                 else
                 {
-                    addedRow = new DeckCardEntryViewModel
-                    {
-                        OracleCard = card,
-                        Section = DeckSection.Mainboard,
-                        DesiredQuantity = quantityToAdd
-                    };
-
+                    addedRow = CreateDeckRow(card, quantityToAdd, DeckSection.Mainboard);
                     DeckCards.Add(addedRow);
                 }
 
@@ -206,6 +197,93 @@ namespace CollectaMundo.ViewModels.Decks
 
                 Debug.WriteLine($"Failed to add card to deck: {ex}");
                 throw;
+            }
+        }
+        private DeckCardEntryViewModel CreateDeckRow(OracleCard card, int desiredQuantity, DeckSection section)
+        {
+            return new DeckCardEntryViewModel(quantityChangedAsync: OnDeckCardQuantityChangedAsync, quantityLostFocusAsync: OnDeckCardQuantityEditLostFocusAsync)
+            {
+                OracleCard = card,
+                DesiredQuantity = desiredQuantity,
+                Section = section
+            };
+        }
+        private Task OnDeckCardQuantityChangedAsync(DeckCardEntryViewModel row)
+        {
+            return PersistDeckAsync();
+        }
+        private async Task OnDeckCardQuantityEditLostFocusAsync(DeckCardEntryViewModel row)
+        {
+            if (row.DesiredQuantity <= 0)
+            {
+                await DeleteDeckCardsAsync([row]);
+                return;
+            }
+
+            await PersistDeckAsync();
+        }
+
+        // Deleting a card
+        [RelayCommand]
+        private Task DeleteDeckCardsAsync(object? param)
+        {
+            var rows = GetDeckRowsFromCommandParameter(param).ToList();
+
+            if (rows.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            return DeleteDeckCardsAsync(rows);
+        }
+        private async Task DeleteDeckCardsAsync(IReadOnlyList<DeckCardEntryViewModel> rows)
+        {
+            var removedRows = rows.Where(DeckCards.Contains).ToList();
+
+            if (removedRows.Count == 0)
+            {
+                return;
+            }
+
+            var removedWithIndexes = removedRows.Select(row => new { Row = row, Index = DeckCards.IndexOf(row) }).OrderByDescending(x => x.Index).ToList();
+
+            try
+            {
+                foreach (var item in removedWithIndexes)
+                {
+                    DeckCards.RemoveAt(item.Index);
+                }
+
+                await PersistDeckAsync();
+            }
+            catch (Exception ex)
+            {
+                foreach (var item in removedWithIndexes.OrderBy(x => x.Index))
+                {
+                    DeckCards.Insert(item.Index, item.Row);
+                }
+
+                Debug.WriteLine($"Failed to delete deck card entries: {ex}");
+                throw;
+            }
+        }
+        private static IEnumerable<DeckCardEntryViewModel> GetDeckRowsFromCommandParameter(object? param)
+        {
+            if (param is DeckCardEntryViewModel singleRow)
+            {
+                yield return singleRow;
+                yield break;
+            }
+
+            if (param is System.Collections.IEnumerable selectedItems)
+            {
+                foreach (var item in selectedItems)
+                {
+                    if (item is DeckCardEntryViewModel row)
+                    {
+                        yield return row;
+                    }
+                }
             }
         }
 
@@ -235,6 +313,37 @@ namespace CollectaMundo.ViewModels.Decks
         {
             SelectedOracleCard = null;
             ExitEditorRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        [RelayCommand]
+        private async Task IncrementDeckCardQuantityAsync(DeckCardEntryViewModel? row)
+        {
+            if (row is null)
+            {
+                return;
+            }
+
+            row.DesiredQuantity++;
+            await PersistDeckAsync();
+        }
+
+        [RelayCommand]
+        private async Task DecrementDeckCardQuantityAsync(DeckCardEntryViewModel? row)
+        {
+            if (row is null || row.DesiredQuantity <= 0)
+            {
+                return;
+            }
+
+            row.DesiredQuantity--;
+
+            if (row.DesiredQuantity <= 0)
+            {
+                await DeleteDeckCardsAsync([row]);
+                return;
+            }
+
+            await PersistDeckAsync();
         }
 
 

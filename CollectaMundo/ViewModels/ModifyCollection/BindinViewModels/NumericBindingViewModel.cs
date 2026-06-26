@@ -3,13 +3,15 @@ using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.ModifyCollection.BindinViewModels
 {
-    public sealed partial class NumericBindingViewModel(Func<int> getter, Action<int> setter, ICommand? changedCommand = null, int? min = null, int? max = null, Func<int?>? maxGetter = null, int delayMs = 0) : ObservableObject
+    public sealed partial class NumericBindingViewModel(Func<int> getter, Action<int> setter, ICommand? changedCommand = null, ICommand? lostFocusCommand = null, int? min = null, int? max = null, Func<int?>? maxGetter = null, int delayMs = 0) : ObservableObject
     {
         private readonly Func<int> _getter = getter;
         private readonly Action<int> _setter = setter;
         private readonly Func<int?>? _maxGetter = maxGetter;
 
-        public ICommand? ChangedCommand { get; } = changedCommand;
+        public ICommand? LiveChangedCommand { get; } = changedCommand;
+        public ICommand? CommitCommand { get; } = lostFocusCommand;
+
         public int? Min { get; } = min;
         public int? Max { get; } = max;
         public int DelayMs { get; } = delayMs;

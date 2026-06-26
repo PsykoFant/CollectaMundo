@@ -26,15 +26,20 @@
         </TextBox.Text>
 
         <i:Interaction.Behaviors>
-            <!-- Use DelayMs from adapter -->
             <behaviors:DelayedUpdateBehavior Delay="{Binding DelayMs}" />
             <behaviors:NumericValidationBehavior />
+            <behaviors:ExplicitTextBoxCommitBehavior CommitCommand="{Binding CommitCommand}" />
         </i:Interaction.Behaviors>
 
         <i:Interaction.Triggers>
             <i:EventTrigger EventName="TextChanged">
-                <i:InvokeCommandAction Command="{Binding ChangedCommand}" />
+                <i:InvokeCommandAction Command="{Binding LiveChangedCommand}" />
+            </i:EventTrigger>
+
+            <i:EventTrigger EventName="LostFocus">
+                <i:InvokeCommandAction Command="{Binding CommitCommand}" />
             </i:EventTrigger>
         </i:Interaction.Triggers>
+
     </TextBox>
 </UserControl>

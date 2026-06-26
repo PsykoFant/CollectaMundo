@@ -43,7 +43,7 @@ namespace CollectaMundo.ViewModels.Decks
 
         // UI state
         [ObservableProperty]
-        private bool isEditDeckButtonEnabled = false;
+        private bool isEnterDeckBuilderButtonEnabled = false;
 
         // View data
         public ObservableCollection<DeckManagementRowViewModel> Decks { get; } = [];
@@ -55,14 +55,14 @@ namespace CollectaMundo.ViewModels.Decks
             DeckName = selectedItem.Name;
             SelectedDeckFormat = selectedItem.Format ?? string.Empty;
             Description = selectedItem.Description ?? string.Empty;
-            IsEditDeckButtonEnabled = true;
+            IsEnterDeckBuilderButtonEnabled = true;
         }
         protected override void OnEnterEditMultipleMode(IReadOnlyList<DeckManagementRowViewModel> selectedItems)
         {
             DeckName = string.Empty;
             Description = string.Empty;
             SelectedDeckFormat = null;
-            IsEditDeckButtonEnabled = false;
+            IsEnterDeckBuilderButtonEnabled = false;
         }
         protected override void ClearEditorFields()
         {
@@ -158,28 +158,28 @@ namespace CollectaMundo.ViewModels.Decks
         [RelayCommand]
         private Task DeleteSelectedDecks()
         {
-            return DeleteSelectedItemsAsync(
-                "This will delete the selected deck metadata and deck location.",
-                async selectedDecks =>
+            IsEnterDeckBuilderButtonEnabled = false;
+
+            return DeleteSelectedItemsAsync("This will delete the selected deck metadata and deck location.", async selectedDecks =>
+            {
+                var idsToDelete = selectedDecks.Select(deck => deck.LocationId).Distinct().ToList();
+                var entityName = idsToDelete.Count == 1 ? "deck" : "decks";
+                var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete, entityName);
+
+                if (result.Result.Code is OperationResultCode.Success)
                 {
-                    var idsToDelete = selectedDecks.Select(deck => deck.LocationId).Distinct().ToList();
-                    var entityName = idsToDelete.Count == 1 ? "deck" : "decks";
-                    var result = await _cardLocationService.DeleteLocationsAsync(idsToDelete, entityName);
-
-                    if (result.Result.Code is OperationResultCode.Success)
+                    foreach (int locationId in idsToDelete)
                     {
-                        foreach (int locationId in idsToDelete)
-                        {
-                            RemoveDeckRow(locationId);
-                        }
-
-                        CollectionChanged?.Invoke(this, result.CollectionChangeSet);
+                        RemoveDeckRow(locationId);
                     }
 
-                    ShowStatus(result.Result.Message);
+                    CollectionChanged?.Invoke(this, result.CollectionChangeSet);
+                }
 
-                    return result.Result.Code is OperationResultCode.Success;
-                });
+                ShowStatus(result.Result.Message);
+
+                return result.Result.Code is OperationResultCode.Success;
+            });
         }
 
         [RelayCommand]
@@ -191,6 +191,7 @@ namespace CollectaMundo.ViewModels.Decks
             }
 
             EditDeckRequested?.Invoke(this, SelectedItem);
+            ResetEditorAndSelection();
         }
 
         // Helper methods

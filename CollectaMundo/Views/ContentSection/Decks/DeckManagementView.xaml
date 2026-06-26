@@ -102,7 +102,7 @@
                 Content="Enter Deck Builder" 
                 Margin="0,5,0,5"
                 Style="{StaticResource TopMenuButtonStyle}"
-                IsEnabled="{Binding IsEditDeckButtonEnabled}"
+                IsEnabled="{Binding IsEnterDeckBuilderButtonEnabled}"
                 Command="{Binding EnterDeckBuilderCommand}"
                 Visibility="{Binding HasSelectedItems, Converter={StaticResource BoolToVisibilityConverter}}" />
 

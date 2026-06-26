@@ -411,10 +411,13 @@ namespace CollectaMundo.ApplicationServices.CardLocations
 
                     var changeSet = await _mutationsService.SubmitBatchAsync(editedCards, snapshot, conn, tx);
 
-                    // Step 4: delete deck metadata for all deleted locations.
+                    // Step 4: delete desired deck card entries for all deleted deck locations.
+                    await _cardLocationRepo.DeleteDeckCardsAsync(conn, tx, distinctIds, token);
+
+                    // Step 5: delete deck metadata for all deleted locations.
                     await _cardLocationRepo.DeleteDecksMetadataAsync(conn, tx, distinctIds, token);
 
-                    // Step 5: delete all selected locations.
+                    // Step 6: delete all selected locations.
                     int deletedLocationCount = await _cardLocationRepo.DeleteLocationsAsync(conn, tx, distinctIds, token);
 
                     var successResult = new CardLocationDeleteResult(

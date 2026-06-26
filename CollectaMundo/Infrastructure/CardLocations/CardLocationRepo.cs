@@ -427,6 +427,31 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             return await cmd.ExecuteNonQueryAsync(token);
         }
+        public async Task<int> DeleteDeckCardsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, CancellationToken token = default)
+        {
+            var distinctIds = GetDistinctIds(locationIds);
+
+            if (distinctIds.Count == 0)
+            {
+                return 0;
+            }
+
+            var parameters = CreateParameterList(distinctIds.Count);
+
+            string sql = $"""
+                            DELETE FROM myDeckCards
+                            WHERE locationId IN ({parameters.InClause});
+                            """;
+
+            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+
+            for (int i = 0; i < distinctIds.Count; i++)
+            {
+                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
+            }
+
+            return await cmd.ExecuteNonQueryAsync(token);
+        }
 
 
         // Helpers

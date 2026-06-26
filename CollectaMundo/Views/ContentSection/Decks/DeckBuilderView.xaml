@@ -15,17 +15,14 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- 0 - Header + back button -->
-            <RowDefinition Height="Auto"/>  <!-- 1 - Deck name -->
-            <RowDefinition Height="2*"/>    <!-- 2- Top: Deck list + Stats -->
-            <RowDefinition Height="Auto"/>  <!-- 3 - Filter criteria summary -->
-            <RowDefinition Height="3*"/>    <!-- 4- Bottom: Filterable oracle card source -->
+            <RowDefinition Height="Auto"/>    <!-- 1 - Top: Deck list + Stats -->
+            <RowDefinition Height="Auto"/>  <!-- 2 - Filter criteria summary -->
+            <RowDefinition Height="3*"/>    <!-- 3- Bottom: Filterable oracle card source -->
         </Grid.RowDefinitions>
 
         <!-- 0 - Header + back button -->
         <DockPanel Grid.Row="0" Margin="0,0,0,8">
-            <Label Content="Deck Editor"
-                   Style="{StaticResource MediumHeaderLabelStyle}"
-                   DockPanel.Dock="Left"/>
+            <Label DockPanel.Dock="Left" Content="{Binding DeckName}" Style="{StaticResource MediumHeaderLabelStyle}"/>
 
             <Button Content="Back to Decks"
                     Width="120"
@@ -34,12 +31,9 @@
                     DockPanel.Dock="Right"
                     Command="{Binding BackToDeckManagementCommand}"/>
         </DockPanel>
-
-        <!-- 1 - Deck name -->
-        <Label Grid.Row="1" Content="{Binding DeckName}" Style="{StaticResource MediumHeaderLabelStyle}"/>
         
-        <!-- 2- Top: Deck list + Stats -->
-        <Grid Grid.Row="2">
+        <!-- 1 - Top: Deck list + Stats -->
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="10"/>
@@ -55,9 +49,7 @@
                           CanUserAddRows="False"
                           IsReadOnly="True"
                           Style="{StaticResource CardGridBaseStyle}">
-
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Qty" Width="50" Binding="{Binding DesiredQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -76,7 +68,48 @@
 
                         <DataGridTextColumn Header="Owned" Width="70" Binding="{Binding OwnedQuantity}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Allocated" Width="80" Binding="{Binding AllocatedQuantity}" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="+">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="+" Style="{StaticResource StepperButtonStyle}" 
+                                            Command="{Binding DataContext.IncrementDeckCardQuantityCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="Quantity">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <sharedElements:NumericEditorUserControl DataContext="{Binding DesiredQuantityBinding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="-">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="-" Style="{StaticResource StepperButtonStyle}"
+                                            Command="{Binding DataContext.DecrementDeckCardQuantityCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
+
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Remove from deck"
+                                      Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
+
+                    <DataGrid.InputBindings>
+                        <KeyBinding Key="Delete"
+                                        Command="{Binding DeleteDeckCardsCommand}"
+                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                    </DataGrid.InputBindings>
                 </DataGrid>
             </GroupBox>
 
@@ -97,17 +130,18 @@
             </GroupBox>
         </Grid>
 
-        <!-- 3 - Filter criteria summary -->
-        <ScrollViewer Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <!-- 2 - Filter criteria summary -->
+        <ScrollViewer Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
             <TextBlock HorizontalAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
         </ScrollViewer>
 
-        <!-- 4- Bottom: Filterable oracle card source -->
-        <Grid Grid.Row="4">
+        <!-- 3- Bottom: Filterable oracle card source -->
+        <Grid Grid.Row="3">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
+            
             <Grid Grid.Row="0" Margin="0,10,0,10">
                 <Button Content="Add 4 to deck"
                         Width="120"
@@ -137,7 +171,17 @@
                         <i:InvokeCommandAction Command="{Binding AddOracleCardToDeckCommand}" CommandParameter="{Binding SelectedItem, ElementName=AvailableCardsDataGrid}"/>
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
-                
+                <DataGrid.ContextMenu>
+                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Header="Add 1 card to deck" Style="{StaticResource BelerenBold}"
+                                          Command="{Binding AddOracleCardToDeckCommand}"
+                                          CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        <MenuItem Header="Add 4 cards to deck" Style="{StaticResource BelerenBold}"
+                                          Command="{Binding AddOracleCardPlaySetToDeckCommand}"
+                                          CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                         <DataGridTemplateColumn.HeaderTemplate>
