@@ -80,6 +80,13 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             _timer?.Stop();
 
+            var text = AssociatedObject.Text;
+
+            if (!int.TryParse(text, out var value) || value < 0)
+            {
+                return;
+            }
+
             var binding = AssociatedObject.GetBindingExpression(TextBox.TextProperty);
             binding?.UpdateSource();
 
@@ -89,5 +96,4 @@ namespace CollectaMundo.Presentation.Behaviors
             }
         }
     }
-
 }

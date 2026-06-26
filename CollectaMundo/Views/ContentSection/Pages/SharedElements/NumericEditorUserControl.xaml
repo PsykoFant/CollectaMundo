@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors" 
-             xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors" 
              xmlns:sharedelements="clr-namespace:CollectaMundo.ViewModels.Pages.SharedElements" 
              xmlns:bindingViewModels="clr-namespace:CollectaMundo.ViewModels.ModifyCollection.BindinViewModels" 
@@ -13,31 +12,18 @@
 
     <TextBox HorizontalAlignment="Center" Background="White">
         <TextBox.Text>
-            <!-- Bind to adapter Value -->
-            <Binding Path="Value"
-                     Mode="TwoWay"
-                     UpdateSourceTrigger="Explicit"
-                     ValidatesOnDataErrors="True"
-                     NotifyOnValidationError="True">
-                <Binding.ValidationRules>
-                    <validation:IntegerValidationRule />
-                </Binding.ValidationRules>
-            </Binding>
+            <Binding Path="Value" Mode="TwoWay" UpdateSourceTrigger="Explicit" />
         </TextBox.Text>
 
         <i:Interaction.Behaviors>
-            <behaviors:DelayedUpdateBehavior Delay="{Binding DelayMs}" />
             <behaviors:NumericValidationBehavior />
             <behaviors:ExplicitTextBoxCommitBehavior CommitCommand="{Binding CommitCommand}" />
+            <behaviors:DelayedUpdateBehavior Delay="{Binding DelayMs}" CommitCommand="{Binding CommitCommand}" />
         </i:Interaction.Behaviors>
 
         <i:Interaction.Triggers>
             <i:EventTrigger EventName="TextChanged">
                 <i:InvokeCommandAction Command="{Binding LiveChangedCommand}" />
-            </i:EventTrigger>
-
-            <i:EventTrigger EventName="LostFocus">
-                <i:InvokeCommandAction Command="{Binding CommitCommand}" />
             </i:EventTrigger>
         </i:Interaction.Triggers>
 

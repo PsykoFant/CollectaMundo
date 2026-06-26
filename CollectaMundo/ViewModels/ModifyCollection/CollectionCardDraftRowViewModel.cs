@@ -52,14 +52,14 @@ namespace CollectaMundo.ViewModels.ModifyCollection
             Owned = new NumericBindingViewModel(
                 getter: () => CardsOwned,
                 setter: v => CardsOwned = v,
-                changedCommand: refreshColumnsCommand,
+                liveChangedCommand: refreshColumnsCommand,
                 min: 0,
                 delayMs: 500);
 
             Trade = new NumericBindingViewModel(
                 getter: () => CardsForTrade,
                 setter: v => CardsForTrade = v,
-                changedCommand: refreshColumnsCommand,
+                liveChangedCommand: refreshColumnsCommand,
                 min: 0,
                 maxGetter: () => CardsOwned,
                 delayMs: 0);

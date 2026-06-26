@@ -27,13 +27,12 @@ namespace CollectaMundo.ViewModels.Decks
 
         public NumericBindingViewModel DesiredQuantityBinding { get; }
 
-        public DeckCardEntryViewModel(Func<DeckCardEntryViewModel, Task> quantityChangedAsync, Func<DeckCardEntryViewModel, Task> quantityLostFocusAsync)
+        public DeckCardEntryViewModel(Func<DeckCardEntryViewModel, Task> quantityCommitAsync)
         {
             DesiredQuantityBinding = new NumericBindingViewModel(
                 getter: () => DesiredQuantity,
                 setter: value => DesiredQuantity = value,
-                changedCommand: new AsyncRelayCommand(() => quantityChangedAsync(this)),
-                lostFocusCommand: new AsyncRelayCommand(() => quantityLostFocusAsync(this)),
+                commitCommand: new AsyncRelayCommand(() => quantityCommitAsync(this)),
                 min: 0,
                 delayMs: 300);
         }

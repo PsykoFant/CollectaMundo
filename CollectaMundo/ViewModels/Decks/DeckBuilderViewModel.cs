@@ -106,38 +106,68 @@ namespace CollectaMundo.ViewModels.Decks
         // Adding a card
 
         [RelayCommand]
-        private async Task AddOracleCardToDeckAsync(object? param)
+        private Task AddOracleCardToDeckAsync(object? param)
         {
-            var cards = GetOracleCardsFromCommandParameter(param).ToList();
-
-            if (cards.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var card in cards)
-            {
-                await AddOracleCardQuantityToDeckAsync(card, quantityToAdd: 1);
-            }
+            return AddOracleCardsQuantityToDeckAsync(param, quantityToAdd: 1);
         }
 
         [RelayCommand]
-        private async Task AddOracleCardPlaySetToDeckAsync(object? param)
+        private Task AddOracleCardPlaySetToDeckAsync(object? param)
+        {
+            return AddOracleCardsQuantityToDeckAsync(param, quantityToAdd: 4);
+        }
+
+        // Add OracleCard helpers
+        private async Task AddOracleCardsQuantityToDeckAsync(object? param, int quantityToAdd)
         {
             var cards = GetOracleCardsFromCommandParameter(param).ToList();
 
-            if (cards.Count == 0)
+            if (cards.Count == 0 || DeckLocationId is null || quantityToAdd <= 0)
             {
                 return;
             }
 
-            foreach (var card in cards)
+            var addedRows = new List<DeckCardEntryViewModel>();
+            var changedRows = new List<(DeckCardEntryViewModel Row, int PreviousQuantity)>();
+
+            try
             {
-                await AddOracleCardQuantityToDeckAsync(card, quantityToAdd: 4);
+                foreach (var card in cards)
+                {
+                    var existing = DeckCards.FirstOrDefault(x => x.OracleId == card.ScryfallOracleId && x.Section == DeckSection.Mainboard);
+
+                    if (existing is not null)
+                    {
+                        changedRows.Add((existing, existing.DesiredQuantity));
+                        existing.DesiredQuantity += quantityToAdd;
+                    }
+                    else
+                    {
+                        var addedRow = CreateDeckRow(card, quantityToAdd, DeckSection.Mainboard);
+
+                        DeckCards.Add(addedRow);
+                        addedRows.Add(addedRow);
+                    }
+                }
+
+                await PersistDeckAsync();
+            }
+            catch (Exception ex)
+            {
+                foreach (var (row, previousQuantity) in changedRows)
+                {
+                    row.DesiredQuantity = previousQuantity;
+                }
+
+                foreach (var addedRow in addedRows)
+                {
+                    DeckCards.Remove(addedRow);
+                }
+
+                Debug.WriteLine($"Failed to add cards to deck: {ex}");
+                throw;
             }
         }
-
-        // Add OracleCard helpers
         private static IEnumerable<OracleCard> GetOracleCardsFromCommandParameter(object? param)
         {
             if (param is OracleCard singleCard)
@@ -157,62 +187,20 @@ namespace CollectaMundo.ViewModels.Decks
                 }
             }
         }
-        private async Task AddOracleCardQuantityToDeckAsync(OracleCard? card, int quantityToAdd)
-        {
-            if (card is null || DeckLocationId is null || quantityToAdd <= 0)
-            {
-                return;
-            }
 
-            var existing = DeckCards.FirstOrDefault(x => x.OracleId == card.ScryfallOracleId && x.Section == DeckSection.Mainboard);
 
-            DeckCardEntryViewModel? addedRow = null;
-            var previousQuantity = existing?.DesiredQuantity;
-
-            try
-            {
-                if (existing is not null)
-                {
-                    existing.DesiredQuantity += quantityToAdd;
-                }
-                else
-                {
-                    addedRow = CreateDeckRow(card, quantityToAdd, DeckSection.Mainboard);
-                    DeckCards.Add(addedRow);
-                }
-
-                await PersistDeckAsync();
-            }
-            catch (Exception ex)
-            {
-                if (existing is not null && previousQuantity is not null)
-                {
-                    existing.DesiredQuantity = previousQuantity.Value;
-                }
-
-                if (addedRow is not null)
-                {
-                    DeckCards.Remove(addedRow);
-                }
-
-                Debug.WriteLine($"Failed to add card to deck: {ex}");
-                throw;
-            }
-        }
+        // DeckCardEntryViewModel factory
         private DeckCardEntryViewModel CreateDeckRow(OracleCard card, int desiredQuantity, DeckSection section)
         {
-            return new DeckCardEntryViewModel(quantityChangedAsync: OnDeckCardQuantityChangedAsync, quantityLostFocusAsync: OnDeckCardQuantityEditLostFocusAsync)
+            return new DeckCardEntryViewModel(
+                quantityCommitAsync: OnDeckCardQuantityCommitAsync)
             {
                 OracleCard = card,
                 DesiredQuantity = desiredQuantity,
                 Section = section
             };
         }
-        private Task OnDeckCardQuantityChangedAsync(DeckCardEntryViewModel row)
-        {
-            return PersistDeckAsync();
-        }
-        private async Task OnDeckCardQuantityEditLostFocusAsync(DeckCardEntryViewModel row)
+        private async Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel row)
         {
             if (row.DesiredQuantity <= 0)
             {
@@ -295,7 +283,7 @@ namespace CollectaMundo.ViewModels.Decks
                 return Task.CompletedTask;
             }
 
-            var entries = DeckCards.Where(x => x.OracleCard is not null).Select(x => new DeckCardEntry
+            var entries = DeckCards.Select(x => new DeckCardEntry
             {
                 DeckLocationId = DeckLocationId.Value,
                 OracleId = x.OracleId,

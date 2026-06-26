@@ -2,8 +2,18 @@ TO DO
 
 Deck editor!
 
- - Filter på gameplay only
- - Filter på print only
+ - Opdater numering editor control brug ved add og edit collection (hvad sker der ved 0)
+ - Tilføj type til deck datagrid
+ - Tilføj side-board, commander
+ - Sorter deck datagrid efter kort type
+ - Tilføj træk kort fra datagrid
+ - Tilføj højreklik fra allcards tilføj
+ - Tilføj owned/allocated support
+ - Tilføj højreklik fra my collection
+ - Tilføj legality filter
+ - Tilføj legality check (+ hasAlternativeDeckLimit + basic)
+ - Tilføj stats
+ - Tilføj pris
 
 
 

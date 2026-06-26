@@ -23,23 +23,21 @@ namespace CollectaMundo.Presentation.Behaviors
 
         private void AssociatedObject_TextChanged(object sender, TextChangedEventArgs e)
         {
-            // In this behavior we only check for a valid, non-negative integer.
             string currentText = AssociatedObject.Text;
+
+            // Allow blank while editing.
             if (string.IsNullOrWhiteSpace(currentText))
             {
-                RevertText();
                 return;
             }
 
             if (int.TryParse(currentText, out int value) && value >= 0)
             {
-                // Accept valid numeric input.
                 _lastValidValue = currentText;
+                return;
             }
-            else
-            {
-                RevertText();
-            }
+
+            RevertText();
         }
 
         private void RevertText()
