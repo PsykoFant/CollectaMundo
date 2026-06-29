@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.ViewModels.ModifyCollection.BindinViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels.ModifyCollection
@@ -21,7 +22,7 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         // Bindable properties for the numeric inputs
         public NumericBindingViewModel Owned { get; }
         public NumericBindingViewModel Trade { get; }
-        public CollectionCardDraftRowViewModel(CollectionCardDraft cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand)
+        public CollectionCardDraftRowViewModel(CollectionCardDraft cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand, ICommand countCommittedCommand)
         {
             CardToAddOrEdit = cardToAdd;
 
@@ -53,6 +54,13 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 getter: () => CardsOwned,
                 setter: v => CardsOwned = v,
                 liveChangedCommand: refreshColumnsCommand,
+                commitCommand: new RelayCommand(() =>
+                {
+                    if (countCommittedCommand.CanExecute(this))
+                    {
+                        countCommittedCommand.Execute(this);
+                    }
+                }),
                 min: 0,
                 delayMs: 500);
 

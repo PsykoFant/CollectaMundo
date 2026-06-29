@@ -17,8 +17,7 @@
 
         <i:Interaction.Behaviors>
             <behaviors:NumericValidationBehavior />
-            <behaviors:ExplicitTextBoxCommitBehavior CommitCommand="{Binding CommitCommand}" />
-            <behaviors:DelayedUpdateBehavior Delay="{Binding DelayMs}" CommitCommand="{Binding CommitCommand}" />
+            <behaviors:NumericTextBoxCommitBehavior CommitCommand="{Binding CommitCommand}" />
         </i:Interaction.Behaviors>
 
         <i:Interaction.Triggers>

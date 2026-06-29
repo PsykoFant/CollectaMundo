@@ -2,7 +2,6 @@ TO DO
 
 Deck editor!
 
- - Opdater numering editor control brug ved add og edit collection (hvad sker der ved 0)
  - Tilføj type til deck datagrid
  - Tilføj side-board, commander
  - Sorter deck datagrid efter kort type

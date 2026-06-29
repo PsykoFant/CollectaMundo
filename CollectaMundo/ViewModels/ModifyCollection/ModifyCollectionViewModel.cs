@@ -152,7 +152,7 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                     continue;
                 }
 
-                CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(editable, _availableLocations, RefreshColumnsCommand));
+                CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(editable, _availableLocations, RefreshColumnsCommand, CountCommittedCommand));
             }
 
             ClearSelectionTrigger++;
@@ -244,6 +244,27 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         }
 
         [RelayCommand]
+        private void CountCommitted(CollectionCardDraftRowViewModel? row)
+        {
+            if (row is null)
+            {
+                return;
+            }
+
+            if (row.CardsOwned < row.CardsForTrade)
+            {
+                row.CardsForTrade = row.CardsOwned;
+            }
+
+            if (_removeCardWhenZero && row.CardsOwned <= 0)
+            {
+                CardsToAddOrEdit.Remove(row);
+            }
+
+            RefreshColumnsTrigger++;
+        }
+
+        [RelayCommand]
         private void SplitOneRowOut(CollectionCardDraftRowViewModel? row)
         {
             if (row is null)
@@ -283,7 +304,7 @@ namespace CollectaMundo.ViewModels.ModifyCollection
 
             var splitDraft = CollectionCardDraftFactory.FromSplit(row.CardToAddOrEdit);
 
-            CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(splitDraft, _availableLocations, RefreshColumnsCommand));
+            CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(splitDraft, _availableLocations, RefreshColumnsCommand, CountCommittedCommand));
 
             RefreshColumnsTrigger++;
         }
