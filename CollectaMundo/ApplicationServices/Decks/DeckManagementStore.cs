@@ -1,19 +1,22 @@
-﻿using CollectaMundo.ApplicationServices.CardLocations;
+﻿using CollectaMundo.ApplicationServices.CardLegalities;
+using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.Decks.Models;
+using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.ViewModels.Decks.Models;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
-    public sealed class DeckManagementStore(ICardLocationService cardLocationService) : IDeckManagementStore
+    public sealed class DeckManagementStore(ICardLocationService cardLocationService, ICardLegalityProviderService cardLegalityProviderService) : IDeckManagementStore
     {
         private readonly ICardLocationService _cardLocationService = cardLocationService;
+        private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
         public ObservableCollection<DeckManagementRecord> Decks { get; } = [];
         public ObservableCollection<DeckFormatOption> DeckFormats { get; } = [];
         public async Task LoadAsync()
         {
             var loadedDecks = await _cardLocationService.GetAllDecksAsync();
-            var loadedFormats = await _cardLocationService.GetDeckFormatsAsync();
+            var loadedFormats = _cardLegalityProviderService.Formats;
 
             Decks.Clear();
             foreach (var deck in loadedDecks)
@@ -31,9 +34,9 @@ namespace CollectaMundo.ApplicationServices.Decks
                 DeckFormats.Add(CreateDeckFormatOption(format));
             }
         }
-        private static DeckFormatOption CreateDeckFormatOption(string value)
+        private static DeckFormatOption CreateDeckFormatOption(CardLegalityFormat format)
         {
-            return new DeckFormatOption(value, char.ToUpperInvariant(value[0]) + value[1..]);
+            return new DeckFormatOption(format.Value, format.DisplayName);
         }
         public void Upsert(DeckManagementRecord deck)
         {

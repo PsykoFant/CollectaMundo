@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.KeyedDataProvider;
+﻿using CollectaMundo.ApplicationServices.CardLegalities;
+using CollectaMundo.ApplicationServices.KeyedDataProvider;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -14,24 +15,26 @@ using System.Diagnostics;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IUnitOfWorkRunner uowRunner, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService) : ICardListService
+    public sealed class CardListService(IUnitOfWorkRunner uowRunner, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService, ICardLegalityProviderService cardLegalityProviderService) : ICardListService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterDefaultsLogic = filterDefaultsLogic;
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
+        private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
         public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, CardListViewModel<OracleCard> oracleCardsVM, Dictionary<string, FilterItemViewModel> filters, FilterPanelViewModel filterVM)
         {
             var dbIoSw = Stopwatch.StartNew();
 
             // Phase 1: DB I/O
+
             var (lookupPackage, printingRows, collectionRows) = await _uowRunner.ExecuteReadOnlyAsync(async conn =>
             {
-                var lookupPackageTask = _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All);
+                var lookupPackageTask = _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All); var legalityTask = _cardLegalityProviderService.LoadAsync(conn);
                 var printingRowsTask = _cardListRepo.ReadAllCardPrintingDbRowsAsync(conn);
                 var collectionRowsTask = _cardListRepo.ReadMyCollectionAsync(conn);
 
-                await Task.WhenAll(lookupPackageTask, printingRowsTask, collectionRowsTask);
+                await Task.WhenAll(lookupPackageTask, legalityTask, printingRowsTask, collectionRowsTask);
 
                 return (lookupPackageTask.Result, printingRowsTask.Result, collectionRowsTask.Result);
             });
@@ -52,7 +55,10 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             Parallel.For(0, printingRows.Count, i =>
             {
-                printings[i] = PrintingCardFactory.FromRow(printingRows[i]);
+                var row = printingRows[i];
+                var uuid = row.Uuid ?? string.Empty;
+                _cardLegalityProviderService.MasksByUuid.TryGetValue(uuid, out var legalityMasks);
+                printings[i] = PrintingCardFactory.FromRow(row, legalityMasks);
             });
 
             var aggregatedPrintings = PrintingCardAggregator.Aggregate(printings);

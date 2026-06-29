@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Shared.CardModels;
+﻿using CollectaMundo.DomainLogic.CardLegalities;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.Shared.Models;
 using System.Text;
 
@@ -6,35 +7,37 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
 {
     public static class PrintingCardFactory
     {
-        public static PrintingCard FromRow(PrintingCardDbRow row)
+        public static PrintingCard FromRow(PrintingCardDbRow row, CardLegalityMasks legalityMasks = default)
         {
             var oracle = new OracleCard
             {
-                ScryfallOracleId = row.ScryfallOracleId ?? string.Empty,
-                Name = row.Name ?? string.Empty,
-                ManaCostRaw = row.ManaCostRaw,
-                ManaCost = ProcessManaCost(row.ManaCostRaw),
                 Colors = JoinAndDedupCsv(row.Colors),
-                Type = JoinAndDedupCsv(row.Type),
-                Types = JoinAndDedupCsv(row.Types),
-                SuperTypes = JoinAndDedupCsv(row.SuperTypes),
-                SubTypes = JoinAndDedupCsv(row.SubTypes),
                 Keywords = JoinAndDedupCsv(row.Keywords),
-                Text = row.RulesText,
-                Side = row.Side,
+                LegalityMasks = legalityMasks,
+                ManaCost = ProcessManaCost(row.ManaCostRaw),
+                ManaCostRaw = row.ManaCostRaw,
+                ManaValue = row.ManaValue ?? 0,
+                Name = row.Name ?? string.Empty,
                 OtherFaceIds = ParseOtherFaceIds(row.OtherFaceIds),
-                ManaValue = row.ManaValue ?? 0
+                ScryfallOracleId = row.ScryfallOracleId ?? string.Empty,
+                Side = row.Side,
+                SubTypes = JoinAndDedupCsv(row.SubTypes),
+                SuperTypes = JoinAndDedupCsv(row.SuperTypes),
+                Text = row.RulesText,
+                Type = JoinAndDedupCsv(row.Type),
+                Types = JoinAndDedupCsv(row.Types)
             };
 
             return new PrintingCard
             {
                 Availability = row.Availability,
-                Oracle = oracle,
-                Uuid = row.Uuid ?? string.Empty,
-                SetCode = row.SetCode,
+                Finishes = row.Finishes,
                 Language = row.Language,
+                LegalityMasks = legalityMasks,
+                Oracle = oracle,
                 Rarity = row.Rarity,
-                Finishes = row.Finishes
+                SetCode = row.SetCode,
+                Uuid = row.Uuid ?? string.Empty
             };
         }
 

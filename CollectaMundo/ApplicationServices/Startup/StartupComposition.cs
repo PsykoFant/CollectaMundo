@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardDatabaseManagement.Models;
 using CollectaMundo.ApplicationServices.CardImages;
+using CollectaMundo.ApplicationServices.CardLegalities;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
@@ -24,6 +25,7 @@ using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
+using CollectaMundo.Infrastructure.CardLegalities;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
@@ -101,14 +103,16 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardImageDownloader = new CardImageDownloader(settings);
                 var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
 
+                var cardLegalityProviderService = new CardLegalityProviderService(uowRunner, new CardLegalityRepo());
+
                 var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
-                var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService);
+                var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, cardLegalityProviderService);
 
                 var cardLocationLookupStore = new CardLocationLookupStore();
                 var cardLocationRepo = new CardLocationRepo();
                 var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
 
-                var deckManagementStore = new DeckManagementStore(cardLocationService);
+                var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityProviderService);
                 var deckBuilderService = new DeckBuilderService(uowRunner, new DeckBuilderRepo());
 
                 var importService = new ImportService(uowRunner, new ImportRepo(), fileSystemPicker, new ImportLogic(), cardLocationService);

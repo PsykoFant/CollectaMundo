@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
+using CollectaMundo.ApplicationServices.CardLegalities;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
@@ -25,10 +26,12 @@ using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
+using CollectaMundo.Infrastructure.CardLegalities;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Infrastructure.CollectionMutations;
+using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.KeyedDataProvider;
@@ -85,7 +88,9 @@ public static class TestAppBuilder
 
         var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
 
-        var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService);
+        var cardLegalityProviderService = new CardLegalityProviderService(uowRunner, new CardLegalityRepo());
+
+        var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, cardLegalityProviderService);
 
         var collectionMutationsLogic = new CollectionMutationsLogic();
         var collectionMutationsRepo = new CollectionMutationsRepo();
@@ -94,7 +99,8 @@ public static class TestAppBuilder
         var cardLocationLookupStore = new CardLocationLookupStore();
         var cardLocationRepo = new CardLocationRepo();
         var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
-        var deckManagementStore = new DeckManagementStore(cardLocationService);
+        var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityProviderService);
+        var deckBuilderService = new DeckBuilderService(uowRunner, new DeckBuilderRepo());
 
         var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
 
@@ -123,6 +129,7 @@ public static class TestAppBuilder
             cardLocationService,
             cardLocationLookupStore,
             deckManagementStore,
+            deckBuilderService,
             settings,
             scheduler);
 

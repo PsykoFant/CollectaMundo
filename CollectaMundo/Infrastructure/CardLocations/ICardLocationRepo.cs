@@ -15,7 +15,6 @@ namespace CollectaMundo.Infrastructure.CardLocations
         Task<IReadOnlyList<CardLocationDbRow>> GetAllLocationsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null);
         Task<IReadOnlyList<int>> GetExistingLocationIdsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> ids, CancellationToken token = default);
         Task<IReadOnlyList<DeckManagementRecord>> GetAllDecksAsync(SQLiteConnection conn, SQLiteTransaction? tx = null);
-        Task<IReadOnlyList<string>> GetDeckFormatsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null);
         Task<IReadOnlyList<CollectionCardDbRow>> GetAllCollectionRowsAsync(SQLiteConnection conn, SQLiteTransaction tx);
         Task<IReadOnlyList<CollectionCardDbRow>> GetCollectionRowsByLocationIdsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<int> locationIds, CancellationToken token = default);
         Task<bool> ExistsByNameAsync(SQLiteConnection conn, SQLiteTransaction tx, string name, int? excludingId = null);

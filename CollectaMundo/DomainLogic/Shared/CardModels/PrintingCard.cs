@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardImages.Models;
+using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Windows.Media;
 
@@ -33,6 +34,9 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
         }
         public string? Keywords => Oracle.Keywords;
         public string? Language { get; init; }
+        public CardLegalityMasks LegalityMasks { get; init; }
+        public ulong PlayableFormatsMask => LegalityMasks.PlayableFormatsMask;
+        public ulong RestrictedFormatsMask => LegalityMasks.RestrictedFormatsMask;
         public string? ManaCost => Oracle.ManaCost;
         public ImageSource? ManaCostImage => Oracle.ManaCostImage;
         public string? ManaCostRaw => Oracle.ManaCostRaw;

@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Shared.CardModels;
+﻿using CollectaMundo.DomainLogic.CardLegalities;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 
 namespace CollectaMundo.DomainLogic.CardLists
 {
@@ -19,6 +20,9 @@ namespace CollectaMundo.DomainLogic.CardLists
                 var allTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var allTexts = new List<string>();
 
+                ulong playableFormatsMask = 0;
+                ulong restrictedFormatsMask = 0;
+
                 MergeFrom(printing.Oracle);
 
                 foreach (var otherId in printing.Oracle.OtherFaceIds)
@@ -29,11 +33,16 @@ namespace CollectaMundo.DomainLogic.CardLists
                     }
                 }
 
+                var aggregatedLegalityMasks = new CardLegalityMasks(PlayableFormatsMask: playableFormatsMask, RestrictedFormatsMask: restrictedFormatsMask);
+
                 void MergeFrom(OracleCard oracle)
                 {
                     AddCsvValues(oracle.Keywords, allKeywords);
                     AddCsvValues(oracle.Colors, allColors);
                     AddCsvValues(oracle.Types, allTypes);
+
+                    playableFormatsMask |= oracle.PlayableFormatsMask;
+                    restrictedFormatsMask |= oracle.RestrictedFormatsMask;
 
                     if (!string.IsNullOrWhiteSpace(oracle.Text))
                     {
@@ -55,6 +64,8 @@ namespace CollectaMundo.DomainLogic.CardLists
                     OtherFaceIds = printing.Oracle.OtherFaceIds,
                     ManaValue = printing.Oracle.ManaValue,
 
+                    LegalityMasks = aggregatedLegalityMasks,
+
                     Keywords = string.Join(",", allKeywords),
                     Colors = string.Join(",", allColors),
                     Text = string.Join(" // ", allTexts)
@@ -63,6 +74,8 @@ namespace CollectaMundo.DomainLogic.CardLists
                 results.Add(new PrintingCard
                 {
                     Oracle = aggregatedOracle,
+
+                    LegalityMasks = aggregatedLegalityMasks,
 
                     Uuid = printing.Uuid,
                     SetCode = printing.SetCode,
