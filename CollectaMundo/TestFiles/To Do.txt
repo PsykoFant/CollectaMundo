@@ -2,15 +2,18 @@ TO DO
 
 Deck editor!
 
- - Tilføj legality filter
- - Tilføj legality check (+ hasAlternativeDeckLimit + basic)
+
 
  - Tilføj type til deck datagrid
  - Tilføj side-board, commander
  - Sorter deck datagrid efter kort type
  - Tilføj træk kort fra datagrid
- - Tilføj højreklik fra allcards tilføj
  - Tilføj owned/allocated support
+
+ - Tilføj legality check (+ hasAlternativeDeckLimit + basic)
+
+ - Tilføj højreklik fra allcards tilføj
+
  - Tilføj højreklik fra my collection
 
  - Tilføj stats
