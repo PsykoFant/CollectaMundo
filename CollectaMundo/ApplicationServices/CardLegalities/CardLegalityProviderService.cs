@@ -112,7 +112,7 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
                 "standardbrawl" => "Standard Brawl",
                 "oldschool" => "Old School",
                 "predh" => "PreDH",
-                "tlr" => "Tarkir: Dragonstorm Limited",
+                "tlr" => "Tiny Leaders: Reborn",
                 _ => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(value)
             };
         }

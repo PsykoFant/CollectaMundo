@@ -37,6 +37,11 @@ namespace CollectaMundo.DomainLogic.Filtering
                     return MatchesLocation(card);
                 }
 
+                if (CriteriaKey.Equals("LegalFormats", StringComparison.OrdinalIgnoreCase))
+                {
+                    return MatchesLegalFormats(card);
+                }
+
                 var property = typeof(TCard).GetProperty(CriteriaKey);
 
                 if (property is null)
@@ -61,6 +66,8 @@ namespace CollectaMundo.DomainLogic.Filtering
                 return false;
             }
         }
+
+        // Special case matching
         private bool MatchesColors(TCard card)
         {
             if (SelectedOptions == null || !SelectedOptions.Any())
@@ -130,13 +137,41 @@ namespace CollectaMundo.DomainLogic.Filtering
 
             return OperatorSelection switch
             {
-                OperatorType.NOT => !SelectedOptions.Any(opt =>
-                    string.Equals(opt, locationId, StringComparison.OrdinalIgnoreCase)),
-
-                _ => SelectedOptions.Any(opt =>
-                    string.Equals(opt, locationId, StringComparison.OrdinalIgnoreCase))
+                OperatorType.NOT => !SelectedOptions.Any(opt => string.Equals(opt, locationId, StringComparison.OrdinalIgnoreCase)),
+                _ => SelectedOptions.Any(opt => string.Equals(opt, locationId, StringComparison.OrdinalIgnoreCase))
             };
         }
+        private bool MatchesLegalFormats(TCard card)
+        {
+            if (SelectedOptions == null || !SelectedOptions.Any())
+            {
+                return true;
+            }
+
+            var playableMaskObject = typeof(TCard).GetProperty("PlayableFormatsMask")?.GetValue(card);
+
+            if (playableMaskObject is not ulong playableMask)
+            {
+                return true;
+            }
+
+            var selectedMask = SelectedOptions.Where(x => ulong.TryParse(x, out _)).Select(ulong.Parse).Aggregate(0UL, (acc, mask) => acc | mask);
+
+            if (selectedMask == 0)
+            {
+                return true;
+            }
+
+            return OperatorSelection switch
+            {
+                OperatorType.AND => (playableMask & selectedMask) == selectedMask,
+                OperatorType.NOT => (playableMask & selectedMask) == 0,
+                _ => (playableMask & selectedMask) != 0
+            };
+        }
+
+
+        // Generic matching
         private bool MatchesSingle(string cardValue)
         {
             if (string.IsNullOrWhiteSpace(SelectedSingleOption) || SelectedSingleOption == DefaultText)

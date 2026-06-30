@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
+﻿using CollectaMundo.ApplicationServices.CardLegalities;
+using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
@@ -9,8 +10,9 @@ using System.Text.RegularExpressions;
 
 namespace CollectaMundo.Data.Filtering
 {
-    public partial class FilterDefaultsLogic() : IFilterDefaultsLogic
+    public partial class FilterDefaultsLogic(ICardLegalityProviderService cardLegalityProviderService) : IFilterDefaultsLogic
     {
+        private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
         public List<FilterDefaults> Build(IReadOnlyList<PrintingCard> allCards, IReadOnlyList<CollectionCard> myCollection)
         {
             var filterDefaultsDict = new ConcurrentDictionary<string, FilterDefaults>();
@@ -30,8 +32,17 @@ namespace CollectaMundo.Data.Filtering
             return [.. FilterCriteriaMappings.CriteriaMappings.Keys.Select(k => filterDefaultsDict[k])];
         }
 
-        private static FilterDefaults BuildPrintingDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<PrintingCard> cards)
+        private FilterDefaults BuildPrintingDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<PrintingCard> cards)
         {
+            if (criteriaKey.Equals("LegalFormats", StringComparison.OrdinalIgnoreCase))
+            {
+                var explicitOptions = _cardLegalityProviderService.Formats.Select(format => new FilterOption(
+                    format.Mask.ToString(),
+                    format.DisplayName)).ToList();
+
+                return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues: [], explicitOptions);
+            }
+
             var rawValues = criteriaKey switch
             {
                 "Colors" => ["W", "U", "B", "R", "G", "C", "X", "Colorless"],
@@ -46,7 +57,6 @@ namespace CollectaMundo.Data.Filtering
                 "Keywords" => ExtractValues(cards, c => c.Keywords),
                 "Finishes" => ExtractValues(cards, c => c.Finishes),
                 "Availability" => ExtractValues(cards, c => c.Availability),
-
                 _ => throw new Exception($"Unhandled printing criteria key: {criteriaKey}")
             };
 

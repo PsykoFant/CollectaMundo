@@ -97,6 +97,7 @@
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Types]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[SubTypes]}" />
             <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[Keywords]}" />
+            <sideMenuLeft:FilterComboBoxPairRowUserControl DataContext="{Binding FilterVM.Filters[LegalFormats]}" />
             
             <!--Rulestext filtering-->
             <TextBox DataContext="{Binding FilterVM.Filters[Text]}"

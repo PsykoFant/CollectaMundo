@@ -252,8 +252,6 @@ namespace CollectaMundo.ViewModels.Filtering
         }
         private void UpdateSelectedOptions(bool notifyFilterChanged = true)
         {
-            Debug.WriteLine($"[Filter] UpdateSelectedOptions for {CriteriaKey}");
-
             SelectedOptions.Clear();
 
             foreach (var opt in _filterItemSearchLogic.ExtractSelectedOptions(FilterOptions))
