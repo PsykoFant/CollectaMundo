@@ -9,23 +9,53 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Windows.Data;
 
 namespace CollectaMundo.ViewModels.Decks
 {
-    public partial class DeckBuilderViewModel(IDeckBuilderService deckBuilderService, CardListViewModel<OracleCard> oracleCardsVM, FilterPanelViewModel filterPanelViewModel) : ObservableObject
+    public partial class DeckBuilderViewModel : ObservableObject
     {
-        private readonly IDeckBuilderService _deckBuilderService = deckBuilderService;
+        private readonly IDeckBuilderService _deckBuilderService;
 
         public event EventHandler? ExitEditorRequested;
+
         public event EventHandler<OracleCardImageSelectionRequest?>? CardImageSelectionRequested;
-        public CardListViewModel<OracleCard> CardsVM { get; } = oracleCardsVM;
+        public CardListViewModel<OracleCard> CardsVM { get; }
         public ObservableCollection<DeckCardEntryViewModel> DeckCards { get; } = [];
-        public FilterPanelViewModel FilterVM { get; } = filterPanelViewModel;
+
+        // CollectionViews for each deck section
+        public ICollectionView MainboardCards { get; }
+        public ICollectionView SideboardCards { get; }
+        public ICollectionView CommanderCards { get; }
+        public ICollectionView ScratchpadCards { get; }
+        public FilterPanelViewModel FilterVM { get; }
 
         // Bindable pass-through properties for the filters 
         public FilterItemViewModel? NameFilter => FilterVM.Filters.TryGetValue("Name", out var f) ? f : null;
 
+        // Constructor
+        public DeckBuilderViewModel(IDeckBuilderService deckBuilderService, CardListViewModel<OracleCard> oracleCardsVM, FilterPanelViewModel filterPanelViewModel)
+        {
+            _deckBuilderService = deckBuilderService;
+            CardsVM = oracleCardsVM;
+            FilterVM = filterPanelViewModel;
+
+            MainboardCards = CreateSectionView(DeckSection.Mainboard);
+            SideboardCards = CreateSectionView(DeckSection.Sideboard);
+            CommanderCards = CreateSectionView(DeckSection.Commander);
+            ScratchpadCards = CreateSectionView(DeckSection.Maybeboard);
+        }
+        private ListCollectionView CreateSectionView(DeckSection section)
+        {
+            var view = new ListCollectionView(DeckCards)
+            {
+                Filter = item => item is DeckCardEntryViewModel row && row.Section == section
+            };
+
+            return view;
+        }
 
         [ObservableProperty]
         private OracleCard? selectedOracleCard;
