@@ -25,14 +25,17 @@ namespace CollectaMundo.ViewModels.Decks
         // DeckZoneViewModels for each deck section
         public DeckZoneViewModel MainboardZone => GetZone(DeckSection.Mainboard);
         public DeckZoneViewModel SideboardZone => GetZone(DeckSection.Sideboard);
-        public DeckZoneViewModel CommanderZone => GetZone(DeckSection.Commander);
         public DeckZoneViewModel MaybeboardZone => GetZone(DeckSection.Maybeboard);
+        public DeckZoneViewModel CommanderZone => GetZone(DeckSection.Commander);
+        public DeckZoneViewModel CompanionZone => GetZone(DeckSection.Companion);
+
         private ObservableCollection<DeckZoneViewModel> Zones { get; } =
         [
             new() { Section = DeckSection.Mainboard, DisplayName = "Deck" },
             new() { Section = DeckSection.Sideboard, DisplayName = "Sideboard" },
+            new() { Section = DeckSection.Maybeboard, DisplayName = "Maybeboard" },
             new() { Section = DeckSection.Commander, DisplayName = "Command zone" },
-            new() { Section = DeckSection.Maybeboard, DisplayName = "Maybeboard" }
+            new() { Section = DeckSection.Companion, DisplayName = "Companion zone" }            
         ];
         private IEnumerable<DeckCardEntryViewModel> AllDeckCards => Zones.SelectMany(z => z.Cards);
         private DeckZoneViewModel GetZone(DeckSection section) { return Zones.First(z => z.Section == section); }
@@ -149,6 +152,24 @@ namespace CollectaMundo.ViewModels.Decks
         private Task AddOracleCardToSideboardAsync(object? param)
         {
             return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Sideboard);
+        }
+
+        [RelayCommand]
+        private Task AddOracleCardToMaybeboardAsync(object? param)
+        {
+            return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Maybeboard);
+        }
+
+        [RelayCommand]
+        private Task SetOracleCardAsCommanderAsync(object? param)
+        {
+            return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Commander);
+        }
+
+        [RelayCommand]
+        private Task SetOracleCardAsCompanionAsync(object? param)
+        {
+            return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Companion);
         }
 
         // Add OracleCard helpers

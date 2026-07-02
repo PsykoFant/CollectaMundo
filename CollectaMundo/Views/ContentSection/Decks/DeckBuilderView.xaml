@@ -250,6 +250,50 @@
                 </DataGrid>
             </GroupBox>
 
+            <!-- Companion zone -->
+            <GroupBox Grid.Column="2" Grid.Row ="2" Header="Companion zone">
+                <DataGrid x:Name="CompanionDataGrid"
+                          ItemsSource="{Binding CompanionZone.Cards}"
+                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          Style="{StaticResource CardGridBaseStyle}">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                    </DataGrid.Columns>
+
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Remove from sideboard"
+                                      Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
+
+                    <DataGrid.InputBindings>
+                        <KeyBinding Key="Delete"
+                                        Command="{Binding DeleteDeckCardsCommand}"
+                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                    </DataGrid.InputBindings>
+                </DataGrid>
+            </GroupBox>            
+            
             <!-- Maybeboard -->
             <GroupBox Grid.Column="0" Grid.Row ="2" Header="Maybeboard">
                 <DataGrid x:Name="MaybeboardDataGrid"
@@ -333,24 +377,43 @@
                    Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>
 
-            <StackPanel Orientation="Horizontal"
-                HorizontalAlignment="Right">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+
+                <Button Content="  Set as Companion  "
+                        Height="20"
+                        Margin="0,0,6,0"
+                        Command="{Binding SetOracleCardAsCompanionCommand}"
+                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+
+                <Button Content="  Set as Commander  "
+                        Height="20"
+                        Margin="0,0,6,0"
+                        Command="{Binding SetOracleCardAsCommanderCommand}"
+                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+
+                <Button Content="  + 1 to Maybeboard  "
+                        Height="20"
+                        Margin="0,0,6,0"
+                        Command="{Binding AddOracleCardToMaybeboardCommand}"
+                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>                
+                
                 <Button Content="  + 1 to sideboard  "
-                Height="20"
-                Margin="0,0,6,0"
-                Command="{Binding AddOracleCardToSideboardCommand}"
-                CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+                        Height="20"
+                        Margin="0,0,6,0"
+                        Command="{Binding AddOracleCardToSideboardCommand}"
+                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
                 <Button Content="  + 4 to deck  "
-                Height="20"
-                Margin="0,0,6,0"
-                Command="{Binding AddOracleCardPlaySetToDeckCommand}"
-                CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+                        Height="20"
+                        Margin="0,0,6,0"
+                        Command="{Binding AddOracleCardPlaySetToDeckCommand}"
+                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
                 <Button Content="  + 1 to deck  "
-                Height="20"
-                Command="{Binding AddOracleCardToDeckCommand}"
-                CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+                        Height="20"
+                        Command="{Binding AddOracleCardToDeckCommand}"
+                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+                
             </StackPanel>
         </Grid>
 
