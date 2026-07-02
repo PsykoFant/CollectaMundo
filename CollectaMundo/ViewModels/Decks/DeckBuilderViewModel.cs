@@ -9,53 +9,51 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Windows.Data;
 
 namespace CollectaMundo.ViewModels.Decks
 {
-    public partial class DeckBuilderViewModel : ObservableObject
+    public partial class DeckBuilderViewModel(IDeckBuilderService deckBuilderService, CardListViewModel<OracleCard> oracleCardsVM, FilterPanelViewModel filterPanelViewModel) : ObservableObject
     {
-        private readonly IDeckBuilderService _deckBuilderService;
+        private readonly IDeckBuilderService _deckBuilderService = deckBuilderService;
 
+        // Events for external notifications
         public event EventHandler? ExitEditorRequested;
 
         public event EventHandler<OracleCardImageSelectionRequest?>? CardImageSelectionRequested;
-        public CardListViewModel<OracleCard> CardsVM { get; }
-        public ObservableCollection<DeckCardEntryViewModel> DeckCards { get; } = [];
 
-        // CollectionViews for each deck section
-        public ICollectionView MainboardCards { get; }
-        public ICollectionView SideboardCards { get; }
-        public ICollectionView CommanderCards { get; }
-        public ICollectionView ScratchpadCards { get; }
-        public FilterPanelViewModel FilterVM { get; }
+        // DeckZoneViewModels for each deck section
+        public DeckZoneViewModel MainboardZone => GetZone(DeckSection.Mainboard);
+        public DeckZoneViewModel SideboardZone => GetZone(DeckSection.Sideboard);
+        public DeckZoneViewModel CommanderZone => GetZone(DeckSection.Commander);
+        public DeckZoneViewModel MaybeboardZone => GetZone(DeckSection.Maybeboard);
+        private ObservableCollection<DeckZoneViewModel> Zones { get; } =
+        [
+            new() { Section = DeckSection.Mainboard, DisplayName = "Deck" },
+            new() { Section = DeckSection.Sideboard, DisplayName = "Sideboard" },
+            new() { Section = DeckSection.Commander, DisplayName = "Command zone" },
+            new() { Section = DeckSection.Maybeboard, DisplayName = "Maybeboard" }
+        ];
+        private IEnumerable<DeckCardEntryViewModel> AllDeckCards => Zones.SelectMany(z => z.Cards);
+        private DeckZoneViewModel GetZone(DeckSection section) { return Zones.First(z => z.Section == section); }
+        private void AddRowToZone(DeckCardEntryViewModel row) { GetZone(row.Section).Cards.Add(row); }
+        private void ClearZones()
+        {
+            foreach (var zone in Zones)
+            {
+                zone.Cards.Clear();
+            }
+        }
+
+        // Filtered OracleCard list view model
+        public CardListViewModel<OracleCard> CardsVM { get; } = oracleCardsVM;
+
+        // Filter panel view model
+        public FilterPanelViewModel FilterVM { get; } = filterPanelViewModel;
 
         // Bindable pass-through properties for the filters 
         public FilterItemViewModel? NameFilter => FilterVM.Filters.TryGetValue("Name", out var f) ? f : null;
 
-        // Constructor
-        public DeckBuilderViewModel(IDeckBuilderService deckBuilderService, CardListViewModel<OracleCard> oracleCardsVM, FilterPanelViewModel filterPanelViewModel)
-        {
-            _deckBuilderService = deckBuilderService;
-            CardsVM = oracleCardsVM;
-            FilterVM = filterPanelViewModel;
-
-            MainboardCards = CreateSectionView(DeckSection.Mainboard);
-            SideboardCards = CreateSectionView(DeckSection.Sideboard);
-            CommanderCards = CreateSectionView(DeckSection.Commander);
-            ScratchpadCards = CreateSectionView(DeckSection.Maybeboard);
-        }
-        private ListCollectionView CreateSectionView(DeckSection section)
-        {
-            var view = new ListCollectionView(DeckCards)
-            {
-                Filter = item => item is DeckCardEntryViewModel row && row.Section == section
-            };
-
-            return view;
-        }
 
         [ObservableProperty]
         private OracleCard? selectedOracleCard;
@@ -97,11 +95,11 @@ namespace CollectaMundo.ViewModels.Decks
             DeckFormat = deck.Format;
             DeckDescription = deck.Description;
 
-            DeckCards.Clear();
+            ClearZones();
 
             foreach (var row in rows)
             {
-                DeckCards.Add(row);
+                AddRowToZone(row);
             }
         }
 
@@ -164,7 +162,8 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 foreach (var card in cards)
                 {
-                    var existing = DeckCards.FirstOrDefault(x => x.OracleId == card.ScryfallOracleId && x.Section == DeckSection.Mainboard);
+                    var zone = GetZone(DeckSection.Mainboard);
+                    var existing = zone.Cards.FirstOrDefault(x => x.OracleId == card.ScryfallOracleId);
 
                     if (existing is not null)
                     {
@@ -175,7 +174,7 @@ namespace CollectaMundo.ViewModels.Decks
                     {
                         var addedRow = CreateDeckRow(card, quantityToAdd, DeckSection.Mainboard);
 
-                        DeckCards.Add(addedRow);
+                        zone.Cards.Add(addedRow);
                         addedRows.Add(addedRow);
                     }
                 }
@@ -191,7 +190,7 @@ namespace CollectaMundo.ViewModels.Decks
 
                 foreach (var addedRow in addedRows)
                 {
-                    DeckCards.Remove(addedRow);
+                    GetZone(addedRow.Section).Cards.Remove(addedRow);
                 }
 
                 Debug.WriteLine($"Failed to add cards to deck: {ex}");
@@ -243,42 +242,34 @@ namespace CollectaMundo.ViewModels.Decks
 
         // Deleting a card
         [RelayCommand]
-        private Task DeleteDeckCardsAsync(object? param)
-        {
-            var rows = GetDeckRowsFromCommandParameter(param).ToList();
-
-            if (rows.Count == 0)
-            {
-                return Task.CompletedTask;
-            }
-
-            return DeleteDeckCardsAsync(rows);
-        }
         private async Task DeleteDeckCardsAsync(IReadOnlyList<DeckCardEntryViewModel> rows)
         {
-            var removedRows = rows.Where(DeckCards.Contains).ToList();
+            var removed = rows.Select(row => new
+            {
+                Row = row,
+                Zone = GetZone(row.Section),
+                Index = GetZone(row.Section).Cards.IndexOf(row)
+            }).Where(x => x.Index >= 0).OrderByDescending(x => x.Index).ToList();
 
-            if (removedRows.Count == 0)
+            if (removed.Count == 0)
             {
                 return;
             }
 
-            var removedWithIndexes = removedRows.Select(row => new { Row = row, Index = DeckCards.IndexOf(row) }).OrderByDescending(x => x.Index).ToList();
-
             try
             {
-                foreach (var item in removedWithIndexes)
+                foreach (var item in removed)
                 {
-                    DeckCards.RemoveAt(item.Index);
+                    item.Zone.Cards.RemoveAt(item.Index);
                 }
 
                 await PersistDeckAsync();
             }
             catch (Exception ex)
             {
-                foreach (var item in removedWithIndexes.OrderBy(x => x.Index))
+                foreach (var item in removed.OrderBy(x => x.Index))
                 {
-                    DeckCards.Insert(item.Index, item.Row);
+                    item.Zone.Cards.Insert(item.Index, item.Row);
                 }
 
                 Debug.WriteLine($"Failed to delete deck card entries: {ex}");
@@ -313,15 +304,14 @@ namespace CollectaMundo.ViewModels.Decks
                 return Task.CompletedTask;
             }
 
-            var entries = DeckCards.Select(x => new DeckCardEntry
+            var entries = AllDeckCards.Select(x => new DeckCardEntry
             {
                 DeckLocationId = DeckLocationId.Value,
                 OracleId = x.OracleId,
                 CardName = x.CardName,
                 DesiredQuantity = x.DesiredQuantity,
                 Section = x.Section
-            })
-                .ToList();
+            }).ToList();
 
             return _deckBuilderService.SaveDeckAsync(DeckLocationId.Value, entries);
         }

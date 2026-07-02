@@ -7,14 +7,14 @@ namespace CollectaMundo.ViewModels.Pages
     {
         public event EventHandler? DecksContentChanged;
         public DeckManagementViewModel DeckManagementVM { get; }
-        public DeckBuilderViewModel DeckEditorVM { get; }
+        public DeckBuilderViewModel DeckBuilderVM { get; }
         public PagesDecksHostViewModel(DeckManagementViewModel deckManagementVM, DeckBuilderViewModel deckEditorVM)
         {
             DeckManagementVM = deckManagementVM;
-            DeckEditorVM = deckEditorVM;
+            DeckBuilderVM = deckEditorVM;
 
             DeckManagementVM.EditDeckRequested += OnEditDeckRequested;
-            DeckEditorVM.ExitEditorRequested += OnExitEditorRequested;
+            DeckBuilderVM.ExitEditorRequested += OnExitEditorRequested;
 
             currentDecksContentViewModel = DeckManagementVM;
         }
@@ -23,9 +23,9 @@ namespace CollectaMundo.ViewModels.Pages
         private object currentDecksContentViewModel;
         private async void OnEditDeckRequested(object? sender, DeckManagementRowViewModel selectedDeck)
         {
-            await DeckEditorVM.BeginEditAsync(selectedDeck.Record);
+            await DeckBuilderVM.BeginEditAsync(selectedDeck.Record);
 
-            CurrentDecksContentViewModel = DeckEditorVM;
+            CurrentDecksContentViewModel = DeckBuilderVM;
             DecksContentChanged?.Invoke(this, EventArgs.Empty);
         }
         private void OnExitEditorRequested(object? sender, EventArgs e)

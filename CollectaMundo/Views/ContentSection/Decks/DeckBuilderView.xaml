@@ -49,7 +49,7 @@
             <!-- Deck -->
             <GroupBox Grid.Column="0" Grid.Row ="0" Header="Deck">
                 <DataGrid x:Name="DeckCardsDataGrid"
-                          ItemsSource="{Binding MainboardCards}"
+                          ItemsSource="{Binding MainboardZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -138,7 +138,7 @@
             <!-- Sideboard -->
             <GroupBox Grid.Column="0" Grid.Row ="1" Header="Sideboard">
                 <DataGrid x:Name="SideboardDataGrid"
-                          ItemsSource="{Binding SideboardCards}"
+                          ItemsSource="{Binding SideboardZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -209,7 +209,7 @@
             <!-- Command zone -->
             <GroupBox Grid.Column="2" Grid.Row ="1" Header="Command zone">
                 <DataGrid x:Name="CommanderDataGrid"
-                          ItemsSource="{Binding CommanderCards}"
+                          ItemsSource="{Binding CommanderZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -250,10 +250,10 @@
                 </DataGrid>
             </GroupBox>
 
-            <!-- Scratchpad -->
-            <GroupBox Grid.Column="0" Grid.Row ="2" Header="Scratchpad">
-                <DataGrid x:Name="ScratchpadDataGrid"
-                          ItemsSource="{Binding ScratchpadCards}"
+            <!-- Maybeboard -->
+            <GroupBox Grid.Column="0" Grid.Row ="2" Header="Maybeboard">
+                <DataGrid x:Name="MaybeboardDataGrid"
+                          ItemsSource="{Binding MaybeboardZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -329,20 +329,26 @@
                 <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>
 
-            <Button Content="Add 4 to deck"
-                        Width="120"
+            <Button Content="+ 1 to sideboard"
+                        Height="20"
+                        HorizontalAlignment="Right"
+                        Margin="0,0,200,0"
+                        Command="{Binding AddOracleCardToDeckCommand}"
+                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+
+            <Button Content="+ 4 to deck"
                         Height="20"
                         Margin="0,0,130,0"
                         HorizontalAlignment="Right"
                         Command="{Binding AddOracleCardPlaySetToDeckCommand}" 
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
-            <Button Content="Add 1 to deck"
-                        Width="120"
+            <Button Content="+ 1 to deck"
                         Height="20"
                         HorizontalAlignment="Right"
                         Command="{Binding AddOracleCardToDeckCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+            
         </Grid>
 
         <!-- 3- Bottom: Filterable oracle card source -->
