@@ -276,25 +276,6 @@ namespace CollectaMundo.ViewModels.Decks
                 throw;
             }
         }
-        private static IEnumerable<DeckCardEntryViewModel> GetDeckRowsFromCommandParameter(object? param)
-        {
-            if (param is DeckCardEntryViewModel singleRow)
-            {
-                yield return singleRow;
-                yield break;
-            }
-
-            if (param is System.Collections.IEnumerable selectedItems)
-            {
-                foreach (var item in selectedItems)
-                {
-                    if (item is DeckCardEntryViewModel row)
-                    {
-                        yield return row;
-                    }
-                }
-            }
-        }
 
         // Persist in db
         private Task PersistDeckAsync()
