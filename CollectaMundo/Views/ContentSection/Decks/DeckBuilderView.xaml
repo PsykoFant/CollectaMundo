@@ -325,30 +325,33 @@
 
         <!-- 2 - Filter criteria summary and add-buttons -->
         <Grid Grid.Row="2" Margin="0,10,0,10">
-            <ScrollViewer HorizontalAlignment="Left" Height="20" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
+            <ScrollViewer HorizontalAlignment="Left"
+                  Height="20"
+                  VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Auto">
+                <TextBlock TextWrapping="Wrap"
+                   Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>
 
-            <Button Content="+ 1 to sideboard"
-                        Height="20"
-                        HorizontalAlignment="Right"
-                        Margin="0,0,200,0"
-                        Command="{Binding AddOracleCardToDeckCommand}"
-                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+            <StackPanel Orientation="Horizontal"
+                HorizontalAlignment="Right">
+                <Button Content="  + 1 to sideboard  "
+                Height="20"
+                Margin="0,0,6,0"
+                Command="{Binding AddOracleCardToSideboardCommand}"
+                CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
-            <Button Content="+ 4 to deck"
-                        Height="20"
-                        Margin="0,0,130,0"
-                        HorizontalAlignment="Right"
-                        Command="{Binding AddOracleCardPlaySetToDeckCommand}" 
-                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+                <Button Content="  + 4 to deck  "
+                Height="20"
+                Margin="0,0,6,0"
+                Command="{Binding AddOracleCardPlaySetToDeckCommand}"
+                CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
-            <Button Content="+ 1 to deck"
-                        Height="20"
-                        HorizontalAlignment="Right"
-                        Command="{Binding AddOracleCardToDeckCommand}"
-                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
-            
+                <Button Content="  + 1 to deck  "
+                Height="20"
+                Command="{Binding AddOracleCardToDeckCommand}"
+                CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+            </StackPanel>
         </Grid>
 
         <!-- 3- Bottom: Filterable oracle card source -->

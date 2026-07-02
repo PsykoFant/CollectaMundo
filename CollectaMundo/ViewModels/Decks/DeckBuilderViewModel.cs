@@ -136,17 +136,23 @@ namespace CollectaMundo.ViewModels.Decks
         [RelayCommand]
         private Task AddOracleCardToDeckAsync(object? param)
         {
-            return AddOracleCardsQuantityToDeckAsync(param, quantityToAdd: 1);
+            return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Mainboard);
         }
 
         [RelayCommand]
         private Task AddOracleCardPlaySetToDeckAsync(object? param)
         {
-            return AddOracleCardsQuantityToDeckAsync(param, quantityToAdd: 4);
+            return AddOracleCardsQuantityToDeckAsync(param, 4, DeckSection.Mainboard);
+        }
+
+        [RelayCommand]
+        private Task AddOracleCardToSideboardAsync(object? param)
+        {
+            return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Sideboard);
         }
 
         // Add OracleCard helpers
-        private async Task AddOracleCardsQuantityToDeckAsync(object? param, int quantityToAdd)
+        private async Task AddOracleCardsQuantityToDeckAsync(object? param,int quantityToAdd,DeckSection section)
         {
             var cards = GetOracleCardsFromCommandParameter(param).ToList();
 
@@ -160,9 +166,10 @@ namespace CollectaMundo.ViewModels.Decks
 
             try
             {
+                var zone = GetZone(section);
+
                 foreach (var card in cards)
                 {
-                    var zone = GetZone(DeckSection.Mainboard);
                     var existing = zone.Cards.FirstOrDefault(x => x.OracleId == card.ScryfallOracleId);
 
                     if (existing is not null)
@@ -172,8 +179,7 @@ namespace CollectaMundo.ViewModels.Decks
                     }
                     else
                     {
-                        var addedRow = CreateDeckRow(card, quantityToAdd, DeckSection.Mainboard);
-
+                        var addedRow = CreateDeckRow(card, quantityToAdd, section);
                         zone.Cards.Add(addedRow);
                         addedRows.Add(addedRow);
                     }
@@ -335,6 +341,13 @@ namespace CollectaMundo.ViewModels.Decks
             await PersistDeckAsync();
         }
 
+
+        private sealed class AddCardsToDeckZoneRequest
+        {
+            public object? CardsParameter { get; init; }
+            public DeckSection Section { get; init; }
+            public int QuantityToAdd { get; init; } = 1;
+        }
 
     }
 }
