@@ -37,7 +37,7 @@ namespace CollectaMundo.ViewModels.Decks
             new() { Section = DeckSection.Sideboard, DisplayName = "Sideboard" },
             new() { Section = DeckSection.Maybeboard, DisplayName = "Maybeboard" },
             new() { Section = DeckSection.Commander, DisplayName = "Command zone" },
-            new() { Section = DeckSection.Companion, DisplayName = "Companion zone" }            
+            new() { Section = DeckSection.Companion, DisplayName = "Companion zone" }
         ];
         private IEnumerable<DeckCardEntryViewModel> AllDeckCards => Zones.SelectMany(z => z.Cards);
 
@@ -207,7 +207,7 @@ namespace CollectaMundo.ViewModels.Decks
         }
 
         // Add OracleCard helpers
-        private async Task AddOracleCardsQuantityToDeckAsync(object? param,int quantityToAdd,DeckSection section)
+        private async Task AddOracleCardsQuantityToDeckAsync(object? param, int quantityToAdd, DeckSection section)
         {
             var cards = GetOracleCardsFromCommandParameter(param).ToList();
 
@@ -278,12 +278,10 @@ namespace CollectaMundo.ViewModels.Decks
             }
         }
 
-
         // DeckCardEntryViewModel factory
         private DeckCardEntryViewModel CreateDeckRow(OracleCard card, int desiredQuantity, DeckSection section)
         {
-            return new DeckCardEntryViewModel(
-                quantityCommitAsync: OnDeckCardQuantityCommitAsync)
+            return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync)
             {
                 OracleCard = card,
                 DesiredQuantity = desiredQuantity,
@@ -294,7 +292,7 @@ namespace CollectaMundo.ViewModels.Decks
         {
             if (row.DesiredQuantity <= 0)
             {
-                await DeleteDeckCardsAsync([row]);
+                await DeleteDeckCardsInternalAsync([row]);
                 return;
             }
 
@@ -303,14 +301,28 @@ namespace CollectaMundo.ViewModels.Decks
 
         // Deleting a card
         [RelayCommand]
-        private async Task DeleteDeckCardsAsync(IReadOnlyList<DeckCardEntryViewModel> rows)
+        private Task DeleteDeckCardsAsync(object? param)
+        {
+            var rows = GetDeckRowsFromCommandParameter(param).ToList();
+
+            if (rows.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            return DeleteDeckCardsInternalAsync(rows);
+        }
+        private async Task DeleteDeckCardsInternalAsync(IReadOnlyList<DeckCardEntryViewModel> rows)
         {
             var removed = rows.Select(row => new
             {
                 Row = row,
                 Zone = GetZone(row.Section),
                 Index = GetZone(row.Section).Cards.IndexOf(row)
-            }).Where(x => x.Index >= 0).OrderByDescending(x => x.Index).ToList();
+            })
+            .Where(x => x.Index >= 0)
+            .OrderByDescending(x => x.Index)
+            .ToList();
 
             if (removed.Count == 0)
             {
@@ -335,6 +347,25 @@ namespace CollectaMundo.ViewModels.Decks
 
                 Debug.WriteLine($"Failed to delete deck card entries: {ex}");
                 throw;
+            }
+        }
+        private static IEnumerable<DeckCardEntryViewModel> GetDeckRowsFromCommandParameter(object? param)
+        {
+            if (param is DeckCardEntryViewModel singleRow)
+            {
+                yield return singleRow;
+                yield break;
+            }
+
+            if (param is IEnumerable selectedItems)
+            {
+                foreach (var item in selectedItems)
+                {
+                    if (item is DeckCardEntryViewModel row)
+                    {
+                        yield return row;
+                    }
+                }
             }
         }
 
@@ -389,19 +420,11 @@ namespace CollectaMundo.ViewModels.Decks
 
             if (row.DesiredQuantity <= 0)
             {
-                await DeleteDeckCardsAsync([row]);
+                await DeleteDeckCardsInternalAsync([row]);
                 return;
             }
 
             await PersistDeckAsync();
-        }
-
-
-        private sealed class AddCardsToDeckZoneRequest
-        {
-            public object? CardsParameter { get; init; }
-            public DeckSection Section { get; init; }
-            public int QuantityToAdd { get; init; } = 1;
         }
 
     }
