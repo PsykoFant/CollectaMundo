@@ -1,19 +1,15 @@
 TO DO 
 
 Deck editor!
-
-
-
- - Tilføj type til deck datagrid
- - Tilføj side-board, commander
- - Sorter deck datagrid efter kort type
- - Tilføj træk kort fra datagrid
- - Tilføj owned/allocated support
-
+ - Visibility triggers
  - Tilføj legality check (+ hasAlternativeDeckLimit + basic)
 
- - Tilføj højreklik fra allcards tilføj
+ - Tilføj owned/allocated support
+ - Sorter deck datagrid efter kort type
+ - Tilføj træk kort fra datagrid
 
+
+ - Tilføj højreklik fra allcards tilføj
  - Tilføj højreklik fra my collection
 
  - Tilføj stats

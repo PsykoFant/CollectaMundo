@@ -15,6 +15,7 @@ namespace CollectaMundo.ViewModels.Decks
         public string CardName => OracleCard.Name;
         public double? ManaValue => OracleCard.ManaValue;
         public ImageSource? ManaCostImage => OracleCard.ManaCostImage;
+        public string? Type => OracleCard.Type;
 
         public int OwnedQuantity => 0;
         public int AllocatedQuantity => 0;
