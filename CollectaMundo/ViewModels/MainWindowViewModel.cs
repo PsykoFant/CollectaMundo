@@ -16,6 +16,7 @@ using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
+using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
@@ -62,7 +63,6 @@ namespace CollectaMundo.ViewModels
 
         // Deck services
         private readonly IDeckManagementStore _deckManagementStore;
-        private readonly IDeckBuilderService _deckBuilderService;
 
         // Filtering infrastructure
         private readonly FilteringService _filteringService;
@@ -167,7 +167,6 @@ namespace CollectaMundo.ViewModels
             _cardLocationService = cardLocationService;
             _cardLocationLookupStore = cardLocationLookupStore;
             _deckManagementStore = deckManagementStore;
-            _deckBuilderService = deckBuilderService;
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
             _userPromptService = userPromptService;
@@ -195,7 +194,7 @@ namespace CollectaMundo.ViewModels
 
             // Deck management viewmodels
             DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
-            DeckBuilderVM = new DeckBuilderViewModel(_deckBuilderService, OracleCardsVM, FilterPanelVM);
+            DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, new DeckBuilderLogic(), OracleCardsVM, FilterPanelVM);
 
             var cardCollectionHost = this;
 

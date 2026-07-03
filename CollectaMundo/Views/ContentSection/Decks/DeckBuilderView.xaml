@@ -382,12 +382,14 @@
                 <Button Content="  Set as Companion  "
                         Height="20"
                         Margin="0,0,6,0"
+                        Visibility="{Binding CanSetSelectedOracleCardAsCompanion, Converter={StaticResource BoolToVisibilityConverter}}"
                         Command="{Binding SetOracleCardAsCompanionCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
                 <Button Content="  Set as Commander  "
                         Height="20"
                         Margin="0,0,6,0"
+                        Visibility="{Binding CanSetSelectedOracleCardAsCommander, Converter={StaticResource BoolToVisibilityConverter}}"
                         Command="{Binding SetOracleCardAsCommanderCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
