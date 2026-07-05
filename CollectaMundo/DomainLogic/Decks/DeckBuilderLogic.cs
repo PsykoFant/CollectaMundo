@@ -17,15 +17,17 @@ namespace CollectaMundo.DomainLogic.Decks
         // Commander rules
         private static bool CanBeCommander(DeckBuildingRuleContext context, OracleCard card)
         {
-            if (!IsCommanderFormat(context.Format))
+            if (!IsCommanderLikeFormat(context.Format))
             {
                 return false;
             }
 
             return IsLegendaryCreature(card) || RulesTextAllowsCommander(card);
 
-            static bool IsLegendaryCreature(OracleCard card) { return CsvContains(card.SuperTypes, "Legendary") && CsvContains(card.Types, "Creature"); }
-
+            static bool IsLegendaryCreature(OracleCard card)
+            {
+                return CsvContains(card.SuperTypes, "Legendary") && CsvContains(card.Types, "Creature");
+            }
         }
         private static bool RulesTextAllowsCommander(OracleCard card)
         {
@@ -37,6 +39,8 @@ namespace CollectaMundo.DomainLogic.Decks
         {
             return format is not null &&
                    (
+                       format.Equals(string.Empty) ||
+                       format.Equals("casual", StringComparison.OrdinalIgnoreCase) ||
                        format.Equals("commander", StringComparison.OrdinalIgnoreCase) ||
                        format.Equals("duel", StringComparison.OrdinalIgnoreCase) ||
                        format.Equals("predh", StringComparison.OrdinalIgnoreCase) ||
