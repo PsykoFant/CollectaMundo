@@ -51,7 +51,7 @@ namespace CollectaMundo.ViewModels.Decks
                 return new DeckActionAvailability();
             }
 
-            return _deckBuilderLogic.GetActionAvailability(CreateRuleContext(),SelectedOracleCard);
+            return _deckBuilderLogic.GetActionAvailability(CreateRuleContext(), SelectedOracleCard);
 
             DeckBuildingRuleContext CreateRuleContext()
             {
@@ -69,7 +69,6 @@ namespace CollectaMundo.ViewModels.Decks
                 };
             }
         }
-
 
         private DeckZoneViewModel GetZone(DeckSection section) { return Zones.First(z => z.Section == section); }
         private void AddRowToZone(DeckCardEntryViewModel row) { GetZone(row.Section).Cards.Add(row); }
@@ -165,7 +164,7 @@ namespace CollectaMundo.ViewModels.Decks
                 return;
             }
 
-            CardImageSelectionRequested?.Invoke(this,new OracleCardImageSelectionRequest(OracleId: value.OracleId,Name: value.CardName));
+            CardImageSelectionRequested?.Invoke(this, new OracleCardImageSelectionRequest(OracleId: value.OracleId, Name: value.CardName));
         }
 
         // Adding a card
