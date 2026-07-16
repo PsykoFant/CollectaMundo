@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
+using CollectaMundo.DomainLogic.Shared;
 using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.Filtering
@@ -78,36 +79,26 @@ namespace CollectaMundo.DomainLogic.Filtering
             var manaCost = GetPropertyValue(card, "ManaCost");
             var colors = GetPropertyValue(card, "Colors");
 
-            var manaCostSymbols = new HashSet<string>(
-                !string.IsNullOrWhiteSpace(manaCost)
-                    ? manaCost.Split(',').Select(s => s.Trim())
-                    : [],
-                StringComparer.OrdinalIgnoreCase);
+            var manaCostSymbols = CsvValues.Split(manaCost)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var colorSymbols = new HashSet<string>(
-                !string.IsNullOrWhiteSpace(colors)
-                    ? colors.Split(',').Select(s => s.Trim())
-                    : [],
-                StringComparer.OrdinalIgnoreCase);
+            var colorSymbols = CsvValues.Split(colors)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             var isColorless = string.IsNullOrWhiteSpace(colors);
 
+            bool MatchesOption(string option)
+            {
+                return option.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless
+                    || manaCostSymbols.Contains(option)
+                    || colorSymbols.Contains(option);
+            }
+
             return OperatorSelection switch
             {
-                OperatorType.AND => SelectedOptions.All(opt =>
-                    opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
-                    manaCostSymbols.Contains(opt) ||
-                    colorSymbols.Contains(opt)),
-
-                OperatorType.NOT => !SelectedOptions.Any(opt =>
-                    opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
-                    manaCostSymbols.Contains(opt) ||
-                    colorSymbols.Contains(opt)),
-
-                _ => SelectedOptions.Any(opt =>
-                    opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless ||
-                    manaCostSymbols.Contains(opt) ||
-                    colorSymbols.Contains(opt))
+                OperatorType.AND => SelectedOptions.All(MatchesOption),
+                OperatorType.NOT => !SelectedOptions.Any(MatchesOption),
+                _ => SelectedOptions.Any(MatchesOption)
             };
         }
         private bool MatchesExactStringOption(TCard card, string propertyName)
@@ -195,9 +186,9 @@ namespace CollectaMundo.DomainLogic.Filtering
 
             return OperatorSelection switch
             {
-                OperatorType.AND => SelectedOptions.All(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase)),
-                OperatorType.NOT => !SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase)),
-                _ => SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase))
+                OperatorType.AND => CsvValues.ContainsAll(cardValue, SelectedOptions),
+                OperatorType.NOT => !CsvValues.ContainsAny(cardValue, SelectedOptions),
+                _ => CsvValues.ContainsAny(cardValue, SelectedOptions)
             };
         }
         private bool MatchesNumeric(string cardValue)

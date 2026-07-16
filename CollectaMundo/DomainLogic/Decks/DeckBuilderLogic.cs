@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 
 namespace CollectaMundo.DomainLogic.Decks
@@ -10,7 +11,7 @@ namespace CollectaMundo.DomainLogic.Decks
             return new DeckActionAvailability
             {
                 CanSetAsCommander = CanBeCommander(context, selectedCard),
-                CanSetAsCompanion = CanBeCompanion(context, selectedCard)
+                CanSetAsCompanion = CanBeCompanion(selectedCard)
             };
         }
 
@@ -51,7 +52,7 @@ namespace CollectaMundo.DomainLogic.Decks
 
             static bool IsLegendaryCreature(OracleCard card)
             {
-                return CsvContains(card.SuperTypes, "Legendary") && CsvContains(card.Types, "Creature");
+                return CsvValues.Contains(card.SuperTypes, "Legendary") && CsvValues.Contains(card.Types, "Creature");
             }
 
             static bool IsAlreadyInZone(DeckBuildingRuleContext context, OracleCard card, DeckSection section)
@@ -69,10 +70,8 @@ namespace CollectaMundo.DomainLogic.Decks
             }
         }
 
-        private
-
         // Companion rules
-        private static bool CanBeCompanion(DeckBuildingRuleContext context, OracleCard card)
+        private static bool CanBeCompanion(OracleCard card)
         {
             return HasKeyword(card, "Companion");
         }
@@ -80,15 +79,8 @@ namespace CollectaMundo.DomainLogic.Decks
         // Shared helpers
         private static bool HasKeyword(OracleCard card, string keyword)
         {
-            return CsvContains(card.Keywords, keyword);
+            return CsvValues.Contains(card.Keywords, keyword);
         }
-        private static bool CsvContains(string? csv, string value)
-        {
-            return csv?
-                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                .Any(x => x.Equals(value, StringComparison.OrdinalIgnoreCase)) == true;
-        }
-
         public DeckCardValidationResult ValidateCard(DeckBuildingRuleContext context, DeckCardEntry entry, OracleCard oracleCard)
         {
             return new DeckCardValidationResult

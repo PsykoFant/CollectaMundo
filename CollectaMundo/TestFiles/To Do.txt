@@ -1,12 +1,17 @@
 TO DO 
 
 Deck editor!
+ - Filrer på gameplay cards skal filtrere på, hvilken tabel det kommer fra
+
  - Visibility triggers
+
  - Tilføj legality check (+ hasAlternativeDeckLimit + basic)
 
  - Tilføj owned/allocated support
  - Sorter deck datagrid efter kort type
  - Tilføj træk kort fra datagrid
+
+ - Kolonnebredde på deck manager
 
 
  - Tilføj højreklik fra allcards tilføj
