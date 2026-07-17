@@ -5,6 +5,7 @@
         public string? Availability { get; init; }
         public string? Colors { get; init; }
         public string? Finishes { get; init; }
+        public int GamePlayCard { get; init; }
         public string? Keywords { get; init; }
         public string? Language { get; init; }
         public string? ManaCostRaw { get; init; }

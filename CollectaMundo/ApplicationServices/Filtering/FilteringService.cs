@@ -28,7 +28,7 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     _ => false
                 });
         }
-        public List<TCard> ApplyFilters<TCard>(IEnumerable<TCard> cards, IEnumerable<FilterItemViewModel> vmFilters, bool gameplayCardsOnly)
+        public List<TCard> ApplyFilters<TCard>(IEnumerable<TCard> cards, IEnumerable<FilterItemViewModel> vmFilters)
         {
             if (vmFilters == null || !vmFilters.Any())
             {
@@ -36,11 +36,6 @@ namespace CollectaMundo.ApplicationServices.Filtering
             }
 
             var filtered = cards;
-
-            if (gameplayCardsOnly)
-            {
-                filtered = filtered.Where(IsGameplayCard);
-            }
 
             var criteria = vmFilters
                 .Select(vm => new FilteringLogic<TCard>(
@@ -68,34 +63,6 @@ namespace CollectaMundo.ApplicationServices.Filtering
                 Debug.WriteLine($"[Filter] ERROR during filtering: {ex}");
                 return [.. cards]; // fallback
             }
-        }
-        private static bool IsGameplayCard<TCard>(TCard card)
-        {
-            var types = typeof(TCard).GetProperty("Types")?.GetValue(card)?.ToString();
-
-            if (string.IsNullOrWhiteSpace(types))
-            {
-                return true;
-            }
-
-            var nonGameplayTypes = new[]
-            {
-                "Boss",
-                "Card",
-                "Conspiracy",
-                "Emblem",
-                "Event",
-                "Phenome-nom",
-                "Phenomenon",
-                "Plane",
-                "Scheme",
-                "Stickers",
-                "Token",
-                "Vanguard"
-            };
-
-            return !nonGameplayTypes.Any(t =>
-                types.Contains(t, StringComparison.OrdinalIgnoreCase));
         }
         public void ResetAllFilters(IEnumerable<FilterItemViewModel> allFilters)
         {
@@ -161,6 +128,11 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     }
                     // For filters that use checkboxes (e.g. CardsForTrade),
                     // explicitly reset the trade-related properties.
+                    if (filter.CriteriaKey == "GameplayCard")
+                    {
+                        filter.IsGameplayCardsOnlyChecked = false;
+                    }
+
                     if (filter.CriteriaKey == "CardsForTrade")
                     {
                         filter.IsTradeChecked = false;
@@ -173,16 +145,11 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     break;
             }
         }
-        public string BuildSummary(IEnumerable<FilterItemViewModel> filters, bool gameplayCardsOnly)
+        public string BuildSummary(IEnumerable<FilterItemViewModel> filters)
         {
             try
             {
                 var summary = new StringBuilder();
-
-                if (gameplayCardsOnly)
-                {
-                    summary.Append("Card type: {Gameplay cards only} AND ");
-                }
 
                 foreach (var filter in filters)
                 {

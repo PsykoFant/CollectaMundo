@@ -478,7 +478,7 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
             EditCardsVM.ReconcileOpenRowsWithCollection(MyCollectionVM.Cards);
 
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterPanelVM.Filters.Values, FilterPanelVM.IsGameplayCardsOnlyChecked);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterPanelVM.Filters.Values);
 
             _facetScheduler.Cancel();
             _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterPanelVM.Filters));
@@ -599,9 +599,8 @@ namespace CollectaMundo.ViewModels
         private void OnFilterChanged(object? sender, EventArgs e)
         {
             var filters = FilterPanelVM.Filters.Values;
-            var gameplayCardsOnly = FilterPanelVM.IsGameplayCardsOnlyChecked;
 
-            if (!gameplayCardsOnly && !FilteringService.HasActiveFilters(filters))
+            if (!FilteringService.HasActiveFilters(filters))
             {
                 AllCardsVM.FilteredCards = AllCardsVM.Cards;
                 MyCollectionVM.FilteredCards = MyCollectionVM.Cards;
@@ -609,9 +608,9 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, filters, gameplayCardsOnly);
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, filters, gameplayCardsOnly);
-            OracleCardsVM.FilteredCards = _filteringService.ApplyFilters(OracleCardsVM.Cards, filters, gameplayCardsOnly);
+            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, filters);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, filters);
+            OracleCardsVM.FilteredCards = _filteringService.ApplyFilters(OracleCardsVM.Cards, filters);
         }
 
         // Card images

@@ -27,6 +27,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                                     c.uuid              AS Uuid,
                                     c.otherFaceIds      AS OtherFaceIds,
                                     c.availability      AS Availability,
+                                    1                   AS GameplayCard,
                                     c.finishes          AS Finishes,
                                     c.side              AS Side,
                                     c.rarity            AS Rarity
@@ -53,6 +54,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                                     t.uuid              AS Uuid,
                                     t.otherFaceIds      AS OtherFaceIds,
                                     t.availability      AS Availability,
+                                    0                   AS GameplayCard,
                                     t.finishes          AS Finishes,
                                     t.side              AS Side,
                                     NULL                AS Rarity
@@ -91,6 +93,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                 Side = GetFieldValue<string>(r, "Side"),
                 OtherFaceIds = GetFieldValue<string>(r, "OtherFaceIds"),
                 Availability = GetFieldValue<string>(r, "Availability"),
+                GamePlayCard = GetFieldValue<int>(r, "GamePlayCard"),
                 ManaValue = GetFieldValue<double?>(r, "ManaValue"),
                 Uuid = GetFieldValue<string>(r, "Uuid"),
                 Language = GetFieldValue<string>(r, "Language"),

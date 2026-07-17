@@ -5,7 +5,7 @@ Deck editor!
 
  - Visibility triggers
 
- - Tilføj legality check (+ hasAlternativeDeckLimit + basic)
+ - Tilføj legality check (commander)
 
  - Tilføj owned/allocated support
  - Sorter deck datagrid efter kort type

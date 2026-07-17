@@ -21,6 +21,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public string? ManaCost => Printing.ManaCost;
         public string? ManaCostRaw => Printing.ManaCostRaw;
         public string? Colors => Printing.Colors;
+        public int GamePlayCard => Printing.GamePlayCard;
         public string? Type => Printing.Type;
         public string? Types => Printing.Types;
         public string? SuperTypes => Printing.SuperTypes;

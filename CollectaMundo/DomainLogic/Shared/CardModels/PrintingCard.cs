@@ -18,6 +18,7 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
                 ? []
                 : Finishes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         public decimal? FoilPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.FoilPrice;
+        public int GamePlayCard => Oracle.GamePlayCard;
 
         private ImageSource? _keyRuneImage;
         public ImageSource? KeyRuneImage

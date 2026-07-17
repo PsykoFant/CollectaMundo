@@ -29,13 +29,6 @@ namespace CollectaMundo.ViewModels.Filtering
         [ObservableProperty]
         private string? filterSummary;
 
-        [ObservableProperty]
-        private bool isGameplayCardsOnlyChecked;
-        partial void OnIsGameplayCardsOnlyCheckedChanged(bool value)
-        {
-            NotifyFilterChanged();
-        }
-
         [RelayCommand]
         private void ClearFilters()
         {
@@ -43,7 +36,6 @@ namespace CollectaMundo.ViewModels.Filtering
 
             try
             {
-                IsGameplayCardsOnlyChecked = false;
                 _filteringService.ResetAllFilters(Filters.Values);
             }
             finally
@@ -67,7 +59,7 @@ namespace CollectaMundo.ViewModels.Filtering
                 return;
             }
 
-            FilterSummary = _filteringService.BuildSummary(Filters.Values, IsGameplayCardsOnlyChecked);
+            FilterSummary = _filteringService.BuildSummary(Filters.Values);
             FilterChanged?.Invoke(this, EventArgs.Empty);
         }
     }

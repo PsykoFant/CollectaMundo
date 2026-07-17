@@ -43,7 +43,7 @@ namespace CollectaMundo.Data.Filtering
                 return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues: [], explicitOptions);
             }
 
-            var rawValues = criteriaKey switch
+            List<string> rawValues = criteriaKey switch
             {
                 "Colors" => ["W", "U", "B", "R", "G", "C", "X", "Colorless"],
                 "Text" or "Comment" or "CardsForTrade" => [],
@@ -57,7 +57,9 @@ namespace CollectaMundo.Data.Filtering
                 "Keywords" => ExtractValues(cards, c => c.Keywords),
                 "Finishes" => ExtractValues(cards, c => c.Finishes),
                 "Availability" => ExtractValues(cards, c => c.Availability),
-                _ => throw new Exception($"Unhandled printing criteria key: {criteriaKey}")
+                "GamePlayCard" => ["0", "1"],
+                _ => throw new Exception(
+                    $"Unhandled printing criteria key: {criteriaKey}")
             };
 
             return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues, explicitOptions: null);

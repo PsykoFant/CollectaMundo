@@ -126,6 +126,16 @@ namespace CollectaMundo.ViewModels.Filtering
         }
 
         [ObservableProperty]
+        private bool isGameplayCardsOnlyChecked;
+        partial void OnIsGameplayCardsOnlyCheckedChanged(bool value)
+        {
+            SelectedNumericValue = value ? 1 : 0;
+            OperatorSelection = OperatorType.EQUALS;
+
+            NotifyFilterChanged();
+        }
+
+        [ObservableProperty]
         private bool isTradeChecked;
         partial void OnIsTradeCheckedChanged(bool value)
         {
@@ -264,7 +274,6 @@ namespace CollectaMundo.ViewModels.Filtering
                 NotifyFilterChanged();
             }
         }
-
         private void ApplyTextFilter()
         {
             var effectiveFilterText =
