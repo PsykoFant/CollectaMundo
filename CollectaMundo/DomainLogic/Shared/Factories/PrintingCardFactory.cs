@@ -12,6 +12,7 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
             var oracle = new OracleCard
             {
                 Colors = JoinAndDedupCsv(row.Colors),
+                GamePlayCard = row.GamePlayCard,
                 Keywords = JoinAndDedupCsv(row.Keywords),
                 LegalityMasks = legalityMasks,
                 ManaCost = ProcessManaCost(row.ManaCostRaw),

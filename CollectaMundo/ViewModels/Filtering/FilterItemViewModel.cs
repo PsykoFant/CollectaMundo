@@ -17,7 +17,7 @@ namespace CollectaMundo.ViewModels.Filtering
 {
     public partial class FilterItemViewModel : ObservableObject
     {
-        private readonly FilterPanelViewModel _filterViewModel;
+        private readonly FilterPanelViewModel _filterPanelViewModel;
         private readonly IFilterItemSearchLogic _filterItemSearchLogic;
         private readonly Timer? _typingTimer;
         private bool _isSelectionInProgress = false;
@@ -81,7 +81,7 @@ namespace CollectaMundo.ViewModels.Filtering
                 return;
             }
 
-            _filterViewModel.NotifyFilterChanged();
+            _filterPanelViewModel.NotifyFilterChanged();
         }
 
         [ObservableProperty]
@@ -131,6 +131,8 @@ namespace CollectaMundo.ViewModels.Filtering
         {
             SelectedNumericValue = value ? 1 : 0;
             OperatorSelection = OperatorType.EQUALS;
+
+            Debug.WriteLine($"GameplayCardsOnly filter changed: {value}, SelectedNumericValue: {SelectedNumericValue}, OperatorSelection: {OperatorSelection}");
 
             NotifyFilterChanged();
         }
@@ -207,7 +209,7 @@ namespace CollectaMundo.ViewModels.Filtering
         // Constructor
         public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterPanelViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null)
         {
-            _filterViewModel = filterViewModel;
+            _filterPanelViewModel = filterViewModel;
             _filterItemSearchLogic = filterItemSearchLogic;
 
             CriteriaKey = criteriaKey;

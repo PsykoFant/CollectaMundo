@@ -64,6 +64,8 @@ namespace CollectaMundo.DomainLogic.CardLists
                     OtherFaceIds = printing.Oracle.OtherFaceIds,
                     ManaValue = printing.Oracle.ManaValue,
 
+                    GamePlayCard = printing.Oracle.GamePlayCard,
+
                     LegalityMasks = aggregatedLegalityMasks,
 
                     Keywords = string.Join(",", allKeywords),
