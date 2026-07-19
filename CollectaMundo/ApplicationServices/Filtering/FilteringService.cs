@@ -185,10 +185,21 @@ namespace CollectaMundo.ApplicationServices.Filtering
                             break;
 
                         case FilterType.Numeric:
-                            if (filter.SelectedNumericValue != null)
+                            if (filter.SelectedNumericValue is not null)
                             {
-                                summary.Append($"{filter.ReadableLabel} {GetOperatorSymbol(filter.OperatorSelection)} {filter.SelectedNumericValue} AND ");
+                                if (filter.CriteriaKey.Equals("GamePlayCard", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    summary.Append($"{filter.ReadableLabel} == true AND ");
+                                }
+                                else
+                                {
+                                    summary.Append(
+                                        $"{filter.ReadableLabel} " +
+                                        $"{GetOperatorSymbol(filter.OperatorSelection)} " +
+                                        $"{filter.SelectedNumericValue} AND ");
+                                }
                             }
+
                             break;
                     }
                 }

@@ -129,10 +129,8 @@ namespace CollectaMundo.ViewModels.Filtering
         private bool isGameplayCardsOnlyChecked;
         partial void OnIsGameplayCardsOnlyCheckedChanged(bool value)
         {
-            SelectedNumericValue = value ? 1 : 0;
+            SelectedNumericValue = value ? 1 : null;
             OperatorSelection = OperatorType.EQUALS;
-
-            Debug.WriteLine($"GameplayCardsOnly filter changed: {value}, SelectedNumericValue: {SelectedNumericValue}, OperatorSelection: {OperatorSelection}");
 
             NotifyFilterChanged();
         }

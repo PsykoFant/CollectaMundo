@@ -1,8 +1,6 @@
 TO DO 
 
 Deck editor!
- - Filrer på gameplay cards skal filtrere på, hvilken tabel det kommer fra
-
  - Visibility triggers
 
  - Tilføj legality check (commander)
@@ -19,6 +17,7 @@ Deck editor!
 
  - Tilføj stats
  - Tilføj pris
+ - Tilføj ekport decklist/want list
 
 
 

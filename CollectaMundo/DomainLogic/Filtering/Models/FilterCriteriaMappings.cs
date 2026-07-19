@@ -23,7 +23,7 @@ namespace CollectaMundo.DomainLogic.Filtering.Models
             { "LegalFormats",      new("Legal in",              FilterType.Multi,   [OperatorType.OR, OperatorType.AND, OperatorType.NOT],false,            FilterDataSource.Printing, GenerateFilterOptions: true) },
             { "Finishes",          new("",                      FilterType.Multi,   [OperatorType.OR, OperatorType.NOT],false,                              FilterDataSource.Printing, GenerateFilterOptions: false) },
             { "Availability",      new("",                      FilterType.Multi,   [OperatorType.OR, OperatorType.AND, OperatorType.NOT],false,            FilterDataSource.Printing, GenerateFilterOptions: true) },
-            { "GamePlayCard",      new("Gameplay card",         FilterType.Numeric, [OperatorType.EQUALS,],false,                                           FilterDataSource.Printing, GenerateFilterOptions: false) },
+            { "GamePlayCard",      new("Gameplay Cards Only",   FilterType.Numeric, [OperatorType.EQUALS,],false,                                           FilterDataSource.Printing, GenerateFilterOptions: false) },
             { "ManaValue",         new("",                      FilterType.Numeric,
                 [OperatorType.GREATER_THAN,OperatorType.LESS_THAN,OperatorType.EQUALS,OperatorType.GREATER_THAN_OR_EQUALS,OperatorType.LESS_THAN_OR_EQUALS ],false,
                                                                                                                                             FilterDataSource.Printing, GenerateFilterOptions: true) },    
