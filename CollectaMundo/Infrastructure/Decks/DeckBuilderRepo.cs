@@ -24,13 +24,14 @@ namespace CollectaMundo.Infrastructure.Decks
                                         WHEN 'Mainboard' THEN 2
                                         WHEN 'Sideboard' THEN 3
                                         WHEN 'Maybeboard' THEN 4
+                                        ELSE 5
                                     END,
                                     cardName COLLATE NOCASE;
                                 """;
 
             using var command = connection.CreateCommand();
             command.CommandText = sql;
-            command.Parameters.AddWithValue("@locationId", locationId);
+            command.Parameters.Add("@locationId", DbType.Int32).Value = locationId;
 
             var results = new List<DeckCardEntry>();
 
@@ -44,66 +45,77 @@ namespace CollectaMundo.Infrastructure.Decks
                     OracleId = reader.GetString(1),
                     CardName = reader.GetString(2),
                     DesiredQuantity = reader.GetInt32(3),
-                    Section = Enum.Parse<DeckSection>(reader.GetString(4))
+                    Section = Enum.Parse<DeckSection>(reader.GetString(4), ignoreCase: true)
                 });
             }
 
             return results;
         }
-        public async Task ReplaceDeckAsync(SQLiteConnection connection, SQLiteTransaction transaction, int locationId, IReadOnlyList<DeckCardEntry> entries)
+        public async Task ReplaceDeckAsync(SQLiteConnection connection, SQLiteTransaction transaction, int locationId, IReadOnlyCollection<DeckCardEntry> entries)
         {
-            const string deleteSql = """
-                                    DELETE FROM myDeckCards
-                                    WHERE locationId = @locationId;
-                                    """;
+            await DeleteDeckEntriesAsync(connection, transaction, locationId);
+            await InsertDeckEntriesAsync(connection, transaction, locationId, entries);
+        }
+        private static async Task DeleteDeckEntriesAsync(SQLiteConnection connection, SQLiteTransaction transaction, int locationId)
+        {
+            const string sql = """
+                                DELETE FROM myDeckCards
+                                WHERE locationId = @locationId;
+                                """;
 
-            using (var delete = connection.CreateCommand())
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = sql;
+
+            command.Parameters.Add("@locationId", DbType.Int32).Value = locationId;
+
+            await command.ExecuteNonQueryAsync();
+        }
+        private static async Task InsertDeckEntriesAsync(SQLiteConnection connection, SQLiteTransaction transaction, int locationId, IReadOnlyCollection<DeckCardEntry> entries)
+        {
+            const string sql = """
+                                INSERT INTO myDeckCards
+                                (
+                                    locationId,
+                                    oracleId,
+                                    cardName,
+                                    desiredQuantity,
+                                    section
+                                )
+                                VALUES
+                                (
+                                    @locationId,
+                                    @oracleId,
+                                    @cardName,
+                                    @desiredQuantity,
+                                    @section
+                                );
+                                """;
+
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = sql;
+
+            var locationParameter = command.Parameters.Add("@locationId", DbType.Int32);
+            var oracleIdParameter = command.Parameters.Add("@oracleId", DbType.String);
+            var cardNameParameter = command.Parameters.Add("@cardName", DbType.String);
+            var quantityParameter = command.Parameters.Add("@desiredQuantity", DbType.Int32);
+            var sectionParameter = command.Parameters.Add("@section", DbType.String);
+
+            foreach (var entry in entries)
             {
-                delete.Transaction = transaction;
-                delete.CommandText = deleteSql;
-                delete.Parameters.AddWithValue("@locationId", locationId);
+                if (entry.DesiredQuantity <= 0)
+                {
+                    continue;
+                }
 
-                await delete.ExecuteNonQueryAsync();
-            }
+                locationParameter.Value = locationId;
+                oracleIdParameter.Value = entry.OracleId;
+                cardNameParameter.Value = entry.CardName;
+                quantityParameter.Value = entry.DesiredQuantity;
+                sectionParameter.Value = entry.Section.ToString();
 
-            const string insertSql = """
-                                    INSERT INTO myDeckCards
-                                    (
-                                        locationId,
-                                        oracleId,
-                                        cardName,
-                                        desiredQuantity,
-                                        section
-                                    )
-                                    VALUES
-                                    (
-                                        @locationId,
-                                        @oracleId,
-                                        @cardName,
-                                        @desiredQuantity,
-                                        @section
-                                    );
-                                    """;
-
-            using var insert = connection.CreateCommand();
-            insert.Transaction = transaction;
-            insert.CommandText = insertSql;
-
-            var pLocationId = insert.Parameters.Add("@locationId", DbType.Int32);
-            var pOracleId = insert.Parameters.Add("@oracleId", DbType.String);
-            var pCardName = insert.Parameters.Add("@cardName", DbType.String);
-            var pQuantity = insert.Parameters.Add("@desiredQuantity", DbType.Int32);
-            var pSection = insert.Parameters.Add("@section", DbType.String);
-
-            foreach (var entry in entries.Where(x => x.DesiredQuantity > 0))
-            {
-                pLocationId.Value = locationId;
-                pOracleId.Value = entry.OracleId;
-                pCardName.Value = entry.CardName;
-                pQuantity.Value = entry.DesiredQuantity;
-                pSection.Value = entry.Section.ToString();
-
-                await insert.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync();
             }
         }
     }

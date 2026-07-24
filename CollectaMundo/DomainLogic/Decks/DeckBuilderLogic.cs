@@ -4,70 +4,111 @@ using CollectaMundo.DomainLogic.Shared.CardModels;
 
 namespace CollectaMundo.DomainLogic.Decks
 {
-    public class DeckBuilderLogic : IDeckBuilderLogic
+    public sealed class DeckBuilderLogic : IDeckBuilderLogic
     {
         public DeckActionAvailability GetActionAvailability(DeckBuildingRuleContext context, OracleCard selectedCard)
         {
             return new DeckActionAvailability
             {
-                CanSetAsCommander = CanBeCommander(context, selectedCard),
+                CanSetAsCommander = GetCommanderPlacement(context, selectedCard).IsAllowed,
                 CanSetAsCompanion = CanBeCompanion(selectedCard)
             };
         }
 
         // Commander rules
-        private static bool CanBeCommander(DeckBuildingRuleContext context, OracleCard card)
+        private static readonly HashSet<string> CommanderLikeFormats = new(StringComparer.OrdinalIgnoreCase)
+        {
+            string.Empty,
+            "casual",
+            "commander",
+            "duel",
+            "predh",
+            "brawl",
+            "standardbrawl",
+            "paupercommander",
+            "oathbreaker",
+            "tlr"
+        };
+        public CommanderPlacementResult GetCommanderPlacement(DeckBuildingRuleContext context, OracleCard selectedCard)
         {
             if (!IsCommanderLikeFormat(context.Format))
             {
-                return false;
+                return NotAllowed("The selected format does not use commanders.");
             }
 
-            if (IsAlreadyInZone(context, card, DeckSection.Commander))
+            if (!IsCommanderEligible(selectedCard))
             {
-                return false;
+                return NotAllowed("The selected card cannot be a commander.");
             }
 
-            return IsLegendaryCreature(card) || RulesTextAllowsCommander(card);
+            var existingCommanders = context.Entries.Where(x => x.Section == DeckSection.Commander).ToList();
 
-
-            // Local helpers
-
-            static bool IsCommanderLikeFormat(string? format)
+            if (existingCommanders.Any(x => string.Equals(x.Card.ScryfallOracleId, selectedCard.ScryfallOracleId, StringComparison.OrdinalIgnoreCase)))
             {
-                return format is not null &&
-                       (
-                           format.Equals(string.Empty) ||
-                           format.Equals("casual", StringComparison.OrdinalIgnoreCase) ||
-                           format.Equals("commander", StringComparison.OrdinalIgnoreCase) ||
-                           format.Equals("duel", StringComparison.OrdinalIgnoreCase) ||
-                           format.Equals("predh", StringComparison.OrdinalIgnoreCase) ||
-                           format.Equals("brawl", StringComparison.OrdinalIgnoreCase) ||
-                           format.Equals("standardbrawl", StringComparison.OrdinalIgnoreCase) ||
-                           format.Equals("paupercommander", StringComparison.OrdinalIgnoreCase) ||
-                           format.Equals("oathbreaker", StringComparison.OrdinalIgnoreCase) ||
-                           format.Equals("tlr", StringComparison.OrdinalIgnoreCase)
-                       );
+                return NotAllowed("The selected card is already a commander.");
             }
 
-            static bool IsLegendaryCreature(OracleCard card)
+            if (existingCommanders.Count == 0)
             {
-                return CsvValues.Contains(card.SuperTypes, "Legendary") && CsvValues.Contains(card.Types, "Creature");
+                return Allowed(CommanderPlacementAction.Add);
             }
 
-            static bool IsAlreadyInZone(DeckBuildingRuleContext context, OracleCard card, DeckSection section)
+            if (existingCommanders.Count == 1 && (AllowsAdditionalCommander(selectedCard) || AllowsAdditionalCommander(existingCommanders[0].Card)))
             {
-                return context.Entries.Any(x =>
-                    x.Section == section &&
-                    x.OracleId.Equals(card.ScryfallOracleId, StringComparison.OrdinalIgnoreCase));
+                return Allowed(CommanderPlacementAction.Add);
             }
 
-            static bool RulesTextAllowsCommander(OracleCard card)
+            return Allowed(CommanderPlacementAction.Replace);
+
+
+            static CommanderPlacementResult Allowed(CommanderPlacementAction action)
             {
-                var text = card.Text ?? string.Empty;
-
-                return text.Contains("can be your commander", StringComparison.OrdinalIgnoreCase) || text.Contains("can be a commander", StringComparison.OrdinalIgnoreCase);
+                return new CommanderPlacementResult
+                {
+                    Action = action
+                };
             }
+
+            static CommanderPlacementResult NotAllowed(string message)
+            {
+                return new CommanderPlacementResult
+                {
+                    Action = CommanderPlacementAction.NotAllowed,
+                    Message = message
+                };
+            }
+        }
+        private static bool IsCommanderLikeFormat(string? format)
+        {
+            return format is not null && CommanderLikeFormats.Contains(format);
+        }
+        private static bool IsCommanderEligible(OracleCard card)
+        {
+            return IsLegendaryCreature(card) || RulesTextAllowsCommander(card) || IsBackground(card);
+        }
+        private static bool AllowsAdditionalCommander(OracleCard card)
+        {
+            return CsvValues.Contains(card.Keywords, "Partner")
+                || CsvValues.Contains(card.Keywords, "Partner with")
+                || CsvValues.Contains(card.Keywords, "Friends forever")
+                || CsvValues.Contains(card.Keywords, "Doctor's Companion")
+                || CsvValues.Contains(card.Keywords, "Choose a Background")
+                || CsvValues.Contains(card.SubTypes, "Background");
+        }
+        private static bool IsLegendaryCreature(OracleCard card)
+        {
+            return CsvValues.Contains(card.SuperTypes, "Legendary") && CsvValues.Contains(card.Types, "Creature");
+        }
+        private static bool RulesTextAllowsCommander(OracleCard card)
+        {
+            var text = card.Text ?? string.Empty;
+
+            return text.Contains("can be your commander", StringComparison.OrdinalIgnoreCase) || text.Contains("can be a commander", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsBackground(OracleCard card)
+        {
+            return CsvValues.Contains(card.SubTypes, "Background");
         }
 
         // Companion rules

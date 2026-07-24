@@ -20,6 +20,7 @@ using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CollectionMutations;
+using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.ModifyCollection;
@@ -113,7 +114,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
 
                 var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityProviderService);
-                var deckBuilderService = new DeckBuilderService(uowRunner, new DeckBuilderRepo());
+                var deckBuilderService = new DeckBuilderService(uowRunner, new DeckBuilderLogic(), new DeckBuilderRepo());
 
                 var importService = new ImportService(uowRunner, new ImportRepo(), fileSystemPicker, new ImportLogic(), cardLocationService);
 
