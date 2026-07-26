@@ -1,6 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Decks.Models.Enums;
+using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks.Models;
@@ -58,6 +60,8 @@ namespace CollectaMundo.ViewModels.Decks
         private void AddRowToZone(DeckCardEntryViewModel row) { GetZone(row.Section).Cards.Add(row); }
         private void ClearZones()
         {
+            Debug.WriteLine("ClearZones called");
+
             foreach (var zone in Zones)
             {
                 zone.Cards.Clear();
@@ -78,7 +82,49 @@ namespace CollectaMundo.ViewModels.Decks
         private OracleCard? selectedOracleCard;
 
         [ObservableProperty]
-        private DeckCardEntryViewModel? selectedDeckCard;
+        private DeckCardEntryViewModel? selectedMainboardCard;
+        partial void OnSelectedMainboardCardChanged(DeckCardEntryViewModel? value)
+        {
+            HandleSelectedDeckCardChanged(value);
+        }
+
+        [ObservableProperty]
+        private DeckCardEntryViewModel? selectedSideboardCard;
+        partial void OnSelectedSideboardCardChanged(DeckCardEntryViewModel? value)
+        {
+            HandleSelectedDeckCardChanged(value);
+        }
+
+        [ObservableProperty]
+        private DeckCardEntryViewModel? selectedCommanderCard;
+        partial void OnSelectedCommanderCardChanged(DeckCardEntryViewModel? value)
+        {
+            HandleSelectedDeckCardChanged(value);
+        }
+
+        [ObservableProperty]
+        private DeckCardEntryViewModel? selectedCompanionCard;
+        partial void OnSelectedCompanionCardChanged(DeckCardEntryViewModel? value)
+        {
+            HandleSelectedDeckCardChanged(value);
+        }
+
+        [ObservableProperty]
+        private DeckCardEntryViewModel? selectedMaybeboardCard;
+        partial void OnSelectedMaybeboardCardChanged(DeckCardEntryViewModel? value)
+        {
+            HandleSelectedDeckCardChanged(value);
+        }
+
+        private void HandleSelectedDeckCardChanged(DeckCardEntryViewModel? value)
+        {
+            if (value is null)
+            {
+                return;
+            }
+
+            CardImageSelectionRequested?.Invoke(this, new OracleCardImageSelectionRequest(OracleId: value.OracleId, Name: value.CardName));
+        }
 
         [ObservableProperty]
         private int? deckLocationId;
@@ -142,18 +188,6 @@ namespace CollectaMundo.ViewModels.Decks
             CardImageSelectionRequested?.Invoke(this, new OracleCardImageSelectionRequest(OracleId: value.ScryfallOracleId, Name: value.Name));
         }
 
-        // Selecting a card in deck datagrid
-        partial void OnSelectedDeckCardChanged(DeckCardEntryViewModel? value)
-        {
-            if (value is null)
-            {
-                CardImageSelectionRequested?.Invoke(this, new OracleCardImageSelectionRequest());
-                return;
-            }
-
-            CardImageSelectionRequested?.Invoke(this, new OracleCardImageSelectionRequest(OracleId: value.OracleId, Name: value.CardName));
-        }
-
         // Adding a card
 
         [RelayCommand]
@@ -191,14 +225,7 @@ namespace CollectaMundo.ViewModels.Decks
             }
 
             var result = await _deckBuilderService.SetCommanderAsync(DeckLocationId.Value, DeckFormat, CreateDeckCardStates(), selectedCard);
-
-            if (!result.Succeeded)
-            {
-                return;
-            }
-
-            ApplyDeckState(result.Cards);
-            RefreshRuleDependentProperties();
+            ApplySuccessfulMutation(result);
         }
         private IReadOnlyList<DeckCardState> CreateDeckCardStates()
         {
@@ -209,8 +236,22 @@ namespace CollectaMundo.ViewModels.Decks
                 Section = x.Section
             })];
         }
-        private void ApplyDeckState(IEnumerable<DeckCardState> cards)
+        private void ApplySuccessfulMutation(DeckMutationResult result)
         {
+            if (!result.Succeeded)
+            {
+                Debug.WriteLine($"Deck mutation failed: {result.Message}");
+
+                return;
+            }
+
+            ApplyDeckState(result.Cards);
+            RefreshRuleDependentProperties();
+        }
+        private void ApplyDeckState(IReadOnlyCollection<DeckCardState> cards)
+        {
+            Debug.WriteLine("ApplyDeckState called");
+
             ClearZones();
 
             foreach (var card in cards)
@@ -220,62 +261,39 @@ namespace CollectaMundo.ViewModels.Decks
         }
 
         [RelayCommand]
-        private Task SetOracleCardAsCompanionAsync(object? param)
+        private async Task SetOracleCardAsCompanionAsync(object? parameter)
         {
-            return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Companion);
-        }
+            var selectedCard = GetOracleCardsFromCommandParameter(parameter).FirstOrDefault();
 
-        // Add OracleCard helpers
-        private async Task AddOracleCardsQuantityToDeckAsync(object? param, int quantityToAdd, DeckSection section)
-        {
-            var cards = GetOracleCardsFromCommandParameter(param).ToList();
-
-            if (cards.Count == 0 || DeckLocationId is null || quantityToAdd <= 0)
+            if (selectedCard is null || DeckLocationId is null)
             {
                 return;
             }
 
-            var addedRows = new List<DeckCardEntryViewModel>();
-            var changedRows = new List<(DeckCardEntryViewModel Row, int PreviousQuantity)>();
+            var result = await _deckBuilderService.SetCompanionAsync(DeckLocationId.Value, DeckFormat, CreateDeckCardStates(), selectedCard);
 
-            try
+            ApplySuccessfulMutation(result);
+        }
+
+
+        // Add OracleCard helpers
+        private async Task AddOracleCardsQuantityToDeckAsync(object? parameter, int quantity, DeckSection section)
+        {
+            if (DeckLocationId is null)
             {
-                var zone = GetZone(section);
-
-                foreach (var card in cards)
-                {
-                    var existing = zone.Cards.FirstOrDefault(x => x.OracleId == card.ScryfallOracleId);
-
-                    if (existing is not null)
-                    {
-                        changedRows.Add((existing, existing.DesiredQuantity));
-                        existing.DesiredQuantity += quantityToAdd;
-                    }
-                    else
-                    {
-                        var addedRow = CreateDeckRow(card, quantityToAdd, section);
-                        zone.Cards.Add(addedRow);
-                        addedRows.Add(addedRow);
-                    }
-                }
-
-                await PersistDeckAsync();
+                return;
             }
-            catch (Exception ex)
+
+            var selectedCards = GetOracleCardsFromCommandParameter(parameter).ToList();
+
+            if (selectedCards.Count == 0)
             {
-                foreach (var (row, previousQuantity) in changedRows)
-                {
-                    row.DesiredQuantity = previousQuantity;
-                }
-
-                foreach (var addedRow in addedRows)
-                {
-                    GetZone(addedRow.Section).Cards.Remove(addedRow);
-                }
-
-                Debug.WriteLine($"Failed to add cards to deck: {ex}");
-                throw;
+                return;
             }
+
+            var result = await _deckBuilderService.AddCardsAsync(DeckLocationId.Value, CreateDeckCardStates(), selectedCards, quantity, section);
+
+            ApplySuccessfulMutation(result);
         }
         private static IEnumerable<OracleCard> GetOracleCardsFromCommandParameter(object? param)
         {
@@ -307,66 +325,34 @@ namespace CollectaMundo.ViewModels.Decks
                 Section = section
             };
         }
-        private async Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel row)
+        private Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel? row)
         {
-            if (row.DesiredQuantity <= 0)
-            {
-                await DeleteDeckCardsInternalAsync([row]);
-                return;
-            }
-
-            await PersistDeckAsync();
-        }
-
-        // Deleting a card
-        [RelayCommand]
-        private Task DeleteDeckCardsAsync(object? param)
-        {
-            var rows = GetDeckRowsFromCommandParameter(param).ToList();
-
-            if (rows.Count == 0)
+            if (row is null)
             {
                 return Task.CompletedTask;
             }
 
-            return DeleteDeckCardsInternalAsync(rows);
+            return SetCardQuantityAsync(row, row.DesiredQuantity);
         }
-        private async Task DeleteDeckCardsInternalAsync(IReadOnlyList<DeckCardEntryViewModel> rows)
-        {
-            var removed = rows.Select(row => new
-            {
-                Row = row,
-                Zone = GetZone(row.Section),
-                Index = GetZone(row.Section).Cards.IndexOf(row)
-            })
-            .Where(x => x.Index >= 0)
-            .OrderByDescending(x => x.Index)
-            .ToList();
 
-            if (removed.Count == 0)
+        // Deleting a card
+        [RelayCommand]
+        private async Task DeleteDeckCardsAsync(object? param)
+        {
+            if (DeckLocationId is null)
             {
                 return;
             }
 
-            try
-            {
-                foreach (var item in removed)
-                {
-                    item.Zone.Cards.RemoveAt(item.Index);
-                }
+            var rows = GetDeckRowsFromCommandParameter(param).ToList();
 
-                await PersistDeckAsync();
-            }
-            catch (Exception ex)
+            if (rows.Count == 0)
             {
-                foreach (var item in removed.OrderBy(x => x.Index))
-                {
-                    item.Zone.Cards.Insert(item.Index, item.Row);
-                }
-
-                Debug.WriteLine($"Failed to delete deck card entries: {ex}");
-                throw;
+                return;
             }
+
+            var result = await _deckBuilderService.DeleteCardsAsync(DeckLocationId.Value, CreateDeckCardStates(), [.. rows.Select(row => new DeckCardIdentityRecord(row.OracleId, row.Section))]);
+            ApplySuccessfulMutation(result);
         }
         private static IEnumerable<DeckCardEntryViewModel> GetDeckRowsFromCommandParameter(object? param)
         {
@@ -388,18 +374,6 @@ namespace CollectaMundo.ViewModels.Decks
             }
         }
 
-        // Persist in db
-        private Task PersistDeckAsync()
-        {
-            if (DeckLocationId is null)
-            {
-                return Task.CompletedTask;
-            }
-
-            RefreshRuleDependentProperties();
-            return _deckBuilderService.SaveDeckAsync(DeckLocationId.Value, CreateDeckCardStates());
-        }
-
         [RelayCommand]
         private void BackToDeckManagement()
         {
@@ -408,34 +382,36 @@ namespace CollectaMundo.ViewModels.Decks
         }
 
         [RelayCommand]
-        private async Task IncrementDeckCardQuantityAsync(DeckCardEntryViewModel? row)
+        private Task IncrementDeckCardQuantityAsync(DeckCardEntryViewModel? row)
         {
             if (row is null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            row.DesiredQuantity++;
-            await PersistDeckAsync();
+            return SetCardQuantityAsync(row, row.DesiredQuantity + 1);
         }
 
         [RelayCommand]
-        private async Task DecrementDeckCardQuantityAsync(DeckCardEntryViewModel? row)
+        private Task DecrementDeckCardQuantityAsync(DeckCardEntryViewModel? row)
         {
-            if (row is null || row.DesiredQuantity <= 0)
+            if (row is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return SetCardQuantityAsync(row, row.DesiredQuantity - 1);
+        }
+        private async Task SetCardQuantityAsync(DeckCardEntryViewModel row, int desiredQuantity)
+        {
+            if (DeckLocationId is null)
             {
                 return;
             }
 
-            row.DesiredQuantity--;
+            var result = await _deckBuilderService.SetCardQuantityAsync(DeckLocationId.Value, CreateDeckCardStates(), new DeckCardIdentityRecord(row.OracleId, row.Section), desiredQuantity);
 
-            if (row.DesiredQuantity <= 0)
-            {
-                await DeleteDeckCardsInternalAsync([row]);
-                return;
-            }
-
-            await PersistDeckAsync();
+            ApplySuccessfulMutation(result);
         }
 
     }

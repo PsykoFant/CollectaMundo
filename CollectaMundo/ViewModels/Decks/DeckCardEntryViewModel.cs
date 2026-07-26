@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Decks.Models;
+﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.ViewModels.ModifyCollection.BindinViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;

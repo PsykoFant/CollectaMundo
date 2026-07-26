@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 
@@ -8,10 +9,13 @@ namespace CollectaMundo.DomainLogic.Decks
     {
         public DeckActionAvailability GetActionAvailability(DeckBuildingRuleContext context, OracleCard selectedCard)
         {
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentNullException.ThrowIfNull(selectedCard);
+
             return new DeckActionAvailability
             {
                 CanSetAsCommander = GetCommanderPlacement(context, selectedCard).IsAllowed,
-                CanSetAsCompanion = CanBeCompanion(selectedCard)
+                CanSetAsCompanion = GetCompanionPlacement(context, selectedCard).IsAllowed
             };
         }
 
@@ -29,8 +33,11 @@ namespace CollectaMundo.DomainLogic.Decks
             "oathbreaker",
             "tlr"
         };
-        public CommanderPlacementResult GetCommanderPlacement(DeckBuildingRuleContext context, OracleCard selectedCard)
+        public DeckSlotPlacementResult GetCommanderPlacement(DeckBuildingRuleContext context, OracleCard selectedCard)
         {
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentNullException.ThrowIfNull(selectedCard);
+
             if (!IsCommanderLikeFormat(context.Format))
             {
                 return NotAllowed("The selected format does not use commanders.");
@@ -50,30 +57,30 @@ namespace CollectaMundo.DomainLogic.Decks
 
             if (existingCommanders.Count == 0)
             {
-                return Allowed(CommanderPlacementAction.Add);
+                return Allowed(DeckSlotPlacementAction.Add);
             }
 
             if (existingCommanders.Count == 1 && (AllowsAdditionalCommander(selectedCard) || AllowsAdditionalCommander(existingCommanders[0].Card)))
             {
-                return Allowed(CommanderPlacementAction.Add);
+                return Allowed(DeckSlotPlacementAction.Add);
             }
 
-            return Allowed(CommanderPlacementAction.Replace);
+            return Allowed(DeckSlotPlacementAction.Replace);
 
 
-            static CommanderPlacementResult Allowed(CommanderPlacementAction action)
+            static DeckSlotPlacementResult Allowed(DeckSlotPlacementAction action)
             {
-                return new CommanderPlacementResult
+                return new DeckSlotPlacementResult
                 {
                     Action = action
                 };
             }
 
-            static CommanderPlacementResult NotAllowed(string message)
+            static DeckSlotPlacementResult NotAllowed(string message)
             {
-                return new CommanderPlacementResult
+                return new DeckSlotPlacementResult
                 {
-                    Action = CommanderPlacementAction.NotAllowed,
+                    Action = DeckSlotPlacementAction.NotAllowed,
                     Message = message
                 };
             }
@@ -105,16 +112,58 @@ namespace CollectaMundo.DomainLogic.Decks
 
             return text.Contains("can be your commander", StringComparison.OrdinalIgnoreCase) || text.Contains("can be a commander", StringComparison.OrdinalIgnoreCase);
         }
-
         private static bool IsBackground(OracleCard card)
         {
             return CsvValues.Contains(card.SubTypes, "Background");
         }
 
         // Companion rules
+        public DeckSlotPlacementResult GetCompanionPlacement(DeckBuildingRuleContext context, OracleCard candidate)
+        {
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentNullException.ThrowIfNull(candidate);
+
+            if (!CanBeCompanion(candidate))
+            {
+                return NotAllowed("The selected card is not eligible to be a companion.");
+            }
+
+            var currentCompanions = context.Entries.Where(entry => entry.Section == DeckSection.Companion).ToList();
+
+            if (currentCompanions.Count == 0)
+            {
+                return Allowed(DeckSlotPlacementAction.Add);
+            }
+
+            if (currentCompanions.Any(entry => SameOracleCard(entry.Card, candidate)))
+            {
+                return NotAllowed("The selected card is already the companion.");
+            }
+
+            return Allowed(DeckSlotPlacementAction.Replace);
+        }
         private static bool CanBeCompanion(OracleCard card)
         {
             return HasKeyword(card, "Companion");
+        }
+        private static DeckSlotPlacementResult Allowed(DeckSlotPlacementAction action)
+        {
+            return new DeckSlotPlacementResult
+            {
+                Action = action
+            };
+        }
+        private static DeckSlotPlacementResult NotAllowed(string message)
+        {
+            return new DeckSlotPlacementResult
+            {
+                Action = DeckSlotPlacementAction.NotAllowed,
+                Message = message
+            };
+        }
+        private static bool SameOracleCard(OracleCard left, OracleCard right)
+        {
+            return string.Equals(left.ScryfallOracleId, right.ScryfallOracleId, StringComparison.OrdinalIgnoreCase);
         }
 
         // Shared helpers

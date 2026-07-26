@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Decks.Models;
+﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ViewModels.Decks

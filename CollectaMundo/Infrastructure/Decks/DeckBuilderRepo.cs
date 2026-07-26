@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using System.Data;
 using System.Data.SQLite;
 

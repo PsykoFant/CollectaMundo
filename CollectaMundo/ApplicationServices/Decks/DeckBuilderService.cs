@@ -1,6 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Decks.Models.Enums;
+using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.Decks;
 
@@ -18,18 +20,124 @@ namespace CollectaMundo.ApplicationServices.Decks
                 return await _deckBuilderRepo.GetByDeckLocationIdAsync(conn, locationId);
             });
         }
-        public Task SaveDeckAsync(int locationId, IReadOnlyCollection<DeckCardState> cards)
+        public async Task<DeckMutationResult> AddCardsAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<OracleCard> selectedCards, int quantity, DeckSection section)
         {
-            return ReplaceDeckAsync(locationId, cards);
-        }
-        public Task SaveDeckAsync(int locationId, IEnumerable<DeckCardEntry> entries)
-        {
-            return _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
-            {
-                await _deckBuilderRepo.ReplaceDeckAsync(conn, tx, locationId, [.. entries]);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(deckLocationId);
+            ArgumentNullException.ThrowIfNull(currentCards);
+            ArgumentNullException.ThrowIfNull(selectedCards);
 
-                return (Result: true, Commit: true);
-            });
+            if (quantity <= 0)
+            {
+                return Failure(currentCards, "The quantity to add must be greater than zero.");
+            }
+
+            if (selectedCards.Count == 0)
+            {
+                return Failure(currentCards, "No cards were selected.");
+            }
+
+            if (section is DeckSection.Commander
+                or DeckSection.Companion)
+            {
+                return Failure(currentCards, "Commander and companion cards must use their dedicated operations.");
+            }
+
+            var updatedCards = currentCards.ToList();
+
+            foreach (var selectedCard in selectedCards)
+            {
+                var existingIndex = updatedCards.FindIndex(x => x.Section == section && string.Equals(x.Card.ScryfallOracleId, selectedCard.ScryfallOracleId, StringComparison.OrdinalIgnoreCase));
+
+                if (existingIndex >= 0)
+                {
+                    var existing = updatedCards[existingIndex];
+
+                    updatedCards[existingIndex] = new DeckCardState
+                    {
+                        Card = existing.Card,
+                        DesiredQuantity =
+                            existing.DesiredQuantity + quantity,
+                        Section = existing.Section
+                    };
+
+                    continue;
+                }
+
+                updatedCards.Add(new DeckCardState
+                {
+                    Card = selectedCard,
+                    DesiredQuantity = quantity,
+                    Section = section
+                });
+            }
+
+            await PersistDeckStateAsync(deckLocationId, updatedCards);
+            return Success(updatedCards);
+        }
+        public async Task<DeckMutationResult> DeleteCardsAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<DeckCardIdentityRecord> cardsToDelete)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(deckLocationId);
+            ArgumentNullException.ThrowIfNull(currentCards);
+            ArgumentNullException.ThrowIfNull(cardsToDelete);
+
+            if (cardsToDelete.Count == 0)
+            {
+                return Failure(currentCards, "No deck cards were selected for deletion.");
+            }
+
+            var deleteKeys = cardsToDelete.Select(x => new DeckCardKey(x.OracleId, x.Section)).ToHashSet();
+            var updatedCards = currentCards.Where(card => !cardsToDelete.Any(target => target.Section == card.Section && string.Equals(target.OracleId, card.Card.ScryfallOracleId, StringComparison.OrdinalIgnoreCase))).ToList();
+
+            if (updatedCards.Count == currentCards.Count)
+            {
+                return Failure(currentCards, "None of the selected deck cards were found.");
+            }
+
+            await PersistDeckStateAsync(deckLocationId, updatedCards);
+            return Success(updatedCards);
+        }
+        public async Task<DeckMutationResult> SetCardQuantityAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, DeckCardIdentityRecord card, int desiredQuantity)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(deckLocationId);
+            ArgumentNullException.ThrowIfNull(currentCards);
+            ArgumentNullException.ThrowIfNull(card);
+
+            if (card.Section is DeckSection.Commander or DeckSection.Companion)
+            {
+                return Failure(currentCards, "Commander and companion quantities cannot be edited.");
+            }
+
+            var updatedCards = currentCards.ToList();
+
+            var index = updatedCards.FindIndex(x => Matches(x, card));
+
+            if (index < 0)
+            {
+                return Failure(currentCards, "The selected deck card could not be found.");
+            }
+
+            if (desiredQuantity <= 0)
+            {
+                updatedCards.RemoveAt(index);
+            }
+            else
+            {
+                var existing = updatedCards[index];
+
+                updatedCards[index] = new DeckCardState
+                {
+                    Card = existing.Card,
+                    DesiredQuantity = desiredQuantity,
+                    Section = existing.Section
+                };
+            }
+
+            await PersistDeckStateAsync(deckLocationId, updatedCards);
+            return Success(updatedCards);
+        }
+        private static bool Matches(DeckCardState state, DeckCardIdentityRecord identity)
+        {
+            return state.Section == identity.Section && string.Equals(state.Card.ScryfallOracleId, identity.OracleId, StringComparison.OrdinalIgnoreCase);
         }
         public DeckActionAvailability GetActionAvailability(string? format, IReadOnlyCollection<DeckCardState> deckCards, OracleCard selectedCard)
         {
@@ -47,7 +155,7 @@ namespace CollectaMundo.ApplicationServices.Decks
                 Entries = [.. cards.Select(x => new DeckBuildingRuleEntry { Card = x.Card, Section = x.Section })]
             };
         }
-        public async Task<SetCommanderResult> SetCommanderAsync(int deckLocationId, string? format, IReadOnlyCollection<DeckCardState> currentCards, OracleCard selectedCard)
+        public async Task<DeckMutationResult> SetCommanderAsync(int deckLocationId, string? format, IReadOnlyCollection<DeckCardState> currentCards, OracleCard selectedCard)
         {
             ArgumentNullException.ThrowIfNull(currentCards);
             ArgumentNullException.ThrowIfNull(selectedCard);
@@ -58,7 +166,7 @@ namespace CollectaMundo.ApplicationServices.Decks
 
             if (!placement.IsAllowed)
             {
-                return new SetCommanderResult
+                return new DeckMutationResult
                 {
                     Succeeded = false,
                     Message = placement.Message,
@@ -68,25 +176,66 @@ namespace CollectaMundo.ApplicationServices.Decks
 
             var updatedCards = ApplyCommanderPlacement(currentCards, selectedCard, placement.Action);
 
-            await ReplaceDeckAsync(deckLocationId, updatedCards);
+            await PersistDeckStateAsync(deckLocationId, updatedCards);
 
-            return new SetCommanderResult
+            return new DeckMutationResult
             {
                 Succeeded = true,
                 Cards = updatedCards
             };
         }
+        public async Task<DeckMutationResult> SetCompanionAsync(int deckLocationId, string? format, IReadOnlyCollection<DeckCardState> currentCards, OracleCard selectedCard)
+        {
+            var context = CreateRuleContext(format, currentCards);
+
+            var placement = _deckBuilderLogic.GetCompanionPlacement(context, selectedCard);
+
+            if (!placement.IsAllowed)
+            {
+                return Failure(currentCards, placement.Message ?? "The selected card cannot be placed in that deck slot.");
+            }
+
+            var updatedCards = currentCards.Where(card => card.Section != DeckSection.Companion).ToList();
+
+            updatedCards.Add(new DeckCardState
+            {
+                Card = selectedCard,
+                DesiredQuantity = 1,
+                Section = DeckSection.Companion
+            });
+
+            await PersistDeckStateAsync(deckLocationId, updatedCards);
+
+            return Success(updatedCards);
+        }
 
         // Helpers
-        private Task ReplaceDeckAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> cards)
+        private static DeckMutationResult Success(IReadOnlyList<DeckCardState> cards)
+        {
+            return new DeckMutationResult
+            {
+                Succeeded = true,
+                Cards = cards
+            };
+        }
+        private static DeckMutationResult Failure(IReadOnlyCollection<DeckCardState> currentCards, string message)
+        {
+            return new DeckMutationResult
+            {
+                Succeeded = false,
+                Message = message,
+                Cards = [.. currentCards]
+            };
+        }
+        private async Task PersistDeckStateAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> cards)
         {
             var entries = MapToDeckCardEntries(deckLocationId, cards);
 
-            return _uowRunner.ExecuteWriteAsync(async (connection, transaction) =>
-            {
-                await _deckBuilderRepo.ReplaceDeckAsync(connection, transaction, deckLocationId, entries);
-                return (Result: true, Commit: true);
-            });
+            await _uowRunner.ExecuteWriteAsync(async (connection, transaction) =>
+                {
+                    await _deckBuilderRepo.ReplaceDeckAsync(connection, transaction, deckLocationId, entries);
+                    return (Result: true, Commit: true);
+                });
         }
         private static IReadOnlyList<DeckCardEntry> MapToDeckCardEntries(int deckLocationId, IEnumerable<DeckCardState> cards)
         {
@@ -101,16 +250,16 @@ namespace CollectaMundo.ApplicationServices.Decks
                     Section = x.Section
                 })];
         }
-        private static IReadOnlyList<DeckCardState> ApplyCommanderPlacement(IReadOnlyCollection<DeckCardState> currentCards, OracleCard selectedCard, CommanderPlacementAction action)
+        private static List<DeckCardState> ApplyCommanderPlacement(IReadOnlyCollection<DeckCardState> currentCards, OracleCard selectedCard, DeckSlotPlacementAction action)
         {
-            if (action == CommanderPlacementAction.NotAllowed)
+            if (action == DeckSlotPlacementAction.NotAllowed)
             {
                 throw new InvalidOperationException("A disallowed commander placement cannot be applied.");
             }
 
             var updatedCards = currentCards.ToList();
 
-            if (action == CommanderPlacementAction.Replace)
+            if (action == DeckSlotPlacementAction.Replace)
             {
                 updatedCards.RemoveAll(x => x.Section == DeckSection.Commander);
             }
@@ -124,5 +273,7 @@ namespace CollectaMundo.ApplicationServices.Decks
 
             return updatedCards;
         }
+        private sealed record DeckCardKey(string OracleId, DeckSection Section);
     }
+
 }

@@ -51,7 +51,7 @@
             <GroupBox Grid.Column="0" Grid.Row ="0" Header="Deck">
                 <DataGrid x:Name="DeckCardsDataGrid"
                           ItemsSource="{Binding MainboardZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                          SelectedItem="{Binding SelectedMainboardCard, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
@@ -143,7 +143,7 @@
             <GroupBox Grid.Column="0" Grid.Row ="1" Header="Sideboard">
                 <DataGrid x:Name="SideboardDataGrid"
                           ItemsSource="{Binding SideboardZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                          SelectedItem="{Binding SelectedSideboardCard, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
@@ -211,7 +211,7 @@
                 <GroupBox Header="Command zone">
                     <DataGrid x:Name="CommanderDataGrid"
                           ItemsSource="{Binding CommanderZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                          SelectedItem="{Binding SelectedCommanderCard, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
@@ -253,7 +253,7 @@
                 <GroupBox Header="Companion zone">
                     <DataGrid x:Name="CompanionDataGrid"
                           ItemsSource="{Binding CompanionZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                          SelectedItem="{Binding SelectedCompanionCard, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
@@ -293,14 +293,12 @@
                     </DataGrid>
                 </GroupBox>
             </StackPanel>
-
-   
             
             <!-- Maybeboard -->
             <GroupBox Grid.Column="0" Grid.Row ="2" Header="Maybeboard">
                 <DataGrid x:Name="MaybeboardDataGrid"
                           ItemsSource="{Binding MaybeboardZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                          SelectedItem="{Binding SelectedMaybeboardCard, Mode=TwoWay}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"

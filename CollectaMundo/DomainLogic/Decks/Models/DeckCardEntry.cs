@@ -1,4 +1,6 @@
-﻿namespace CollectaMundo.DomainLogic.Decks.Models
+﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
+
+namespace CollectaMundo.DomainLogic.Decks.Models
 {
     public sealed class DeckCardEntry
     {

@@ -7,6 +7,7 @@ namespace CollectaMundo.DomainLogic.Decks
     {
         public DeckActionAvailability GetActionAvailability(DeckBuildingRuleContext context, OracleCard selectedCard);
         public DeckCardValidationResult ValidateCard(DeckBuildingRuleContext context, DeckCardEntry entry, OracleCard oracleCard);
-        public CommanderPlacementResult GetCommanderPlacement(DeckBuildingRuleContext context, OracleCard selectedCard);
+        public DeckSlotPlacementResult GetCommanderPlacement(DeckBuildingRuleContext context, OracleCard selectedCard);
+        public DeckSlotPlacementResult GetCompanionPlacement(DeckBuildingRuleContext context, OracleCard candidate);
     }
 }

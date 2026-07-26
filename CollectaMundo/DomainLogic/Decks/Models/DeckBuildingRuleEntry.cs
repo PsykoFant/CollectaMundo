@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Shared.CardModels;
+﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 
 namespace CollectaMundo.DomainLogic.Decks.Models
 {

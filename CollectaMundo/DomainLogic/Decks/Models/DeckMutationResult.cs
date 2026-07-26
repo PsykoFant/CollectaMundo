@@ -1,6 +1,6 @@
 ﻿namespace CollectaMundo.DomainLogic.Decks.Models
 {
-    public sealed class SetCommanderResult
+    public sealed class DeckMutationResult
     {
         public bool Succeeded { get; init; }
         public string? Message { get; init; }
