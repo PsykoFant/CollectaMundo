@@ -1,9 +1,9 @@
 TO DO 
 
 Deck editor!
-
-
  - Visibility triggers
+	- Knapper kun synlige når kort er valgt
+	- Synlighed i højrekliksmenuer
 
  - Tilføj unit tests for commander zone
 

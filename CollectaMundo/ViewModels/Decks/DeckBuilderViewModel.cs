@@ -81,6 +81,7 @@ namespace CollectaMundo.ViewModels.Decks
                 AddRowToZone(row);
             }
 
+            RefreshZoneVisibility();
             RefreshRuleDependentProperties();
         }
 
@@ -89,7 +90,19 @@ namespace CollectaMundo.ViewModels.Decks
         public bool CanSetSelectedOracleCardAsCommander => _selectedCardActionAvailability.CanSetAsCommander;
         public bool CanSetSelectedOracleCardAsCompanion => _selectedCardActionAvailability.CanSetAsCompanion;
 
-        public bool IsCommanderZoneVisible => !string.IsNullOrWhiteSpace(DeckFormat) && CommanderFormats.IsCommanderLike(DeckFormat);
+        // Visibilities
+        [ObservableProperty]
+        private bool isCommanderZoneVisible;
+
+        [ObservableProperty]
+        private bool isSideboardZoneVisible;
+
+        [ObservableProperty]
+        private bool isMaybeboardZoneVisible;
+
+        [ObservableProperty]
+        private bool isCompanionZoneVisible;
+
 
         // Deck identity properties
         [ObservableProperty]
@@ -324,9 +337,7 @@ namespace CollectaMundo.ViewModels.Decks
 
             if (!result.Succeeded)
             {
-                Debug.WriteLine(
-                    $"Failed to change deck card quantity: {result.Message}");
-
+                Debug.WriteLine($"Failed to change deck card quantity: {result.Message}");
                 return;
             }
 
@@ -335,6 +346,7 @@ namespace CollectaMundo.ViewModels.Decks
             if (updatedCard is null)
             {
                 GetZone(row.Section).Cards.Remove(row);
+                RefreshZoneVisibility();
                 return;
             }
 
@@ -342,6 +354,7 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 row.DesiredQuantity = updatedCard.DesiredQuantity;
             }
+
         }
 
         // Shared helpers
@@ -361,7 +374,7 @@ namespace CollectaMundo.ViewModels.Decks
                 AddRowToZone(CreateDeckRow(card.Card, card.DesiredQuantity, card.Section));
             }
 
-
+            RefreshZoneVisibility();
             RefreshRuleDependentProperties();
         }
         private void ClearZones()
@@ -384,6 +397,13 @@ namespace CollectaMundo.ViewModels.Decks
             })];
         }
         private IEnumerable<DeckCardEntryViewModel> AllDeckCards => Zones.SelectMany(z => z.Cards);
+        private void RefreshZoneVisibility()
+        {
+            IsCommanderZoneVisible = CommanderZone.Cards.Count > 0 && CommanderFormats.IsCommanderLike(DeckFormat);
+            IsSideboardZoneVisible = SideboardZone.Cards.Count > 0; 
+            IsCompanionZoneVisible = CompanionZone.Cards.Count > 0;
+            IsMaybeboardZoneVisible = MaybeboardZone.Cards.Count > 0;
+        }
         private void RefreshRuleDependentProperties()
         {
             _selectedCardActionAvailability = SelectedOracleCard is null

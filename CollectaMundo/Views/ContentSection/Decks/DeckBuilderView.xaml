@@ -146,7 +146,7 @@
             </GroupBox>
 
             <!-- Sideboard -->
-            <GroupBox Grid.Column="0" Grid.Row ="1" Header="Sideboard">
+            <GroupBox Grid.Column="0" Grid.Row ="1" Header="Sideboard" Visibility="{Binding IsSideboardZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                 <DataGrid x:Name="SideboardDataGrid"
                           ItemsSource="{Binding SideboardZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
@@ -214,8 +214,7 @@
 
             <StackPanel Grid.Column="2" Grid.Row="1" Grid.RowSpan="2">
                 <!-- Command zone -->
-                <GroupBox Header="Command zone"
-                          Visibility="{Binding IsCommanderZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <GroupBox Header="Command zone" Visibility="{Binding IsCommanderZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                     <DataGrid x:Name="CommanderDataGrid"
                           ItemsSource="{Binding CommanderZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
@@ -257,7 +256,7 @@
                 </GroupBox>
 
                 <!-- Companion zone -->
-                <GroupBox Header="Companion zone">
+                <GroupBox Header="Companion zone" Visibility="{Binding IsCompanionZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                     <DataGrid x:Name="CompanionDataGrid"
                           ItemsSource="{Binding CompanionZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
@@ -302,7 +301,7 @@
             </StackPanel>
 
             <!-- Maybeboard -->
-            <GroupBox Grid.Column="0" Grid.Row ="2" Header="Maybeboard">
+            <GroupBox Grid.Column="0" Grid.Row ="2" Header="Maybeboard" Visibility="{Binding IsMaybeboardZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                 <DataGrid x:Name="MaybeboardDataGrid"
                           ItemsSource="{Binding MaybeboardZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
