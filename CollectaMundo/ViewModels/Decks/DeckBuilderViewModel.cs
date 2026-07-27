@@ -85,12 +85,16 @@ namespace CollectaMundo.ViewModels.Decks
             RefreshRuleDependentProperties();
         }
 
-        // Rules
-        private DeckActionAvailability _selectedCardActionAvailability = new();
-        public bool CanSetSelectedOracleCardAsCommander => _selectedCardActionAvailability.CanSetAsCommander;
-        public bool CanSetSelectedOracleCardAsCompanion => _selectedCardActionAvailability.CanSetAsCompanion;
+        // Visibility rules
+        [ObservableProperty]
+        private bool isAddButtonVisible;
 
-        // Visibilities
+        [ObservableProperty]
+        private bool canSetSelectedOracleCardAsCommander;
+
+        [ObservableProperty]
+        private bool canSetSelectedOracleCardAsCompanion;
+
         [ObservableProperty]
         private bool isCommanderZoneVisible;
 
@@ -127,7 +131,6 @@ namespace CollectaMundo.ViewModels.Decks
         // OracleCard datagrid
         [ObservableProperty]
         private OracleCard? selectedOracleCard;
-
         partial void OnSelectedOracleCardChanged(OracleCard? value)
         {
             RefreshRuleDependentProperties();
@@ -148,6 +151,13 @@ namespace CollectaMundo.ViewModels.Decks
         {
             SelectedOracleCard = null;
             ExitEditorRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        [RelayCommand]
+        protected void ClearSelections()
+        {
+            SelectedOracleCard = null;
+            SelectedDeckCard = null;
         }
 
         // Adding a card
@@ -406,12 +416,13 @@ namespace CollectaMundo.ViewModels.Decks
         }
         private void RefreshRuleDependentProperties()
         {
-            _selectedCardActionAvailability = SelectedOracleCard is null
+            var availability = SelectedOracleCard is null
                 ? new DeckActionAvailability()
-                : _deckBuilderService.GetActionAvailability(DeckFormat, CreateDeckCardStates(), SelectedOracleCard);
+                : _deckBuilderService.GetActionAvailability(DeckFormat,CreateDeckCardStates(),SelectedOracleCard);
 
-            OnPropertyChanged(nameof(CanSetSelectedOracleCardAsCommander));
-            OnPropertyChanged(nameof(CanSetSelectedOracleCardAsCompanion));
+            IsAddButtonVisible = SelectedOracleCard is not null;
+            CanSetSelectedOracleCardAsCommander = availability.CanSetAsCommander && IsAddButtonVisible is true;
+            CanSetSelectedOracleCardAsCompanion = availability.CanSetAsCompanion && IsAddButtonVisible is true;
         }
 
 

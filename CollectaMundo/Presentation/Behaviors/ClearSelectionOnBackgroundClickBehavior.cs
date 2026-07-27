@@ -8,11 +8,7 @@ namespace CollectaMundo.Presentation.Behaviors
 {
     public sealed class ClearSelectionOnBackgroundClickBehavior : Behavior<FrameworkElement>
     {
-        public static readonly DependencyProperty CommandProperty =
-            DependencyProperty.Register(
-                nameof(Command),
-                typeof(ICommand),
-                typeof(ClearSelectionOnBackgroundClickBehavior));
+        public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(nameof(Command), typeof(ICommand), typeof(ClearSelectionOnBackgroundClickBehavior));
 
         public ICommand? Command
         {

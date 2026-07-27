@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              xmlns:deckViewModels="clr-namespace:CollectaMundo.ViewModels.Decks"
              xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"             
              mc:Ignorable="d"
@@ -11,13 +12,17 @@
              d:Style="{StaticResource {x:Type UserControl}}"
              d:DesignHeight="450"
              d:DesignWidth="800">
+    
+    <Grid Margin="10" Background="Transparent">
+        <i:Interaction.Behaviors>
+            <behaviors:ClearSelectionOnBackgroundClickBehavior Command="{Binding ClearSelectionsCommand}" />
+        </i:Interaction.Behaviors>
 
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
+            <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- 0 - Header + back button -->
             <RowDefinition Height="Auto"/>  <!-- 1 - Deck list + Stats -->
             <RowDefinition Height="Auto"/>  <!-- 2 - Filter criteria summary -->
-            <RowDefinition Height="Auto"/>  <!-- 3 - Add-buttons -->
+            <RowDefinition Height="40"/>  <!-- 3 - Add-buttons -->
             <RowDefinition Height="3*"/>    <!-- 4 - Bottom: Filterable oracle card source -->
         </Grid.RowDefinitions>
 
@@ -406,24 +411,28 @@
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
                 <Button Content="  + 1 to Maybeboard  "
+                        Visibility="{Binding IsAddButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                         Height="20"
                         Margin="0,0,6,0"
                         Command="{Binding AddOracleCardToMaybeboardCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>                
                 
                 <Button Content="  + 1 to sideboard  "
+                        Visibility="{Binding IsAddButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                         Height="20"
                         Margin="0,0,6,0"
                         Command="{Binding AddOracleCardToSideboardCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
                 <Button Content="  + 4 to deck  "
+                        Visibility="{Binding IsAddButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                         Height="20"
                         Margin="0,0,6,0"
                         Command="{Binding AddOracleCardPlaySetToDeckCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
                 <Button Content="  + 1 to deck  "
+                        Visibility="{Binding IsAddButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                         Height="20"
                         Command="{Binding AddOracleCardToDeckCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
