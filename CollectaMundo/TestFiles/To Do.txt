@@ -1,12 +1,6 @@
 TO DO 
 
 Deck editor!
- - Tilføj legality check (commander)
- Bug: vis kort i commander zonen
-
-
-
-
 
 
  - Visibility triggers

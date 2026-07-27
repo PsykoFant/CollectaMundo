@@ -20,25 +20,12 @@ namespace CollectaMundo.DomainLogic.Decks
         }
 
         // Commander rules
-        private static readonly HashSet<string> CommanderLikeFormats = new(StringComparer.OrdinalIgnoreCase)
-        {
-            string.Empty,
-            "casual",
-            "commander",
-            "duel",
-            "predh",
-            "brawl",
-            "standardbrawl",
-            "paupercommander",
-            "oathbreaker",
-            "tlr"
-        };
         public DeckSlotPlacementResult GetCommanderPlacement(DeckBuildingRuleContext context, OracleCard selectedCard)
         {
             ArgumentNullException.ThrowIfNull(context);
             ArgumentNullException.ThrowIfNull(selectedCard);
 
-            if (!IsCommanderLikeFormat(context.Format))
+            if (!CommanderFormats.IsCommanderLike(context.Format))
             {
                 return NotAllowed("The selected format does not use commanders.");
             }
@@ -84,10 +71,6 @@ namespace CollectaMundo.DomainLogic.Decks
                     Message = message
                 };
             }
-        }
-        private static bool IsCommanderLikeFormat(string? format)
-        {
-            return format is not null && CommanderLikeFormats.Contains(format);
         }
         private static bool IsCommanderEligible(OracleCard card)
         {

@@ -49,6 +49,7 @@ namespace CollectaMundo.ViewModels.Decks
             new() { Section = DeckSection.Commander, DisplayName = "Command zone" },
             new() { Section = DeckSection.Companion, DisplayName = "Companion zone" }
         ];
+        private DeckZoneViewModel GetZone(DeckSection section) { return Zones.First(z => z.Section == section); }
 
         // Begin editing a deck - initializes the view model with the deck's current state
         public async Task BeginEditAsync(DeckManagementRecord deck)
@@ -88,7 +89,7 @@ namespace CollectaMundo.ViewModels.Decks
         public bool CanSetSelectedOracleCardAsCommander => _selectedCardActionAvailability.CanSetAsCommander;
         public bool CanSetSelectedOracleCardAsCompanion => _selectedCardActionAvailability.CanSetAsCompanion;
 
-        private DeckZoneViewModel GetZone(DeckSection section) { return Zones.First(z => z.Section == section); }
+        public bool IsCommanderZoneVisible => !string.IsNullOrWhiteSpace(DeckFormat) && CommanderFormats.IsCommanderLike(DeckFormat);
 
         // Deck identity properties
         [ObservableProperty]
@@ -102,24 +103,38 @@ namespace CollectaMundo.ViewModels.Decks
 
         // Selected card properties
 
-        // Selecting a card in DeckCard datagrid
+        // DeckCards datagrids
         [ObservableProperty]
         private DeckCardEntryViewModel? selectedDeckCard;
+        partial void OnSelectedDeckCardChanged(DeckCardEntryViewModel? value)
+        {
+            ShowCardImage(value?.OracleId, value?.CardName);
+        }
 
-        // Selecting a card in OracleCard datagrid
+        // OracleCard datagrid
         [ObservableProperty]
         private OracleCard? selectedOracleCard;
+
         partial void OnSelectedOracleCardChanged(OracleCard? value)
         {
             RefreshRuleDependentProperties();
+            ShowCardImage(value?.ScryfallOracleId, value?.Name);
+        }
+        private void ShowCardImage(string? oracleId, string? name)
+        {
+            var request = string.IsNullOrWhiteSpace(oracleId)
+                ? new OracleCardImageSelectionRequest()
+                : new OracleCardImageSelectionRequest(OracleId: oracleId, Name: name);
 
-            if (value is null)
-            {
-                CardImageSelectionRequested?.Invoke(this, new OracleCardImageSelectionRequest());
-                return;
-            }
+            CardImageSelectionRequested?.Invoke(this, request);
+        }
 
-            CardImageSelectionRequested?.Invoke(this, new OracleCardImageSelectionRequest(OracleId: value.ScryfallOracleId, Name: value.Name));
+        // Navigation back to deck management
+        [RelayCommand]
+        private void BackToDeckManagement()
+        {
+            SelectedOracleCard = null;
+            ExitEditorRequested?.Invoke(this, EventArgs.Empty);
         }
 
         // Adding a card
@@ -305,13 +320,7 @@ namespace CollectaMundo.ViewModels.Decks
                 return;
             }
 
-            var result = await _deckBuilderService.SetCardQuantityAsync(
-                DeckLocationId.Value,
-                CreateDeckCardStates(),
-                new DeckCardIdentityRecord(
-                    row.OracleId,
-                    row.Section),
-                desiredQuantity);
+            var result = await _deckBuilderService.SetCardQuantityAsync(DeckLocationId.Value, CreateDeckCardStates(), new DeckCardIdentityRecord(row.OracleId, row.Section), desiredQuantity);
 
             if (!result.Succeeded)
             {
@@ -321,17 +330,7 @@ namespace CollectaMundo.ViewModels.Decks
                 return;
             }
 
-            ApplyQuantityMutation(row, result);
-            RefreshRuleDependentProperties();
-        }
-        private void ApplyQuantityMutation(DeckCardEntryViewModel row, DeckMutationResult result)
-        {
-            var updatedCard = result.Cards.FirstOrDefault(card =>
-                card.Section == row.Section
-                && string.Equals(
-                    card.Card.ScryfallOracleId,
-                    row.OracleId,
-                    StringComparison.OrdinalIgnoreCase));
+            var updatedCard = result.Cards.FirstOrDefault(card => card.Section == row.Section && string.Equals(card.Card.ScryfallOracleId, row.OracleId, StringComparison.OrdinalIgnoreCase));
 
             if (updatedCard is null)
             {
@@ -396,13 +395,7 @@ namespace CollectaMundo.ViewModels.Decks
         }
 
 
-        // Navigation back to deck management
-        [RelayCommand]
-        private void BackToDeckManagement()
-        {
-            SelectedOracleCard = null;
-            ExitEditorRequested?.Invoke(this, EventArgs.Empty);
-        }
+
 
 
 
