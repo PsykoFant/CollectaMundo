@@ -102,54 +102,13 @@ namespace CollectaMundo.ViewModels.Decks
 
         // Selected card properties
 
+        // Selecting a card in DeckCard datagrid
         [ObservableProperty]
-        private OracleCard? selectedOracleCard;
-
-        [ObservableProperty]
-        private DeckCardEntryViewModel? selectedMainboardCard;
-        partial void OnSelectedMainboardCardChanged(DeckCardEntryViewModel? value)
-        {
-            HandleSelectedDeckCardChanged(value);
-        }
-
-        [ObservableProperty]
-        private DeckCardEntryViewModel? selectedSideboardCard;
-        partial void OnSelectedSideboardCardChanged(DeckCardEntryViewModel? value)
-        {
-            HandleSelectedDeckCardChanged(value);
-        }
-
-        [ObservableProperty]
-        private DeckCardEntryViewModel? selectedCommanderCard;
-        partial void OnSelectedCommanderCardChanged(DeckCardEntryViewModel? value)
-        {
-            HandleSelectedDeckCardChanged(value);
-        }
-
-        [ObservableProperty]
-        private DeckCardEntryViewModel? selectedCompanionCard;
-        partial void OnSelectedCompanionCardChanged(DeckCardEntryViewModel? value)
-        {
-            HandleSelectedDeckCardChanged(value);
-        }
-
-        [ObservableProperty]
-        private DeckCardEntryViewModel? selectedMaybeboardCard;
-        partial void OnSelectedMaybeboardCardChanged(DeckCardEntryViewModel? value)
-        {
-            HandleSelectedDeckCardChanged(value);
-        }
-        private void HandleSelectedDeckCardChanged(DeckCardEntryViewModel? value)
-        {
-            if (value is null)
-            {
-                return;
-            }
-
-            CardImageSelectionRequested?.Invoke(this, new OracleCardImageSelectionRequest(OracleId: value.OracleId, Name: value.CardName));
-        }
+        private DeckCardEntryViewModel? selectedDeckCard;
 
         // Selecting a card in OracleCard datagrid
+        [ObservableProperty]
+        private OracleCard? selectedOracleCard;
         partial void OnSelectedOracleCardChanged(OracleCard? value)
         {
             RefreshRuleDependentProperties();
