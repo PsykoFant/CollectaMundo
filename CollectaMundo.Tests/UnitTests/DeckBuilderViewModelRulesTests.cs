@@ -2,10 +2,14 @@
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Tests.TestUtils;
+using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks;
+using CollectaMundo.ViewModels.Filtering;
 using Moq;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Tests.UnitTests
 {
@@ -14,61 +18,30 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public void SelectingLegendaryCreature_InNonCommanderFormat_HidesCommanderButton()
         {
-            var sut = CreateSut(format: "standard");
+            var sut = CreateSuite(format: "standard");
             var card = TestCardFactory.CreateLegendaryCreature();
             sut.ViewModel.SelectedOracleCard = card;
             Assert.False(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
         }
-
-        private static CommanderTestSuite CreateSut(string format)
+        private static CommanderTestSuite CreateSuite(string format)
         {
+            var unitOfWorkRunnerMock = new Mock<IUnitOfWorkRunner>(MockBehavior.Strict);
             var repositoryMock = new Mock<IDeckBuilderRepo>(MockBehavior.Strict);
-            var unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
-            var persistedDeck = new List<DeckCardEntry>();
-
-            repositoryMock.Setup(repo => repo.ReplaceDeckAsync(
-                    It.IsAny<int>(),
-                    It.IsAny<IReadOnlyCollection<DeckCardEntry>>(),
-                    It.IsAny<CancellationToken>()))
-                .Callback<int,
-                          IReadOnlyCollection<DeckCardEntry>,
-                          CancellationToken>(
-                    (_, entries, _) =>
-                    {
-                        persistedDeck.Clear();
-                        persistedDeck.AddRange(entries);
-                    })
-                .Returns(Task.CompletedTask);
-
-            unitOfWorkMock
-                .Setup(unit => unit.ExecuteAsync(
-                    It.IsAny<Func<CancellationToken, Task>>(),
-                    It.IsAny<CancellationToken>()))
-                .Returns<Func<CancellationToken, Task>,
-                         CancellationToken>(
-                    (operation, cancellationToken) =>
-                        operation(cancellationToken));
-
-            var logic = new DeckBuilderLogic();
-
-            var service = new DeckBuilderService(
-                logic,
-                repositoryMock.Object,
-                unitOfWorkMock.Object);
-
-            var viewModel = CreateDeckBuilderViewModel(service);
+            var deckBuilderLogic = new DeckBuilderLogic();
+            var deckBuilderService = new DeckBuilderService(unitOfWorkRunnerMock.Object,deckBuilderLogic,repositoryMock.Object);
+            var viewModel = CreateDeckBuilderViewModel(deckBuilderService);
 
             viewModel.DeckLocationId = 42;
             viewModel.DeckFormat = format;
 
-            return new CommanderTestSuite(
-                viewModel,
-                repositoryMock,
-                unitOfWorkMock);
+            return new CommanderTestSuite(viewModel);
         }
-        private sealed record CommanderTestSuite(
-    DeckBuilderViewModel ViewModel,
-    Mock<IDeckBuilderRepo> RepositoryMock,
-    Mock<IUnitOfWork> UnitOfWorkMock);
+        private static DeckBuilderViewModel CreateDeckBuilderViewModel(IDeckBuilderService deckBuilderService)
+        {
+            var oracleCardsViewModel = Mock.Of<CardListViewModel<OracleCard>>();
+            var filterPanelViewModel = Mock.Of<FilterPanelViewModel>();
+            return new DeckBuilderViewModel(deckBuilderService, oracleCardsViewModel, filterPanelViewModel);
+        }
+        private sealed record CommanderTestSuite(DeckBuilderViewModel ViewModel);
     }
 }
