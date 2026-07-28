@@ -20,6 +20,7 @@ namespace CollectaMundo.ViewModels.Decks
         private readonly IDeckBuilderService _deckBuilderService = deckBuilderService;
         private readonly CardListViewModel<OracleCard> _oracleCardsVM = oracleCardsVM;
         private readonly FilterPanelViewModel _filterPanelViewModel = filterPanelViewModel;
+        private IEnumerable<DeckCardEntryViewModel> AllDeckCards => Zones.SelectMany(z => z.Cards);
 
         // Filtered OracleCard list view model
         public CardListViewModel<OracleCard> CardsVM => _oracleCardsVM;
@@ -85,6 +86,8 @@ namespace CollectaMundo.ViewModels.Decks
             RefreshRuleDependentProperties();
         }
 
+        #region Observable Properties
+
         // Visibility rules
         [ObservableProperty]
         private bool isAddButtonVisible;
@@ -145,6 +148,9 @@ namespace CollectaMundo.ViewModels.Decks
             CardImageSelectionRequested?.Invoke(this, request);
         }
 
+        #endregion
+
+        #region Commands
         // Navigation back to deck management
         [RelayCommand]
         private void BackToDeckManagement()
@@ -367,6 +373,8 @@ namespace CollectaMundo.ViewModels.Decks
 
         }
 
+        #endregion
+
         // Shared helpers
         private void ApplySuccessfulMutation(DeckMutationResult result)
         {
@@ -406,11 +414,10 @@ namespace CollectaMundo.ViewModels.Decks
                 Section = x.Section
             })];
         }
-        private IEnumerable<DeckCardEntryViewModel> AllDeckCards => Zones.SelectMany(z => z.Cards);
         private void RefreshZoneVisibility()
         {
             IsCommanderZoneVisible = CommanderZone.Cards.Count > 0 && CommanderFormats.IsCommanderLike(DeckFormat);
-            IsSideboardZoneVisible = SideboardZone.Cards.Count > 0; 
+            IsSideboardZoneVisible = SideboardZone.Cards.Count > 0;
             IsCompanionZoneVisible = CompanionZone.Cards.Count > 0;
             IsMaybeboardZoneVisible = MaybeboardZone.Cards.Count > 0;
         }
@@ -418,7 +425,7 @@ namespace CollectaMundo.ViewModels.Decks
         {
             var availability = SelectedOracleCard is null
                 ? new DeckActionAvailability()
-                : _deckBuilderService.GetActionAvailability(DeckFormat,CreateDeckCardStates(),SelectedOracleCard);
+                : _deckBuilderService.GetActionAvailability(DeckFormat, CreateDeckCardStates(), SelectedOracleCard);
 
             IsAddButtonVisible = SelectedOracleCard is not null;
             CanSetSelectedOracleCardAsCommander = availability.CanSetAsCommander && IsAddButtonVisible is true;
