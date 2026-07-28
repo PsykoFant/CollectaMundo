@@ -1,15 +1,10 @@
 ﻿using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Decks;
-using CollectaMundo.DomainLogic.Decks.Models;
-using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Tests.TestUtils;
-using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks;
-using CollectaMundo.ViewModels.Filtering;
 using Moq;
-using System.Data.SQLite;
 
 namespace CollectaMundo.Tests.UnitTests
 {
@@ -23,24 +18,31 @@ namespace CollectaMundo.Tests.UnitTests
             sut.ViewModel.SelectedOracleCard = card;
             Assert.False(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
         }
+
+        [Fact]
+        public void SelectingLegendaryCreature_InCommanderFormat_ShowsCommanderButton()
+        {
+            var sut = CreateSuite(format: "commander");
+            var card = TestCardFactory.CreateLegendaryCreature();
+
+            sut.ViewModel.SelectedOracleCard = card;
+
+            Assert.True(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+        }
         private static CommanderTestSuite CreateSuite(string format)
         {
             var unitOfWorkRunnerMock = new Mock<IUnitOfWorkRunner>(MockBehavior.Strict);
             var repositoryMock = new Mock<IDeckBuilderRepo>(MockBehavior.Strict);
             var deckBuilderLogic = new DeckBuilderLogic();
-            var deckBuilderService = new DeckBuilderService(unitOfWorkRunnerMock.Object,deckBuilderLogic,repositoryMock.Object);
-            var viewModel = CreateDeckBuilderViewModel(deckBuilderService);
+            var deckBuilderService = new DeckBuilderService(unitOfWorkRunnerMock.Object, deckBuilderLogic, repositoryMock.Object);
 
-            viewModel.DeckLocationId = 42;
-            viewModel.DeckFormat = format;
+            var viewModel = new DeckBuilderViewModel(deckBuilderService, null!, null!)
+            {
+                DeckLocationId = 42,
+                DeckFormat = format
+            };
 
             return new CommanderTestSuite(viewModel);
-        }
-        private static DeckBuilderViewModel CreateDeckBuilderViewModel(IDeckBuilderService deckBuilderService)
-        {
-            var oracleCardsViewModel = Mock.Of<CardListViewModel<OracleCard>>();
-            var filterPanelViewModel = Mock.Of<FilterPanelViewModel>();
-            return new DeckBuilderViewModel(deckBuilderService, oracleCardsViewModel, filterPanelViewModel);
         }
         private sealed record CommanderTestSuite(DeckBuilderViewModel ViewModel);
     }
