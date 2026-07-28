@@ -6,51 +6,6 @@ Deck editor!
 
 
 Test cases:
-Test 1
-Pre-conditons:
-- Non-commander format
-Steps:
-- Select legendary creature
-Expected: Set as commander button not visible
-
-Test 2
-Pre-conditons
-- Commander-like format
-Steps:
-- Select legendary creature (no extra commander relevant keywords)
-Expected: Set as commander button visible
-- Add selected creature as commander
-- Add same creature as commander again
-Expected: Creature not added (already set as commander)
-
-Test 3
-Pre-conditons
-- Test 3
-Steps:
-- Select another legendary creature (no extra commander relevant keywords)
-Expected: Set as commander button visible
-- Add selected creature as commander
-Expected: Creature REPLACES existing commander
-
-Test 4
-Pre-conditons
-- Test 3
-Steps:
-- Select another legendary creature with commander relevant keyword ("Partner", "Partner with", "Friends forever", "Doctor's Companion", "Background")
-Expected: Set as commander button visible
-- Add selected card as second commander
-Expected: card ADDED to commander zone
-- Try to add same card again 
-Expected: card NOT ADDED to commander zone an additional time
-
-Test 5
-Pre-conditons
-- Test 4
-Steps:
-- Select another legendary creature with commander relevant keyword - not one of the existing two in command zone ("Partner", "Partner with", "Friends forever", "Doctor's Companion", "Background")
-Expected: Set as commander button visible
-- Add selected card as commander
-Expected: card ADDED to commander zone - REPLACING the two existing
 
 
  - Tilføj legality check (commander)

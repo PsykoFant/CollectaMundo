@@ -18,6 +18,7 @@ using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CollectionMutations;
+using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
@@ -90,7 +91,7 @@ public static class TestAppBuilder
 
         var cardLegalityProviderService = new CardLegalityProviderService(uowRunner, new CardLegalityRepo());
 
-        var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, cardLegalityProviderService);
+        var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(cardLegalityProviderService), keyedDataProviderService, cardLegalityProviderService);
 
         var collectionMutationsLogic = new CollectionMutationsLogic();
         var collectionMutationsRepo = new CollectionMutationsRepo();
@@ -100,7 +101,7 @@ public static class TestAppBuilder
         var cardLocationRepo = new CardLocationRepo();
         var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
         var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityProviderService);
-        var deckBuilderService = new DeckBuilderService(uowRunner, new DeckBuilderRepo());
+        var deckBuilderService = new DeckBuilderService(uowRunner, new DeckBuilderLogic(), new DeckBuilderRepo());
 
         var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
 

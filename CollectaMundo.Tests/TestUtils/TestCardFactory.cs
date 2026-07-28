@@ -91,5 +91,30 @@ namespace CollectaMundo.Tests.TestUtils
                 CreatePrinting("test-018", "oracle-018", "Tundra", "30A", "", "Land", "", "", "Plains,Island", "Land — Plains Island", "", "{T}: Add {W} or {U}.", 0, "English", "nonfoil", "rare")
             ];
         }
+        public static OracleCard CreateLegendaryCreature(string oracleId = "oracle-legendary-creature", string name = "Test Legendary Creature", string keywords = "", string subTypes = "Human", string? type = null)
+        {
+            return CreatePrinting(
+                uuid: $"printing-{oracleId}",
+                oracleId: oracleId,
+                name: name,
+                types: "Creature",
+                superTypes: "Legendary",
+                subTypes: subTypes,
+                type: type ?? $"Legendary Creature — {subTypes.Replace(",", " ")}",
+                keywords: keywords)
+                .Oracle;
+        }
+        public static OracleCard CreateBackground(string oracleId = "oracle-background", string name = "Test Background")
+        {
+            return CreatePrinting(
+                uuid: $"printing-{oracleId}",
+                oracleId: oracleId,
+                name: name,
+                types: "Enchantment",
+                superTypes: "Legendary",
+                subTypes: "Background",
+                type: "Legendary Enchantment — Background")
+                .Oracle;
+        }
     }
 }

@@ -13,8 +13,8 @@ namespace CollectaMundo.Tests.TestUtils
     {
         public static void ApplyAllFilters(MainWindowViewModel mainVM, FilteringService filteringService)
         {
-            mainVM.AllCardsVM.FilteredCards = filteringService.ApplyFilters(mainVM.AllCardsVM.Cards, mainVM.FilterPanelVM.Filters.Values, gameplayCardsOnly: false);
-            mainVM.MyCollectionVM.FilteredCards = filteringService.ApplyFilters(mainVM.MyCollectionVM.Cards, mainVM.FilterPanelVM.Filters.Values, gameplayCardsOnly: false);
+            mainVM.AllCardsVM.FilteredCards = filteringService.ApplyFilters(mainVM.AllCardsVM.Cards, mainVM.FilterPanelVM.Filters.Values);
+            mainVM.MyCollectionVM.FilteredCards = filteringService.ApplyFilters(mainVM.MyCollectionVM.Cards, mainVM.FilterPanelVM.Filters.Values);
         }
         public static void AssertFiltersCleared(MainWindowViewModel mainVM)
         {
