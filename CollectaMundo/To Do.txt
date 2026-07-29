@@ -1,14 +1,9 @@
 TO DO 
 
 Deck editor!
-
- - Tilføj unit tests for commander zone
-
-
-Test cases:
-
-
  - Tilføj legality check (commander)
+
+
  - Tilføj owned/allocated support
  - Sorter deck datagrid efter kort type
  - Tilføj træk kort fra datagrid
