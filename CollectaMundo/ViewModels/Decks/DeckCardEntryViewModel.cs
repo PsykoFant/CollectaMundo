@@ -26,6 +26,9 @@ namespace CollectaMundo.ViewModels.Decks
         [ObservableProperty]
         private DeckSection section = DeckSection.Mainboard;
 
+        [ObservableProperty]
+        private bool isLegal;
+
         public NumericBindingViewModel DesiredQuantityBinding { get; }
 
         public DeckCardEntryViewModel(Func<DeckCardEntryViewModel, Task> quantityCommitAsync)

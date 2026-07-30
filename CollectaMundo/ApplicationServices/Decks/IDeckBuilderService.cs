@@ -12,6 +12,7 @@ namespace CollectaMundo.ApplicationServices.Decks
         Task<DeckMutationResult> SetCardQuantityAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, DeckCardIdentityRecord card, int desiredQuantity);
         public Task<IReadOnlyList<DeckCardEntry>> LoadDeckAsync(int locationId);
         DeckActionAvailability GetActionAvailability(string? format, IReadOnlyCollection<DeckCardState> deckCards, OracleCard selectedCard);
+        DeckCardValidationResult ValidateCard(string? format, IReadOnlyCollection<DeckCardState> deckCards, DeckCardEntry entry, OracleCard oracleCard);
         Task<DeckMutationResult> SetCommanderAsync(int deckLocationId, string? format, IReadOnlyCollection<DeckCardState> currentCards, OracleCard selectedCard);
         Task<DeckMutationResult> SetCompanionAsync(int deckLocationId, string? format, IReadOnlyCollection<DeckCardState> currentCards, OracleCard selectedCard);
     }

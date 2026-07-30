@@ -57,29 +57,34 @@ namespace CollectaMundo.ViewModels.Decks
         {
             var entries = await _deckBuilderService.LoadDeckAsync(deck.LocationId);
 
-            var rows = new List<DeckCardEntryViewModel>();
+            DeckLocationId = deck.LocationId;
+            DeckName = deck.Name;
+            DeckFormat = deck.Format;
+
+            var deckCards = new List<DeckCardState>();
 
             foreach (var entry in entries)
             {
-                var oracleCard = CardsVM.Cards.FirstOrDefault(c => c.ScryfallOracleId == entry.OracleId);
+                var oracleCard = CardsVM.Cards.FirstOrDefault(c => string.Equals(c.ScryfallOracleId, entry.OracleId, StringComparison.OrdinalIgnoreCase));
 
                 if (oracleCard is null)
                 {
                     continue;
                 }
 
-                rows.Add(CreateDeckRow(oracleCard, entry.DesiredQuantity, entry.Section));
+                deckCards.Add(new DeckCardState
+                {
+                    Card = oracleCard,
+                    DesiredQuantity = entry.DesiredQuantity,
+                    Section = entry.Section
+                });
             }
-
-            DeckLocationId = deck.LocationId;
-            DeckName = deck.Name;
-            DeckFormat = deck.Format;
 
             ClearZones();
 
-            foreach (var row in rows)
+            foreach (var card in deckCards)
             {
-                AddRowToZone(row);
+                AddRowToZone(CreateDeckRow(card, deckCards));
             }
 
             RefreshZoneVisibility();
@@ -261,26 +266,6 @@ namespace CollectaMundo.ViewModels.Decks
             }
         }
 
-        // DeckCardEntryViewModel factory
-        private DeckCardEntryViewModel CreateDeckRow(OracleCard card, int desiredQuantity, DeckSection section)
-        {
-            return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync)
-            {
-                OracleCard = card,
-                DesiredQuantity = desiredQuantity,
-                Section = section
-            };
-        }
-        private Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel? row)
-        {
-            if (row is null)
-            {
-                return Task.CompletedTask;
-            }
-
-            return SetCardQuantityAsync(row, row.DesiredQuantity);
-        }
-
         // Deleting a card
         [RelayCommand]
         private async Task DeleteDeckCardsAsync(object? param)
@@ -381,7 +366,6 @@ namespace CollectaMundo.ViewModels.Decks
             if (!result.Succeeded)
             {
                 Debug.WriteLine($"Deck mutation failed: {result.Message}");
-
                 return;
             }
 
@@ -389,11 +373,41 @@ namespace CollectaMundo.ViewModels.Decks
 
             foreach (var card in result.Cards)
             {
-                AddRowToZone(CreateDeckRow(card.Card, card.DesiredQuantity, card.Section));
+                AddRowToZone(CreateDeckRow(card, result.Cards));
             }
 
             RefreshZoneVisibility();
             RefreshRuleDependentProperties();
+        }
+        private DeckCardEntryViewModel CreateDeckRow(DeckCardState card, IReadOnlyCollection<DeckCardState> deckCards)
+        {
+            var entry = new DeckCardEntry
+            {
+                DeckLocationId = DeckLocationId ?? 0,
+                OracleId = card.Card.ScryfallOracleId,
+                CardName = card.Card.Name,
+                DesiredQuantity = card.DesiredQuantity,
+                Section = card.Section
+            };
+
+            var validation = _deckBuilderService.ValidateCard(DeckFormat, deckCards, entry, card.Card);
+
+            return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync)
+            {
+                OracleCard = card.Card,
+                DesiredQuantity = card.DesiredQuantity,
+                Section = card.Section,
+                IsLegal = validation.IsLegal
+            };
+        }
+        private Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel? row)
+        {
+            if (row is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return SetCardQuantityAsync(row, row.DesiredQuantity);
         }
         private void ClearZones()
         {
@@ -432,11 +446,26 @@ namespace CollectaMundo.ViewModels.Decks
             CanSetSelectedOracleCardAsCompanion = availability.CanSetAsCompanion && IsAddButtonVisible is true;
         }
 
+        // If we add format changing in deck builder later
+        private void RefreshCardLegalities()
+        {
+            var deckCards = CreateDeckCardStates();
 
+            foreach (var row in AllDeckCards)
+            {
+                var entry = new DeckCardEntry
+                {
+                    DeckLocationId = DeckLocationId ?? 0,
+                    OracleId = row.OracleId,
+                    CardName = row.CardName,
+                    DesiredQuantity = row.DesiredQuantity,
+                    Section = row.Section
+                };
 
+                var validation = _deckBuilderService.ValidateCard(DeckFormat, deckCards, entry, row.OracleCard);
 
-
-
-
+                row.IsLegal = validation.IsLegal;
+            }
+        }
     }
 }

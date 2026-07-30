@@ -14,7 +14,15 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
 
         private List<CardLegalityFormat> _formats = [];
         private Dictionary<string, CardLegalityMasks> _masksByUuid = new(StringComparer.OrdinalIgnoreCase);
+        public CardLegalityFormat? GetFormat(string? format)
+        {
+            if (string.IsNullOrWhiteSpace(format))
+            {
+                return null;
+            }
 
+            return _formats.FirstOrDefault(x => string.Equals(x.Value, format.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
         public IReadOnlyList<CardLegalityFormat> Formats => _formats;
         public IReadOnlyDictionary<string, CardLegalityMasks> MasksByUuid => _masksByUuid;
         public async Task LoadAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)

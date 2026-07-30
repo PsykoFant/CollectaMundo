@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
+﻿using CollectaMundo.ApplicationServices.CardLegalities;
+using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
@@ -8,9 +9,10 @@ using CollectaMundo.Infrastructure.Decks;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
-    public sealed class DeckBuilderService(IUnitOfWorkRunner uowRunner, IDeckBuilderLogic deckBuilderLogic, IDeckBuilderRepo deckBuilderRepo) : IDeckBuilderService
+    public sealed class DeckBuilderService(IUnitOfWorkRunner uowRunner, ICardLegalityProviderService cardLegalityProviderService, IDeckBuilderLogic deckBuilderLogic, IDeckBuilderRepo deckBuilderRepo) : IDeckBuilderService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
+        private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
         private readonly IDeckBuilderLogic _deckBuilderLogic = deckBuilderLogic;
         private readonly IDeckBuilderRepo _deckBuilderRepo = deckBuilderRepo;
         public Task<IReadOnlyList<DeckCardEntry>> LoadDeckAsync(int locationId)
@@ -143,9 +145,19 @@ namespace CollectaMundo.ApplicationServices.Decks
         {
             var context = CreateRuleContext(format, deckCards);
 
-            return _deckBuilderLogic.GetActionAvailability(
-                context,
-                selectedCard);
+            return _deckBuilderLogic.GetActionAvailability(context, selectedCard);
+        }
+        public DeckCardValidationResult ValidateCard(string? format, IReadOnlyCollection<DeckCardState> deckCards, DeckCardEntry entry, OracleCard oracleCard)
+        {
+            ArgumentNullException.ThrowIfNull(deckCards);
+            ArgumentNullException.ThrowIfNull(entry);
+            ArgumentNullException.ThrowIfNull(oracleCard);
+
+            var context = CreateRuleContext(format, deckCards);
+
+            var formatInfo = _cardLegalityProviderService.GetFormat(format);
+
+            return _deckBuilderLogic.ValidateCard(context, entry, oracleCard, formatInfo?.Mask);
         }
         private static DeckBuildingRuleContext CreateRuleContext(string? format, IEnumerable<DeckCardState> cards)
         {

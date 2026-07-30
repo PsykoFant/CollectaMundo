@@ -18,6 +18,22 @@ namespace CollectaMundo.DomainLogic.Decks
                 CanSetAsCompanion = GetCompanionPlacement(context, selectedCard).IsAllowed
             };
         }
+        public DeckCardValidationResult ValidateCard(DeckBuildingRuleContext context, DeckCardEntry entry, OracleCard oracleCard, ulong? formatMask)
+        {
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentNullException.ThrowIfNull(entry);
+            ArgumentNullException.ThrowIfNull(oracleCard);
+
+            var isLegal = formatMask.HasValue && (oracleCard.PlayableFormatsMask & formatMask.Value) != 0;
+
+            return new DeckCardValidationResult
+            {
+                IsLegal = isLegal,
+                Message = isLegal
+                    ? string.Empty
+                    : $"{oracleCard.Name} is not legal in {context.Format}."
+            };
+        }
 
         // Commander rules
         public DeckSlotPlacementResult GetCommanderPlacement(DeckBuildingRuleContext context, OracleCard selectedCard)
@@ -154,13 +170,6 @@ namespace CollectaMundo.DomainLogic.Decks
         {
             return CsvValues.Contains(card.Keywords, keyword);
         }
-        public DeckCardValidationResult ValidateCard(DeckBuildingRuleContext context, DeckCardEntry entry, OracleCard oracleCard)
-        {
-            return new DeckCardValidationResult
-            {
-                IsLegal = true,
-                Message = string.Empty
-            };
-        }
+
     }
 }

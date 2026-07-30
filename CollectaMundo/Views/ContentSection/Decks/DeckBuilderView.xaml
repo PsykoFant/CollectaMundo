@@ -66,12 +66,36 @@
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
-                          Style="{StaticResource CardGridBaseStyle}">
+                          Style="{StaticResource DeckCardGridStyle}">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Margin="0,0,6,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="DarkRed"
+                                                   FontSize="16"
+                                                   Text="⚠"
+                                                   ToolTip="This card is not legal in the selected format">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsLegal}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                    </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -88,7 +112,7 @@
                                     <TextBlock Text="{Binding Type}" TextWrapping="Wrap"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        </DataGridTemplateColumn>                     
                         <DataGridTextColumn Header="Owned" Width="70" Binding="{Binding OwnedQuantity}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Allocated" Width="80" Binding="{Binding AllocatedQuantity}" IsReadOnly="True"/>
                         <DataGridTemplateColumn Header="+">
@@ -117,7 +141,6 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
-
                     <DataGrid.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Remove from deck"
@@ -158,12 +181,36 @@
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
-                          Style="{StaticResource CardGridBaseStyle}">
+                          Style="{StaticResource DeckCardGridStyle}">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                           Margin="0,0,6,0"
+                           VerticalAlignment="Center"
+                           Foreground="DarkRed"
+                           FontSize="16"
+                           Text="⚠"
+                           ToolTip="This card is not legal in the selected format">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsLegal}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                    </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -227,12 +274,36 @@
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
-                          Style="{StaticResource CardGridBaseStyle}">
+                          Style="{StaticResource DeckCardGridStyle}">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                           Margin="0,0,6,0"
+                           VerticalAlignment="Center"
+                           Foreground="DarkRed"
+                           FontSize="16"
+                           Text="⚠"
+                           ToolTip="This card is not legal in the selected format">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsLegal}" Value="False">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                        </Grid>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -269,12 +340,36 @@
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
-                          Style="{StaticResource CardGridBaseStyle}">
+                          Style="{StaticResource DeckCardGridStyle}">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                           Margin="0,0,6,0"
+                           VerticalAlignment="Center"
+                           Foreground="DarkRed"
+                           FontSize="16"
+                           Text="⚠"
+                           ToolTip="This card is not legal in the selected format">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsLegal}" Value="False">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                        </Grid>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -314,12 +409,36 @@
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
-                          Style="{StaticResource CardGridBaseStyle}">
+                          Style="{StaticResource DeckCardGridStyle}">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                           Margin="0,0,6,0"
+                           VerticalAlignment="Center"
+                           Foreground="DarkRed"
+                           FontSize="16"
+                           Text="⚠"
+                           ToolTip="This card is not legal in the selected format">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsLegal}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
+                                    </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
