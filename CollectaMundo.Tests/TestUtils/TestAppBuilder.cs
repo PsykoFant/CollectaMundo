@@ -101,7 +101,7 @@ public static class TestAppBuilder
         var cardLocationRepo = new CardLocationRepo();
         var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
         var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityProviderService);
-        var deckBuilderService = new DeckBuilderService(uowRunner, new DeckBuilderLogic(), new DeckBuilderRepo());
+        var deckBuilderService = new DeckBuilderService(uowRunner, cardLegalityProviderService, new DeckBuilderLogic(), new DeckBuilderRepo());
 
         var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
 

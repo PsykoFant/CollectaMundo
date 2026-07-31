@@ -1,8 +1,10 @@
-﻿using CollectaMundo.ApplicationServices.Decks;
+﻿using CollectaMundo.ApplicationServices.CardLegalities;
+using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.Infrastructure.CardLegalities;
 using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels.Decks;
@@ -353,7 +355,9 @@ namespace CollectaMundo.Tests.UnitTests
                 });
 
             var deckBuilderLogic = new DeckBuilderLogic();
-            var deckBuilderService = new DeckBuilderService(unitOfWorkRunnerMock.Object, deckBuilderLogic, repositoryMock.Object);
+
+            var cardLegalityProviderService = new CardLegalityProviderService(unitOfWorkRunnerMock.Object, new CardLegalityRepo());
+            var deckBuilderService = new DeckBuilderService(unitOfWorkRunnerMock.Object, cardLegalityProviderService, deckBuilderLogic, repositoryMock.Object);
             var viewModel = new DeckBuilderViewModel(deckBuilderService, null!, null!)
             {
                 DeckLocationId = 42,
