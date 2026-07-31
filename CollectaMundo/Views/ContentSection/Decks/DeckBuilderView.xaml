@@ -6,7 +6,7 @@
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              xmlns:deckViewModels="clr-namespace:CollectaMundo.ViewModels.Decks"
-             xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"             
+             xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=deckViewModels:DeckBuilderViewModel}"
              d:Style="{StaticResource {x:Type UserControl}}"
@@ -60,99 +60,58 @@
 
             <!-- Deck -->
             <GroupBox Grid.Column="0" Grid.Row ="0" Header="Deck">
-                <DataGrid x:Name="DeckCardsDataGrid"
-                          ItemsSource="{Binding MainboardZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
+                <DataGrid x:Name="DeckCardsDataGrid" ItemsSource="{Binding MainboardZone.Cards}"
+                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"                          
                           Style="{StaticResource DeckCardGridStyle}">
+
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0"
-                                                   Margin="0,0,6,0"
-                                                   VerticalAlignment="Center"
-                                                   Foreground="DarkRed"
-                                                   FontSize="16"
-                                                   Text="⚠"
-                                                   ToolTip="This card is not legal in the selected format">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsLegal}" Value="False">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                        <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Card types" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Type}" TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>                     
-                        <DataGridTextColumn Header="Owned" Width="70" Binding="{Binding OwnedQuantity}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Allocated" Width="80" Binding="{Binding AllocatedQuantity}" IsReadOnly="True"/>
-                        <DataGridTemplateColumn Header="+">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="+" Style="{StaticResource StepperButtonStyle}" 
-                                            Command="{Binding DataContext.IncrementDeckCardQuantityCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                            CommandParameter="{Binding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Quantity">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <sharedElements:NumericEditorUserControl DataContext="{Binding DesiredQuantityBinding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="-">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="-" Style="{StaticResource StepperButtonStyle}"
-                                            Command="{Binding DataContext.DecrementDeckCardQuantityCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Card Name"
+                                Width="*"
+                                SortMemberPath="CardName"
+                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+
+                        <DataGridTemplateColumn Header="Mana Cost"
+                                Width="Auto"
+                                SortMemberPath="ManaValue"
+                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+
+                        <DataGridTemplateColumn Header="Card types"
+                                Width="Auto"
+                                SortMemberPath="Type"
+                                CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
+
+                        <DataGridTextColumn Header="Owned"
+                            Width="70"
+                            Binding="{Binding OwnedQuantity}"
+                            IsReadOnly="True"/>
+
+                        <DataGridTextColumn Header="Allocated"
+                            Width="80"
+                            Binding="{Binding AllocatedQuantity}"
+                            IsReadOnly="True"/>
+
+                        <DataGridTemplateColumn Header="+"
+                                CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
+
+                        <DataGridTemplateColumn Header="Quantity"
+                                CellTemplate="{StaticResource DeckCardQuantityCellTemplate}"/>
+
+                        <DataGridTemplateColumn Header="-"
+                                CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
                     </DataGrid.Columns>
+
                     <DataGrid.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Remove from deck"
                                       Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
 
                     <DataGrid.InputBindings>
                         <KeyBinding Key="Delete"
-                                        Command="{Binding DeleteDeckCardsCommand}"
-                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                    Command="{Binding DeleteDeckCardsCommand}" 
+                                    CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     </DataGrid.InputBindings>
                 </DataGrid>
             </GroupBox>
@@ -175,91 +134,40 @@
 
             <!-- Sideboard -->
             <GroupBox Grid.Column="0" Grid.Row ="1" Header="Sideboard" Visibility="{Binding IsSideboardZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                <DataGrid x:Name="SideboardDataGrid"
-                          ItemsSource="{Binding SideboardZone.Cards}"
+                <DataGrid x:Name="SideboardDataGrid" ItemsSource="{Binding SideboardZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
                           Style="{StaticResource DeckCardGridStyle}">
+
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0"
-                           Margin="0,0,6,0"
-                           VerticalAlignment="Center"
-                           Foreground="DarkRed"
-                           FontSize="16"
-                           Text="⚠"
-                           ToolTip="This card is not legal in the selected format">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsLegal}" Value="False">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                        <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="+">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="+" Style="{StaticResource StepperButtonStyle}" 
-                                            Command="{Binding DataContext.IncrementDeckCardQuantityCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                            CommandParameter="{Binding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Quantity">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <sharedElements:NumericEditorUserControl DataContext="{Binding DesiredQuantityBinding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="-">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="-" Style="{StaticResource StepperButtonStyle}"
-                                            Command="{Binding DataContext.DecrementDeckCardQuantityCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Card Name"
+                                Width="*"
+                                SortMemberPath="CardName"
+                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+
+                        <DataGridTemplateColumn Header="Mana Cost"
+                                Width="Auto"
+                                SortMemberPath="ManaValue"
+                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+
+                        <DataGridTemplateColumn Header="+"
+                                CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
+
+                        <DataGridTemplateColumn Header="Quantity" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}"/>
+
+                        <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
                     </DataGrid.Columns>
 
                     <DataGrid.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Remove from sideboard"
-                                      Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                            <MenuItem Header="Remove from sideboard" Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
 
                     <DataGrid.InputBindings>
                         <KeyBinding Key="Delete"
-                                        Command="{Binding DeleteDeckCardsCommand}"
-                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                    Command="{Binding DeleteDeckCardsCommand}" 
+                                    CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     </DataGrid.InputBindings>
                 </DataGrid>
             </GroupBox>
@@ -268,66 +176,34 @@
             <StackPanel Grid.Column="2" Grid.Row="1" Grid.RowSpan="2">
                 <!-- Command zone -->
                 <GroupBox Header="Command zone" Visibility="{Binding IsCommanderZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <DataGrid x:Name="CommanderDataGrid"
-                          ItemsSource="{Binding CommanderZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
-                          Style="{StaticResource DeckCardGridStyle}">
+                    <DataGrid x:Name="CommanderDataGrid" ItemsSource="{Binding CommanderZone.Cards}"
+                              SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                              Style="{StaticResource DeckCardGridStyle}">
+
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0"
-                           Margin="0,0,6,0"
-                           VerticalAlignment="Center"
-                           Foreground="DarkRed"
-                           FontSize="16"
-                           Text="⚠"
-                           ToolTip="This card is not legal in the selected format">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsLegal}" Value="False">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                            <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Mana Cost" Width="Auto">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Image Source="{Binding ManaCostImage}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Card Name"
+                                Width="*"
+                                SortMemberPath="CardName"
+                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+
+                            <DataGridTemplateColumn Header="Mana Cost"
+                                Width="Auto"
+                                SortMemberPath="ManaValue"
+                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
                         </DataGrid.Columns>
 
                         <DataGrid.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Fire commander"
-                                      Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                          Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                             </ContextMenu>
                         </DataGrid.ContextMenu>
 
                         <DataGrid.InputBindings>
                             <KeyBinding Key="Delete"
                                         Command="{Binding DeleteDeckCardsCommand}"
-                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                         </DataGrid.InputBindings>
                     </DataGrid>
                 </GroupBox>
@@ -337,52 +213,19 @@
                     <DataGrid x:Name="CompanionDataGrid"
                           ItemsSource="{Binding CompanionZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
                           Style="{StaticResource DeckCardGridStyle}">
+
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0"
-                           Margin="0,0,6,0"
-                           VerticalAlignment="Center"
-                           Foreground="DarkRed"
-                           FontSize="16"
-                           Text="⚠"
-                           ToolTip="This card is not legal in the selected format">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsLegal}" Value="False">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                            <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Card Name"
+                                Width="*"
+                                SortMemberPath="CardName"
+                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
 
-                            <DataGridTemplateColumn Header="Mana Cost" Width="Auto">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                        </DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Mana Cost"
+                                Width="Auto"
+                                SortMemberPath="ManaValue"
+                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                        </DataGrid.Columns>                        
 
                         <DataGrid.ContextMenu>
                             <ContextMenu>
@@ -406,100 +249,49 @@
                 <DataGrid x:Name="MaybeboardDataGrid"
                           ItemsSource="{Binding MaybeboardZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
                           Style="{StaticResource DeckCardGridStyle}">
+
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0"
-                           Margin="0,0,6,0"
-                           VerticalAlignment="Center"
-                           Foreground="DarkRed"
-                           FontSize="16"
-                           Text="⚠"
-                           ToolTip="This card is not legal in the selected format">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsLegal}" Value="False">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                        <TextBlock Grid.Column="1" Text="{Binding CardName}" TextWrapping="Wrap"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Card Name"
+                                Width="*"
+                                SortMemberPath="CardName"
+                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
 
-                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Mana Cost"
+                                Width="Auto"
+                                SortMemberPath="ManaValue"
+                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
 
-                        <DataGridTemplateColumn Header="Card types" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Type}" TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Card types"
+                                Width="Auto"
+                                SortMemberPath="Type"
+                                CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
 
-                        <DataGridTemplateColumn Header="+">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="+" Style="{StaticResource StepperButtonStyle}" 
-                                            Command="{Binding DataContext.IncrementDeckCardQuantityCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
-                                            CommandParameter="{Binding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="+"
+                                CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
 
-                        <DataGridTemplateColumn Header="Quantity">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <sharedElements:NumericEditorUserControl DataContext="{Binding DesiredQuantityBinding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Quantity"
+                                CellTemplate="{StaticResource DeckCardQuantityCellTemplate}"/>
 
-                        <DataGridTemplateColumn Header="-">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="-" Style="{StaticResource StepperButtonStyle}"
-                                            Command="{Binding DataContext.DecrementDeckCardQuantityCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="-"
+                                CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
                     </DataGrid.Columns>
 
                     <DataGrid.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Remove from Maybeboard"
-                                      Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                            <MenuItem Header="Remove from maybeboard"
+                      Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand,
+                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      CommandParameter="{Binding PlacementTarget.SelectedItems,
+                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
 
                     <DataGrid.InputBindings>
                         <KeyBinding Key="Delete"
-                                        Command="{Binding DeleteDeckCardsCommand}"
-                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                    Command="{Binding DeleteDeckCardsCommand}"
+                    CommandParameter="{Binding SelectedItems,
+                                              RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     </DataGrid.InputBindings>
                 </DataGrid>
             </GroupBox>

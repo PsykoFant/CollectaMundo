@@ -40,10 +40,10 @@
     </Style>
 
     <!-- Style for card datagrid -->
-        <Style x:Key="CardGridBaseStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource DataGridBaseStyle}">
-            <!-- your attached behaviors (static values only) -->
-            <Setter Property="behaviors:DataGridPersistSortBehavior.Enable" Value="True"/>
-    </Style>    
+    <Style x:Key="CardGridBaseStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource DataGridBaseStyle}">
+        <!-- your attached behaviors (static values only) -->
+        <Setter Property="behaviors:DataGridPersistSortBehavior.Enable" Value="True"/>
+    </Style>
 
     <!-- Row style for deck cards -->
     <Style x:Key="DeckCardRowStyle"
@@ -60,12 +60,18 @@
                 <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
             </Trigger>
         </Style.Triggers>
-    </Style>
-
+    </Style>    
+    
     <!-- Style for deck card DataGrids -->
     <Style x:Key="DeckCardGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource CardGridBaseStyle}">
         <Setter Property="RowStyle" Value="{StaticResource DeckCardRowStyle}"/>
+        <Setter Property="AutoGenerateColumns" Value="False"/>
+        <Setter Property="CanUserAddRows" Value="False"/>
+        <Setter Property="AutoGenerateColumns" Value="False"/>
+        <Setter Property="IsReadOnly" Value="True"/>
     </Style>
+
+
 
     <!-- Style for stepper buttons for card to add/edit listview -->
     <Style x:Key="StepperButtonStyle" TargetType="Button">

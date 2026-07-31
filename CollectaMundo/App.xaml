@@ -12,6 +12,7 @@
                 <ResourceDictionary Source="Resources/Styles/DataDisplay.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Shell.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Filters.xaml" />
+                <ResourceDictionary Source="Resources/Templates/DeckCardTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
