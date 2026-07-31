@@ -390,7 +390,13 @@ namespace CollectaMundo.ViewModels.Decks
                 Section = card.Section
             };
 
-            var validation = _deckBuilderService.ValidateCard(DeckFormat, deckCards, entry, card.Card);
+            var validation = new DeckCardValidationResult { IsLegal = true };
+
+            // Only validate if the deck format is not null and not casual
+            if (DeckFormat != null && DeckFormat != "casual")
+            {
+                validation = _deckBuilderService.ValidateCard(DeckFormat, deckCards, entry, card.Card);
+            }
 
             return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync)
             {
@@ -444,28 +450,6 @@ namespace CollectaMundo.ViewModels.Decks
             IsAddButtonVisible = SelectedOracleCard is not null;
             CanSetSelectedOracleCardAsCommander = availability.CanSetAsCommander && IsAddButtonVisible is true;
             CanSetSelectedOracleCardAsCompanion = availability.CanSetAsCompanion && IsAddButtonVisible is true;
-        }
-
-        // If we add format changing in deck builder later
-        private void RefreshCardLegalities()
-        {
-            var deckCards = CreateDeckCardStates();
-
-            foreach (var row in AllDeckCards)
-            {
-                var entry = new DeckCardEntry
-                {
-                    DeckLocationId = DeckLocationId ?? 0,
-                    OracleId = row.OracleId,
-                    CardName = row.CardName,
-                    DesiredQuantity = row.DesiredQuantity,
-                    Section = row.Section
-                };
-
-                var validation = _deckBuilderService.ValidateCard(DeckFormat, deckCards, entry, row.OracleCard);
-
-                row.IsLegal = validation.IsLegal;
-            }
         }
     }
 }

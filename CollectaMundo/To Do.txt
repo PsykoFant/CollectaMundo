@@ -1,9 +1,6 @@
 TO DO 
 
 Deck editor!
- - Tilføj legality check (commander)
-
-
  - Tilføj owned/allocated support
  - Sorter deck datagrid efter kort type
  - Tilføj træk kort fra datagrid
