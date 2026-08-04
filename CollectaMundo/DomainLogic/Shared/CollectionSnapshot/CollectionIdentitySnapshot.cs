@@ -3,13 +3,13 @@ using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared.Models;
 
-namespace CollectaMundo.DomainLogic.Shared
+namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
 {
-    public sealed class CollectionSnapshot : ICollectionSnapshot
+    public sealed class CollectionIdentitySnapshot : ICollectionIdentitySnapshot
     {
         private readonly Dictionary<int, CollectionCardDbRow> _byId;
         private readonly Dictionary<CollectionIdentity, CollectionCardDbRow> _byIdentity;
-        private CollectionSnapshot(Dictionary<int, CollectionCardDbRow> byId, Dictionary<CollectionIdentity, CollectionCardDbRow> byIdentity)
+        private CollectionIdentitySnapshot(Dictionary<int, CollectionCardDbRow> byId, Dictionary<CollectionIdentity, CollectionCardDbRow> byIdentity)
         {
             _byId = byId;
             _byIdentity = byIdentity;
@@ -17,7 +17,7 @@ namespace CollectaMundo.DomainLogic.Shared
         public IReadOnlyCollection<CollectionCardDbRow> Rows => _byId.Values;
         public bool TryGetById(int cardId, out CollectionCardDbRow row) => _byId.TryGetValue(cardId, out row!);
         public bool TryGetByIdentity(CollectionIdentity identity, out CollectionCardDbRow row) => _byIdentity.TryGetValue(identity, out row!);
-        public static CollectionSnapshot From(IEnumerable<CollectionCard> cards)
+        public static CollectionIdentitySnapshot From(IEnumerable<CollectionCard> cards)
         {
             var byId = new Dictionary<int, CollectionCardDbRow>(capacity: 1024);
             var byIdentity = new Dictionary<CollectionIdentity, CollectionCardDbRow>(capacity: 1024);
@@ -44,9 +44,9 @@ namespace CollectaMundo.DomainLogic.Shared
                 byIdentity[identity] = row;
             }
 
-            return new CollectionSnapshot(byId, byIdentity);
+            return new CollectionIdentitySnapshot(byId, byIdentity);
         }
-        public static CollectionSnapshot FromRows(IEnumerable<CollectionCardDbRow> rows)
+        public static CollectionIdentitySnapshot FromRows(IEnumerable<CollectionCardDbRow> rows)
         {
             var byId = new Dictionary<int, CollectionCardDbRow>(capacity: 1024);
             var byIdentity = new Dictionary<CollectionIdentity, CollectionCardDbRow>(capacity: 1024);
@@ -57,7 +57,7 @@ namespace CollectaMundo.DomainLogic.Shared
                 byIdentity[row.Identity] = row;
             }
 
-            return new CollectionSnapshot(byId, byIdentity);
+            return new CollectionIdentitySnapshot(byId, byIdentity);
         }
     }
 }

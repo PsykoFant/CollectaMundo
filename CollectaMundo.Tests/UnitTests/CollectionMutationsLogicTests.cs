@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CollectionMutations;
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
-using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared.Models;
 
@@ -9,7 +9,7 @@ namespace CollectaMundo.Tests.UnitTests
     public class CollectionMutationsLogicTests
     {
         // Snapshot stub for unit tests: represents an empty in-memory collection.
-        private sealed class EmptySnapshot : ICollectionSnapshot
+        private sealed class EmptySnapshot : ICollectionIdentitySnapshot
         {
             public IReadOnlyCollection<CollectionCardDbRow> Rows { get; } = [];
             public bool TryGetById(int cardId, out CollectionCardDbRow row)
@@ -23,7 +23,7 @@ namespace CollectaMundo.Tests.UnitTests
                 return false;
             }
         }
-        private sealed class TestSnapshot : ICollectionSnapshot
+        private sealed class TestSnapshot : ICollectionIdentitySnapshot
         {
             private readonly Dictionary<int, CollectionCardDbRow> _byId;
             private readonly Dictionary<CollectionIdentity, CollectionCardDbRow> _byIdentity;

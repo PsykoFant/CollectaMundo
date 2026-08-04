@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CollectionMutations;
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
-using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CollectionMutations;
 using CollectaMundo.Infrastructure.Shared.Models;
@@ -12,7 +12,7 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
     {
         private readonly ICollectionMutationsLogic _logic = logic;
         private readonly ICollectionMutationsRepo _repo = repo;
-        public async Task<CollectionChangeSet<CollectionCardDbRow>> SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, ICollectionSnapshot snapshot, SQLiteConnection connection, SQLiteTransaction transaction)
+        public async Task<CollectionChangeSet<CollectionCardDbRow>> SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, ICollectionIdentitySnapshot snapshot, SQLiteConnection connection, SQLiteTransaction transaction)
         {
             var plan = _logic.PlanIdentityRewriteBatch(cards, snapshot);
 

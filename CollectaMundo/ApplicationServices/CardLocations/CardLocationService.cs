@@ -5,7 +5,7 @@ using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CardLocations.Models;
-using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLocations;
@@ -402,7 +402,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     var affectedRows = await _cardLocationRepo.GetCollectionRowsByLocationIdsAsync(conn, tx, distinctIds, token);
 
                     // Step 3: build and execute one collection mutation plan for all affected cards.
-                    var snapshot = CollectionSnapshot.FromRows(snapshotRows);
+                    var snapshot = CollectionIdentitySnapshot.FromRows(snapshotRows);
                     var editedCards = affectedRows.Select(CollectionCardDraftFactory.FromDbRowWithClearedLocation).ToList();
 
                     var changeSet = await _mutationsService.SubmitBatchAsync(editedCards, snapshot, conn, tx);

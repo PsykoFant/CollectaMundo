@@ -17,8 +17,8 @@ using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.KeyedDataProvider;
-using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared;
@@ -691,9 +691,9 @@ namespace CollectaMundo.ViewModels
             Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}");
             PricesVM.RefreshLatestPriceDate();
         }
-        public ICollectionSnapshot CreateMyCollectionSnapshot()
+        public ICollectionIdentitySnapshot CreateCollectionIdentitySnapshot()
         {
-            return CollectionSnapshot.From(MyCollectionVM.Cards);
+            return CollectionIdentitySnapshot.From(MyCollectionVM.Cards);
         }
 
         #endregion

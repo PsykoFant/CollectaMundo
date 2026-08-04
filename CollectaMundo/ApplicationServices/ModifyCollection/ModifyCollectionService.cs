@@ -4,8 +4,8 @@ using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.ModifyCollection;
-using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.Shared.Models;
@@ -37,7 +37,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
         }
 
         // Submitting new cards or card edits
-        public async Task<CollectionChangeSet<CollectionCardDbRow>> SubmitCardBatchAsync(IEnumerable<CollectionCardDraft> cards, ICollectionSnapshot snapshot)
+        public async Task<CollectionChangeSet<CollectionCardDbRow>> SubmitCardBatchAsync(IEnumerable<CollectionCardDraft> cards, ICollectionIdentitySnapshot snapshot)
         {
             try
             {
@@ -56,7 +56,7 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
                 throw;
             }
         }
-        public async Task<CollectionChangeSet<CollectionCardDbRow>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<PrintingCard> cards, ICollectionSnapshot snapshot)
+        public async Task<CollectionChangeSet<CollectionCardDbRow>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<PrintingCard> cards, ICollectionIdentitySnapshot snapshot)
         {
             return await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {

@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CollectionMutations.Models;
-using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared.Models;
@@ -8,7 +8,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 {
     public class CollectionMutationsLogic : ICollectionMutationsLogic
     {
-        public CollectionMutationPlan PlanIdentityRewriteBatch(IEnumerable<CollectionCardDraft> cards, ICollectionSnapshot snapshot)
+        public CollectionMutationPlan PlanIdentityRewriteBatch(IEnumerable<CollectionCardDraft> cards, ICollectionIdentitySnapshot snapshot)
         {
             var plan = new CollectionMutationPlan();
             var removedIds = new HashSet<int>();
@@ -56,7 +56,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
         }
 
         // Helper methods for PlanIdentityRewriteBatch
-        private static void SeedWorkingState(ICollectionSnapshot snapshot, Dictionary<int, WorkingRow> workingById, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        private static void SeedWorkingState(ICollectionIdentitySnapshot snapshot, Dictionary<int, WorkingRow> workingById, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
         {
             foreach (var row in snapshot.Rows)
             {

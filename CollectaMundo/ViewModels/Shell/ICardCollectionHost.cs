@@ -1,11 +1,12 @@
-﻿using CollectaMundo.DomainLogic.Shared;
+﻿using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 
 namespace CollectaMundo.ViewModels.Shell
 {
     public interface ICardCollectionHost
     {
         // Cardlist and filter refresh
-        ICollectionSnapshot CreateMyCollectionSnapshot();
+        ICollectionIdentitySnapshot CreateCollectionIdentitySnapshot();
+        ICollectionQuantitySnapshot CreateCollectionQuantitySnapshot();
         Task ReloadAllCardListsAndFiltersAsync();
         Task RefreshAllPrices();
     }

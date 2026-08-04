@@ -2,8 +2,8 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
-using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared.Models;
@@ -337,7 +337,7 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 return;
             }
 
-            var snapshot = _cardCollectionHost.CreateMyCollectionSnapshot();
+            var snapshot = _cardCollectionHost.CreateCollectionIdentitySnapshot();
             var changeSet = await _service.SubmitNewCardsWithDefaultsBatchAsync(printings, snapshot);
 
             CollectionChanged?.Invoke(this, changeSet);
@@ -420,10 +420,10 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         }
 
         // Shared helpers 
-        private async Task SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, Func<IEnumerable<CollectionCardDraft>, ICollectionSnapshot, Task<CollectionChangeSet<CollectionCardDbRow>>> submit, bool clearAfter, string summaryTitle)
+        private async Task SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, Func<IEnumerable<CollectionCardDraft>, ICollectionIdentitySnapshot, Task<CollectionChangeSet<CollectionCardDbRow>>> submit, bool clearAfter, string summaryTitle)
         {
             var cardList = cards.ToList();
-            var snapshot = _cardCollectionHost.CreateMyCollectionSnapshot();
+            var snapshot = _cardCollectionHost.CreateCollectionIdentitySnapshot();
 
             var changeSet = await submit(cardList, snapshot);
 
