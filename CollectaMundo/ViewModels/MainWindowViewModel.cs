@@ -693,7 +693,12 @@ namespace CollectaMundo.ViewModels
         }
         public ICollectionIdentitySnapshot CreateCollectionIdentitySnapshot()
         {
-            return CollectionIdentitySnapshot.From(MyCollectionVM.Cards);
+            return CollectionSnapshotFactory.CreateIdentitySnapshot(MyCollectionVM.Cards);
+        }
+
+        public ICollectionQuantitySnapshot CreateCollectionQuantitySnapshot()
+        {
+            return CollectionSnapshotFactory.CreateQuantitySnapshot(MyCollectionVM.Cards);
         }
 
         #endregion
