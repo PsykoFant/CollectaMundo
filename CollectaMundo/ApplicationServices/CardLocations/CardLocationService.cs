@@ -402,7 +402,7 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                     var affectedRows = await _cardLocationRepo.GetCollectionRowsByLocationIdsAsync(conn, tx, distinctIds, token);
 
                     // Step 3: build and execute one collection mutation plan for all affected cards.
-                    var snapshot = CollectionSnapshotFactory.CreateIdentitySnapshotFromRows(snapshotRows);
+                    var snapshot = CollectionSnapshotFactory.CreateIdentitySnapshot(snapshotRows);
                     var editedCards = affectedRows.Select(CollectionCardDraftFactory.FromDbRowWithClearedLocation).ToList();
 
                     var changeSet = await _mutationsService.SubmitBatchAsync(editedCards, snapshot, conn, tx);

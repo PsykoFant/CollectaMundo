@@ -17,7 +17,6 @@ namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
 
             return new CollectionIdentitySnapshot(byId, byIdentity, rowList);
         }
-
         public static CollectionIdentitySnapshot CreateIdentitySnapshot(IEnumerable<CollectionCard> cards)
         {
             ArgumentNullException.ThrowIfNull(cards);
@@ -44,29 +43,13 @@ namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
             return CreateIdentitySnapshot(rows);
         }
 
-        public static CollectionIdentitySnapshot CreateIdentitySnapshotFromRows(IEnumerable<CollectionCardDbRow> rows)
-        {
-            ArgumentNullException.ThrowIfNull(rows);
-
-            var rowList = rows.ToList();
-            var byId = new Dictionary<int, CollectionCardDbRow>(capacity: rowList.Count);
-            var byIdentity = new Dictionary<CollectionIdentity, CollectionCardDbRow>(capacity: rowList.Count);
-
-            foreach (var row in rowList)
-            {
-                byId[row.CardId] = row;
-                byIdentity[row.Identity] = row;
-            }
-
-            return new CollectionIdentitySnapshot(byId, byIdentity, rowList);
-        }
         public static CollectionQuantitySnapshot CreateQuantitySnapshot(IEnumerable<CollectionCard> cards)
         {
             ArgumentNullException.ThrowIfNull(cards);
 
             var ownedByOracleId = new Dictionary<string, int>(capacity: 1024, comparer: StringComparer.OrdinalIgnoreCase);
 
-            var allocatedByOracleAndLocation = new Dictionary<OracleLocationIdentity, int>(capacity: 1024, comparer: OracleLocationIdentityComparer.Instance);
+            var allocatedByOracleAndLocation = new Dictionary<OracleLocationIdentity, int>();
 
             foreach (var card in cards)
             {
@@ -84,32 +67,12 @@ namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
                     continue;
                 }
 
-                var key = new OracleLocationIdentity(oracleId, locationId);
+                var key = new OracleLocationIdentity(card.Oracle.ScryfallOracleId,locationId);
 
                 allocatedByOracleAndLocation[key] = allocatedByOracleAndLocation.GetValueOrDefault(key) + card.CardsOwned;
             }
 
             return new CollectionQuantitySnapshot(ownedByOracleId, allocatedByOracleAndLocation);
-        }
-
-        private sealed class OracleLocationIdentityComparer : IEqualityComparer<OracleLocationIdentity>
-        {
-            public static OracleLocationIdentityComparer Instance { get; } =
-                new();
-
-            private OracleLocationIdentityComparer()
-            {
-            }
-
-            public bool Equals(OracleLocationIdentity x, OracleLocationIdentity y)
-            {
-                return x.LocationId == y.LocationId && string.Equals(x.OracleId, y.OracleId, StringComparison.OrdinalIgnoreCase);
-            }
-
-            public int GetHashCode(OracleLocationIdentity obj)
-            {
-                return HashCode.Combine(StringComparer.OrdinalIgnoreCase.GetHashCode(obj.OracleId), obj.LocationId);
-            }
         }
     }
 }
