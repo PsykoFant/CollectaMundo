@@ -22,7 +22,7 @@
             <RowDefinition Height="Auto"/>  <!-- 0 - Header + back button -->
             <RowDefinition Height="Auto"/>  <!-- 1 - Deck list + Stats -->
             <RowDefinition Height="Auto"/>  <!-- 2 - Filter criteria summary -->
-            <RowDefinition Height="40"/>  <!-- 3 - Add-buttons -->
+            <RowDefinition Height="40"/>    <!-- 3 - Add-buttons -->
             <RowDefinition Height="3*"/>    <!-- 4 - Bottom: Filterable oracle card source -->
         </Grid.RowDefinitions>
 
@@ -76,19 +76,16 @@
                                 CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
 
                         <DataGridTemplateColumn Header="Card types"
-                                Width="Auto"
-                                SortMemberPath="Type"
-                                CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
+                                                SortMemberPath="Type"
+                                                CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
 
-                        <DataGridTextColumn Header="Owned"
-                            Width="70"
-                            Binding="{Binding OwnedQuantity}"
-                            IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="Owned"
+                                                SortMemberPath="OwnedQuantity"
+                                                CellTemplate="{StaticResource DeckCardOwnedCellTemplate}"/>
 
-                        <DataGridTextColumn Header="Allocated"
-                            Width="80"
-                            Binding="{Binding AllocatedQuantity}"
-                            IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="Allocated"
+                                                SortMemberPath="AllocatedQuantity"
+                                                CellTemplate="{StaticResource DeckCardAllocatedCellTemplate}"/>
 
                         <DataGridTemplateColumn Header="+"
                                 CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>

@@ -41,6 +41,14 @@
         <TextBlock Text="{Binding Type}" TextWrapping="Wrap"/>
     </DataTemplate>
 
+    <DataTemplate x:Key="DeckCardOwnedCellTemplate">
+        <TextBlock Text="{Binding OwnedQuantity}" TextWrapping="Wrap"/>
+    </DataTemplate>
+
+    <DataTemplate x:Key="DeckCardAllocatedCellTemplate">
+        <TextBlock Text="{Binding AllocatedQuantity}" TextWrapping="Wrap"/>
+    </DataTemplate>
+
     <DataTemplate x:Key="DeckCardIncrementCellTemplate">
         <Button Content="+"
                 Style="{StaticResource StepperButtonStyle}"
@@ -49,8 +57,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardQuantityCellTemplate">
-        <sharedElements:NumericEditorUserControl
-            DataContext="{Binding DesiredQuantityBinding}"/>
+        <sharedElements:NumericEditorUserControl DataContext="{Binding DesiredQuantityBinding}"/>
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardDecrementCellTemplate">

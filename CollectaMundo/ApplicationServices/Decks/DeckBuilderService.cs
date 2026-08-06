@@ -57,8 +57,7 @@ namespace CollectaMundo.ApplicationServices.Decks
                     updatedCards[existingIndex] = new DeckCardState
                     {
                         Card = existing.Card,
-                        DesiredQuantity =
-                            existing.DesiredQuantity + quantity,
+                        DesiredQuantity = existing.DesiredQuantity + quantity,
                         Section = existing.Section
                     };
 

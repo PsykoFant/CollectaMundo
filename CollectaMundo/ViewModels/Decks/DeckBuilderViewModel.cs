@@ -4,9 +4,11 @@ using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Filtering;
+using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections;
@@ -15,11 +17,13 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Decks
 {
-    public partial class DeckBuilderViewModel(IDeckBuilderService deckBuilderService, CardListViewModel<OracleCard> oracleCardsVM, FilterPanelViewModel filterPanelViewModel) : ObservableObject
+    public partial class DeckBuilderViewModel(IDeckBuilderService deckBuilderService, CardListViewModel<OracleCard> oracleCardsVM, FilterPanelViewModel filterPanelViewModel, ICardCollectionHost cardCollectionHost) : ObservableObject
     {
         private readonly IDeckBuilderService _deckBuilderService = deckBuilderService;
         private readonly CardListViewModel<OracleCard> _oracleCardsVM = oracleCardsVM;
         private readonly FilterPanelViewModel _filterPanelViewModel = filterPanelViewModel;
+        private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
+        private ICollectionQuantitySnapshot? _collectionQuantitySnapshot;
         private IEnumerable<DeckCardEntryViewModel> AllDeckCards => Zones.SelectMany(z => z.Cards);
 
         // Filtered OracleCard list view model
@@ -61,11 +65,13 @@ namespace CollectaMundo.ViewModels.Decks
             DeckName = deck.Name;
             DeckFormat = deck.Format;
 
+            _collectionQuantitySnapshot = _cardCollectionHost.CreateCollectionQuantitySnapshot();
+
             var deckCards = new List<DeckCardState>();
 
             foreach (var entry in entries)
             {
-                var oracleCard = CardsVM.Cards.FirstOrDefault(c => string.Equals(c.ScryfallOracleId, entry.OracleId, StringComparison.OrdinalIgnoreCase));
+                var oracleCard = CardsVM.Cards.FirstOrDefault(card => string.Equals(card.ScryfallOracleId, entry.OracleId, StringComparison.OrdinalIgnoreCase));
 
                 if (oracleCard is null)
                 {
@@ -398,12 +404,22 @@ namespace CollectaMundo.ViewModels.Decks
                 validation = _deckBuilderService.ValidateCard(DeckFormat, deckCards, entry, card.Card);
             }
 
+            var oracleId = card.Card.ScryfallOracleId;
+
+            var ownedQuantity = _collectionQuantitySnapshot?.GetOwnedQuantity(oracleId) ?? 0;
+
+            var allocatedQuantity = DeckLocationId is int locationId? _collectionQuantitySnapshot?.GetAllocatedQuantity(oracleId, locationId)
+                ?? 0
+                : 0;
+
             return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync)
             {
                 OracleCard = card.Card,
                 DesiredQuantity = card.DesiredQuantity,
                 Section = card.Section,
-                IsLegal = validation.IsLegal
+                IsLegal = validation.IsLegal,
+                OwnedQuantity = ownedQuantity,
+                AllocatedQuantity = allocatedQuantity
             };
         }
         private Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel? row)

@@ -16,9 +16,12 @@ namespace CollectaMundo.ViewModels.Decks
         public double? ManaValue => OracleCard.ManaValue;
         public ImageSource? ManaCostImage => OracleCard.ManaCostImage;
         public string? Type => OracleCard.Type;
+        
+        [ObservableProperty]
+        private int ownedQuantity;
 
-        public int OwnedQuantity => 0;
-        public int AllocatedQuantity => 0;
+        [ObservableProperty]
+        private int allocatedQuantity;
 
         [ObservableProperty]
         private int desiredQuantity = 1;

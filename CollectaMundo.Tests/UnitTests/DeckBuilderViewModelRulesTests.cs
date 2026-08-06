@@ -358,7 +358,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var cardLegalityProviderService = new CardLegalityProviderService(unitOfWorkRunnerMock.Object, new CardLegalityRepo());
             var deckBuilderService = new DeckBuilderService(unitOfWorkRunnerMock.Object, cardLegalityProviderService, deckBuilderLogic, repositoryMock.Object);
-            var viewModel = new DeckBuilderViewModel(deckBuilderService, null!, null!)
+            var viewModel = new DeckBuilderViewModel(deckBuilderService, null!, null!, null!)
             {
                 DeckLocationId = 42,
                 DeckFormat = format

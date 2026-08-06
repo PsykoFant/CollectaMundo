@@ -172,6 +172,8 @@ namespace CollectaMundo.ViewModels
             _filesystemPicker = fileSystemPicker;
             _utilitiesNavigator = new UtilitiesNavigator();
 
+            var cardCollectionHost = this;
+
             // cardlist viewmodels
             AllCardsVM = new CardListViewModel<PrintingCard>();
             MyCollectionVM = new CardListViewModel<CollectionCard>();
@@ -193,9 +195,7 @@ namespace CollectaMundo.ViewModels
 
             // Deck management viewmodels
             DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
-            DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, OracleCardsVM, FilterPanelVM);
-
-            var cardCollectionHost = this;
+            DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, OracleCardsVM, FilterPanelVM, cardCollectionHost);            
 
             // Utility viewmodels
             UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, _utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
