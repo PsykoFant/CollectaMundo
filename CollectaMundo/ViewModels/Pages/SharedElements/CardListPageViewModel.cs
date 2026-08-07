@@ -63,7 +63,6 @@ namespace CollectaMundo.ViewModels.Pages.SharedElements
                 });
             }
         }
-
         public CardListPageViewModel(CardListViewModel<TCard> cardsVM, FilterPanelViewModel filterVM, string pageTitle, ShellPageEnum cardListPage, string primarySubmitButtonText, ICommand? primarySubmitCommand = null, PricesViewModel? pricesVM = null, ModifyCollectionViewModel? modifyCollectionVM = null)
         {
             CardsVM = cardsVM;

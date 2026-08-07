@@ -42,11 +42,27 @@
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardOwnedCellTemplate">
-        <TextBlock Text="{Binding OwnedQuantity}" TextWrapping="Wrap"/>
+        <TextBlock Text="{Binding OwnedQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center"/>
+    </DataTemplate>
+
+    <DataTemplate x:Key="DeckCardAvailableCellTemplate">
+        <TextBlock Text="{Binding AvailableQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="{x:Type TextBlock}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasInsufficientAvailableQuantity}" Value="True">
+                            <Setter Property="Background" Value="LightCoral"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="ToolTip" Value="Not enough available copies to build the deck."/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardAllocatedCellTemplate">
-        <TextBlock Text="{Binding AllocatedQuantity}" TextWrapping="Wrap"/>
+        <TextBlock Text="{Binding AllocatedQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center"/>
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardIncrementCellTemplate">

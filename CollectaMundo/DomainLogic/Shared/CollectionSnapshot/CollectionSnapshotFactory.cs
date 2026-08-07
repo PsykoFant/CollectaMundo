@@ -42,14 +42,13 @@ namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
 
             return CreateIdentitySnapshot(rows);
         }
-
         public static CollectionQuantitySnapshot CreateQuantitySnapshot(IEnumerable<CollectionCard> cards)
         {
             ArgumentNullException.ThrowIfNull(cards);
 
             var ownedByOracleId = new Dictionary<string, int>(capacity: 1024, comparer: StringComparer.OrdinalIgnoreCase);
-
-            var allocatedByOracleAndLocation = new Dictionary<OracleLocationIdentity, int>();
+            var allocatedByOracleId = new Dictionary<string, int>(capacity: 1024, comparer: StringComparer.OrdinalIgnoreCase);
+            var allocatedByOracleAndLocation = new Dictionary<OracleLocationIdentity, int>();            
 
             foreach (var card in cards)
             {
@@ -67,12 +66,14 @@ namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
                     continue;
                 }
 
-                var key = new OracleLocationIdentity(card.Oracle.ScryfallOracleId,locationId);
+                allocatedByOracleId[oracleId] = allocatedByOracleId.GetValueOrDefault(oracleId) + card.CardsOwned;
+
+                var key = new OracleLocationIdentity(oracleId,locationId);
 
                 allocatedByOracleAndLocation[key] = allocatedByOracleAndLocation.GetValueOrDefault(key) + card.CardsOwned;
             }
 
-            return new CollectionQuantitySnapshot(ownedByOracleId, allocatedByOracleAndLocation);
+            return new CollectionQuantitySnapshot(ownedByOracleId, allocatedByOracleAndLocation, allocatedByOracleId);
         }
     }
 }

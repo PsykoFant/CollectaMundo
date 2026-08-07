@@ -93,8 +93,7 @@ namespace CollectaMundo.ViewModels.Decks
                 AddRowToZone(CreateDeckRow(card, deckCards));
             }
 
-            RefreshZoneVisibility();
-            RefreshRuleDependentProperties();
+            RefreshAll();
         }
 
         #region Observable Properties
@@ -354,16 +353,63 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 GetZone(row.Section).Cards.Remove(row);
                 RefreshZoneVisibility();
+                RefreshOwnedQuantityStatus();
                 return;
             }
 
             if (row.DesiredQuantity != updatedCard.DesiredQuantity)
             {
                 row.DesiredQuantity = updatedCard.DesiredQuantity;
-            }
-
+                RefreshOwnedQuantityStatus();
+            }            
         }
 
+        #endregion
+
+        #region Refresh Methods
+        private void RefreshAll()
+        {
+            RefreshZoneVisibility();
+            RefreshRuleDependentProperties();
+            RefreshOwnedQuantityStatus();
+        }
+        private void RefreshZoneVisibility()
+        {
+            IsCommanderZoneVisible = CommanderZone.Cards.Count > 0 && CommanderFormats.IsCommanderLike(DeckFormat);
+            IsSideboardZoneVisible = SideboardZone.Cards.Count > 0;
+            IsCompanionZoneVisible = CompanionZone.Cards.Count > 0;
+            IsMaybeboardZoneVisible = MaybeboardZone.Cards.Count > 0;
+        }
+        private void RefreshRuleDependentProperties()
+        {
+            var availability = SelectedOracleCard is null
+                ? new DeckActionAvailability()
+                : _deckBuilderService.GetActionAvailability(DeckFormat, CreateDeckCardStates(), SelectedOracleCard);
+
+            IsAddButtonVisible = SelectedOracleCard is not null;
+            CanSetSelectedOracleCardAsCommander = availability.CanSetAsCommander && IsAddButtonVisible is true;
+            CanSetSelectedOracleCardAsCompanion = availability.CanSetAsCompanion && IsAddButtonVisible is true;
+        }
+        private void RefreshOwnedQuantityStatus()
+        {
+            var requiredByOracleId = MainboardZone.Cards
+                .Concat(SideboardZone.Cards)
+                .Concat(CommanderZone.Cards)
+                .Concat(CompanionZone.Cards)
+                .GroupBy(row => row.OracleId, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Sum(row => row.DesiredQuantity), StringComparer.OrdinalIgnoreCase);
+
+            foreach (var row in GetAllDeckRows())
+            {
+                var requiredQuantity = requiredByOracleId.GetValueOrDefault(row.OracleId);
+
+                row.HasInsufficientAvailableQuantity = row.AvailableQuantity < requiredQuantity;
+            }
+        }
+        private IEnumerable<DeckCardEntryViewModel> GetAllDeckRows()
+        {
+            return MainboardZone.Cards.Concat(SideboardZone.Cards).Concat(CommanderZone.Cards).Concat(CompanionZone.Cards);
+        }
         #endregion
 
         // Shared helpers
@@ -382,8 +428,7 @@ namespace CollectaMundo.ViewModels.Decks
                 AddRowToZone(CreateDeckRow(card, result.Cards));
             }
 
-            RefreshZoneVisibility();
-            RefreshRuleDependentProperties();
+            RefreshAll();
         }
         private DeckCardEntryViewModel CreateDeckRow(DeckCardState card, IReadOnlyCollection<DeckCardState> deckCards)
         {
@@ -408,18 +453,21 @@ namespace CollectaMundo.ViewModels.Decks
 
             var ownedQuantity = _collectionQuantitySnapshot?.GetOwnedQuantity(oracleId) ?? 0;
 
-            var allocatedQuantity = DeckLocationId is int locationId? _collectionQuantitySnapshot?.GetAllocatedQuantity(oracleId, locationId)
-                ?? 0
-                : 0;
+            var allocatedQuantity = DeckLocationId is int locationId? _collectionQuantitySnapshot?.GetAllocatedQuantity(oracleId, locationId) ?? 0 : 0;
 
-            return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync)
+            var availableQuantity = DeckLocationId is int currentLocationId
+                ? _collectionQuantitySnapshot?.GetAvailableQuantity(oracleId, currentLocationId) ?? 0
+                : ownedQuantity;
+
+            return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync, desiredQuantityChanged: _ => RefreshOwnedQuantityStatus())
             {
                 OracleCard = card.Card,
                 DesiredQuantity = card.DesiredQuantity,
                 Section = card.Section,
                 IsLegal = validation.IsLegal,
                 OwnedQuantity = ownedQuantity,
-                AllocatedQuantity = allocatedQuantity
+                AllocatedQuantity = allocatedQuantity,
+                AvailableQuantity = availableQuantity
             };
         }
         private Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel? row)
@@ -450,22 +498,7 @@ namespace CollectaMundo.ViewModels.Decks
                 Section = x.Section
             })];
         }
-        private void RefreshZoneVisibility()
-        {
-            IsCommanderZoneVisible = CommanderZone.Cards.Count > 0 && CommanderFormats.IsCommanderLike(DeckFormat);
-            IsSideboardZoneVisible = SideboardZone.Cards.Count > 0;
-            IsCompanionZoneVisible = CompanionZone.Cards.Count > 0;
-            IsMaybeboardZoneVisible = MaybeboardZone.Cards.Count > 0;
-        }
-        private void RefreshRuleDependentProperties()
-        {
-            var availability = SelectedOracleCard is null
-                ? new DeckActionAvailability()
-                : _deckBuilderService.GetActionAvailability(DeckFormat, CreateDeckCardStates(), SelectedOracleCard);
 
-            IsAddButtonVisible = SelectedOracleCard is not null;
-            CanSetSelectedOracleCardAsCommander = availability.CanSetAsCommander && IsAddButtonVisible is true;
-            CanSetSelectedOracleCardAsCompanion = availability.CanSetAsCompanion && IsAddButtonVisible is true;
-        }
+
     }
 }

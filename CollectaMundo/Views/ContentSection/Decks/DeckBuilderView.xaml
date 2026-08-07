@@ -79,13 +79,23 @@
                                                 SortMemberPath="Type"
                                                 CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
 
-                        <DataGridTemplateColumn Header="Owned"
-                                                SortMemberPath="OwnedQuantity"
-                                                CellTemplate="{StaticResource DeckCardOwnedCellTemplate}"/>
+                        <DataGridTemplateColumn SortMemberPath="OwnedQuantity" CellTemplate="{StaticResource DeckCardOwnedCellTemplate}">
+                            <DataGridTemplateColumn.Header> 
+                                <TextBlock Text="📦" ToolTip="Owned"/>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="Allocated"
-                                                SortMemberPath="AllocatedQuantity"
-                                                CellTemplate="{StaticResource DeckCardAllocatedCellTemplate}"/>
+                        <DataGridTemplateColumn SortMemberPath="AvailableQuantity" CellTemplate="{StaticResource DeckCardAvailableCellTemplate}">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="🔓" ToolTip="Available to this deck"/>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn SortMemberPath="AllocatedQuantity" CellTemplate="{StaticResource DeckCardAllocatedCellTemplate}">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="📍" ToolTip="Allocated to this deck"/>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
 
                         <DataGridTemplateColumn Header="+"
                                 CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
