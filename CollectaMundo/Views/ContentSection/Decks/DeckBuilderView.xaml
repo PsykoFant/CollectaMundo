@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
+             xmlns:deckPresentation="clr-namespace:CollectaMundo.Presentation.Decks"
              xmlns:deckViewModels="clr-namespace:CollectaMundo.ViewModels.Decks"
              xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
              mc:Ignorable="d"
@@ -80,20 +81,20 @@
                                                 CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
 
                         <DataGridTemplateColumn SortMemberPath="OwnedQuantity" CellTemplate="{StaticResource DeckCardOwnedCellTemplate}">
-                            <DataGridTemplateColumn.Header> 
-                                <TextBlock Text="📦" ToolTip="Owned"/>
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="📦" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.Owned}"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
 
                         <DataGridTemplateColumn SortMemberPath="AvailableQuantity" CellTemplate="{StaticResource DeckCardAvailableCellTemplate}">
                             <DataGridTemplateColumn.Header>
-                                <TextBlock Text="🔓" ToolTip="Available to this deck from your collection (owned minus cards allocated to other decks)"/>
+                                <TextBlock Text="🔓" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.Available}"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
 
                         <DataGridTemplateColumn SortMemberPath="AllocatedQuantity" CellTemplate="{StaticResource DeckCardAllocatedCellTemplate}">
                             <DataGridTemplateColumn.Header>
-                                <TextBlock Text="📍" ToolTip="Allocated to this deck from your collection"/>
+                                <TextBlock Text="📍" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.Allocated}"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
 
@@ -101,7 +102,7 @@
 
                         <DataGridTemplateColumn SortMemberPath="DesiredQuantityBinding" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}">
                             <DataGridTemplateColumn.Header>
-                                <TextBlock Text="#" ToolTip="Cards in this deck"/>
+                                <TextBlock Text="#" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.DesiredQuantity}"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
                         
