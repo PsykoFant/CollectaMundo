@@ -46,19 +46,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardAvailableCellTemplate">
-        <TextBlock Text="{Binding AvailableQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center">
-            <TextBlock.Style>
-                <Style TargetType="{x:Type TextBlock}">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding HasInsufficientAvailableQuantity}" Value="True">
-                            <Setter Property="Background" Value="LightCoral"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
-                            <Setter Property="ToolTip" Value="Not enough available copies to build the deck."/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
-        </TextBlock>
+        <TextBlock Text="{Binding AvailableQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center"/>
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardAllocatedCellTemplate">
@@ -73,7 +61,21 @@
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardQuantityCellTemplate">
-        <sharedElements:NumericEditorUserControl DataContext="{Binding DesiredQuantityBinding}"/>
+        <Border Padding="2">
+            <Border.Style>
+                <Style TargetType="{x:Type Border}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasInsufficientAvailableQuantity}" Value="True">
+                            <Setter Property="Background" Value="LightCoral"/>
+                            <Setter Property="ToolTip" Value="Desired quantity exceeds the number of copies available to this deck."/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <sharedElements:NumericEditorUserControl
+            DataContext="{Binding DesiredQuantityBinding}"/>
+        </Border>
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardDecrementCellTemplate">

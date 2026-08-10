@@ -10,7 +10,7 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=bindingViewModels:NumericBindingViewModel}">
 
-    <TextBox HorizontalAlignment="Center" Background="White">
+    <TextBox HorizontalAlignment="Center" Background="{x:Null}">
         <TextBox.Text>
             <Binding Path="Value" Mode="TwoWay" UpdateSourceTrigger="Explicit" />
         </TextBox.Text>

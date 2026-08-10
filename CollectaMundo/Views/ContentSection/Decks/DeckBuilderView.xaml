@@ -87,24 +87,25 @@
 
                         <DataGridTemplateColumn SortMemberPath="AvailableQuantity" CellTemplate="{StaticResource DeckCardAvailableCellTemplate}">
                             <DataGridTemplateColumn.Header>
-                                <TextBlock Text="🔓" ToolTip="Available to this deck"/>
+                                <TextBlock Text="🔓" ToolTip="Available to this deck from your collection (owned minus cards allocated to other decks)"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
 
                         <DataGridTemplateColumn SortMemberPath="AllocatedQuantity" CellTemplate="{StaticResource DeckCardAllocatedCellTemplate}">
                             <DataGridTemplateColumn.Header>
-                                <TextBlock Text="📍" ToolTip="Allocated to this deck"/>
+                                <TextBlock Text="📍" ToolTip="Allocated to this deck from your collection"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
 
-                        <DataGridTemplateColumn Header="+"
-                                CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
+                        <DataGridTemplateColumn Header="+" CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
 
-                        <DataGridTemplateColumn Header="Quantity"
-                                CellTemplate="{StaticResource DeckCardQuantityCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="-"
-                                CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
+                        <DataGridTemplateColumn SortMemberPath="DesiredQuantityBinding" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="#" ToolTip="Cards in this deck"/>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
+                        
+                        <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
                     </DataGrid.Columns>
 
                     <DataGrid.ContextMenu>
