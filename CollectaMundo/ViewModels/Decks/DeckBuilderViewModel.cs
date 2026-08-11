@@ -88,10 +88,7 @@ namespace CollectaMundo.ViewModels.Decks
 
             ClearZones();
 
-            foreach (var card in deckCards)
-            {
-                AddRowToZone(CreateDeckRow(card, deckCards));
-            }
+            AddDeckRows(deckCards);
 
             RefreshAll();
         }
@@ -181,25 +178,25 @@ namespace CollectaMundo.ViewModels.Decks
         [RelayCommand]
         private Task AddOracleCardToDeckAsync(object? param)
         {
-            return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Mainboard);
+            return AddOracleCardsToDeckZoneAsync(param, 1, DeckSection.Mainboard);
         }
 
         [RelayCommand]
         private Task AddOracleCardPlaySetToDeckAsync(object? param)
         {
-            return AddOracleCardsQuantityToDeckAsync(param, 4, DeckSection.Mainboard);
+            return AddOracleCardsToDeckZoneAsync(param, 4, DeckSection.Mainboard);
         }
 
         [RelayCommand]
         private Task AddOracleCardToSideboardAsync(object? param)
         {
-            return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Sideboard);
+            return AddOracleCardsToDeckZoneAsync(param, 1, DeckSection.Sideboard);
         }
 
         [RelayCommand]
         private Task AddOracleCardToMaybeboardAsync(object? param)
         {
-            return AddOracleCardsQuantityToDeckAsync(param, 1, DeckSection.Maybeboard);
+            return AddOracleCardsToDeckZoneAsync(param, 1, DeckSection.Maybeboard);
         }
 
         [RelayCommand]
@@ -233,7 +230,7 @@ namespace CollectaMundo.ViewModels.Decks
 
 
         // Add OracleCard helpers
-        private async Task AddOracleCardsQuantityToDeckAsync(object? parameter, int quantity, DeckSection section)
+        private async Task AddOracleCardsToDeckZoneAsync(object? parameter, int quantity, DeckSection section)
         {
             if (DeckLocationId is null)
             {
@@ -423,10 +420,7 @@ namespace CollectaMundo.ViewModels.Decks
 
             ClearZones();
 
-            foreach (var card in result.Cards)
-            {
-                AddRowToZone(CreateDeckRow(card, result.Cards));
-            }
+            AddDeckRows(result.Cards);
 
             RefreshAll();
         }
@@ -489,6 +483,81 @@ namespace CollectaMundo.ViewModels.Decks
             }
         }
         private void AddRowToZone(DeckCardEntryViewModel row) { GetZone(row.Section).Cards.Add(row); }
+        private void AddDeckRows(IReadOnlyCollection<DeckCardState> deckCards)
+        {
+            var rows = deckCards.Select(card => CreateDeckRow(card, deckCards)).ToList();
+
+            foreach (var row in rows.Where(row => row.Section is DeckSection.Mainboard or DeckSection.Sideboard or DeckSection.Maybeboard)
+                .OrderBy(GetCardTypeSortOrder)
+                .ThenBy(row => row.CardName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(row => row.ManaValue ?? 0))
+            {
+                AddRowToZone(row);
+            }
+
+            // Commander/Companion aren't part of the normal deck-card ordering.
+            foreach (var row in rows.Where(row => row.Section is not (DeckSection.Mainboard or DeckSection.Sideboard or DeckSection.Maybeboard)))
+            {
+                AddRowToZone(row);
+            }
+        }
+        private static int GetCardTypeSortOrder( DeckCardEntryViewModel row)
+        {
+            var type = row.OracleCard.Type ?? string.Empty;
+            var gamePlayCard = row.OracleCard.GamePlayCard;
+
+            Debug.WriteLine($"GetCardTypeSortOrder called for {row.CardName} with type '{type}' and GamePlayCard {gamePlayCard}");
+
+            // Treat anything with the Land type as a land,
+            // even e.g. a Land Creature.
+
+            if (gamePlayCard == 0)
+            {
+                return 99;
+            }
+
+            if (type.Contains("Basic Land", StringComparison.OrdinalIgnoreCase))
+            {
+                return 9;
+            }
+
+            if (type.Contains("Land", StringComparison.OrdinalIgnoreCase))
+            {
+                return 8;
+            }
+
+            if (type.Contains("Creature", StringComparison.OrdinalIgnoreCase))
+            {
+                return 1;
+            }
+
+            if (type.Contains("Sorcery", StringComparison.OrdinalIgnoreCase))
+            {
+                return 2;
+            }
+
+            if (type.Contains("Instant", StringComparison.OrdinalIgnoreCase))
+            {
+                return 3;
+            }
+
+            if (type.Contains("Enchantment", StringComparison.OrdinalIgnoreCase))
+            {
+                return 4;
+            }
+
+            if (type.Contains("Planeswalker", StringComparison.OrdinalIgnoreCase))
+            {
+                return 5;
+            }
+
+            if (type.Contains("Artifact", StringComparison.OrdinalIgnoreCase))
+            {
+                return 6;
+            }
+
+            return 10;
+        }
         private IReadOnlyList<DeckCardState> CreateDeckCardStates()
         {
             return [.. AllDeckCards.Select(x => new DeckCardState
