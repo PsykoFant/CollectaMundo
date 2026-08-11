@@ -42,13 +42,14 @@ namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
 
             return CreateIdentitySnapshot(rows);
         }
-        public static CollectionQuantitySnapshot CreateQuantitySnapshot(IEnumerable<CollectionCard> cards)
+        public static CollectionQuantitySnapshot CreateQuantitySnapshot(IEnumerable<CollectionCard> cards, IReadOnlySet<int> deckLocationIds)
         {
             ArgumentNullException.ThrowIfNull(cards);
+            ArgumentNullException.ThrowIfNull(deckLocationIds);
 
             var ownedByOracleId = new Dictionary<string, int>(capacity: 1024, comparer: StringComparer.OrdinalIgnoreCase);
             var allocatedByOracleId = new Dictionary<string, int>(capacity: 1024, comparer: StringComparer.OrdinalIgnoreCase);
-            var allocatedByOracleAndLocation = new Dictionary<OracleLocationIdentity, int>();            
+            var allocatedByOracleAndLocation = new Dictionary<OracleLocationIdentity, int>();
 
             foreach (var card in cards)
             {
@@ -66,7 +67,13 @@ namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
                     continue;
                 }
 
-                allocatedByOracleId[oracleId] = allocatedByOracleId.GetValueOrDefault(oracleId) + card.CardsOwned;
+                // Storage locations do not reserve cards from decks.
+                if (!deckLocationIds.Contains(locationId))
+                {
+                    continue;
+                }
+
+                allocatedByOracleId[oracleId] = allocatedByOracleId.GetValueOrDefault(oracleId)+ card.CardsOwned;
 
                 var key = new OracleLocationIdentity(oracleId,locationId);
 

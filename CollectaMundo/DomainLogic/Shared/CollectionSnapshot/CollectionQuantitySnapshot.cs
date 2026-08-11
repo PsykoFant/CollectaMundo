@@ -4,13 +4,13 @@
         : ICollectionQuantitySnapshot
     {
         private readonly IReadOnlyDictionary<string, int> _ownedByOracleId;
-        private readonly IReadOnlyDictionary<OracleLocationIdentity, int> _allocatedByOracleAndLocation;
-        private readonly IReadOnlyDictionary<string, int> _allocatedByOracleId;
-        internal CollectionQuantitySnapshot(IReadOnlyDictionary<string, int> ownedByOracleId, IReadOnlyDictionary<OracleLocationIdentity, int> allocatedByOracleAndLocation, IReadOnlyDictionary<string, int> allocatedByOracleId)
+        private readonly IReadOnlyDictionary<OracleLocationIdentity, int> _deckAllocatedByOracleAndLocation;
+        private readonly IReadOnlyDictionary<string, int> _deckAllocatedByOracleId;
+        internal CollectionQuantitySnapshot(IReadOnlyDictionary<string, int> ownedByOracleId, IReadOnlyDictionary<OracleLocationIdentity, int> deckAllocatedByOracleAndLocation, IReadOnlyDictionary<string, int> deckAllocatedByOracleId)
         {
             _ownedByOracleId = ownedByOracleId;
-            _allocatedByOracleAndLocation = allocatedByOracleAndLocation;
-            _allocatedByOracleId = allocatedByOracleId;
+            _deckAllocatedByOracleAndLocation = deckAllocatedByOracleAndLocation;
+            _deckAllocatedByOracleId = deckAllocatedByOracleId;
         }
         public int GetOwnedQuantity(string oracleId)
         {
@@ -28,13 +28,13 @@
                 return 0;
             }
 
-            return _allocatedByOracleAndLocation.GetValueOrDefault(new OracleLocationIdentity(oracleId, locationId));
+            return _deckAllocatedByOracleAndLocation.GetValueOrDefault(new OracleLocationIdentity(oracleId, locationId));
         }
         public int GetAvailableQuantity(string oracleId, int locationId)
         {
             var owned = GetOwnedQuantity(oracleId);
 
-            var allocatedTotal = _allocatedByOracleId.GetValueOrDefault(oracleId);
+            var allocatedTotal = _deckAllocatedByOracleId.GetValueOrDefault(oracleId);
 
             var allocatedHere = GetAllocatedQuantity(oracleId, locationId);
 

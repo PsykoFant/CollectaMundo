@@ -66,61 +66,43 @@
                           Style="{StaticResource DeckCardGridStyle}">
 
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Card Name"
-                                Width="*"
-                                SortMemberPath="CardName"
-                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="Mana Cost"
-                                Width="Auto"
-                                SortMemberPath="ManaValue"
-                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="Card types"
-                                                SortMemberPath="Type"
-                                                CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
-
+                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                        <DataGridTemplateColumn Header="Card types" SortMemberPath="Type" CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
                         <DataGridTemplateColumn SortMemberPath="OwnedQuantity" CellTemplate="{StaticResource DeckCardOwnedCellTemplate}">
                             <DataGridTemplateColumn.Header>
                                 <TextBlock Text="📦" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.Owned}"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
-
                         <DataGridTemplateColumn SortMemberPath="AvailableQuantity" CellTemplate="{StaticResource DeckCardAvailableCellTemplate}">
                             <DataGridTemplateColumn.Header>
                                 <TextBlock Text="🔓" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.Available}"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
-
                         <DataGridTemplateColumn SortMemberPath="AllocatedQuantity" CellTemplate="{StaticResource DeckCardAllocatedCellTemplate}">
                             <DataGridTemplateColumn.Header>
                                 <TextBlock Text="📍" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.Allocated}"/>
                             </DataGridTemplateColumn.Header>
                         </DataGridTemplateColumn>
-
                         <DataGridTemplateColumn Header="+" CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
-
                         <DataGridTemplateColumn SortMemberPath="DesiredQuantityBinding" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}">
                             <DataGridTemplateColumn.Header>
                                 <TextBlock Text="#" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.DesiredQuantity}"/>
                             </DataGridTemplateColumn.Header>
-                        </DataGridTemplateColumn>
-                        
+                        </DataGridTemplateColumn>                        
                         <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
                     </DataGrid.Columns>
 
                     <DataGrid.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Remove from deck"
+                            <MenuItem Header="Remove from deck" 
                                       Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
 
                     <DataGrid.InputBindings>
-                        <KeyBinding Key="Delete"
-                                    Command="{Binding DeleteDeckCardsCommand}" 
-                                    CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                        <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     </DataGrid.InputBindings>
                 </DataGrid>
             </GroupBox>
@@ -148,21 +130,14 @@
                           Style="{StaticResource DeckCardGridStyle}">
 
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Card Name"
-                                Width="*"
-                                SortMemberPath="CardName"
-                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="Mana Cost"
-                                Width="Auto"
-                                SortMemberPath="ManaValue"
-                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="+"
-                                CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="Quantity" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}"/>
-
+                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                        <DataGridTemplateColumn Header="+" CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
+                        <DataGridTemplateColumn SortMemberPath="DesiredQuantityBinding" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="#" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.DesiredQuantity}"/>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
                     </DataGrid.Columns>
 
@@ -174,9 +149,7 @@
                     </DataGrid.ContextMenu>
 
                     <DataGrid.InputBindings>
-                        <KeyBinding Key="Delete"
-                                    Command="{Binding DeleteDeckCardsCommand}" 
-                                    CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                        <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}"  CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     </DataGrid.InputBindings>
                 </DataGrid>
             </GroupBox>
@@ -190,15 +163,8 @@
                               Style="{StaticResource DeckCardGridStyle}">
 
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Card Name"
-                                Width="*"
-                                SortMemberPath="CardName"
-                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
-
-                            <DataGridTemplateColumn Header="Mana Cost"
-                                Width="Auto"
-                                SortMemberPath="ManaValue"
-                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                            <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+                            <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
                         </DataGrid.Columns>
 
                         <DataGrid.ContextMenu>
@@ -225,15 +191,8 @@
                           Style="{StaticResource DeckCardGridStyle}">
 
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Card Name"
-                                Width="*"
-                                SortMemberPath="CardName"
-                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
-
-                            <DataGridTemplateColumn Header="Mana Cost"
-                                Width="Auto"
-                                SortMemberPath="ManaValue"
-                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                            <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+                            <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
                         </DataGrid.Columns>                        
 
                         <DataGrid.ContextMenu>
@@ -261,46 +220,27 @@
                           Style="{StaticResource DeckCardGridStyle}">
 
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Card Name"
-                                Width="*"
-                                SortMemberPath="CardName"
-                                CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="Mana Cost"
-                                Width="Auto"
-                                SortMemberPath="ManaValue"
-                                CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="Card types"
-                                Width="Auto"
-                                SortMemberPath="Type"
-                                CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="+"
-                                CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="Quantity"
-                                CellTemplate="{StaticResource DeckCardQuantityCellTemplate}"/>
-
-                        <DataGridTemplateColumn Header="-"
-                                CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
+                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                        <DataGridTemplateColumn Header="Card types" SortMemberPath="Type" CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
+                        <DataGridTemplateColumn Header="+" CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
+                        <DataGridTemplateColumn SortMemberPath="DesiredQuantityBinding" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="#" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.DesiredQuantity}"/>
+                            </DataGridTemplateColumn.Header>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
                     </DataGrid.Columns>
 
                     <DataGrid.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Remove from maybeboard"
-                      Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand,
-                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                      CommandParameter="{Binding PlacementTarget.SelectedItems,
-                                                RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                            <MenuItem Header="Remove from maybeboard" Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
 
                     <DataGrid.InputBindings>
-                        <KeyBinding Key="Delete"
-                    Command="{Binding DeleteDeckCardsCommand}"
-                    CommandParameter="{Binding SelectedItems,
-                                              RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                        <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     </DataGrid.InputBindings>
                 </DataGrid>
             </GroupBox>

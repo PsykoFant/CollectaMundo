@@ -1,5 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:deckPresentation="clr-namespace:CollectaMundo.Presentation.Decks"
                     xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements">
     
     
@@ -16,7 +17,7 @@
                        Foreground="DarkRed"
                        FontSize="16"
                        Text="⚠"
-                       ToolTip="This card is not legal in the selected format">
+                       ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.IllegalCard}">
                 <TextBlock.Style>
                     <Style TargetType="{x:Type TextBlock}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -42,15 +43,18 @@
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardOwnedCellTemplate">
-        <TextBlock Text="{Binding OwnedQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center"/>
+        <TextBlock Text="{Binding OwnedQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center"
+                   ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.Owned}"/>
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardAvailableCellTemplate">
-        <TextBlock Text="{Binding AvailableQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center"/>
+        <TextBlock Text="{Binding AvailableQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center"
+                   ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.Available}"/>
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardAllocatedCellTemplate">
-        <TextBlock Text="{Binding AllocatedQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center"/>
+        <TextBlock Text="{Binding AllocatedQuantity}" TextWrapping="Wrap" HorizontalAlignment="Stretch" TextAlignment="Center"
+                   ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.Allocated}"/>
     </DataTemplate>
 
     <DataTemplate x:Key="DeckCardIncrementCellTemplate">
@@ -67,7 +71,7 @@
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding HasInsufficientAvailableQuantity}" Value="True">
                             <Setter Property="Background" Value="LightCoral"/>
-                            <Setter Property="ToolTip" Value="Desired quantity exceeds the number of copies available to this deck."/>
+                            <Setter Property="ToolTip" Value="{x:Static deckPresentation:DeckBuilderTooltips.InsufficientAvailableQuantity}"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>

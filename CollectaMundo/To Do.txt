@@ -1,7 +1,7 @@
 TO DO 
 
 Deck editor!
- - Tilføj owned/allocated support
+ 
  - Sorter deck datagrid efter kort type
  - Tilføj træk kort fra datagrid
 

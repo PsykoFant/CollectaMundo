@@ -698,7 +698,8 @@ namespace CollectaMundo.ViewModels
 
         public ICollectionQuantitySnapshot CreateCollectionQuantitySnapshot()
         {
-            return CollectionSnapshotFactory.CreateQuantitySnapshot(MyCollectionVM.Cards);
+            var deckLocationIds = _cardLocationLookupStore.GetAll().Where(x => x.Type == CardLocationType.Deck).Select(x => x.Id).ToHashSet();
+            return CollectionSnapshotFactory.CreateQuantitySnapshot(MyCollectionVM.Cards,deckLocationIds);
         }
 
         #endregion
