@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Decks.Models.Records;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.ViewModels.CardLists;
@@ -489,13 +490,14 @@ namespace CollectaMundo.ViewModels.Decks
 
             foreach (var row in rows.Where(row => row.Section is DeckSection.Mainboard or DeckSection.Sideboard or DeckSection.Maybeboard)
                 .OrderBy(GetCardTypeSortOrder)
-                .ThenBy(row => row.CardName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(row => row.ManaValue ?? 0))
+                .ThenBy(row => CardColorSort.GetRank(row.OracleCard.Colors))
+                .ThenBy(row => row.ManaValue ?? 0)
+                .ThenBy(row => row.CardName, StringComparer.OrdinalIgnoreCase))
             {
                 AddRowToZone(row);
             }
 
-            // Commander/Companion aren't part of the normal deck-card ordering.
+            // Commander/Companion aren't part of normal deck sorting.
             foreach (var row in rows.Where(row => row.Section is not (DeckSection.Mainboard or DeckSection.Sideboard or DeckSection.Maybeboard)))
             {
                 AddRowToZone(row);

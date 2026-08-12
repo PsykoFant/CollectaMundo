@@ -4,6 +4,7 @@ using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.Infrastructure.CardLists;
@@ -153,7 +154,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 .. cards
             .OrderByDescending(c => c.ReleaseDate)
             .ThenBy(c => c.SetCode, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(c => ColorRankFast(c.Colors))
+            .ThenBy(c => CardColorSort.GetRank(c.Colors))
             .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)
             ];
         }
@@ -163,33 +164,12 @@ namespace CollectaMundo.ApplicationServices.CardLists
             return
             [
                 .. cards
-            .OrderBy(c => ColorRankFast(c.Colors))
+            .OrderByDescending(c => c.GamePlayCard)
+            .ThenBy(c => CardColorSort.GetRank(c.Colors))
             .ThenBy(c => c.ManaValue)
             .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)
             ];
-        }
-        private static int ColorRankFast(string? colors)
-        {
-            if (string.IsNullOrWhiteSpace(colors))
-            {
-                return 6; // colorless
-            }
-
-            if (colors.Length == 1)
-            {
-                return colors[0] switch
-                {
-                    'W' => 0,
-                    'U' => 1,
-                    'B' => 2,
-                    'R' => 3,
-                    'G' => 4,
-                    _ => 7
-                };
-            }
-
-            return 5; // multicolor
         }
     }
 }
