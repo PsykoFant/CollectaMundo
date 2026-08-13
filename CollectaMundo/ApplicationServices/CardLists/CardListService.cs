@@ -154,8 +154,8 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 .. cards
             .OrderByDescending(c => c.ReleaseDate)
             .ThenBy(c => c.SetCode, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(c => CardColorSort.GetRank(c.Colors))
-            .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(c => CardSort.GetColorRank(c.Colors))
+            .ThenBy(c => CardSort.GetTypeRank(c.Types, c.GamePlayCard))
             ];
         }
 
@@ -165,7 +165,8 @@ namespace CollectaMundo.ApplicationServices.CardLists
             [
                 .. cards
             .OrderByDescending(c => c.GamePlayCard)
-            .ThenBy(c => CardColorSort.GetRank(c.Colors))
+            .ThenBy(c => CardSort.GetTypeRank(c.Types, c.GamePlayCard))
+            .ThenBy(c => CardSort.GetColorRank(c.Colors))
             .ThenBy(c => c.ManaValue)
             .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)

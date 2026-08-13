@@ -489,8 +489,8 @@ namespace CollectaMundo.ViewModels.Decks
             var rows = deckCards.Select(card => CreateDeckRow(card, deckCards)).ToList();
 
             foreach (var row in rows.Where(row => row.Section is DeckSection.Mainboard or DeckSection.Sideboard or DeckSection.Maybeboard)
-                .OrderBy(GetCardTypeSortOrder)
-                .ThenBy(row => CardColorSort.GetRank(row.OracleCard.Colors))
+                .OrderBy(row => CardSort.GetTypeRank(row.OracleCard.Types, row.OracleCard.GamePlayCard))
+                .ThenBy(row => CardSort.GetColorRank(row.OracleCard.Colors))
                 .ThenBy(row => row.ManaValue ?? 0)
                 .ThenBy(row => row.CardName, StringComparer.OrdinalIgnoreCase))
             {
@@ -502,63 +502,6 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 AddRowToZone(row);
             }
-        }
-        private static int GetCardTypeSortOrder( DeckCardEntryViewModel row)
-        {
-            var type = row.OracleCard.Type ?? string.Empty;
-            var gamePlayCard = row.OracleCard.GamePlayCard;
-
-            Debug.WriteLine($"GetCardTypeSortOrder called for {row.CardName} with type '{type}' and GamePlayCard {gamePlayCard}");
-
-            // Treat anything with the Land type as a land,
-            // even e.g. a Land Creature.
-
-            if (gamePlayCard == 0)
-            {
-                return 99;
-            }
-
-            if (type.Contains("Basic Land", StringComparison.OrdinalIgnoreCase))
-            {
-                return 9;
-            }
-
-            if (type.Contains("Land", StringComparison.OrdinalIgnoreCase))
-            {
-                return 8;
-            }
-
-            if (type.Contains("Creature", StringComparison.OrdinalIgnoreCase))
-            {
-                return 1;
-            }
-
-            if (type.Contains("Sorcery", StringComparison.OrdinalIgnoreCase))
-            {
-                return 2;
-            }
-
-            if (type.Contains("Instant", StringComparison.OrdinalIgnoreCase))
-            {
-                return 3;
-            }
-
-            if (type.Contains("Enchantment", StringComparison.OrdinalIgnoreCase))
-            {
-                return 4;
-            }
-
-            if (type.Contains("Planeswalker", StringComparison.OrdinalIgnoreCase))
-            {
-                return 5;
-            }
-
-            if (type.Contains("Artifact", StringComparison.OrdinalIgnoreCase))
-            {
-                return 6;
-            }
-
-            return 10;
         }
         private IReadOnlyList<DeckCardState> CreateDeckCardStates()
         {

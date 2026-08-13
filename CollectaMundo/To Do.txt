@@ -2,7 +2,6 @@ TO DO
 
 Deck editor!
  
- - Sorter deck datagrid efter kort type
  - Tilføj træk kort fra datagrid
 
  - Kolonnebredde på deck manager

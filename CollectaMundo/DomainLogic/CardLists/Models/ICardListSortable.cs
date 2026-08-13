@@ -6,5 +6,6 @@
         string? SetCode { get; }
         string? Colors { get; }
         string? Types { get; }
+        int GamePlayCard { get; } 
     }
 }
