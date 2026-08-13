@@ -34,6 +34,105 @@ namespace CollectaMundo.DomainLogic.Decks
                     : $"{oracleCard.Name} is not legal in {context.Format}."
             };
         }
+        public DeckMutationResult MoveCard(IReadOnlyCollection<DeckCardState> cards, OracleCard card, DeckSection sourceSection, DeckSection destinationSection, int quantity)
+        {
+            if (quantity <= 0)
+            {
+                return new DeckMutationResult
+                {
+                    Succeeded = false,
+                    Message = "Quantity must be greater than zero.",
+                    Cards = [.. cards]
+                };
+            }
+
+            if (sourceSection == destinationSection)
+            {
+                return new DeckMutationResult
+                {
+                    Succeeded = false,
+                    Message = "Source and destination zones are the same.",
+                    Cards = [.. cards]
+                };
+            }
+
+            var source = cards.FirstOrDefault(x => x.Section == sourceSection && string.Equals(x.Card.ScryfallOracleId, card.ScryfallOracleId, StringComparison.OrdinalIgnoreCase));
+
+            if (source is null)
+            {
+                return new DeckMutationResult
+                {
+                    Succeeded = false,
+                    Message = "Card was not found in the source zone.",
+                    Cards = [.. cards]
+                };
+            }
+
+            if (source.DesiredQuantity < quantity)
+            {
+                return new DeckMutationResult
+                {
+                    Succeeded = false,
+                    Message = "Source zone does not contain enough copies.",
+                    Cards = [.. cards]
+                };
+            }
+
+            var destination = cards.FirstOrDefault(x => x.Section == destinationSection && string.Equals(x.Card.ScryfallOracleId, card.ScryfallOracleId, StringComparison.OrdinalIgnoreCase));
+
+            var result = new List<DeckCardState>();
+
+            foreach (var existing in cards)
+            {
+                var isSource = existing.Section == sourceSection && string.Equals(existing.Card.ScryfallOracleId, card.ScryfallOracleId, StringComparison.OrdinalIgnoreCase);
+                var isDestination = existing.Section == destinationSection && string.Equals(existing.Card.ScryfallOracleId, card.ScryfallOracleId, StringComparison.OrdinalIgnoreCase);
+
+                if (isSource)
+                {
+                    var newQuantity = existing.DesiredQuantity - quantity;
+
+                    if (newQuantity > 0)
+                    {
+                        result.Add(new DeckCardState
+                        {
+                            Card = existing.Card,
+                            DesiredQuantity = newQuantity,
+                            Section = existing.Section
+                        });
+                    }
+
+                    continue;
+                }
+
+                if (isDestination)
+                {
+                    result.Add(new DeckCardState
+                    {
+                        Card = existing.Card, DesiredQuantity = existing.DesiredQuantity + quantity, Section = existing.Section
+                    });
+
+                    continue;
+                }
+
+                result.Add(existing);
+            }
+
+            if (destination is null)
+            {
+                result.Add(new DeckCardState
+                {
+                    Card = card,
+                    DesiredQuantity = quantity,
+                    Section = destinationSection
+                });
+            }
+
+            return new DeckMutationResult
+            {
+                Succeeded = true,
+                Cards = result
+            };
+        }
 
         // Commander rules
         public DeckSlotPlacementResult GetCommanderPlacement(DeckBuildingRuleContext context, OracleCard selectedCard)

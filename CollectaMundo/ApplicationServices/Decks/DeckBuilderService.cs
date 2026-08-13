@@ -140,6 +140,19 @@ namespace CollectaMundo.ApplicationServices.Decks
         {
             return state.Section == identity.Section && string.Equals(state.Card.ScryfallOracleId, identity.OracleId, StringComparison.OrdinalIgnoreCase);
         }
+        public async Task<DeckMutationResult> MoveCardAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, OracleCard card, DeckSection sourceSection, DeckSection destinationSection, int quantity)
+        {
+            var result = _deckBuilderLogic.MoveCard(currentCards, card, sourceSection, destinationSection, quantity);
+
+            if (!result.Succeeded)
+            {
+                return result;
+            }
+
+            await PersistDeckStateAsync(deckLocationId, result.Cards);
+
+            return result;
+        }
         public DeckActionAvailability GetActionAvailability(string? format, IReadOnlyCollection<DeckCardState> deckCards, OracleCard selectedCard)
         {
             var context = CreateRuleContext(format, deckCards);

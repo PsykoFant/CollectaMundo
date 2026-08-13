@@ -100,10 +100,12 @@
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
-
                     <DataGrid.InputBindings>
                         <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     </DataGrid.InputBindings>
+                    <i:Interaction.Behaviors>
+                        <behaviors:DeckCardDragDropBehavior DestinationSection="Mainboard" MoveCommand="{Binding MoveDeckCardCommand}"/>
+                    </i:Interaction.Behaviors>
                 </DataGrid>
             </GroupBox>
 
@@ -147,10 +149,12 @@
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
-
                     <DataGrid.InputBindings>
                         <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}"  CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     </DataGrid.InputBindings>
+                    <i:Interaction.Behaviors>
+                        <behaviors:DeckCardDragDropBehavior DestinationSection="Sideboard" MoveCommand="{Binding MoveDeckCardCommand}"/>
+                    </i:Interaction.Behaviors>
                 </DataGrid>
             </GroupBox>
 
@@ -214,10 +218,7 @@
 
             <!-- Maybeboard -->
             <GroupBox Grid.Column="0" Grid.Row ="2" Header="Maybeboard" Visibility="{Binding IsMaybeboardZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                <DataGrid x:Name="MaybeboardDataGrid"
-                          ItemsSource="{Binding MaybeboardZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
-                          Style="{StaticResource DeckCardGridStyle}">
+                <DataGrid x:Name="MaybeboardDataGrid" ItemsSource="{Binding MaybeboardZone.Cards}" SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}" Style="{StaticResource DeckCardGridStyle}">
 
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
@@ -238,10 +239,12 @@
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
-
                     <DataGrid.InputBindings>
                         <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     </DataGrid.InputBindings>
+                    <i:Interaction.Behaviors>
+                        <behaviors:DeckCardDragDropBehavior DestinationSection="Maybeboard" MoveCommand="{Binding MoveDeckCardCommand}"/>
+                    </i:Interaction.Behaviors>
                 </DataGrid>
             </GroupBox>
         </Grid>

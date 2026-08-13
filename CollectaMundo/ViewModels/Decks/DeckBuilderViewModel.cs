@@ -38,7 +38,6 @@ namespace CollectaMundo.ViewModels.Decks
 
         // Events for external notifications
         public event EventHandler? ExitEditorRequested;
-
         public event EventHandler<OracleCardImageSelectionRequest?>? CardImageSelectionRequested;
 
         // DeckZoneViewModels for each deck section
@@ -267,6 +266,19 @@ namespace CollectaMundo.ViewModels.Decks
                     }
                 }
             }
+        }
+
+        [RelayCommand]
+        private async Task MoveDeckCardAsync(DeckCardMoveRequest? request)
+        {
+            if (request is null || DeckLocationId is null || request.Card.Section == request.DestinationSection)
+            {
+                return;
+            }
+
+            var result = await _deckBuilderService.MoveCardAsync(DeckLocationId.Value, CreateDeckCardStates(), request.Card.OracleCard, request.Card.Section, request.DestinationSection, quantity: 1);
+
+            ApplySuccessfulMutation(result);
         }
 
         // Deleting a card

@@ -10,6 +10,7 @@ namespace CollectaMundo.ApplicationServices.Decks
         Task<DeckMutationResult> AddCardsAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<OracleCard> selectedCards, int quantity, DeckSection section);
         Task<DeckMutationResult> DeleteCardsAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<DeckCardIdentityRecord> cardsToDelete);
         Task<DeckMutationResult> SetCardQuantityAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, DeckCardIdentityRecord card, int desiredQuantity);
+        Task<DeckMutationResult> MoveCardAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, OracleCard card, DeckSection sourceSection, DeckSection destinationSection, int quantity);
         public Task<IReadOnlyList<DeckCardEntry>> LoadDeckAsync(int locationId);
         DeckActionAvailability GetActionAvailability(string? format, IReadOnlyCollection<DeckCardState> deckCards, OracleCard selectedCard);
         DeckCardValidationResult ValidateCard(string? format, IReadOnlyCollection<DeckCardState> deckCards, DeckCardEntry entry, OracleCard oracleCard);
