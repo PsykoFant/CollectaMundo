@@ -276,7 +276,7 @@ namespace CollectaMundo.ViewModels.Decks
                 return;
             }
 
-            var result = await _deckBuilderService.MoveCardAsync(DeckLocationId.Value, CreateDeckCardStates(), request.Card.OracleCard, request.Card.Section, request.DestinationSection, quantity: 1);
+            var result = await _deckBuilderService.MoveCardAsync(DeckLocationId.Value, CreateDeckCardStates(), request.Card.OracleCard, request.Card.Section, request.DestinationSection, request.Quantity);
 
             ApplySuccessfulMutation(result);
         }

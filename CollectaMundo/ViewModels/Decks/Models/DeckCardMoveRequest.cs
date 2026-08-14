@@ -2,5 +2,5 @@
 
 namespace CollectaMundo.ViewModels.Decks.Models
 {
-    public sealed record DeckCardMoveRequest(DeckCardEntryViewModel Card, DeckSection DestinationSection);
+    public sealed record DeckCardMoveRequest(DeckCardEntryViewModel Card, DeckSection DestinationSection, int Quantity);
 }
