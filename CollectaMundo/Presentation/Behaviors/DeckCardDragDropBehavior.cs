@@ -16,70 +16,24 @@ namespace CollectaMundo.Presentation.Behaviors
 {
     public sealed partial class DeckCardDragDropBehavior : Behavior<DataGrid>
     {
+        // Drag payload identifier shared by source and destination grids.
         private const string DragDataFormat = "CollectaMundo.DeckCard";
+
+        // XAML-configurable destination zone and move command.
         public static readonly DependencyProperty DestinationSectionProperty = DependencyProperty.Register(nameof(DestinationSection), typeof(DeckSection), typeof(DeckCardDragDropBehavior));
         public static readonly DependencyProperty MoveCommandProperty = DependencyProperty.Register(nameof(MoveCommand), typeof(ICommand), typeof(DeckCardDragDropBehavior));
 
+        // State belonging to the current drag operation.
         private Point _dragStartPoint;
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct POINT
-        {
-            public int X;
-            public int Y;
-        }
-
-        [LibraryImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static partial bool GetCursorPos(out POINT point);  
         private DeckCardEntryViewModel? _draggedCard;
+
+
+        // Visual feedback state.
         private DragAdorner? _dragAdorner;
         private AdornerLayer? _adornerLayer;
         private UIElement? _adornerRoot;
 
-        private AdornerDecorator? _adornerDecorator;
-        protected override void OnAttached()
-        {
-            base.OnAttached();
-
-            AssociatedObject.AllowDrop = true;
-
-            AssociatedObject.PreviewMouseLeftButtonDown +=
-                OnPreviewMouseLeftButtonDown;
-
-            AssociatedObject.PreviewMouseMove +=
-                OnPreviewMouseMove;
-
-            AssociatedObject.DragOver +=
-                OnDragOver;
-
-            AssociatedObject.Drop +=
-                OnDrop;
-        }
-
-        protected override void OnDetaching()
-        {
-            AssociatedObject.PreviewMouseLeftButtonDown -=
-                OnPreviewMouseLeftButtonDown;
-
-            AssociatedObject.PreviewMouseMove -=
-                OnPreviewMouseMove;
-
-            AssociatedObject.DragOver -=
-                OnDragOver;
-
-            AssociatedObject.Drop -=
-                OnDrop;
-
-            AssociatedObject.GiveFeedback -=
-                OnGiveFeedback;
-
-            RemoveDragAdorner();
-
-            base.OnDetaching();
-        }
-
-
+        // Public dependency-property wrappers.
         public DeckSection DestinationSection
         {
             get => (DeckSection)GetValue(DestinationSectionProperty);
@@ -90,8 +44,37 @@ namespace CollectaMundo.Presentation.Behaviors
             get => (ICommand?)GetValue(MoveCommandProperty);
             set => SetValue(MoveCommandProperty, value);
         }
+
+        // Behavior lifecycle.
+        protected override void OnAttached()
+        {
+            base.OnAttached();
+
+            // Enable dropping and subscribe to permanent DataGrid events.
+            AssociatedObject.AllowDrop = true;
+            AssociatedObject.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
+            AssociatedObject.PreviewMouseMove += OnPreviewMouseMove;
+            AssociatedObject.DragOver += OnDragOver;
+            AssociatedObject.Drop += OnDrop;
+        }
+        protected override void OnDetaching()
+        {
+            // Remove permanent subscriptions and clean up any active drag.
+            AssociatedObject.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
+            AssociatedObject.PreviewMouseMove -= OnPreviewMouseMove;
+            AssociatedObject.DragOver -= OnDragOver;
+            AssociatedObject.Drop -= OnDrop;
+            AssociatedObject.GiveFeedback -= OnGiveFeedback;
+            RemoveDragAdorner();
+
+            base.OnDetaching();
+        }
+
+        // Drag source handling.
         private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            // Remember where dragging could start and which row was pressed.
+
             _dragStartPoint = e.GetPosition(AssociatedObject);
             _draggedCard = null;
 
@@ -109,6 +92,8 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private void OnPreviewMouseMove(object sender, MouseEventArgs e)
         {
+            // Start dragging only after the normal Windows drag threshold.
+
             if (e.LeftButton != MouseButtonState.Pressed || _draggedCard is null)
             {
                 return;
@@ -127,6 +112,8 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private void StartDrag(DeckCardEntryViewModel card)
         {
+            // Create payload, show feedback, run WPF drag loop, then clean up.
+
             try
             {
                 var data = new DataObject();
@@ -150,52 +137,44 @@ namespace CollectaMundo.Presentation.Behaviors
                 _draggedCard = null;
             }
         }
-        private void OnDragOver(
-    object sender,
-    DragEventArgs e)
+        private void OnGiveFeedback(object sender, GiveFeedbackEventArgs e)
         {
-            if (!TryGetDraggedCard(e, out var card))
+            // Keep the drag visual positioned and update Shift-sensitive text.
+
+            UpdateDragAdornerFromScreenPosition();
+
+            if (_draggedCard is not null && _dragAdorner is not null)
+            {
+                _dragAdorner.UpdateText(GetDragText(_draggedCard));
+            }
+
+            e.UseDefaultCursors = true;
+        }
+
+        // Drop target handling.
+        private void OnDragOver(object sender, DragEventArgs e)
+        {
+            // Check whether this grid can accept the current drag.
+            if (!TryCreateMoveRequest(e, out var request))
             {
                 e.Effects = DragDropEffects.None;
                 e.Handled = true;
                 return;
             }
 
-            if (card.Section == DestinationSection)
-            {
-                e.Effects = DragDropEffects.None;
-                e.Handled = true;
-                return;
-            }
-
-            var quantity = GetMoveQuantity(card);
-
-            var request = new DeckCardMoveRequest(
-                card,
-                DestinationSection,
-                quantity);
-
-            e.Effects =
-                MoveCommand?.CanExecute(request) == true
-                    ? DragDropEffects.Move
-                    : DragDropEffects.None;
+            e.Effects = MoveCommand?.CanExecute(request) == true
+                ? DragDropEffects.Move
+                : DragDropEffects.None;
 
             e.Handled = true;
         }
         private void OnDrop(object sender, DragEventArgs e)
         {
-            if (!TryGetDraggedCard(e, out var card))
+            // Execute exactly the same move shape accepted by DragOver.
+            if (!TryCreateMoveRequest(e, out var request))
             {
                 return;
             }
-
-            if (card.Section == DestinationSection)
-            {
-                return;
-            }
-
-            var quantity = GetMoveQuantity(card);
-            var request = new DeckCardMoveRequest(card, DestinationSection, quantity);
 
             if (MoveCommand?.CanExecute(request) != true)
             {
@@ -207,6 +186,55 @@ namespace CollectaMundo.Presentation.Behaviors
             e.Effects = DragDropEffects.Move;
             e.Handled = true;
         }
+        private bool TryCreateMoveRequest(DragEventArgs e, out DeckCardMoveRequest request)
+        {
+            // Validate payload, reject same-zone moves and determine quantity.
+
+            request = null!;
+
+            if (!TryGetDraggedCard(e, out var card))
+            {
+                return false;
+            }
+
+            if (card.Section == DestinationSection)
+            {
+                return false;
+            }
+
+            request = new DeckCardMoveRequest(card, DestinationSection, GetMoveQuantity(card));
+
+            return true;
+        }
+
+        // Drag semantics.
+        /// <summary>
+        ///  vi er nået hertil...
+        /// </summary>
+
+
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+        [LibraryImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool GetCursorPos(out POINT point);  
+        
+
+        private AdornerDecorator? _adornerDecorator;
+
+
+
+
+
+
+
+
 
         private static int GetMoveQuantity(
     DeckCardEntryViewModel card)
@@ -233,21 +261,7 @@ namespace CollectaMundo.Presentation.Behaviors
             card = draggedCard;
             return true;
         }
-        private void OnGiveFeedback(
-    object sender,
-    GiveFeedbackEventArgs e)
-        {
-            UpdateDragAdornerFromScreenPosition();
 
-            if (_draggedCard is not null &&
-                _dragAdorner is not null)
-            {
-                _dragAdorner.UpdateText(
-                    GetDragText(_draggedCard));
-            }
-
-            e.UseDefaultCursors = true;
-        }
         private void UpdateDragAdornerFromScreenPosition()
         {
             if (_dragAdorner is null ||
@@ -279,7 +293,6 @@ namespace CollectaMundo.Presentation.Behaviors
 
             if (_adornerDecorator is null)
             {
-                Debug.WriteLine("AdornerDecorator not found.");
                 return;
             }
 
@@ -289,14 +302,6 @@ namespace CollectaMundo.Presentation.Behaviors
             _adornerLayer =
                 _adornerDecorator.AdornerLayer;
 
-            Debug.WriteLine(
-                $"Adorner decorator found: {_adornerDecorator is not null}");
-
-            Debug.WriteLine(
-                $"Adorner root found: {_adornerRoot is not null}");
-
-            Debug.WriteLine(
-                $"Adorner layer found: {_adornerLayer is not null}");
 
             if (_adornerRoot is null ||
                 _adornerLayer is null)
@@ -414,8 +419,6 @@ namespace CollectaMundo.Presentation.Behaviors
             protected override void OnRender(
                 DrawingContext drawingContext)
             {
-                Debug.WriteLine(
-    $"DragAdorner.OnRender: {_text} at {_left}, {_top}");
 
                 base.OnRender(drawingContext);
 
