@@ -2,7 +2,6 @@
 using CollectaMundo.ViewModels.Decks;
 using CollectaMundo.ViewModels.Decks.Models;
 using Microsoft.Xaml.Behaviors;
-using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -208,43 +207,23 @@ namespace CollectaMundo.Presentation.Behaviors
         }
 
         // Drag semantics.
-        /// <summary>
-        ///  vi er nået hertil...
-        /// </summary>
-
-
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct POINT
+        private static int GetMoveQuantity(DeckCardEntryViewModel card)
         {
-            public int X;
-            public int Y;
+            // Shift moves the entire source quantity; otherwise move one.
+            return Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? card.DesiredQuantity : 1;
         }
-
-        [LibraryImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static partial bool GetCursorPos(out POINT point);  
-        
-
-        private AdornerDecorator? _adornerDecorator;
-
-
-
-
-
-
-
-
-
-        private static int GetMoveQuantity(
-    DeckCardEntryViewModel card)
+        private static string GetDragText(DeckCardEntryViewModel card)
         {
-            return Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
-                ? card.DesiredQuantity
-                : 1;
+            // Keep displayed quantity consistent with actual move quantity.
+
+            var quantity = GetMoveQuantity(card);
+
+            return $"MOVE: {card.CardName} x{quantity}";
         }
         private static bool TryGetDraggedCard(DragEventArgs e, out DeckCardEntryViewModel card)
         {
+            // Extract only payloads created by this behavior.
+
             card = null!;
 
             if (!e.Data.GetDataPresent(DragDataFormat))
@@ -262,10 +241,30 @@ namespace CollectaMundo.Presentation.Behaviors
             return true;
         }
 
+        // Drag visual management.
+        private void ShowDragAdorner(DeckCardEntryViewModel card)
+        {
+            // All deck-zone grids share the same decorator and adorner layer.
+            var decorator = FindAncestor<AdornerDecorator>(AssociatedObject);
+
+            if (decorator?.Child is not UIElement root)
+            {
+                return;
+            }
+
+            _adornerRoot = root;
+            _adornerLayer = decorator.AdornerLayer;
+            _dragAdorner = new DragAdorner(root, GetDragText(card));
+            _adornerLayer.Add(_dragAdorner);
+
+            // Avoid briefly rendering at the upper-left corner.
+            UpdateDragAdornerFromScreenPosition();
+        }
         private void UpdateDragAdornerFromScreenPosition()
         {
-            if (_dragAdorner is null ||
-                _adornerRoot is null)
+            // Read native screen cursor position and convert it to adorner coordinates.
+
+            if (_dragAdorner is null || _adornerRoot is null)
             {
                 return;
             }
@@ -275,72 +274,29 @@ namespace CollectaMundo.Presentation.Behaviors
                 return;
             }
 
-            var position = _adornerRoot.PointFromScreen(
-                new Point(
-                    screenPoint.X,
-                    screenPoint.Y));
+            var position = _adornerRoot.PointFromScreen(new Point(screenPoint.X, screenPoint.Y));
 
-            _dragAdorner.UpdatePosition(
-                position.X + 16,
-                position.Y + 16);
-        }
-        private void ShowDragAdorner(
-    DeckCardEntryViewModel card)
-        {
-            _adornerDecorator =
-                FindAncestor<AdornerDecorator>(
-                    AssociatedObject);
-
-            if (_adornerDecorator is null)
-            {
-                return;
-            }
-
-            _adornerRoot =
-                _adornerDecorator.Child;
-
-            _adornerLayer =
-                _adornerDecorator.AdornerLayer;
-
-
-            if (_adornerRoot is null ||
-                _adornerLayer is null)
-            {
-                return;
-            }
-
-            _dragAdorner =
-                new DragAdorner(
-                    _adornerRoot,
-                    GetDragText(card));
-
-            _adornerLayer.Add(_dragAdorner);
-        }
-
-
-        private static string GetDragText(
-    DeckCardEntryViewModel card)
-        {
-            var quantity = GetMoveQuantity(card);
-
-            return $"MOVE: {card.CardName} x{quantity}";
+            _dragAdorner.UpdatePosition(position.X + 16, position.Y + 16);
         }
         private void RemoveDragAdorner()
         {
-            if (_dragAdorner is not null &&
-                _adornerLayer is not null)
+            // Remove visual feedback and clear all adorner references.
+
+            if (_dragAdorner is not null && _adornerLayer is not null)
             {
-                _adornerLayer.Remove(
-                    _dragAdorner);
+                _adornerLayer.Remove(_dragAdorner);
             }
 
             _dragAdorner = null;
             _adornerLayer = null;
             _adornerRoot = null;
-            _adornerDecorator = null;
         }
+
+        // Visual-tree helpers.
         private static bool IsInteractiveElement(DependencyObject? source)
         {
+            // Do not start row dragging from buttons, editors or scroll controls.
+
             if (source is null)
             {
                 return false;
@@ -358,6 +314,8 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
         {
+            // Walk upward through the WPF visual tree.
+
             while (current is not null)
             {
                 if (current is T result)
@@ -370,24 +328,45 @@ namespace CollectaMundo.Presentation.Behaviors
 
             return null;
         }
+
+        // Windows interop used because WPF mouse coordinates are unreliable while the native drag/drop loop is active.
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+        [LibraryImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool GetCursorPos(out POINT point);
+
+        // Lightweight visual rendered in the shared AdornerLayer.
         private sealed class DragAdorner : Adorner
         {
+            private readonly Brush _background;
+            private readonly Brush _foreground;
+            private readonly Brush _borderBrush;
+            private readonly FontFamily _fontFamily;
             private string _text;
-
             private double _left;
             private double _top;
-
-            public DragAdorner(
-    UIElement adornedElement,
-    string text)
-    : base(adornedElement)
+            public DragAdorner(UIElement adornedElement, string text) : base(adornedElement)
             {
                 _text = text;
                 IsHitTestVisible = false;
+
+                _background = TryFindResource("CollectaMundoBackground") as Brush ?? SystemColors.InfoBrush;
+                _foreground = TryFindResource("CollectaMundoForeground") as Brush ?? SystemColors.InfoTextBrush;
+                _borderBrush = TryFindResource("CollectaMundoBorder") as Brush ?? SystemColors.ActiveBorderBrush;
+                _fontFamily = TryFindResource("CollectaMundoFont") as FontFamily ?? new FontFamily("Segoe UI");
             }
 
             public void UpdateText(string text)
             {
+                // Redraw only when Shift changes the displayed quantity.
+
                 if (_text == text)
                 {
                     return;
@@ -396,71 +375,50 @@ namespace CollectaMundo.Presentation.Behaviors
                 _text = text;
                 InvalidateVisual();
             }
-            public void UpdatePosition(
-                double left,
-                double top)
+            public void UpdatePosition(double left, double top)
             {
+                // Move the rendered feedback next to the cursor.
+
                 _left = left;
                 _top = top;
 
                 InvalidateVisual();
             }
-
             protected override Size MeasureOverride(Size constraint)
             {
                 return AdornedElement.RenderSize;
             }
-
             protected override Size ArrangeOverride(Size finalSize)
             {
                 return finalSize;
             }
-
-            protected override void OnRender(
-                DrawingContext drawingContext)
+            protected override void OnRender(DrawingContext drawingContext)
             {
+                // Draw the tooltip-like background and drag description.
 
                 base.OnRender(drawingContext);
 
-                var pixelsPerDip =
-                    VisualTreeHelper.GetDpi(this).PixelsPerDip;
+                var pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
 
                 var text = new FormattedText(
-                    _text,
-                    CultureInfo.CurrentCulture,
+                    _text, 
+                    CultureInfo.CurrentCulture, 
                     FlowDirection.LeftToRight,
-                    new Typeface(
-                        new FontFamily("Segoe UI"),
-                            FontStyles.Normal,
-                        FontWeights.SemiBold,
-                        FontStretches.Normal),
+                    new Typeface(_fontFamily, 
+                    FontStyles.Normal, 
+                    FontWeights.SemiBold, 
+                    FontStretches.Normal),
                     13,
-                    SystemColors.InfoTextBrush,
+                    _foreground,
                     pixelsPerDip);
 
                 const double horizontalPadding = 8;
                 const double verticalPadding = 5;
 
-                var rect = new Rect(
-                    _left,
-                    _top,
-                    text.Width + horizontalPadding * 2,
-                    text.Height + verticalPadding * 2);
+                var rect = new Rect(_left, _top, text.Width + horizontalPadding * 2, text.Height + verticalPadding * 2);
 
-                drawingContext.DrawRoundedRectangle(
-                    SystemColors.InfoBrush,
-                    new Pen(
-                        SystemColors.ActiveBorderBrush,
-                        1),
-                    rect,
-                    3,
-                    3);
-
-                drawingContext.DrawText(
-                    text,
-                    new Point(
-                        _left + horizontalPadding,
-                        _top + verticalPadding));
+                drawingContext.DrawRoundedRectangle(_background, new Pen(_borderBrush, 1), rect, 3, 3);
+                drawingContext.DrawText(text, new Point(_left + horizontalPadding, _top + verticalPadding));
             }
         }
     }

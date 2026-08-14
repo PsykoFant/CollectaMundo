@@ -6,6 +6,9 @@
         <GradientStop Color="White" Offset="1"/>
     </LinearGradientBrush>
 
+    <SolidColorBrush x:Key="CollectaMundoForeground" Color="#FF2B2518"/>
+    <SolidColorBrush x:Key="CollectaMundoBorder" Color="#FF8F8150"/>
+
     <FontFamily x:Key="CollectaMundoFont">pack://application:,,,/Resources/Fonts/#MPlantin</FontFamily>
     <FontFamily x:Key="CollectaMundoHeaderFont">pack://application:,,,/Resources/Fonts/#Beleren2016</FontFamily>
 </ResourceDictionary>
