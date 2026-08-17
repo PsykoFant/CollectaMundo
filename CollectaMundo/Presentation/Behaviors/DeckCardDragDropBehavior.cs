@@ -10,6 +10,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 
 namespace CollectaMundo.Presentation.Behaviors
 {
@@ -20,7 +21,6 @@ namespace CollectaMundo.Presentation.Behaviors
 
         // XAML-configurable destination zone and move command.
         public static readonly DependencyProperty DestinationSectionProperty = DependencyProperty.Register(nameof(DestinationSection), typeof(DeckSection), typeof(DeckCardDragDropBehavior));
-        public static readonly DependencyProperty MoveCommandProperty = DependencyProperty.Register(nameof(MoveCommand), typeof(ICommand), typeof(DeckCardDragDropBehavior));
 
         // State belonging to the current drag operation.
         private Point _dragStartPoint;
@@ -29,6 +29,7 @@ namespace CollectaMundo.Presentation.Behaviors
 
         // Visual feedback state.
         private DragAdorner? _dragAdorner;
+        private DeckCardDragContext? _activeDragContext;
         private AdornerLayer? _adornerLayer;
         private UIElement? _adornerRoot;
 
@@ -38,10 +39,11 @@ namespace CollectaMundo.Presentation.Behaviors
             get => (DeckSection)GetValue(DestinationSectionProperty);
             set => SetValue(DestinationSectionProperty, value);
         }
-        public ICommand? MoveCommand
+        public static readonly DependencyProperty DragCommandProperty = DependencyProperty.Register(nameof(DragCommand), typeof(ICommand), typeof(DeckCardDragDropBehavior));
+        public ICommand? DragCommand
         {
-            get => (ICommand?)GetValue(MoveCommandProperty);
-            set => SetValue(MoveCommandProperty, value);
+            get => (ICommand?)GetValue(DragCommandProperty);
+            set => SetValue(DragCommandProperty, value);
         }
 
         // Behavior lifecycle.
@@ -54,6 +56,7 @@ namespace CollectaMundo.Presentation.Behaviors
             AssociatedObject.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
             AssociatedObject.PreviewMouseMove += OnPreviewMouseMove;
             AssociatedObject.DragOver += OnDragOver;
+            AssociatedObject.DragLeave += OnDragLeave;
             AssociatedObject.Drop += OnDrop;
         }
         protected override void OnDetaching()
@@ -62,6 +65,7 @@ namespace CollectaMundo.Presentation.Behaviors
             AssociatedObject.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
             AssociatedObject.PreviewMouseMove -= OnPreviewMouseMove;
             AssociatedObject.DragOver -= OnDragOver;
+            AssociatedObject.DragLeave -= OnDragLeave; 
             AssociatedObject.Drop -= OnDrop;
             AssociatedObject.GiveFeedback -= OnGiveFeedback;
             RemoveDragAdorner();
@@ -113,19 +117,30 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             // Create payload, show feedback, run WPF drag loop, then clean up.
 
+            var context = new DeckCardDragContext
+            {
+                Card = card
+            };
+
+            _activeDragContext = context;
+
             try
             {
                 var data = new DataObject();
-                data.SetData(DragDataFormat, card);
+                data.SetData(DragDataFormat, context);
 
-                ShowDragAdorner(card);
+                ShowDragAdorner(context);
 
                 AssociatedObject.GiveFeedback += OnGiveFeedback;
 
-                DragDrop.DoDragDrop(
-                    AssociatedObject,
-                    data,
-                    DragDropEffects.Move);
+                var effect = DragDrop.DoDragDrop(AssociatedObject, data, DragDropEffects.Move);
+
+                // No valid DataGrid accepted the drop:
+                // remove from the source zone instead.
+                if (effect == DragDropEffects.None)
+                {
+                    ExecuteDelete(context.Card);
+                }
             }
             finally
             {
@@ -134,74 +149,103 @@ namespace CollectaMundo.Presentation.Behaviors
                 RemoveDragAdorner();
 
                 _draggedCard = null;
+                _activeDragContext = null;
             }
         }
         private void OnGiveFeedback(object sender, GiveFeedbackEventArgs e)
         {
-            // Keep the drag visual positioned and update Shift-sensitive text.
-
             UpdateDragAdornerFromScreenPosition();
 
-            if (_draggedCard is not null && _dragAdorner is not null)
+            if (_dragAdorner is not null && _activeDragContext is not null)
             {
-                _dragAdorner.UpdateText(GetDragText(_draggedCard));
+                _dragAdorner.UpdateText(GetDragText(_activeDragContext));
             }
 
             e.UseDefaultCursors = true;
+        }
+        private void ExecuteDelete(DeckCardEntryViewModel card)
+        {
+            var request = new DeckCardDragRequest(card, DestinationSection: null, GetMoveQuantity(card));
+
+            if (DragCommand?.CanExecute(request) == true)
+            {
+                DragCommand.Execute(request);
+            }
         }
 
         // Drop target handling.
         private void OnDragOver(object sender, DragEventArgs e)
         {
-            // Check whether this grid can accept the current drag.
-            if (!TryCreateMoveRequest(e, out var request))
+            if (!TryGetDragContext(e, out var context))
             {
                 e.Effects = DragDropEffects.None;
                 e.Handled = true;
                 return;
             }
 
-            e.Effects = MoveCommand?.CanExecute(request) == true
-                ? DragDropEffects.Move
-                : DragDropEffects.None;
+            var isDifferentZone = context.Card.Section != DestinationSection;
 
+            if (!isDifferentZone)
+            {
+                context.IsOverValidTarget = false;
+                context.DestinationSection = null;
+
+                e.Effects = DragDropEffects.None;
+                e.Handled = true;
+                return;
+            }
+
+            var request = new DeckCardDragRequest(context.Card, DestinationSection, GetMoveQuantity(context.Card));
+            var canMove = DragCommand?.CanExecute(request) == true;
+
+            context.IsOverValidTarget = canMove;
+            context.DestinationSection = canMove ? DestinationSection : null;
+
+            e.Effects = canMove ? DragDropEffects.Move : DragDropEffects.None;
             e.Handled = true;
+        }
+        private void OnDragLeave(object sender, DragEventArgs e)
+        {
+            if (!TryGetDragContext(e, out var context))
+            {
+                return;
+            }
+
+            if (context.DestinationSection == DestinationSection)
+            {
+                context.IsOverValidTarget = false;
+                context.DestinationSection = null;
+            }
         }
         private void OnDrop(object sender, DragEventArgs e)
         {
-            // Execute exactly the same move shape accepted by DragOver.
-            if (!TryCreateMoveRequest(e, out var request))
+            if (!TryCreateMoveRequest(e, out var request) || DragCommand?.CanExecute(request) != true)
             {
+                e.Effects = DragDropEffects.None;
+                e.Handled = true;
                 return;
             }
 
-            if (MoveCommand?.CanExecute(request) != true)
-            {
-                return;
-            }
-
-            MoveCommand.Execute(request);
+            DragCommand.Execute(request);
 
             e.Effects = DragDropEffects.Move;
             e.Handled = true;
         }
-        private bool TryCreateMoveRequest(DragEventArgs e, out DeckCardMoveRequest request)
+        private bool TryCreateMoveRequest(DragEventArgs e, out DeckCardDragRequest request)
         {
-            // Validate payload, reject same-zone moves and determine quantity.
-
             request = null!;
 
-            if (!TryGetDraggedCard(e, out var card))
+            if (!TryGetDragContext(e, out var context))
             {
                 return false;
             }
 
-            if (card.Section == DestinationSection)
+            if (context.Card.Section == DestinationSection)
             {
                 return false;
             }
 
-            request = new DeckCardMoveRequest(card, DestinationSection, GetMoveQuantity(card));
+            request = new DeckCardDragRequest(context.Card, DestinationSection, GetMoveQuantity(context.Card));
 
             return true;
         }
@@ -212,19 +256,19 @@ namespace CollectaMundo.Presentation.Behaviors
             // Shift moves the entire source quantity; otherwise move one.
             return Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? card.DesiredQuantity : 1;
         }
-        private static string GetDragText(DeckCardEntryViewModel card)
+        private static string GetDragText(DeckCardDragContext context)
         {
-            // Keep displayed quantity consistent with actual move quantity.
+            var quantity = GetMoveQuantity(context.Card);
 
-            var quantity = GetMoveQuantity(card);
+            var action = context.IsOverValidTarget
+                ? "MOVE"
+                : "DELETE";
 
-            return $"MOVE: {card.CardName} x{quantity}";
+            return $"{action}: {context.Card.CardName} x{quantity}";
         }
-        private static bool TryGetDraggedCard(DragEventArgs e, out DeckCardEntryViewModel card)
+        private static bool TryGetDragContext(DragEventArgs e, out DeckCardDragContext context)
         {
-            // Extract only payloads created by this behavior.
-
-            card = null!;
+            context = null!;
 
             if (!e.Data.GetDataPresent(DragDataFormat))
             {
@@ -232,17 +276,17 @@ namespace CollectaMundo.Presentation.Behaviors
             }
 
             if (e.Data.GetData(DragDataFormat)
-                is not DeckCardEntryViewModel draggedCard)
+                is not DeckCardDragContext dragContext)
             {
                 return false;
             }
 
-            card = draggedCard;
+            context = dragContext;
             return true;
         }
 
         // Drag visual management.
-        private void ShowDragAdorner(DeckCardEntryViewModel card)
+        private void ShowDragAdorner(DeckCardDragContext context)
         {
             // All deck-zone grids share the same decorator and adorner layer.
             var decorator = FindAncestor<AdornerDecorator>(AssociatedObject);
@@ -254,7 +298,7 @@ namespace CollectaMundo.Presentation.Behaviors
 
             _adornerRoot = root;
             _adornerLayer = decorator.AdornerLayer;
-            _dragAdorner = new DragAdorner(root, GetDragText(card));
+            _dragAdorner = new DragAdorner(root, GetDragText(context));
             _adornerLayer.Add(_dragAdorner);
 
             // Avoid briefly rendering at the upper-left corner.
@@ -420,6 +464,12 @@ namespace CollectaMundo.Presentation.Behaviors
                 drawingContext.DrawRoundedRectangle(_background, new Pen(_borderBrush, 1), rect, 3, 3);
                 drawingContext.DrawText(text, new Point(_left + horizontalPadding, _top + verticalPadding));
             }
+        }
+        private sealed class DeckCardDragContext
+        {
+            public required DeckCardEntryViewModel Card { get; init; }
+            public bool IsOverValidTarget { get; set; }
+            public DeckSection? DestinationSection { get; set; }
         }
     }
 }

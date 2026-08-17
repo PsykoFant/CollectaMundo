@@ -110,7 +110,7 @@
                             <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                         </DataGrid.InputBindings>
                         <i:Interaction.Behaviors>
-                            <behaviors:DeckCardDragDropBehavior DestinationSection="Mainboard" MoveCommand="{Binding MoveDeckCardCommand}"/>
+                            <behaviors:DeckCardDragDropBehavior DestinationSection="Mainboard" DragCommand="{Binding HandleDeckCardDragCommand}"/>
                         </i:Interaction.Behaviors>
                     </DataGrid>
                 </GroupBox>
@@ -159,7 +159,7 @@
                             <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}"  CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                         </DataGrid.InputBindings>
                         <i:Interaction.Behaviors>
-                            <behaviors:DeckCardDragDropBehavior DestinationSection="Sideboard" MoveCommand="{Binding MoveDeckCardCommand}"/>
+                            <behaviors:DeckCardDragDropBehavior DestinationSection="Sideboard" DragCommand="{Binding HandleDeckCardDragCommand}"/>
                         </i:Interaction.Behaviors>
                     </DataGrid>
                 </GroupBox>
@@ -249,7 +249,7 @@
                             <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                         </DataGrid.InputBindings>
                         <i:Interaction.Behaviors>
-                            <behaviors:DeckCardDragDropBehavior DestinationSection="Maybeboard" MoveCommand="{Binding MoveDeckCardCommand}"/>
+                            <behaviors:DeckCardDragDropBehavior DestinationSection="Maybeboard" DragCommand="{Binding HandleDeckCardDragCommand}"/>
                         </i:Interaction.Behaviors>
                     </DataGrid>
                 </GroupBox>

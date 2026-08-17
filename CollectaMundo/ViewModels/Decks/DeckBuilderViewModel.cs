@@ -269,16 +269,43 @@ namespace CollectaMundo.ViewModels.Decks
         }
 
         [RelayCommand]
-        private async Task MoveDeckCardAsync(DeckCardMoveRequest? request)
+        private async Task HandleDeckCardDragAsync(DeckCardDragRequest? request)
         {
-            if (request is null || DeckLocationId is null || request.Card.Section == request.DestinationSection)
+            if (request is null || DeckLocationId is null || request.Quantity <= 0)
             {
                 return;
             }
 
-            var result = await _deckBuilderService.MoveCardAsync(DeckLocationId.Value, CreateDeckCardStates(), request.Card.OracleCard, request.Card.Section, request.DestinationSection, request.Quantity);
+            // A destination section means this is a normal zone-to-zone move.
+            if (request.DestinationSection is DeckSection destinationSection)
+            {
+                if (request.Card.Section == destinationSection)
+                {
+                    return;
+                }
 
-            ApplySuccessfulMutation(result);
+                var result = await _deckBuilderService.MoveCardAsync(
+                    DeckLocationId.Value,
+                    CreateDeckCardStates(),
+                    request.Card.OracleCard,
+                    request.Card.Section,
+                    destinationSection,
+                    request.Quantity);
+
+                ApplySuccessfulMutation(result);
+                return;
+            }
+
+            // No destination means the card was dropped outside a valid deck zone.
+            await RemoveDraggedCardQuantityAsync(request.Card, request.Quantity);
+        }
+        private Task RemoveDraggedCardQuantityAsync(DeckCardEntryViewModel row, int quantity)
+        {
+            // Reuse the existing quantity pipeline.
+            // SetCardQuantityAsync already removes the row when the result no longer contains it.
+            var desiredQuantity = Math.Max(0, row.DesiredQuantity - quantity);
+
+            return SetCardQuantityAsync(row, desiredQuantity);
         }
 
         // Deleting a card
