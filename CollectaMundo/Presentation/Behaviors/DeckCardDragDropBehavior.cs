@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.ViewModels.Decks;
 using CollectaMundo.ViewModels.Decks.Models;
 using Microsoft.Xaml.Behaviors;
@@ -17,7 +18,8 @@ namespace CollectaMundo.Presentation.Behaviors
     public sealed partial class DeckCardDragDropBehavior : Behavior<DataGrid>
     {
         // Drag payload identifier shared by source and destination grids.
-        private const string DragDataFormat = "CollectaMundo.DeckCard";
+        private const string DeckCardDragDataFormat = "CollectaMundo.DeckCard";
+        private const string OracleCardDragDataFormat = "CollectaMundo.OracleCard";
 
         // XAML-configurable destination zone and move command.
         public static readonly DependencyProperty DestinationSectionProperty = DependencyProperty.Register(nameof(DestinationSection), typeof(DeckSection), typeof(DeckCardDragDropBehavior));
@@ -135,8 +137,7 @@ namespace CollectaMundo.Presentation.Behaviors
 
                 var effect = DragDrop.DoDragDrop(AssociatedObject, data, DragDropEffects.Move);
 
-                // No valid DataGrid accepted the drop:
-                // remove from the source zone instead.
+                // Only an actually unaccepted drop means delete.
                 if (effect == DragDropEffects.None)
                 {
                     ExecuteDelete(context.Card);
@@ -183,19 +184,23 @@ namespace CollectaMundo.Presentation.Behaviors
                 return;
             }
 
-            var isDifferentZone = context.Card.Section != DestinationSection;
-
-            if (!isDifferentZone)
+            // Hovering the originating zone is a no-op
+            if (context.Card.Section == DestinationSection)
             {
+                context.IsOverSourceZone = true;
                 context.IsOverValidTarget = false;
                 context.DestinationSection = null;
 
-                e.Effects = DragDropEffects.None;
+                // Accept the drop so WPF raises Drop and DoDragDrop does not return None.
+                e.Effects = DragDropEffects.Move;
                 e.Handled = true;
                 return;
             }
 
+            context.IsOverSourceZone = false;
+
             var request = new DeckCardDragRequest(context.Card, DestinationSection, GetMoveQuantity(context.Card));
+
             var canMove = DragCommand?.CanExecute(request) == true;
 
             context.IsOverValidTarget = canMove;
@@ -211,6 +216,11 @@ namespace CollectaMundo.Presentation.Behaviors
                 return;
             }
 
+            if (context.Card.Section == DestinationSection)
+            {
+                context.IsOverSourceZone = false;
+            }
+
             if (context.DestinationSection == DestinationSection)
             {
                 context.IsOverValidTarget = false;
@@ -219,6 +229,21 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private void OnDrop(object sender, DragEventArgs e)
         {
+            if (!TryGetDragContext(e, out var context))
+            {
+                e.Effects = DragDropEffects.None;
+                e.Handled = true;
+                return;
+            }
+
+            // Dropping back onto the source zone is an accepted no-op.
+            if (context.Card.Section == DestinationSection)
+            {
+                e.Effects = DragDropEffects.Move;
+                e.Handled = true;
+                return;
+            }
+
             if (!TryCreateMoveRequest(e, out var request) || DragCommand?.CanExecute(request) != true)
             {
                 e.Effects = DragDropEffects.None;
@@ -260,9 +285,12 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             var quantity = GetMoveQuantity(context.Card);
 
-            var action = context.IsOverValidTarget
-                ? "MOVE"
-                : "DELETE";
+            if (context.IsOverSourceZone)
+            {
+                return "DO NOTHING";
+            }
+
+            var action = context.IsOverValidTarget ? "MOVE" : "DELETE";
 
             return $"{action}: {context.Card.CardName} x{quantity}";
         }
@@ -468,6 +496,13 @@ namespace CollectaMundo.Presentation.Behaviors
         private sealed class DeckCardDragContext
         {
             public required DeckCardEntryViewModel Card { get; init; }
+            public bool IsOverValidTarget { get; set; }
+            public bool IsOverSourceZone { get; set; }
+            public DeckSection? DestinationSection { get; set; }
+        }
+        private sealed class OracleCardDragContext
+        {
+            public required OracleCard Card { get; init; }
             public bool IsOverValidTarget { get; set; }
             public DeckSection? DestinationSection { get; set; }
         }
