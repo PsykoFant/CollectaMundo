@@ -323,6 +323,9 @@
                             <i:InvokeCommandAction Command="{Binding AddOracleCardToDeckCommand}" CommandParameter="{Binding SelectedItem, ElementName=AvailableCardsDataGrid}"/>
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
+                    <i:Interaction.Behaviors>
+                        <behaviors:OracleCardDragSourceBehavior />
+                    </i:Interaction.Behaviors>
                     <DataGrid.ContextMenu>
                         <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                             <MenuItem Header="+ 1 card to deck" Style="{StaticResource BelerenBold}"

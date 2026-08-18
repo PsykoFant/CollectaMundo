@@ -500,11 +500,11 @@ namespace CollectaMundo.Presentation.Behaviors
             public bool IsOverSourceZone { get; set; }
             public DeckSection? DestinationSection { get; set; }
         }
-        private sealed class OracleCardDragContext
-        {
-            public required OracleCard Card { get; init; }
-            public bool IsOverValidTarget { get; set; }
-            public DeckSection? DestinationSection { get; set; }
-        }
+    }
+    public sealed class OracleCardDragContext
+    {
+        public required OracleCard Card { get; init; }
+        public bool IsOverValidTarget { get; set; }
+        public DeckSection? DestinationSection { get; set; }
     }
 }
