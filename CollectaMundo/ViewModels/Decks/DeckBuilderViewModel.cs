@@ -6,6 +6,7 @@ using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
+using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Filtering;
@@ -179,6 +180,17 @@ namespace CollectaMundo.ViewModels.Decks
         private Task AddOracleCardToDeckAsync(object? param)
         {
             return AddOracleCardsToDeckZoneAsync(param, 1, DeckSection.Mainboard);
+        }
+        
+        [RelayCommand]
+        private Task AddDraggedOracleCardAsync(DeckOracleCardDropRequest? request)
+        {
+            if (request is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return AddOracleCardsToDeckZoneAsync(request.Card, request.Quantity, request.DestinationSection);
         }
 
         [RelayCommand]
