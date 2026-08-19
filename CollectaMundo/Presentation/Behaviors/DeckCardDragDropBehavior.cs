@@ -42,10 +42,16 @@ namespace CollectaMundo.Presentation.Behaviors
             set => SetValue(DestinationSectionProperty, value);
         }
         public static readonly DependencyProperty DragCommandProperty = DependencyProperty.Register(nameof(DragCommand), typeof(ICommand), typeof(DeckCardDragDropBehavior));
+        public static readonly DependencyProperty AddOracleCardCommandProperty = DependencyProperty.Register(nameof(AddOracleCardCommand), typeof(ICommand), typeof(DeckCardDragDropBehavior));
         public ICommand? DragCommand
         {
             get => (ICommand?)GetValue(DragCommandProperty);
             set => SetValue(DragCommandProperty, value);
+        }
+        public ICommand? AddOracleCardCommand
+        {
+            get => (ICommand?)GetValue(AddOracleCardCommandProperty);
+            set => SetValue(AddOracleCardCommandProperty, value);
         }
 
         // Behavior lifecycle.
@@ -129,7 +135,7 @@ namespace CollectaMundo.Presentation.Behaviors
             try
             {
                 var data = new DataObject();
-                data.SetData(DragDataFormat, context);
+                data.SetData(DeckCardDragDataFormat, context);
 
                 ShowDragAdorner(context);
 
@@ -176,6 +182,33 @@ namespace CollectaMundo.Presentation.Behaviors
 
         // Drop target handling.
         private void OnDragOver(object sender, DragEventArgs e)
+        {
+            // First handle OracleCard drags from AvailableCardsDataGrid.
+            if (TryGetOracleCardDragContext(e, out var oracleContext))
+            {
+                HandleOracleCardDragOver(e, oracleContext);
+                return;
+            }
+
+            // Otherwise handle existing DeckCard drag.
+            HandleDeckCardDragOver(e);
+        }
+        private void HandleOracleCardDragOver(DragEventArgs e, OracleCardDragContext context)
+        {
+            var request = new DeckOracleCardDropRequest(context.Card, DestinationSection, GetOracleCardAddQuantity());
+            var canAdd = AddOracleCardCommand?.CanExecute(request) == true;
+
+            context.IsOverValidTarget = canAdd;
+            context.DestinationSection = canAdd ? DestinationSection : null;
+
+            e.Effects = canAdd ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        }
+        private static int GetOracleCardAddQuantity()
+        {
+            return Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 4 : 1;
+        }
+        private void HandleDeckCardDragOver(DragEventArgs e)
         {
             if (!TryGetDragContext(e, out var context))
             {
@@ -229,6 +262,18 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private void OnDrop(object sender, DragEventArgs e)
         {
+            // Oracle card dragged from AvailableCardsDataGrid.
+            if (TryGetOracleCardDragContext(e, out var oracleContext))
+            {
+                HandleOracleCardDrop(e, oracleContext);
+                return;
+            }
+
+            // Existing deck-card drag.
+            HandleDeckCardDrop(e);
+        }
+        private void HandleDeckCardDrop(DragEventArgs e)
+        {
             if (!TryGetDragContext(e, out var context))
             {
                 e.Effects = DragDropEffects.None;
@@ -254,6 +299,22 @@ namespace CollectaMundo.Presentation.Behaviors
             DragCommand.Execute(request);
 
             e.Effects = DragDropEffects.Move;
+            e.Handled = true;
+        }
+        private void HandleOracleCardDrop(DragEventArgs e, OracleCardDragContext context)
+        {
+            var request = new DeckOracleCardDropRequest(context.Card, DestinationSection, GetOracleCardAddQuantity());
+
+            if (AddOracleCardCommand?.CanExecute(request) != true)
+            {
+                e.Effects = DragDropEffects.None;
+                e.Handled = true;
+                return;
+            }
+
+            AddOracleCardCommand.Execute(request);
+
+            e.Effects = DragDropEffects.Copy;
             e.Handled = true;
         }
         private bool TryCreateMoveRequest(DragEventArgs e, out DeckCardDragRequest request)
@@ -298,13 +359,29 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             context = null!;
 
-            if (!e.Data.GetDataPresent(DragDataFormat))
+            if (!e.Data.GetDataPresent(DeckCardDragDataFormat))
             {
                 return false;
             }
 
-            if (e.Data.GetData(DragDataFormat)
-                is not DeckCardDragContext dragContext)
+            if (e.Data.GetData(DeckCardDragDataFormat) is not DeckCardDragContext dragContext)
+            {
+                return false;
+            }
+
+            context = dragContext;
+            return true;
+        }
+        private static bool TryGetOracleCardDragContext(DragEventArgs e, out OracleCardDragContext context)
+        {
+            context = null!;
+
+            if (!e.Data.GetDataPresent(OracleCardDragDataFormat))
+            {
+                return false;
+            }
+
+            if (e.Data.GetData(OracleCardDragDataFormat) is not OracleCardDragContext dragContext)
             {
                 return false;
             }
@@ -507,4 +584,5 @@ namespace CollectaMundo.Presentation.Behaviors
         public bool IsOverValidTarget { get; set; }
         public DeckSection? DestinationSection { get; set; }
     }
+    public sealed record DeckOracleCardDropRequest(OracleCard Card, DeckSection DestinationSection, int Quantity);
 }

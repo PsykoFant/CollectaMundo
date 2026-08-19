@@ -39,7 +39,6 @@ namespace CollectaMundo.Presentation.Behaviors
                 _draggedCard = card;
             }
         }
-
         private void OnPreviewMouseMove(object sender, MouseEventArgs e)
         {
             if (e.LeftButton != MouseButtonState.Pressed || _draggedCard is null)
@@ -51,10 +50,7 @@ namespace CollectaMundo.Presentation.Behaviors
             var horizontalDistance = Math.Abs(currentPosition.X - _dragStartPoint.X);
             var verticalDistance = Math.Abs(currentPosition.Y - _dragStartPoint.Y);
 
-            if (horizontalDistance <
-                    SystemParameters.MinimumHorizontalDragDistance &&
-                verticalDistance <
-                    SystemParameters.MinimumVerticalDragDistance)
+            if (horizontalDistance < SystemParameters.MinimumHorizontalDragDistance && verticalDistance < SystemParameters.MinimumVerticalDragDistance)
             {
                 return;
             }
@@ -66,18 +62,12 @@ namespace CollectaMundo.Presentation.Behaviors
 
             var data = new DataObject();
 
-            data.SetData(
-                OracleCardDragDataFormat,
-                context);
+            data.SetData(OracleCardDragDataFormat, context);
 
-            DragDrop.DoDragDrop(
-                AssociatedObject,
-                data,
-                DragDropEffects.Copy);
+            DragDrop.DoDragDrop(AssociatedObject, data, DragDropEffects.Copy);
 
             _draggedCard = null;
         }
-
         private static T? FindAncestor<T>(DependencyObject? start)
             where T : DependencyObject
         {

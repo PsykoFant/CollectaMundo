@@ -110,7 +110,9 @@
                             <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                         </DataGrid.InputBindings>
                         <i:Interaction.Behaviors>
-                            <behaviors:DeckCardDragDropBehavior DestinationSection="Mainboard" DragCommand="{Binding HandleDeckCardDragCommand}"/>
+                            <behaviors:DeckCardDragDropBehavior DestinationSection="Mainboard" 
+                                                                DragCommand="{Binding HandleDeckCardDragCommand}"
+                                                                AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
                         </i:Interaction.Behaviors>
                     </DataGrid>
                 </GroupBox>
@@ -159,7 +161,9 @@
                             <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}"  CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                         </DataGrid.InputBindings>
                         <i:Interaction.Behaviors>
-                            <behaviors:DeckCardDragDropBehavior DestinationSection="Sideboard" DragCommand="{Binding HandleDeckCardDragCommand}"/>
+                            <behaviors:DeckCardDragDropBehavior DestinationSection="Sideboard" 
+                                                                DragCommand="{Binding HandleDeckCardDragCommand}"
+                                                                AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
                         </i:Interaction.Behaviors>
                     </DataGrid>
                 </GroupBox>
@@ -249,7 +253,9 @@
                             <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                         </DataGrid.InputBindings>
                         <i:Interaction.Behaviors>
-                            <behaviors:DeckCardDragDropBehavior DestinationSection="Maybeboard" DragCommand="{Binding HandleDeckCardDragCommand}"/>
+                            <behaviors:DeckCardDragDropBehavior DestinationSection="Maybeboard" 
+                                                                DragCommand="{Binding HandleDeckCardDragCommand}"
+                                                                AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
                         </i:Interaction.Behaviors>
                     </DataGrid>
                 </GroupBox>
