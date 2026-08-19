@@ -9,9 +9,10 @@ using System.Windows.Media.Media3D;
 
 namespace CollectaMundo.Presentation.Behaviors
 {
-    public sealed class OracleCardDragSourceBehavior : Behavior<DataGrid>
+    public sealed class OracleCardDragSourceBehavior : DeckDragBehaviorBase
     {
         private const string OracleCardDragDataFormat = "CollectaMundo.OracleCard";
+        private OracleCardDragContext? _activeDragContext;
         private Point _dragStartPoint;
         private OracleCard? _draggedCard;
         protected override void OnAttached()
@@ -47,48 +48,55 @@ namespace CollectaMundo.Presentation.Behaviors
             }
 
             var currentPosition = e.GetPosition(AssociatedObject);
-            var horizontalDistance = Math.Abs(currentPosition.X - _dragStartPoint.X);
-            var verticalDistance = Math.Abs(currentPosition.Y - _dragStartPoint.Y);
-
-            if (horizontalDistance < SystemParameters.MinimumHorizontalDragDistance && verticalDistance < SystemParameters.MinimumVerticalDragDistance)
+            
+            if (!HasExceededDragThreshold(_dragStartPoint, currentPosition))
             {
                 return;
             }
 
-            var context = new OracleCardDragContext
-            {
-                Card = _draggedCard
-            };
-
-            var data = new DataObject();
-
-            data.SetData(OracleCardDragDataFormat, context);
-
-            DragDrop.DoDragDrop(AssociatedObject, data, DragDropEffects.Copy);
-
-            _draggedCard = null;
+            StartDrag(_draggedCard);
         }
-        private static T? FindAncestor<T>(DependencyObject? start)
-            where T : DependencyObject
+        private void StartDrag(OracleCard card)
         {
-            var current = start;
-            while (current != null)
+            var context = new OracleCardDragContext { Card = card };
+
+            _activeDragContext = context;
+
+            try
             {
-                if (current is T found)
-                    return found;
+                var data = new DataObject();
 
-                DependencyObject? parent = null;
+                data.SetData(OracleCardDragDataFormat, context);
 
-                if (current is Visual || current is Visual3D)
-                    parent = VisualTreeHelper.GetParent(current);
+                ShowDragFeedback(GetDragText(context));
 
-                if (parent == null)
-                    parent = LogicalTreeHelper.GetParent(current);
+                AssociatedObject.GiveFeedback += OnGiveFeedback;
 
-                current = parent;
+                DragDrop.DoDragDrop(AssociatedObject, data, DragDropEffects.Copy);
+            }
+            finally
+            {
+                AssociatedObject.GiveFeedback -= OnGiveFeedback;
+                HideDragFeedback();
+                _activeDragContext = null;
+                _draggedCard = null;
+            }
+        }
+        private void OnGiveFeedback(object sender, GiveFeedbackEventArgs e)
+        {
+            if (_activeDragContext is not null)
+            {
+                UpdateDragFeedback(GetDragText(_activeDragContext));
             }
 
-            return null;
+            e.UseDefaultCursors = true;
+        }
+        private static string GetDragText(OracleCardDragContext context)
+        {
+            var quantity = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 4 : 1;
+            var action = context.IsOverValidTarget ? "ADD" : "DO NOTHING";
+
+            return $"{action}: {context.Card.Name} x{quantity}";
         }
     }
 }

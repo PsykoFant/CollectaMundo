@@ -1,4 +1,6 @@
-﻿using Microsoft.Xaml.Behaviors;
+﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
+using CollectaMundo.DomainLogic.Shared.CardModels;
+using Microsoft.Xaml.Behaviors;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -203,4 +205,11 @@ namespace CollectaMundo.Presentation.Behaviors
             }
         }
     }
+    public sealed class OracleCardDragContext
+    {
+        public required OracleCard Card { get; init; }
+        public bool IsOverValidTarget { get; set; }
+        public DeckSection? DestinationSection { get; set; }
+    }
+
 }
