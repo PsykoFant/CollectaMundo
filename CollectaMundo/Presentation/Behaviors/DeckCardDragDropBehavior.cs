@@ -1,17 +1,9 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
-using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.ViewModels.Decks;
 using CollectaMundo.ViewModels.Decks.Models;
-using Microsoft.Xaml.Behaviors;
-using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Effects;
 
 namespace CollectaMundo.Presentation.Behaviors
 {
@@ -70,7 +62,7 @@ namespace CollectaMundo.Presentation.Behaviors
             AssociatedObject.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
             AssociatedObject.PreviewMouseMove -= OnPreviewMouseMove;
             AssociatedObject.DragOver -= OnDragOver;
-            AssociatedObject.DragLeave -= OnDragLeave; 
+            AssociatedObject.DragLeave -= OnDragLeave;
             AssociatedObject.Drop -= OnDrop;
             AssociatedObject.GiveFeedback -= OnGiveFeedback;
             HideDragFeedback();
@@ -382,27 +374,6 @@ namespace CollectaMundo.Presentation.Behaviors
             context = dragContext;
             return true;
         }
-
-        // Visual-tree helpers.
-        private static bool IsInteractiveElement(DependencyObject? source)
-        {
-            // Do not start row dragging from buttons, editors or scroll controls.
-
-            if (source is null)
-            {
-                return false;
-            }
-
-            return
-                FindAncestor<ButtonBase>(source)
-                    is not null ||
-                FindAncestor<TextBoxBase>(source)
-                    is not null ||
-                FindAncestor<Thumb>(source)
-                    is not null ||
-                FindAncestor<ScrollBar>(source)
-                    is not null;
-        }
         private sealed class DeckCardDragContext
         {
             public required DeckCardEntryViewModel Card { get; init; }
@@ -411,6 +382,6 @@ namespace CollectaMundo.Presentation.Behaviors
             public DeckSection? DestinationSection { get; set; }
         }
     }
-    
-    
+
+
 }

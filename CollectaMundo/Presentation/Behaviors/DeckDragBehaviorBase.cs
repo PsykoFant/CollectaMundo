@@ -1,18 +1,12 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using Microsoft.Xaml.Behaviors;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using System.Windows.Media.Media3D;
 
 namespace CollectaMundo.Presentation.Behaviors
@@ -91,7 +85,7 @@ namespace CollectaMundo.Presentation.Behaviors
             _dragAdorner.UpdatePosition(position.X + 16, position.Y + 16);
         }
 
-        // Shared visual-tree helper.
+        // Shared visual-tree helpers.
         public static T? FindAncestor<T>(DependencyObject? start) where T : DependencyObject
         {
             var current = start;
@@ -105,13 +99,32 @@ namespace CollectaMundo.Presentation.Behaviors
                 if (current is Visual || current is Visual3D)
                     parent = VisualTreeHelper.GetParent(current);
 
-                if (parent == null)
-                    parent = LogicalTreeHelper.GetParent(current);
+                parent ??= LogicalTreeHelper.GetParent(current);
 
                 current = parent;
             }
 
             return null;
+        }
+        // Visual-tree helpers.
+        private static bool IsInteractiveElement(DependencyObject? source)
+        {
+            // Do not start row dragging from buttons, editors or scroll controls.
+
+            if (source is null)
+            {
+                return false;
+            }
+
+            return
+                FindAncestor<ButtonBase>(source)
+                    is not null ||
+                FindAncestor<TextBoxBase>(source)
+                    is not null ||
+                FindAncestor<Thumb>(source)
+                    is not null ||
+                FindAncestor<ScrollBar>(source)
+                    is not null;
         }
 
         // Shared native cursor interop.

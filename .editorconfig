@@ -1,22 +1,17 @@
 # Remove the line below if you want to inherit .editorconfig settings from higher directories
 root = true
 
-# C# files
+# Shared text-file rules
+[*.{cs,xaml,xml,json,yml,yaml,config,csproj,props,targets,cmd,bat,ps1,md,txt}]
+end_of_line = lf
+insert_final_newline = true
+
+# C#
 [*.cs]
 
-# Indentation and spacing
 indent_size = 4
 indent_style = space
 tab_width = 4
-
-# Line endings
-end_of_line = lf
-insert_final_newline = true
-
-# New line preferences
-[*.{xaml,csproj,props,targets,xml,json,yml,yaml,config,cmd,bat,ps1,md,txt}]
-end_of_line = lf
-insert_final_newline = true
 
 #### .NET Code Actions ####
 
