@@ -1,11 +1,12 @@
 ﻿using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.ViewModels.Decks.Models;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace CollectaMundo.Presentation.Behaviors
 {
-    public sealed class OracleCardDragSourceBehavior : DeckDragBehaviorBase
+    public sealed class DeckBuilderDragOracleCardSourceBehavior : DeckBuilderDragBehaviorBase
     {
         private const string OracleCardDragDataFormat = "CollectaMundo.OracleCard";
         private OracleCardDragContext? _activeDragContext;
@@ -42,7 +43,7 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private void OnPreviewMouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton != MouseButtonState.Pressed || _draggedCards is null)
+            if (e.LeftButton != MouseButtonState.Pressed || _draggedCards.Count == 0)
             {
                 return;
             }
@@ -89,7 +90,9 @@ namespace CollectaMundo.Presentation.Behaviors
                 UpdateDragFeedback(GetDragFeedback(_activeDragContext));
             }
 
-            e.UseDefaultCursors = true;
+            e.UseDefaultCursors = false;
+            Mouse.SetCursor(Cursors.Arrow);
+            e.Handled = true;
         }
         private static DragFeedback GetDragFeedback(OracleCardDragContext context)
         {

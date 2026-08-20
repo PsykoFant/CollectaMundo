@@ -7,14 +7,14 @@ using System.Windows.Input;
 
 namespace CollectaMundo.Presentation.Behaviors
 {
-    public sealed class DeckCardDragDropBehavior : DeckDragBehaviorBase
+    public sealed class DeckBuilderDragDeckCardBehavior : DeckBuilderDragBehaviorBase
     {
         // Drag payload identifier shared by source and destination grids.
         private const string DeckCardDragDataFormat = "CollectaMundo.DeckCard";
         private const string OracleCardDragDataFormat = "CollectaMundo.OracleCard";
 
         // XAML-configurable destination zone and move command.
-        public static readonly DependencyProperty DestinationSectionProperty = DependencyProperty.Register(nameof(DestinationSection), typeof(DeckSection), typeof(DeckCardDragDropBehavior));
+        public static readonly DependencyProperty DestinationSectionProperty = DependencyProperty.Register(nameof(DestinationSection), typeof(DeckSection), typeof(DeckBuilderDragDeckCardBehavior));
 
         // State belonging to the current drag operation.
         private Point _dragStartPoint;
@@ -29,8 +29,8 @@ namespace CollectaMundo.Presentation.Behaviors
             get => (DeckSection)GetValue(DestinationSectionProperty);
             set => SetValue(DestinationSectionProperty, value);
         }
-        public static readonly DependencyProperty DragCommandProperty = DependencyProperty.Register(nameof(DragCommand), typeof(ICommand), typeof(DeckCardDragDropBehavior));
-        public static readonly DependencyProperty AddOracleCardCommandProperty = DependencyProperty.Register(nameof(AddOracleCardCommand), typeof(ICommand), typeof(DeckCardDragDropBehavior));
+        public static readonly DependencyProperty DragCommandProperty = DependencyProperty.Register(nameof(DragCommand), typeof(ICommand), typeof(DeckBuilderDragDeckCardBehavior));
+        public static readonly DependencyProperty AddOracleCardCommandProperty = DependencyProperty.Register(nameof(AddOracleCardCommand), typeof(ICommand), typeof(DeckBuilderDragDeckCardBehavior));
         public ICommand? DragCommand
         {
             get => (ICommand?)GetValue(DragCommandProperty);
@@ -339,11 +339,6 @@ namespace CollectaMundo.Presentation.Behaviors
             var moveAll = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
 
             return [.. cards.Select(card => new DeckCardDragItem(card, moveAll ? card.DesiredQuantity : 1))];
-        }
-        private static int GetMoveQuantity(DeckCardEntryViewModel card)
-        {
-            // Shift moves the entire source quantity; otherwise move one.
-            return Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? card.DesiredQuantity : 1;
         }
         private static DragFeedback GetDragFeedback(DeckCardDragContext context)
         {

@@ -6,7 +6,6 @@ using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
-using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Filtering;
@@ -304,14 +303,6 @@ namespace CollectaMundo.ViewModels.Decks
             var result = await _deckBuilderService.RemoveCardQuantitiesAsync(DeckLocationId!.Value, CreateDeckCardStates(), removals);
 
             ApplySuccessfulMutation(result);
-        }
-        private Task RemoveDraggedCardQuantityAsync(DeckCardEntryViewModel row, int quantity)
-        {
-            // Reuse the existing quantity pipeline.
-            // SetCardQuantityAsync already removes the row when the result no longer contains it.
-            var desiredQuantity = Math.Max(0, row.DesiredQuantity - quantity);
-
-            return SetCardQuantityAsync(row, desiredQuantity);
         }
 
         // Deleting a card

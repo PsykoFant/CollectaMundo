@@ -1,7 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
-using CollectaMundo.DomainLogic.Shared.CardModels;
-using CollectaMundo.ViewModels.Decks;
-using Microsoft.Xaml.Behaviors;
+﻿using Microsoft.Xaml.Behaviors;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -13,14 +10,12 @@ using System.Windows.Media.Media3D;
 
 namespace CollectaMundo.Presentation.Behaviors
 {
-    public abstract partial class DeckDragBehaviorBase : Behavior<DataGrid>
+    public abstract partial class DeckBuilderDragBehaviorBase : Behavior<DataGrid>
     {
         // Shared drag feedback state.
         private DragAdorner? _dragAdorner;
         private AdornerLayer? _adornerLayer;
         private UIElement? _adornerRoot;
-
-
 
         // Shared drag-threshold helper.
         protected static bool HasExceededDragThreshold(Point start, Point current)
@@ -261,19 +256,5 @@ namespace CollectaMundo.Presentation.Behaviors
             Add, Move, Delete, NoOp
         }
         protected readonly record struct DragFeedback(DragFeedbackKind Kind, string Text, string QuantityText, bool IsBulk);
-
-
-
-
-
-
     }
-    public sealed class OracleCardDragContext
-    {
-        public required IReadOnlyList<OracleCard> Cards { get; init; }
-        public bool IsOverValidTarget { get; set; }
-        public DeckSection? DestinationSection { get; set; }
-    }
-    public sealed record DeckCardDragItem(DeckCardEntryViewModel Card, int Quantity);
-
 }
