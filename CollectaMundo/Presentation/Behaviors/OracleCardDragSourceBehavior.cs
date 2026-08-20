@@ -56,9 +56,9 @@ namespace CollectaMundo.Presentation.Behaviors
 
             StartDrag(_draggedCards);
         }
-        private void StartDrag(OracleCard card)
+        private void StartDrag(IReadOnlyList<OracleCard> cards)
         {
-            var context = new OracleCardDragContext { Card = card };
+            var context = new OracleCardDragContext { Cards = cards };
 
             _activeDragContext = context;
 
@@ -79,7 +79,7 @@ namespace CollectaMundo.Presentation.Behaviors
                 AssociatedObject.GiveFeedback -= OnGiveFeedback;
                 HideDragFeedback();
                 _activeDragContext = null;
-                _draggedCards = null;
+                _draggedCards = [];
             }
         }
         private void OnGiveFeedback(object sender, GiveFeedbackEventArgs e)
@@ -93,11 +93,30 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private static DragFeedback GetDragFeedback(OracleCardDragContext context)
         {
-            var quantity = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 4 : 1;
+            var isBulk = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            var quantity = isBulk ? 4 : 1;
+
+            if (context.Cards.Count == 1)
+            {
+                var card = context.Cards[0];
+
+                var quantityText = isBulk
+                    ? "⇧ ×4"
+                    : "×1";
+
+                return context.IsOverValidTarget
+                    ? new(DragFeedbackKind.Add, $"ADD: {card.Name}", quantityText, isBulk)
+                    : new(DragFeedbackKind.NoOp, "DO NOTHING", quantityText, isBulk);
+            }
+
+            var totalQuantity = context.Cards.Count * quantity;
+            var multiQuantityText = isBulk
+                ? $"⇧ ×4 each · {totalQuantity} total"
+                : "×1 each";
 
             return context.IsOverValidTarget
-                ? new(DragFeedbackKind.Add, $"ADD: {context.Card.Name}", quantity)
-                : new(DragFeedbackKind.NoOp, "DO NOTHING", quantity);
+                ? new(DragFeedbackKind.Add, $"ADD: {context.Cards.Count} cards", multiQuantityText, isBulk)
+                : new(DragFeedbackKind.NoOp, $"DO NOTHING: {context.Cards.Count} cards", multiQuantityText, isBulk);
         }
     }
 }

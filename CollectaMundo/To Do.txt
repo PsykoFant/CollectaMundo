@@ -6,7 +6,6 @@ Deck editor!
 	- Træk smid væk
 	- Træk fra oracle card datagrid
 	- Available Warning på maybepad
-	- Maybepad og sideboard synlige hele tiden
 
  - Kolonnebredde på deck manager
 

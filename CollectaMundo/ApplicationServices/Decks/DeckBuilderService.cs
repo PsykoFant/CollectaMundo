@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardLegalities;
+using CollectaMundo.ApplicationServices.Decks.Models;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Decks.Models;
@@ -6,6 +7,7 @@ using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.Decks;
+using CollectaMundo.ViewModels.Decks.Models;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
@@ -97,6 +99,60 @@ namespace CollectaMundo.ApplicationServices.Decks
             await PersistDeckStateAsync(deckLocationId, updatedCards);
             return Success(updatedCards);
         }
+        public async Task<DeckMutationResult> RemoveCardQuantitiesAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<DeckCardQuantityRemoval> removals)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(deckLocationId);
+            ArgumentNullException.ThrowIfNull(currentCards);
+            ArgumentNullException.ThrowIfNull(removals);
+
+            if (removals.Count == 0)
+            {
+                return Failure(currentCards, "No deck cards were selected for removal.");
+            }
+
+            var updatedCards = currentCards.ToList();
+
+            foreach (var removal in removals)
+            {
+                if (removal.Quantity <= 0)
+                {
+                    return Failure(currentCards, "The quantity to remove must be greater than zero.");
+                }
+
+                if (removal.Section is DeckSection.Commander or DeckSection.Companion)
+                {
+                    return Failure(currentCards, "Commander and companion quantities cannot be edited.");
+                }
+
+                var index = updatedCards.FindIndex(card => card.Section == removal.Section && string.Equals(card.Card.ScryfallOracleId, removal.Card.ScryfallOracleId, StringComparison.OrdinalIgnoreCase));
+
+                if (index < 0)
+                {
+                    return Failure(currentCards, $"The selected deck card '{removal.Card.Name}' could not be found.");
+                }
+
+                var existing = updatedCards[index];
+                var desiredQuantity = existing.DesiredQuantity - removal.Quantity;
+
+                if (desiredQuantity <= 0)
+                {
+                    updatedCards.RemoveAt(index);
+                }
+                else
+                {
+                    updatedCards[index] = new DeckCardState
+                    {
+                        Card = existing.Card,
+                        DesiredQuantity = desiredQuantity,
+                        Section = existing.Section
+                    };
+                }
+            }
+
+            await PersistDeckStateAsync(deckLocationId, updatedCards);
+
+            return Success(updatedCards);
+        }
         public async Task<DeckMutationResult> SetCardQuantityAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, DeckCardIdentityRecord card, int desiredQuantity)
         {
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(deckLocationId);
@@ -136,22 +192,38 @@ namespace CollectaMundo.ApplicationServices.Decks
             await PersistDeckStateAsync(deckLocationId, updatedCards);
             return Success(updatedCards);
         }
+        public async Task<DeckMutationResult> MoveCardsAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<DeckCardMoveRequest> moves, DeckSection destinationSection)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(deckLocationId);
+            ArgumentNullException.ThrowIfNull(currentCards);
+            ArgumentNullException.ThrowIfNull(moves);
+
+            if (moves.Count == 0)
+            {
+                return Failure(currentCards, "No deck cards were selected for moving.");
+            }
+
+            IReadOnlyCollection<DeckCardState> updatedCards = currentCards;
+
+            foreach (var move in moves)
+            {
+                var result = _deckBuilderLogic.MoveCard(updatedCards, move.Card, move.SourceSection, destinationSection, move.Quantity);
+
+                if (!result.Succeeded)
+                {
+                    return Failure(currentCards, result.Message ?? $"Failed to move '{move.Card.Name}'.");
+                }
+
+                updatedCards = result.Cards;
+            }
+
+            await PersistDeckStateAsync(deckLocationId, updatedCards);
+
+            return Success([.. updatedCards]);
+        }
         private static bool Matches(DeckCardState state, DeckCardIdentityRecord identity)
         {
             return state.Section == identity.Section && string.Equals(state.Card.ScryfallOracleId, identity.OracleId, StringComparison.OrdinalIgnoreCase);
-        }
-        public async Task<DeckMutationResult> MoveCardAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, OracleCard card, DeckSection sourceSection, DeckSection destinationSection, int quantity)
-        {
-            var result = _deckBuilderLogic.MoveCard(currentCards, card, sourceSection, destinationSection, quantity);
-
-            if (!result.Succeeded)
-            {
-                return result;
-            }
-
-            await PersistDeckStateAsync(deckLocationId, result.Cards);
-
-            return result;
         }
         public DeckActionAvailability GetActionAvailability(string? format, IReadOnlyCollection<DeckCardState> deckCards, OracleCard selectedCard)
         {

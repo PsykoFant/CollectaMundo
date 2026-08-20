@@ -6,6 +6,7 @@ using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
+using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Filtering;
@@ -183,7 +184,7 @@ namespace CollectaMundo.ViewModels.Decks
                 return Task.CompletedTask;
             }
 
-            return AddOracleCardsToDeckZoneAsync(request.Card, request.Quantity, request.DestinationSection);
+            return AddOracleCardsToDeckZoneAsync(request.Cards, request.Quantity, request.DestinationSection);
         }
 
         [RelayCommand]
@@ -276,33 +277,33 @@ namespace CollectaMundo.ViewModels.Decks
         [RelayCommand]
         private async Task HandleDeckCardDragAsync(DeckCardDragRequest? request)
         {
-            if (request is null || DeckLocationId is null || request.Quantity <= 0)
+            if (request is null || DeckLocationId is null || request.Items.Count == 0)
             {
                 return;
             }
 
-            // A destination section means this is a normal zone-to-zone move.
             if (request.DestinationSection is DeckSection destinationSection)
             {
-                if (request.Card.Section == destinationSection)
-                {
-                    return;
-                }
+                await MoveDeckCardsAsync(request.Items, destinationSection);
 
-                var result = await _deckBuilderService.MoveCardAsync(
-                    DeckLocationId.Value,
-                    CreateDeckCardStates(),
-                    request.Card.OracleCard,
-                    request.Card.Section,
-                    destinationSection,
-                    request.Quantity);
-
-                ApplySuccessfulMutation(result);
                 return;
             }
 
-            // No destination means the card was dropped outside a valid deck zone.
-            await RemoveDraggedCardQuantityAsync(request.Card, request.Quantity);
+            await RemoveDraggedCardQuantitiesAsync(request.Items);
+        }
+        private async Task MoveDeckCardsAsync(IReadOnlyList<DeckCardDragItem> items, DeckSection destinationSection)
+        {
+            var moves = items.Select(item => new DeckCardMoveRequest(item.Card.OracleCard, item.Card.Section, item.Quantity)).ToList();
+            var result = await _deckBuilderService.MoveCardsAsync(DeckLocationId!.Value, CreateDeckCardStates(), moves, destinationSection);
+
+            ApplySuccessfulMutation(result);
+        }
+        private async Task RemoveDraggedCardQuantitiesAsync(IReadOnlyList<DeckCardDragItem> items)
+        {
+            var removals = items.Select(item => new DeckCardQuantityRemoval(item.Card.OracleCard, item.Card.Section, item.Quantity)).ToList();
+            var result = await _deckBuilderService.RemoveCardQuantitiesAsync(DeckLocationId!.Value, CreateDeckCardStates(), removals);
+
+            ApplySuccessfulMutation(result);
         }
         private Task RemoveDraggedCardQuantityAsync(DeckCardEntryViewModel row, int quantity)
         {

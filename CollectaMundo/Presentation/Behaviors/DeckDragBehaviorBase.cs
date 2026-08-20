@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.ViewModels.Decks;
 using Microsoft.Xaml.Behaviors;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -18,6 +19,8 @@ namespace CollectaMundo.Presentation.Behaviors
         private DragAdorner? _dragAdorner;
         private AdornerLayer? _adornerLayer;
         private UIElement? _adornerRoot;
+
+
 
         // Shared drag-threshold helper.
         protected static bool HasExceededDragThreshold(Point start, Point current)
@@ -93,12 +96,16 @@ namespace CollectaMundo.Presentation.Behaviors
             while (current != null)
             {
                 if (current is T found)
+                {
                     return found;
+                }
 
                 DependencyObject? parent = null;
 
                 if (current is Visual || current is Visual3D)
+                {
                     parent = VisualTreeHelper.GetParent(current);
+                }
 
                 parent ??= LogicalTreeHelper.GetParent(current);
 
@@ -187,17 +194,13 @@ namespace CollectaMundo.Presentation.Behaviors
 
                 var pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
                 var actionBrush = GetActionBrush(_dragFeedback.Kind);
-                var isBulkQuantity = _dragFeedback.Quantity > 1;
-                var borderThickness = isBulkQuantity ? 4.0 : 2.0;
+                var borderThickness = _dragFeedback.IsBulk ? 4.0 : 2.0;
                 var symbol = GetActionSymbol(_dragFeedback.Kind);
                 var actionText = $"{symbol} {_dragFeedback.Text}";
-                var quantityLabel = isBulkQuantity ? $"⇧ ×{_dragFeedback.Quantity}" : $"×{_dragFeedback.Quantity}";
-                var text =
-                    new FormattedText(actionText, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                    new Typeface(_fontFamily, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal), 13, _foreground, pixelsPerDip);
-
-                var quantityText =
-                    new FormattedText(quantityLabel, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+                var text = new FormattedText(actionText, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+                    new Typeface(_fontFamily, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal),
+                    13, _foreground, pixelsPerDip);
+                var quantityText = new FormattedText(_dragFeedback.QuantityText, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
                     new Typeface(_fontFamily, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
                     13, actionBrush, pixelsPerDip);
 
@@ -217,13 +220,7 @@ namespace CollectaMundo.Presentation.Behaviors
 
                 drawingContext.DrawRoundedRectangle(_background, new Pen(actionBrush, borderThickness), rect, 4, 4);
                 drawingContext.DrawText(text, new Point(_left + horizontalPadding, _top + verticalPadding));
-                drawingContext.DrawText(quantityText,
-                    new Point(
-                        _left +
-                        width -
-                        horizontalPadding -
-                        quantityText.Width,
-                        _top + verticalPadding));
+                drawingContext.DrawText(quantityText, new Point(_left + width - horizontalPadding - quantityText.Width, _top + verticalPadding));
             }
             private Brush GetActionBrush(DragFeedbackKind kind)
             {
@@ -263,13 +260,20 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             Add, Move, Delete, NoOp
         }
-        protected readonly record struct DragFeedback(DragFeedbackKind Kind, string Text, int Quantity);
+        protected readonly record struct DragFeedback(DragFeedbackKind Kind, string Text, string QuantityText, bool IsBulk);
+
+
+
+
+
+
     }
     public sealed class OracleCardDragContext
     {
-        public required OracleCard Cards { get; init; }
+        public required IReadOnlyList<OracleCard> Cards { get; init; }
         public bool IsOverValidTarget { get; set; }
         public DeckSection? DestinationSection { get; set; }
     }
+    public sealed record DeckCardDragItem(DeckCardEntryViewModel Card, int Quantity);
 
 }

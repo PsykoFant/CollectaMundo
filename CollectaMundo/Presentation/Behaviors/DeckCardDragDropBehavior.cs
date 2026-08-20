@@ -95,7 +95,7 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             // Start dragging only after the normal Windows drag threshold.
 
-            if (e.LeftButton != MouseButtonState.Pressed || _draggedCards is null)
+            if (e.LeftButton != MouseButtonState.Pressed || _draggedCards.Count == 0)
             {
                 return;
             }
@@ -109,20 +109,16 @@ namespace CollectaMundo.Presentation.Behaviors
 
             StartDrag(_draggedCards);
         }
-        private void StartDrag(DeckCardEntryViewModel card)
+        private void StartDrag(IReadOnlyList<DeckCardEntryViewModel> cards)
         {
-            // Create payload, show feedback, run WPF drag loop, then clean up.
-
-            var context = new DeckCardDragContext
-            {
-                Card = card
-            };
+            var context = new DeckCardDragContext { Cards = cards };
 
             _activeDragContext = context;
 
             try
             {
                 var data = new DataObject();
+
                 data.SetData(DeckCardDragDataFormat, context);
 
                 ShowDragFeedback(GetDragFeedback(context));
@@ -131,10 +127,10 @@ namespace CollectaMundo.Presentation.Behaviors
 
                 var effect = DragDrop.DoDragDrop(AssociatedObject, data, DragDropEffects.Move);
 
-                // Only an actually unaccepted drop means delete.
+                // Unaccepted deck drag means delete.
                 if (effect == DragDropEffects.None)
                 {
-                    ExecuteDelete(context.Card);
+                    ExecuteDelete(context);
                 }
             }
             finally
@@ -143,7 +139,7 @@ namespace CollectaMundo.Presentation.Behaviors
 
                 HideDragFeedback();
 
-                _draggedCards = null;
+                _draggedCards = [];
                 _activeDragContext = null;
             }
         }
@@ -158,9 +154,9 @@ namespace CollectaMundo.Presentation.Behaviors
             Mouse.SetCursor(Cursors.Arrow);
             e.Handled = true;
         }
-        private void ExecuteDelete(DeckCardEntryViewModel card)
+        private void ExecuteDelete(DeckCardDragContext context)
         {
-            var request = new DeckCardDragRequest(card, DestinationSection: null, GetMoveQuantity(card));
+            var request = new DeckCardDragRequest(CreateDragItems(context.Cards), DestinationSection: null);
 
             if (DragCommand?.CanExecute(request) == true)
             {
@@ -183,7 +179,7 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private void HandleOracleCardDragOver(DragEventArgs e, OracleCardDragContext context)
         {
-            var request = new DeckOracleCardDropRequest(context.Card, DestinationSection, GetOracleCardAddQuantity());
+            var request = new DeckOracleCardDropRequest(context.Cards, DestinationSection, GetOracleCardAddQuantity());
             var canAdd = AddOracleCardCommand?.CanExecute(request) == true;
 
             context.IsOverValidTarget = canAdd;
@@ -206,7 +202,7 @@ namespace CollectaMundo.Presentation.Behaviors
             }
 
             // Hovering the originating zone is a no-op
-            if (context.Card.Section == DestinationSection)
+            if (IsSourceZone(context, DestinationSection))
             {
                 context.IsOverSourceZone = true;
                 context.IsOverValidTarget = false;
@@ -220,7 +216,7 @@ namespace CollectaMundo.Presentation.Behaviors
 
             context.IsOverSourceZone = false;
 
-            var request = new DeckCardDragRequest(context.Card, DestinationSection, GetMoveQuantity(context.Card));
+            var request = new DeckCardDragRequest(CreateDragItems(context.Cards), DestinationSection);
 
             var canMove = DragCommand?.CanExecute(request) == true;
 
@@ -250,7 +246,7 @@ namespace CollectaMundo.Presentation.Behaviors
                 return;
             }
 
-            if (context.Card.Section == DestinationSection)
+            if (IsSourceZone(context, DestinationSection))
             {
                 context.IsOverSourceZone = false;
             }
@@ -283,7 +279,7 @@ namespace CollectaMundo.Presentation.Behaviors
             }
 
             // Dropping back onto the source zone is an accepted no-op.
-            if (context.Card.Section == DestinationSection)
+            if (IsSourceZone(context, DestinationSection))
             {
                 e.Effects = DragDropEffects.Move;
                 e.Handled = true;
@@ -304,7 +300,7 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private void HandleOracleCardDrop(DragEventArgs e, OracleCardDragContext context)
         {
-            var request = new DeckOracleCardDropRequest(context.Card, DestinationSection, GetOracleCardAddQuantity());
+            var request = new DeckOracleCardDropRequest(context.Cards, DestinationSection, GetOracleCardAddQuantity());
 
             if (AddOracleCardCommand?.CanExecute(request) != true)
             {
@@ -327,17 +323,23 @@ namespace CollectaMundo.Presentation.Behaviors
                 return false;
             }
 
-            if (context.Card.Section == DestinationSection)
+            if (IsSourceZone(context, DestinationSection))
             {
                 return false;
             }
 
-            request = new DeckCardDragRequest(context.Card, DestinationSection, GetMoveQuantity(context.Card));
+            request = new DeckCardDragRequest(CreateDragItems(context.Cards), DestinationSection);
 
             return true;
         }
 
         // Drag semantics.
+        private static IReadOnlyList<DeckCardDragItem> CreateDragItems(IReadOnlyList<DeckCardEntryViewModel> cards)
+        {
+            var moveAll = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+            return [.. cards.Select(card => new DeckCardDragItem(card, moveAll ? card.DesiredQuantity : 1))];
+        }
         private static int GetMoveQuantity(DeckCardEntryViewModel card)
         {
             // Shift moves the entire source quantity; otherwise move one.
@@ -345,19 +347,47 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private static DragFeedback GetDragFeedback(DeckCardDragContext context)
         {
-            var quantity = GetMoveQuantity(context.Card);
+            var isBulk = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+            if (context.Cards.Count == 1)
+            {
+                var card = context.Cards[0];
+                var quantity = isBulk ? card.DesiredQuantity : 1;
+
+                var quantityText = isBulk ? $"⇧ ALL · {quantity} total" : "×1";
+
+                if (context.IsOverSourceZone)
+                {
+                    return new(DragFeedbackKind.NoOp, "DO NOTHING", quantityText, isBulk);
+                }
+
+                if (context.IsOverValidTarget)
+                {
+                    return new(DragFeedbackKind.Move, $"MOVE: {card.CardName}", quantityText, isBulk);
+                }
+
+                return new(DragFeedbackKind.Delete, $"DELETE: {card.CardName}", quantityText, isBulk);
+            }
+
+            var totalQuantity = isBulk
+                ? context.Cards.Sum(card => card.DesiredQuantity)
+                : context.Cards.Count;
+
+            var multiQuantityText = isBulk
+                ? $"⇧ ALL · {totalQuantity} total"
+                : "×1 each";
 
             if (context.IsOverSourceZone)
             {
-                return new(DragFeedbackKind.NoOp, "DO NOTHING", quantity);
+                return new(DragFeedbackKind.NoOp, "DO NOTHING", multiQuantityText, isBulk);
             }
 
             if (context.IsOverValidTarget)
             {
-                return new(DragFeedbackKind.Move, $"MOVE: {context.Card.CardName}", quantity);
+                return new(DragFeedbackKind.Move, $"MOVE: {context.Cards.Count} cards", multiQuantityText, isBulk);
             }
 
-            return new(DragFeedbackKind.Delete, $"DELETE: {context.Card.CardName}", quantity);
+            return new(DragFeedbackKind.Delete, $"DELETE: {context.Cards.Count} cards", multiQuantityText, isBulk);
         }
         private static bool TryGetDragContext(DragEventArgs e, out DeckCardDragContext context)
         {
@@ -393,14 +423,16 @@ namespace CollectaMundo.Presentation.Behaviors
             context = dragContext;
             return true;
         }
+        private static bool IsSourceZone(DeckCardDragContext context, DeckSection destinationSection)
+        {
+            return context.Cards.All(card => card.Section == destinationSection);
+        }
         private sealed class DeckCardDragContext
         {
-            public required DeckCardEntryViewModel Cards { get; init; }
+            public required IReadOnlyList<DeckCardEntryViewModel> Cards { get; init; }
             public bool IsOverValidTarget { get; set; }
             public bool IsOverSourceZone { get; set; }
             public DeckSection? DestinationSection { get; set; }
         }
     }
-
-
 }
