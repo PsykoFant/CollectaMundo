@@ -10,7 +10,7 @@ namespace CollectaMundo.Presentation.Behaviors
         private const string OracleCardDragDataFormat = "CollectaMundo.OracleCard";
         private OracleCardDragContext? _activeDragContext;
         private Point _dragStartPoint;
-        private OracleCard? _draggedCard;
+        private IReadOnlyList<OracleCard> _draggedCards = [];
         protected override void OnAttached()
         {
             base.OnAttached();
@@ -27,18 +27,22 @@ namespace CollectaMundo.Presentation.Behaviors
         private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             _dragStartPoint = e.GetPosition(AssociatedObject);
-            _draggedCard = null;
+            _draggedCards = [];
 
             var row = FindAncestor<DataGridRow>(e.OriginalSource as DependencyObject);
 
-            if (row?.DataContext is OracleCard card)
+            if (row?.DataContext is not OracleCard clickedCard)
             {
-                _draggedCard = card;
+                return;
             }
+
+            var selectedCards = AssociatedObject.SelectedItems.OfType<OracleCard>().ToList();
+
+            _draggedCards = selectedCards.Contains(clickedCard) ? selectedCards : [clickedCard];
         }
         private void OnPreviewMouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton != MouseButtonState.Pressed || _draggedCard is null)
+            if (e.LeftButton != MouseButtonState.Pressed || _draggedCards is null)
             {
                 return;
             }
@@ -50,7 +54,7 @@ namespace CollectaMundo.Presentation.Behaviors
                 return;
             }
 
-            StartDrag(_draggedCard);
+            StartDrag(_draggedCards);
         }
         private void StartDrag(OracleCard card)
         {
@@ -75,7 +79,7 @@ namespace CollectaMundo.Presentation.Behaviors
                 AssociatedObject.GiveFeedback -= OnGiveFeedback;
                 HideDragFeedback();
                 _activeDragContext = null;
-                _draggedCard = null;
+                _draggedCards = null;
             }
         }
         private void OnGiveFeedback(object sender, GiveFeedbackEventArgs e)

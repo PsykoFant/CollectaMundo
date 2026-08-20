@@ -18,8 +18,7 @@ namespace CollectaMundo.Presentation.Behaviors
 
         // State belonging to the current drag operation.
         private Point _dragStartPoint;
-        private DeckCardEntryViewModel? _draggedCard;
-
+        private IReadOnlyList<DeckCardEntryViewModel> _draggedCards = [];
 
         // Visual feedback state.
         private DeckCardDragContext? _activeDragContext;
@@ -73,10 +72,8 @@ namespace CollectaMundo.Presentation.Behaviors
         // Drag source handling.
         private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // Remember where dragging could start and which row was pressed.
-
             _dragStartPoint = e.GetPosition(AssociatedObject);
-            _draggedCard = null;
+            _draggedCards = [];
 
             if (IsInteractiveElement(e.OriginalSource as DependencyObject))
             {
@@ -85,16 +82,20 @@ namespace CollectaMundo.Presentation.Behaviors
 
             var row = FindAncestor<DataGridRow>(e.OriginalSource as DependencyObject);
 
-            if (row?.DataContext is DeckCardEntryViewModel card)
+            if (row?.DataContext is not DeckCardEntryViewModel clickedCard)
             {
-                _draggedCard = card;
+                return;
             }
+
+            var selectedCards = AssociatedObject.SelectedItems.OfType<DeckCardEntryViewModel>().ToList();
+
+            _draggedCards = selectedCards.Contains(clickedCard) ? selectedCards : [clickedCard];
         }
         private void OnPreviewMouseMove(object sender, MouseEventArgs e)
         {
             // Start dragging only after the normal Windows drag threshold.
 
-            if (e.LeftButton != MouseButtonState.Pressed || _draggedCard is null)
+            if (e.LeftButton != MouseButtonState.Pressed || _draggedCards is null)
             {
                 return;
             }
@@ -106,7 +107,7 @@ namespace CollectaMundo.Presentation.Behaviors
                 return;
             }
 
-            StartDrag(_draggedCard);
+            StartDrag(_draggedCards);
         }
         private void StartDrag(DeckCardEntryViewModel card)
         {
@@ -142,7 +143,7 @@ namespace CollectaMundo.Presentation.Behaviors
 
                 HideDragFeedback();
 
-                _draggedCard = null;
+                _draggedCards = null;
                 _activeDragContext = null;
             }
         }
@@ -394,7 +395,7 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private sealed class DeckCardDragContext
         {
-            public required DeckCardEntryViewModel Card { get; init; }
+            public required DeckCardEntryViewModel Cards { get; init; }
             public bool IsOverValidTarget { get; set; }
             public bool IsOverSourceZone { get; set; }
             public DeckSection? DestinationSection { get; set; }

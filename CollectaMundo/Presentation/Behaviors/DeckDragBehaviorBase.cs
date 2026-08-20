@@ -267,7 +267,7 @@ namespace CollectaMundo.Presentation.Behaviors
     }
     public sealed class OracleCardDragContext
     {
-        public required OracleCard Card { get; init; }
+        public required OracleCard Cards { get; init; }
         public bool IsOverValidTarget { get; set; }
         public DeckSection? DestinationSection { get; set; }
     }
