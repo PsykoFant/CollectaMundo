@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
@@ -28,7 +29,7 @@ namespace CollectaMundo.Presentation.Behaviors
         }
 
         // Show the shared theme-aware drag feedback.
-        protected void ShowDragFeedback(string text)
+        protected void ShowDragFeedback(DragFeedback feedback)
         {
             var decorator = FindAncestor<AdornerDecorator>(AssociatedObject);
 
@@ -40,17 +41,17 @@ namespace CollectaMundo.Presentation.Behaviors
             _adornerRoot = root;
             _adornerLayer = decorator.AdornerLayer;
 
-            _dragAdorner = new DragAdorner(root, text);
+            _dragAdorner = new DragAdorner(root, feedback);
             _adornerLayer.Add(_dragAdorner);
 
             UpdateDragFeedbackPosition();
         }
 
         // Update both position and text during GiveFeedback.
-        protected void UpdateDragFeedback(string text)
+        protected void UpdateDragFeedback(DragFeedback feedback)
         {
             UpdateDragFeedbackPosition();
-            _dragAdorner?.UpdateText(text);
+            _dragAdorner?.UpdateFeedback(feedback);
         }
 
         // Remove the shared drag feedback.
@@ -86,7 +87,7 @@ namespace CollectaMundo.Presentation.Behaviors
         }
 
         // Shared visual-tree helpers.
-        public static T? FindAncestor<T>(DependencyObject? start) where T : DependencyObject
+        protected static T? FindAncestor<T>(DependencyObject? start) where T : DependencyObject
         {
             var current = start;
             while (current != null)
@@ -106,25 +107,20 @@ namespace CollectaMundo.Presentation.Behaviors
 
             return null;
         }
-        // Visual-tree helpers.
-        private static bool IsInteractiveElement(DependencyObject? source)
-        {
-            // Do not start row dragging from buttons, editors or scroll controls.
 
+        // Do not start row dragging from buttons, editors or scroll controls.
+        protected static bool IsInteractiveElement(DependencyObject? source)
+        {
             if (source is null)
             {
                 return false;
             }
 
             return
-                FindAncestor<ButtonBase>(source)
-                    is not null ||
-                FindAncestor<TextBoxBase>(source)
-                    is not null ||
-                FindAncestor<Thumb>(source)
-                    is not null ||
-                FindAncestor<ScrollBar>(source)
-                    is not null;
+                FindAncestor<ButtonBase>(source) is not null ||
+                FindAncestor<TextBoxBase>(source) is not null ||
+                FindAncestor<Thumb>(source) is not null ||
+                FindAncestor<ScrollBar>(source) is not null;
         }
 
         // Shared native cursor interop.
@@ -144,37 +140,34 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             private readonly Brush _background;
             private readonly Brush _foreground;
-            private readonly Brush _borderBrush;
+            private readonly Brush _fallbackBorderBrush;
             private readonly FontFamily _fontFamily;
-            private string _text;
+            private DragFeedback _dragFeedback;
             private double _left;
             private double _top;
-            public DragAdorner(UIElement adornedElement, string text) : base(adornedElement)
+
+            public DragAdorner(UIElement adornedElement, DragFeedback feedback) : base(adornedElement)
             {
-                _text = text;
+                _dragFeedback = feedback;
                 IsHitTestVisible = false;
 
                 _background = TryFindResource("CollectaMundoBackground") as Brush ?? SystemColors.InfoBrush;
                 _foreground = TryFindResource("CollectaMundoForeground") as Brush ?? SystemColors.InfoTextBrush;
-                _borderBrush = TryFindResource("CollectaMundoBorder") as Brush ?? SystemColors.ActiveBorderBrush;
+                _fallbackBorderBrush = TryFindResource("CollectaMundoBorder") as Brush ?? SystemColors.ActiveBorderBrush;
                 _fontFamily = TryFindResource("CollectaMundoFont") as FontFamily ?? new FontFamily("Segoe UI");
             }
-            public void UpdateText(string text)
+            public void UpdateFeedback(DragFeedback feedback)
             {
-                // Redraw only when Shift changes the displayed quantity.
-
-                if (_text == text)
+                if (_dragFeedback == feedback)
                 {
                     return;
                 }
 
-                _text = text;
+                _dragFeedback = feedback;
                 InvalidateVisual();
             }
             public void UpdatePosition(double left, double top)
             {
-                // Move the rendered feedback next to the cursor.
-
                 _left = left;
                 _top = top;
 
@@ -190,33 +183,87 @@ namespace CollectaMundo.Presentation.Behaviors
             }
             protected override void OnRender(DrawingContext drawingContext)
             {
-                // Draw the tooltip-like background and drag description.
-
                 base.OnRender(drawingContext);
 
                 var pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+                var actionBrush = GetActionBrush(_dragFeedback.Kind);
+                var isBulkQuantity = _dragFeedback.Quantity > 1;
+                var borderThickness = isBulkQuantity ? 4.0 : 2.0;
+                var symbol = GetActionSymbol(_dragFeedback.Kind);
+                var actionText = $"{symbol} {_dragFeedback.Text}";
+                var quantityLabel = isBulkQuantity ? $"⇧ ×{_dragFeedback.Quantity}" : $"×{_dragFeedback.Quantity}";
+                var text =
+                    new FormattedText(actionText, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+                    new Typeface(_fontFamily, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal), 13, _foreground, pixelsPerDip);
 
-                var text = new FormattedText(
-                    _text,
-                    CultureInfo.CurrentCulture,
-                    FlowDirection.LeftToRight,
-                    new Typeface(_fontFamily,
-                    FontStyles.Normal,
-                    FontWeights.SemiBold,
-                    FontStretches.Normal),
-                    13,
-                    _foreground,
-                    pixelsPerDip);
+                var quantityText =
+                    new FormattedText(quantityLabel, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+                    new Typeface(_fontFamily, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
+                    13, actionBrush, pixelsPerDip);
 
                 const double horizontalPadding = 8;
                 const double verticalPadding = 5;
+                const double quantityGap = 12;
 
-                var rect = new Rect(_left, _top, text.Width + horizontalPadding * 2, text.Height + verticalPadding * 2);
+                var width =
+                    horizontalPadding +
+                    text.Width +
+                    quantityGap +
+                    quantityText.Width +
+                    horizontalPadding;
 
-                drawingContext.DrawRoundedRectangle(_background, new Pen(_borderBrush, 1), rect, 3, 3);
+                var height = Math.Max(text.Height, quantityText.Height) + verticalPadding * 2;
+                var rect = new Rect(_left, _top, width, height);
+
+                drawingContext.DrawRoundedRectangle(_background, new Pen(actionBrush, borderThickness), rect, 4, 4);
                 drawingContext.DrawText(text, new Point(_left + horizontalPadding, _top + verticalPadding));
+                drawingContext.DrawText(quantityText,
+                    new Point(
+                        _left +
+                        width -
+                        horizontalPadding -
+                        quantityText.Width,
+                        _top + verticalPadding));
+            }
+            private Brush GetActionBrush(DragFeedbackKind kind)
+            {
+                var resourceKey = kind switch
+                {
+                    DragFeedbackKind.Add =>
+                        "DragAddBrush",
+
+                    DragFeedbackKind.Move =>
+                        "DragMoveBrush",
+
+                    DragFeedbackKind.Delete =>
+                        "DragDeleteBrush",
+
+                    DragFeedbackKind.NoOp =>
+                        "DragNoOpBrush",
+
+                    _ =>
+                        "CollectaMundoBorder"
+                };
+
+                return TryFindResource(resourceKey) as Brush ?? _fallbackBorderBrush;
+            }
+            private static string GetActionSymbol(DragFeedbackKind kind)
+            {
+                return kind switch
+                {
+                    DragFeedbackKind.Add => "➕",
+                    DragFeedbackKind.Move => "➡️",
+                    DragFeedbackKind.Delete => "🗑️",
+                    DragFeedbackKind.NoOp => "🚫",
+                    _ => string.Empty
+                };
             }
         }
+        protected enum DragFeedbackKind
+        {
+            Add, Move, Delete, NoOp
+        }
+        protected readonly record struct DragFeedback(DragFeedbackKind Kind, string Text, int Quantity);
     }
     public sealed class OracleCardDragContext
     {

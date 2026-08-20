@@ -1,11 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.Shared.CardModels;
-using Microsoft.Xaml.Behaviors;
-using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Media3D;
 
 namespace CollectaMundo.Presentation.Behaviors
 {
@@ -33,7 +29,7 @@ namespace CollectaMundo.Presentation.Behaviors
             _dragStartPoint = e.GetPosition(AssociatedObject);
             _draggedCard = null;
 
-            var row = FindAncestor<DataGridRow>(e.OriginalSource as DependencyObject);  
+            var row = FindAncestor<DataGridRow>(e.OriginalSource as DependencyObject);
 
             if (row?.DataContext is OracleCard card)
             {
@@ -48,7 +44,7 @@ namespace CollectaMundo.Presentation.Behaviors
             }
 
             var currentPosition = e.GetPosition(AssociatedObject);
-            
+
             if (!HasExceededDragThreshold(_dragStartPoint, currentPosition))
             {
                 return;
@@ -68,7 +64,7 @@ namespace CollectaMundo.Presentation.Behaviors
 
                 data.SetData(OracleCardDragDataFormat, context);
 
-                ShowDragFeedback(GetDragText(context));
+                ShowDragFeedback(GetDragFeedback(context));
 
                 AssociatedObject.GiveFeedback += OnGiveFeedback;
 
@@ -86,17 +82,18 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             if (_activeDragContext is not null)
             {
-                UpdateDragFeedback(GetDragText(_activeDragContext));
+                UpdateDragFeedback(GetDragFeedback(_activeDragContext));
             }
 
             e.UseDefaultCursors = true;
         }
-        private static string GetDragText(OracleCardDragContext context)
+        private static DragFeedback GetDragFeedback(OracleCardDragContext context)
         {
             var quantity = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 4 : 1;
-            var action = context.IsOverValidTarget ? "ADD" : "DO NOTHING";
 
-            return $"{action}: {context.Card.Name} x{quantity}";
+            return context.IsOverValidTarget
+                ? new(DragFeedbackKind.Add, $"ADD: {context.Card.Name}", quantity)
+                : new(DragFeedbackKind.NoOp, "DO NOTHING", quantity);
         }
     }
 }

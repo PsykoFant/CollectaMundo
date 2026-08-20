@@ -134,7 +134,7 @@
                 </GroupBox>
 
                 <!-- Sideboard -->
-                <GroupBox Grid.Column="0" Grid.Row ="1" Header="Sideboard" Visibility="{Binding IsSideboardZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <GroupBox Grid.Column="0" Grid.Row ="1" Header="Sideboard">
                     <DataGrid x:Name="SideboardDataGrid" ItemsSource="{Binding SideboardZone.Cards}"
                           SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
                           Style="{StaticResource DeckCardGridStyle}">
@@ -227,7 +227,7 @@
                 </StackPanel>
 
                 <!-- Maybeboard -->
-                <GroupBox Grid.Column="0" Grid.Row ="2" Header="Maybeboard" Visibility="{Binding IsMaybeboardZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <GroupBox Grid.Column="0" Grid.Row ="2" Header="Maybeboard">
                     <DataGrid x:Name="MaybeboardDataGrid" ItemsSource="{Binding MaybeboardZone.Cards}" SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}" Style="{StaticResource DeckCardGridStyle}">
 
                         <DataGrid.Columns>

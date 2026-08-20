@@ -8,6 +8,10 @@
 
     <SolidColorBrush x:Key="CollectaMundoForeground" Color="#FF2B2518"/>
     <SolidColorBrush x:Key="CollectaMundoBorder" Color="#FF8F8150"/>
+    <SolidColorBrush x:Key="DragAddBrush" Color="#FF3F7D44"/>
+    <SolidColorBrush x:Key="DragMoveBrush" Color="#FF3E6385"/>
+    <SolidColorBrush x:Key="DragDeleteBrush" Color="#FFA33A32"/>
+    <SolidColorBrush x:Key="DragNoOpBrush" Color="#FF77736A"/>
 
     <FontFamily x:Key="CollectaMundoFont">pack://application:,,,/Resources/Fonts/#MPlantin</FontFamily>
     <FontFamily x:Key="CollectaMundoHeaderFont">pack://application:,,,/Resources/Fonts/#Beleren2016</FontFamily>

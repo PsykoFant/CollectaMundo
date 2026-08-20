@@ -6,7 +6,6 @@ using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
-using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Filtering;
@@ -110,12 +109,6 @@ namespace CollectaMundo.ViewModels.Decks
         private bool isCommanderZoneVisible;
 
         [ObservableProperty]
-        private bool isSideboardZoneVisible;
-
-        [ObservableProperty]
-        private bool isMaybeboardZoneVisible;
-
-        [ObservableProperty]
         private bool isCompanionZoneVisible;
 
 
@@ -181,7 +174,7 @@ namespace CollectaMundo.ViewModels.Decks
         {
             return AddOracleCardsToDeckZoneAsync(param, 1, DeckSection.Mainboard);
         }
-        
+
         [RelayCommand]
         private Task AddDraggedOracleCardAsync(DeckOracleCardDropRequest? request)
         {
@@ -410,7 +403,7 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 row.DesiredQuantity = updatedCard.DesiredQuantity;
                 RefreshOwnedQuantityStatus();
-            }            
+            }
         }
 
         #endregion
@@ -425,9 +418,7 @@ namespace CollectaMundo.ViewModels.Decks
         private void RefreshZoneVisibility()
         {
             IsCommanderZoneVisible = CommanderZone.Cards.Count > 0 && CommanderFormats.IsCommanderLike(DeckFormat);
-            IsSideboardZoneVisible = SideboardZone.Cards.Count > 0;
             IsCompanionZoneVisible = CompanionZone.Cards.Count > 0;
-            IsMaybeboardZoneVisible = MaybeboardZone.Cards.Count > 0;
         }
         private void RefreshRuleDependentProperties()
         {
@@ -499,7 +490,7 @@ namespace CollectaMundo.ViewModels.Decks
 
             var ownedQuantity = _collectionQuantitySnapshot?.GetOwnedQuantity(oracleId) ?? 0;
 
-            var allocatedQuantity = DeckLocationId is int locationId? _collectionQuantitySnapshot?.GetAllocatedQuantity(oracleId, locationId) ?? 0 : 0;
+            var allocatedQuantity = DeckLocationId is int locationId ? _collectionQuantitySnapshot?.GetAllocatedQuantity(oracleId, locationId) ?? 0 : 0;
 
             var availableQuantity = DeckLocationId is int currentLocationId
                 ? _collectionQuantitySnapshot?.GetAvailableQuantity(oracleId, currentLocationId) ?? 0

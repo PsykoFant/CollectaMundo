@@ -124,7 +124,7 @@ namespace CollectaMundo.Presentation.Behaviors
                 var data = new DataObject();
                 data.SetData(DeckCardDragDataFormat, context);
 
-                ShowDragFeedback(GetDragText(context));
+                ShowDragFeedback(GetDragFeedback(context));
 
                 AssociatedObject.GiveFeedback += OnGiveFeedback;
 
@@ -150,10 +150,12 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             if (_activeDragContext is not null)
             {
-                UpdateDragFeedback(GetDragText(_activeDragContext));
+                UpdateDragFeedback(GetDragFeedback(_activeDragContext));
             }
 
-            e.UseDefaultCursors = true;
+            e.UseDefaultCursors = false;
+            Mouse.SetCursor(Cursors.Arrow);
+            e.Handled = true;
         }
         private void ExecuteDelete(DeckCardEntryViewModel card)
         {
@@ -229,6 +231,19 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private void OnDragLeave(object sender, DragEventArgs e)
         {
+            // Oracle card leaving a deck-zone target.
+            if (TryGetOracleCardDragContext(e, out var oracleContext))
+            {
+                if (oracleContext.DestinationSection == DestinationSection)
+                {
+                    oracleContext.IsOverValidTarget = false;
+                    oracleContext.DestinationSection = null;
+                }
+
+                return;
+            }
+
+            // Deck card leaving a deck-zone target.
             if (!TryGetDragContext(e, out var context))
             {
                 return;
@@ -327,18 +342,21 @@ namespace CollectaMundo.Presentation.Behaviors
             // Shift moves the entire source quantity; otherwise move one.
             return Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? card.DesiredQuantity : 1;
         }
-        private static string GetDragText(DeckCardDragContext context)
+        private static DragFeedback GetDragFeedback(DeckCardDragContext context)
         {
             var quantity = GetMoveQuantity(context.Card);
 
             if (context.IsOverSourceZone)
             {
-                return "DO NOTHING";
+                return new(DragFeedbackKind.NoOp, "DO NOTHING", quantity);
             }
 
-            var action = context.IsOverValidTarget ? "MOVE" : "DELETE";
+            if (context.IsOverValidTarget)
+            {
+                return new(DragFeedbackKind.Move, $"MOVE: {context.Card.CardName}", quantity);
+            }
 
-            return $"{action}: {context.Card.CardName} x{quantity}";
+            return new(DragFeedbackKind.Delete, $"DELETE: {context.Card.CardName}", quantity);
         }
         private static bool TryGetDragContext(DragEventArgs e, out DeckCardDragContext context)
         {
