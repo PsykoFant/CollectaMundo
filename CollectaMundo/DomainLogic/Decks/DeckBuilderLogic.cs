@@ -24,7 +24,7 @@ namespace CollectaMundo.DomainLogic.Decks
             ArgumentNullException.ThrowIfNull(entry);
             ArgumentNullException.ThrowIfNull(oracleCard);
 
-            var isLegal = formatMask.HasValue && (oracleCard.PlayableFormatsMask & formatMask.Value) != 0;
+            var isLegal = oracleCard.GamePlayCard != 1 || (formatMask.HasValue && (oracleCard.PlayableFormatsMask & formatMask.Value) != 0);
 
             return new DeckCardValidationResult
             {
@@ -108,7 +108,9 @@ namespace CollectaMundo.DomainLogic.Decks
                 {
                     result.Add(new DeckCardState
                     {
-                        Card = existing.Card, DesiredQuantity = existing.DesiredQuantity + quantity, Section = existing.Section
+                        Card = existing.Card,
+                        DesiredQuantity = existing.DesiredQuantity + quantity,
+                        Section = existing.Section
                     });
 
                     continue;

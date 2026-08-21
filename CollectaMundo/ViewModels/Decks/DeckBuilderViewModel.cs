@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.Models;
+using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Decks.Models.Records;
@@ -435,13 +436,19 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 var requiredQuantity = requiredByOracleId.GetValueOrDefault(row.OracleId);
 
-                row.HasInsufficientAvailableQuantity = row.AvailableQuantity < requiredQuantity;
+                // Basic lands are exempt from the "insufficient quantity" check, except for Wastes.
+                if (CollectionQuantityRules.RequiresAvailabilityCheck(row.OracleCard))
+                {
+                    row.HasInsufficientAvailableQuantity = row.AvailableQuantity < requiredQuantity;
+                }
+            }
+
+            IEnumerable<DeckCardEntryViewModel> GetAllDeckRows()
+            {
+                return MainboardZone.Cards.Concat(SideboardZone.Cards).Concat(CommanderZone.Cards).Concat(CompanionZone.Cards);
             }
         }
-        private IEnumerable<DeckCardEntryViewModel> GetAllDeckRows()
-        {
-            return MainboardZone.Cards.Concat(SideboardZone.Cards).Concat(CommanderZone.Cards).Concat(CompanionZone.Cards);
-        }
+
         #endregion
 
         // Shared helpers
