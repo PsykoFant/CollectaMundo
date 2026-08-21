@@ -23,10 +23,9 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>  <!-- 0 - Header + back button -->
                 <RowDefinition Height="3*"/>    <!-- 1 - upper deck-builder area -->
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="40"/>
-                <RowDefinition Height="2*"/>
-                <!-- Oracle cards -->
+                <RowDefinition Height="Auto"/>  <!-- 2 - Filter criteria summary -->
+                <RowDefinition Height="40"/>    <!-- 3 - Add-buttons -->
+                <RowDefinition Height="2*"/>    <!-- 4 - Bottom: Filterable oracle card source -->
             </Grid.RowDefinitions>
 
             <!-- 0 - Header + back button -->
@@ -52,7 +51,7 @@
                 <!-- Left column: Deck / Sideboard / Maybeboard scroll together -->
                 <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
-
+                        
                         <!-- Deck -->
                         <GroupBox Header="Deck">
                             <DataGrid x:Name="DeckCardsDataGrid" ItemsSource="{Binding MainboardZone.Cards}" SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}" Style="{StaticResource DeckCardGridStyle}">
@@ -92,85 +91,84 @@
                                     </ContextMenu>
                                 </DataGrid.ContextMenu>
                                 <DataGrid.InputBindings>
-                            <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
-                        </DataGrid.InputBindings>
-                        <i:Interaction.Behaviors>
-                            <behaviors:DeckBuilderDragDeckCardBehavior DestinationSection="Mainboard" 
-                                                                DragCommand="{Binding HandleDeckCardDragCommand}"
-                                                                AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
-                        </i:Interaction.Behaviors>
-                    </DataGrid>
-                </GroupBox>
+                                    <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                                </DataGrid.InputBindings>
+                                <i:Interaction.Behaviors>
+                                    <behaviors:DeckBuilderDragDeckCardBehavior DestinationSection="Mainboard" 
+                                                                               DragCommand="{Binding HandleDeckCardDragCommand}"
+                                                                               AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
+                                </i:Interaction.Behaviors>
+                            </DataGrid>
+                        </GroupBox>
+                        
+                        <!-- Sideboard -->
+                        <GroupBox Header="Sideboard">
+                            <DataGrid x:Name="SideboardDataGrid" ItemsSource="{Binding SideboardZone.Cards}"
+                                  SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                                  Style="{StaticResource DeckCardGridStyle}">
 
-                <!-- Sideboard -->
-                <GroupBox Header="Sideboard">
-                    <DataGrid x:Name="SideboardDataGrid" ItemsSource="{Binding SideboardZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
-                          Style="{StaticResource DeckCardGridStyle}">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+                                    <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                                    <DataGridTemplateColumn Header="+" CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
+                                    <DataGridTemplateColumn SortMemberPath="DesiredQuantityBinding" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}">
+                                        <DataGridTemplateColumn.Header>
+                                            <TextBlock Text="#" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.DesiredQuantity}"/>
+                                        </DataGridTemplateColumn.Header>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
+                                </DataGrid.Columns>
 
-                        <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
-                            <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
-                            <DataGridTemplateColumn Header="+" CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
-                            <DataGridTemplateColumn SortMemberPath="DesiredQuantityBinding" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}">
-                                <DataGridTemplateColumn.Header>
-                                    <TextBlock Text="#" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.DesiredQuantity}"/>
-                                </DataGridTemplateColumn.Header>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
-                        </DataGrid.Columns>
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Remove from sideboard" Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.InputBindings>
+                                    <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}"  CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                                </DataGrid.InputBindings>
+                                <i:Interaction.Behaviors>
+                                    <behaviors:DeckBuilderDragDeckCardBehavior DestinationSection="Sideboard" 
+                                                                        DragCommand="{Binding HandleDeckCardDragCommand}"
+                                                                        AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
+                                </i:Interaction.Behaviors>
+                            </DataGrid>
+                        </GroupBox>
 
-                        <DataGrid.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="Remove from sideboard" Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                            </ContextMenu>
-                        </DataGrid.ContextMenu>
-                        <DataGrid.InputBindings>
-                            <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}"  CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
-                        </DataGrid.InputBindings>
-                        <i:Interaction.Behaviors>
-                            <behaviors:DeckBuilderDragDeckCardBehavior DestinationSection="Sideboard" 
-                                                                DragCommand="{Binding HandleDeckCardDragCommand}"
-                                                                AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
-                        </i:Interaction.Behaviors>
-                    </DataGrid>
-                </GroupBox>
+                        <!-- Maybeboard -->
+                        <GroupBox Header="Maybeboard">
+                            <DataGrid x:Name="MaybeboardDataGrid" ItemsSource="{Binding MaybeboardZone.Cards}" SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}" Style="{StaticResource DeckCardGridStyle}">
 
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+                                    <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                                    <DataGridTemplateColumn Header="Card types" SortMemberPath="Type" CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
+                                    <DataGridTemplateColumn Header="+" CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
+                                    <DataGridTemplateColumn SortMemberPath="DesiredQuantityBinding" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}">
+                                        <DataGridTemplateColumn.Header>
+                                            <TextBlock Text="#" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.DesiredQuantity}"/>
+                                        </DataGridTemplateColumn.Header>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
+                                </DataGrid.Columns>
 
-                <!-- Maybeboard -->
-                <GroupBox Header="Maybeboard">
-                    <DataGrid x:Name="MaybeboardDataGrid" ItemsSource="{Binding MaybeboardZone.Cards}" SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}" Style="{StaticResource DeckCardGridStyle}">
-
-                        <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
-                            <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
-                            <DataGridTemplateColumn Header="Card types" SortMemberPath="Type" CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
-                            <DataGridTemplateColumn Header="+" CellTemplate="{StaticResource DeckCardIncrementCellTemplate}"/>
-                            <DataGridTemplateColumn SortMemberPath="DesiredQuantityBinding" CellTemplate="{StaticResource DeckCardQuantityCellTemplate}">
-                                <DataGridTemplateColumn.Header>
-                                    <TextBlock Text="#" ToolTip="{x:Static deckPresentation:DeckBuilderTooltips.DesiredQuantity}"/>
-                                </DataGridTemplateColumn.Header>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
-                        </DataGrid.Columns>
-
-                        <DataGrid.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="Remove from maybeboard" Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                            </ContextMenu>
-                        </DataGrid.ContextMenu>
-                        <DataGrid.InputBindings>
-                            <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
-                        </DataGrid.InputBindings>
-                        <i:Interaction.Behaviors>
-                            <behaviors:DeckBuilderDragDeckCardBehavior DestinationSection="Maybeboard" 
-                                                                DragCommand="{Binding HandleDeckCardDragCommand}"
-                                                                AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
-                        </i:Interaction.Behaviors>
-                    </DataGrid>
-                </GroupBox>
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Remove from maybeboard" Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.InputBindings>
+                                    <KeyBinding Key="Delete" Command="{Binding DeleteDeckCardsCommand}" CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                                </DataGrid.InputBindings>
+                                <i:Interaction.Behaviors>
+                                    <behaviors:DeckBuilderDragDeckCardBehavior DestinationSection="Maybeboard" 
+                                                                        DragCommand="{Binding HandleDeckCardDragCommand}"
+                                                                        AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
+                                </i:Interaction.Behaviors>
+                            </DataGrid>
+                        </GroupBox>
 
                     </StackPanel>
                 </ScrollViewer>
@@ -185,76 +183,68 @@
 
                     <!-- Stats -->
                     <GroupBox Grid.Row="0" Header="Stats">
-                            <StackPanel Margin="8">
-                                <TextBlock Text="Deck stats will go here later."
-                               TextWrapping="Wrap"
-                               Opacity="0.7"/>
-
-                                <Separator Margin="0,8"/>
-
-                                <TextBlock/>
-                                <TextBlock/>
-                                <TextBlock/>
-                                <TextBlock/>
-                            </StackPanel>
-                        </GroupBox>
-
-                            <!-- Command zone -->
+                        <StackPanel Margin="8">
+                            <TextBlock Text="Deck stats will go here later." TextWrapping="Wrap" Opacity="0.7"/>
+                            <Separator Margin="0,8"/>
+                            <TextBlock/>
+                            <TextBlock/>
+                            <TextBlock/>
+                            <TextBlock/>
+                        </StackPanel>
+                    </GroupBox>
+                    
+                    <!-- Command zone -->
                     <GroupBox Grid.Row="1" Header="Command zone" Visibility="{Binding IsCommanderZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <DataGrid x:Name="CommanderDataGrid" ItemsSource="{Binding CommanderZone.Cards}"
-                              SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
-                              Style="{StaticResource DeckCardGridStyle}">
-
-                                    <DataGrid.Columns>
-                                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
-                                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
-                                    </DataGrid.Columns>
-
-                                    <DataGrid.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="Fire commander"
-                                          Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                                        </ContextMenu>
-                                    </DataGrid.ContextMenu>
-
-                                    <DataGrid.InputBindings>
-                                        <KeyBinding Key="Delete"
-                                        Command="{Binding DeleteDeckCardsCommand}"
-                                        CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
-                                    </DataGrid.InputBindings>
-                                </DataGrid>
-                            </GroupBox>
-
-                            <!-- Companion zone -->
+                        <DataGrid x:Name="CommanderDataGrid" ItemsSource="{Binding CommanderZone.Cards}"
+                                  SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                                  Style="{StaticResource DeckCardGridStyle}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+                                <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                            </DataGrid.Columns>
+                            
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Fire commander"
+                                              Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
+                            <DataGrid.InputBindings>
+                                <KeyBinding Key="Delete"
+                                            Command="{Binding DeleteDeckCardsCommand}"
+                                            CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                            </DataGrid.InputBindings>
+                        </DataGrid>
+                    </GroupBox>
+                    
+                    <!-- Companion zone -->
                     <GroupBox Grid.Row="2" Header="Companion zone" Visibility="{Binding IsCompanionZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <DataGrid x:Name="CompanionDataGrid"
-                          ItemsSource="{Binding CompanionZone.Cards}"
-                          SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
-                          Style="{StaticResource DeckCardGridStyle}">
-
-                                    <DataGrid.Columns>
-                                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
-                                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
-                                    </DataGrid.Columns>
-
-                                    <DataGrid.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="Remove companion"
-                                      Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                        </ContextMenu>
-                                    </DataGrid.ContextMenu>
-
-                                    <DataGrid.InputBindings>
-                                        <KeyBinding Key="Delete"
-                                        Command="{Binding DeleteDeckCardsCommand}"
-                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                    </DataGrid.InputBindings>
-                                </DataGrid>
-                            </GroupBox>
+                        <DataGrid x:Name="CompanionDataGrid"
+                                  ItemsSource="{Binding CompanionZone.Cards}"
+                                  SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
+                                  Style="{StaticResource DeckCardGridStyle}">
+                            
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
+                                <DataGridTemplateColumn Header="Mana Cost" Width="Auto" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                            </DataGrid.Columns>
+                            
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Remove companion"
+                                              Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
+                            <DataGrid.InputBindings>
+                                <KeyBinding Key="Delete"
+                                            Command="{Binding DeleteDeckCardsCommand}"
+                                            CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                            </DataGrid.InputBindings>
+                        </DataGrid>
+                    </GroupBox>
                 </Grid>
-
             </Grid>
 
             <!-- 2 - Filter criteria summary -->
@@ -311,7 +301,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 3- Bottom: Filterable oracle card source -->
+            <!-- 4 - Bottom: Filterable oracle card source -->
             <Grid Grid.Row="4">
                 <DataGrid x:Name="AvailableCardsDataGrid"
                       ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
