@@ -89,7 +89,19 @@ namespace CollectaMundo.Presentation.Behaviors
 
             var selectedCards = AssociatedObject.SelectedItems.OfType<DeckCardEntryViewModel>().ToList();
 
-            _draggedCards = selectedCards.Contains(clickedCard) ? selectedCards : [clickedCard];
+            if (selectedCards.Contains(clickedCard))
+            {
+                _draggedCards = selectedCards;
+
+                if (selectedCards.Count > 1)
+                {
+                    e.Handled = true;
+                }
+            }
+            else
+            {
+                _draggedCards = [clickedCard];
+            }
         }
         private void OnPreviewMouseMove(object sender, MouseEventArgs e)
         {

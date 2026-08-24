@@ -50,10 +50,20 @@
 
                 <!-- Left column: Deck / Sideboard / Maybeboard scroll together -->
                 <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <i:Interaction.Behaviors>
+                        <behaviors:ScrollViewerMouseWheelBehavior/>
+                    </i:Interaction.Behaviors>
                     <StackPanel>
                         
                         <!-- Deck -->
-                        <GroupBox Header="Deck">
+                        <GroupBox>
+                            <GroupBox.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Deck"/>
+                                    <TextBlock Text=" ⓘ" Margin="4,0,0,0" Opacity="0.65"
+                                               ToolTip="Drag cards between deck zones. Hold Shift while dragging to move all copies of each selected card. Dropping outside a valid zone removes cards."/>
+                                </StackPanel>
+                            </GroupBox.Header>
                             <DataGrid x:Name="DeckCardsDataGrid" ItemsSource="{Binding MainboardZone.Cards}" SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}" Style="{StaticResource DeckCardGridStyle}">
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource DeckCardNameCellTemplate}"/>
@@ -303,13 +313,23 @@
 
             <!-- 4 - Bottom: Filterable oracle card source -->
             <Grid Grid.Row="4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="Card pool" FontWeight="SemiBold"/>
+                    <TextBlock Text="ⓘ" Margin="5,0,0,0" Opacity="0.65"
+                               ToolTip="Drag selected cards to a deck zone to add 1 copy of each. Hold Shift while dragging to add 4 copies of each."/>
+                </StackPanel>
                 <DataGrid x:Name="AvailableCardsDataGrid"
-                      ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
-                      SelectedItem="{Binding SelectedOracleCard, Mode=TwoWay}"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      IsReadOnly="True"
-                      Style="{StaticResource CardGridBaseStyle}">
+                          Grid.Row="1"
+                          ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
+                          SelectedItem="{Binding SelectedOracleCard, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          Style="{StaticResource CardGridBaseStyle}">
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="MouseDoubleClick">
                             <i:InvokeCommandAction Command="{Binding AddOracleCardToDeckCommand}" CommandParameter="{Binding SelectedItem, ElementName=AvailableCardsDataGrid}"/>

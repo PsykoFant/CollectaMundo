@@ -1,11 +1,6 @@
 TO DO 
 
 Deck editor!
- 
- - Tilføj træk kort fra datagrid
-	- Træk smid væk
-	- Træk fra oracle card datagrid
-	- Available Warning på maybepad
 
  - Kolonnebredde på deck manager
 
@@ -16,9 +11,6 @@ Deck editor!
  - Tilføj stats
  - Tilføj pris
  - Tilføj ekport decklist/want list
-
-
-
 
 Db optimering
 

@@ -30,6 +30,11 @@ namespace CollectaMundo.Presentation.Behaviors
             _dragStartPoint = e.GetPosition(AssociatedObject);
             _draggedCards = [];
 
+            if (IsInteractiveElement(e.OriginalSource as DependencyObject))
+            {
+                return;
+            }
+
             var row = FindAncestor<DataGridRow>(e.OriginalSource as DependencyObject);
 
             if (row?.DataContext is not OracleCard clickedCard)
@@ -39,7 +44,19 @@ namespace CollectaMundo.Presentation.Behaviors
 
             var selectedCards = AssociatedObject.SelectedItems.OfType<OracleCard>().ToList();
 
-            _draggedCards = selectedCards.Contains(clickedCard) ? selectedCards : [clickedCard];
+            if (selectedCards.Contains(clickedCard))
+            {
+                _draggedCards = selectedCards;
+
+                if (selectedCards.Count > 1)
+                {
+                    e.Handled = true;
+                }
+            }
+            else
+            {
+                _draggedCards = [clickedCard];
+            }
         }
         private void OnPreviewMouseMove(object sender, MouseEventArgs e)
         {
