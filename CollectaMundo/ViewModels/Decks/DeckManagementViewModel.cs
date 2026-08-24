@@ -45,6 +45,9 @@ namespace CollectaMundo.ViewModels.Decks
         [ObservableProperty]
         private bool isEnterDeckBuilderButtonEnabled = false;
 
+        [ObservableProperty]
+        private int refreshColumnsTrigger;
+
         // View data
         public ObservableCollection<DeckManagementRowViewModel> Decks { get; } = [];
         public ObservableCollection<DeckFormatOption> DeckFormats => _deckManagementStore.DeckFormats;
@@ -84,6 +87,8 @@ namespace CollectaMundo.ViewModels.Decks
                 {
                     Decks.Add(CreateRow(deck));
                 }
+
+                RefreshColumns();
             },
             "Failed to load decks");
         }
@@ -115,6 +120,7 @@ namespace CollectaMundo.ViewModels.Decks
             if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
             {
                 UpsertDeckRow(mutation.Entity);
+                RefreshColumns();
                 ResetEditorAndSelection();
             }
         }
@@ -127,6 +133,7 @@ namespace CollectaMundo.ViewModels.Decks
             if (mutation.Result.Code == OperationResultCode.Success && mutation.Entity is not null)
             {
                 UpsertDeckRow(mutation.Entity);
+                RefreshColumns();
                 ResetEditorAndSelection();
             }
         }
@@ -147,6 +154,7 @@ namespace CollectaMundo.ViewModels.Decks
                 UpsertDeckRow(updatedDeck);
             }
 
+            RefreshColumns();
             ResetEditorAndSelection();
 
             ShowStatus(updatedDecks.Count == 1
@@ -173,6 +181,7 @@ namespace CollectaMundo.ViewModels.Decks
                         RemoveDeckRow(locationId);
                     }
 
+                    RefreshColumns();
                     CollectionChanged?.Invoke(this, result.CollectionChangeSet);
                 }
 
@@ -233,6 +242,10 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 Decks.Remove(existing);
             }
+        }
+        private void RefreshColumns()
+        {
+            RefreshColumnsTrigger++;
         }
     }
 }

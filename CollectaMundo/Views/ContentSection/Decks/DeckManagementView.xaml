@@ -113,6 +113,7 @@
                   SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                   behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedItems}"
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ClearSelectionTrigger}"
+                  behaviors:ColumnWidthRefreshBehavior.RefreshTrigger="{Binding RefreshColumnsTrigger}"
                   Style="{StaticResource ManagementGridStyle}">
             <i:Interaction.Triggers>
                 <i:EventTrigger EventName="MouseDoubleClick">
@@ -121,16 +122,22 @@
             </i:Interaction.Triggers>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name"
-                                    Width="2*"
+                                    Width="Auto"
                                     Binding="{Binding Name}" />
 
                 <DataGridTextColumn Header="Format"
-                                    Width="110"
+                                    Width="Auto"
                                     Binding="{Binding FormatDisplayName}" />
 
-                <DataGridTextColumn Header="Description"
-                                    Width="3*"
-                                    Binding="{Binding Description}" />
+                <DataGridTextColumn Header="Description" Width="*" Binding="{Binding Description}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextWrapping" Value="Wrap"/>
+                            <Setter Property="VerticalAlignment" Value="Top"/>
+                            <Setter Property="Margin" Value="0,2"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>
