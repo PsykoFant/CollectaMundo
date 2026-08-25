@@ -111,6 +111,8 @@ namespace CollectaMundo.ViewModels.Decks
 
         [ObservableProperty]
         private bool isCompanionZoneVisible;
+        [ObservableProperty]
+        private int refreshColumnsTrigger;
 
 
         // Deck identity properties
@@ -407,6 +409,7 @@ namespace CollectaMundo.ViewModels.Decks
             RefreshZoneVisibility();
             RefreshRuleDependentProperties();
             RefreshOwnedQuantityStatus();
+            RefreshColumns();
         }
         private void RefreshZoneVisibility()
         {
@@ -447,6 +450,10 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 return MainboardZone.Cards.Concat(SideboardZone.Cards).Concat(CommanderZone.Cards).Concat(CompanionZone.Cards);
             }
+        }
+        private void RefreshColumns()
+        {
+            RefreshColumnsTrigger++;
         }
 
         #endregion
@@ -495,7 +502,11 @@ namespace CollectaMundo.ViewModels.Decks
                 ? _collectionQuantitySnapshot?.GetAvailableQuantity(oracleId, currentLocationId) ?? 0
                 : ownedQuantity;
 
-            return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync, desiredQuantityChanged: _ => RefreshOwnedQuantityStatus())
+            return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync, desiredQuantityChanged: _ =>
+            {
+                RefreshOwnedQuantityStatus();
+                RefreshColumns();
+            })
             {
                 OracleCard = card.Card,
                 DesiredQuantity = card.DesiredQuantity,

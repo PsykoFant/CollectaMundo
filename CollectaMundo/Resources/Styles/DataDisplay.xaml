@@ -69,6 +69,7 @@
         <Setter Property="CanUserAddRows" Value="False"/>
         <Setter Property="AutoGenerateColumns" Value="False"/>
         <Setter Property="IsReadOnly" Value="True"/>
+        <Setter Property="ColumnWidth" Value="Auto"/>
     </Style>
 
 
