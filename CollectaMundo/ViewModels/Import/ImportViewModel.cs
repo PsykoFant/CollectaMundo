@@ -5,7 +5,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.ViewModels.Decks.Models;
+using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;

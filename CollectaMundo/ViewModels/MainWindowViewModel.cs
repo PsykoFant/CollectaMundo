@@ -26,7 +26,7 @@ using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks;
-using CollectaMundo.ViewModels.Decks.Models;
+using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.ModifyCollection;
@@ -195,7 +195,7 @@ namespace CollectaMundo.ViewModels
 
             // Deck management viewmodels
             DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
-            DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, OracleCardsVM, FilterPanelVM, cardCollectionHost);            
+            DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, OracleCardsVM, FilterPanelVM, cardCollectionHost);
 
             // Utility viewmodels
             UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, _utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
@@ -699,7 +699,7 @@ namespace CollectaMundo.ViewModels
         public ICollectionQuantitySnapshot CreateCollectionQuantitySnapshot()
         {
             var deckLocationIds = _cardLocationLookupStore.GetAll().Where(x => x.Type == CardLocationType.Deck).Select(x => x.Id).ToHashSet();
-            return CollectionSnapshotFactory.CreateQuantitySnapshot(MyCollectionVM.Cards,deckLocationIds);
+            return CollectionSnapshotFactory.CreateQuantitySnapshot(MyCollectionVM.Cards, deckLocationIds);
         }
 
         #endregion

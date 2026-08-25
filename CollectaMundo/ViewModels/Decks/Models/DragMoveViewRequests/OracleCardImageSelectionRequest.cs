@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ViewModels.Decks.Models
+﻿namespace CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests
 {
     public sealed record OracleCardImageSelectionRequest(
     string? Uuid = null,

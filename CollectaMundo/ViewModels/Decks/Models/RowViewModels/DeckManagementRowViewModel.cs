@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Decks.Models;
 
-namespace CollectaMundo.ViewModels.Decks
+namespace CollectaMundo.ViewModels.Decks.Models.RowViewModels
 {
     public sealed class DeckManagementRowViewModel(DeckManagementRecord record, Func<string?, string> formatDisplayNameResolver)
     {

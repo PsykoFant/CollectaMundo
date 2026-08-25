@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
-using CollectaMundo.ViewModels.Decks;
-using CollectaMundo.ViewModels.Decks.Models;
+using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
+using CollectaMundo.ViewModels.Decks.Models.RowViewModels;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;

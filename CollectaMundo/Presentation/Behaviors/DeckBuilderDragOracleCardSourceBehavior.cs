@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Shared.CardModels;
-using CollectaMundo.ViewModels.Decks.Models;
+using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;

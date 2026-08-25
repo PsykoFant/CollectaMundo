@@ -8,7 +8,8 @@ using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.ViewModels.CardLists;
-using CollectaMundo.ViewModels.Decks.Models;
+using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
+using CollectaMundo.ViewModels.Decks.Models.RowViewModels;
 using CollectaMundo.ViewModels.Filtering;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -127,22 +128,22 @@ namespace CollectaMundo.ViewModels.Decks
 
         // Selected card properties
 
-        // DeckCards datagrids
         [ObservableProperty]
-        private DeckCardEntryViewModel? selectedDeckCard;
+        private DeckCardEntryViewModel? selectedDeckCard; // DeckCards datagrids
         partial void OnSelectedDeckCardChanged(DeckCardEntryViewModel? value)
         {
             ShowCardImage(value?.OracleId, value?.CardName);
         }
 
-        // OracleCard datagrid
         [ObservableProperty]
-        private OracleCard? selectedOracleCard;
+        private OracleCard? selectedOracleCard; // OracleCard datagrid
         partial void OnSelectedOracleCardChanged(OracleCard? value)
         {
             RefreshRuleDependentProperties();
             ShowCardImage(value?.ScryfallOracleId, value?.Name);
         }
+
+        // Helper method to raise the CardImageSelectionRequested event
         private void ShowCardImage(string? oracleId, string? name)
         {
             var request = string.IsNullOrWhiteSpace(oracleId)

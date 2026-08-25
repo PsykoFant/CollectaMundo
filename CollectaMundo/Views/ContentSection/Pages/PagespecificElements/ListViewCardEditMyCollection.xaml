@@ -12,7 +12,7 @@
     <Grid>
         <ListView ItemsSource="{Binding ModifyCollectionViewModel.CardsToAddOrEdit}"
                   Visibility="{Binding ModifyCollectionViewModel.IsCollectionEditVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                  behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding ModifyCollectionViewModel.RefreshColumnsTrigger, Mode=OneWay}"
+                  behaviors:ColumnWidthRefreshBehavior.RefreshTrigger="{Binding ModifyCollectionViewModel.RefreshColumnsTrigger, Mode=OneWay}"
                   VerticalAlignment="Top" 
                   Height="170">
             <ListView.ItemContainerStyle>

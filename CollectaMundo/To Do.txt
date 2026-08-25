@@ -2,7 +2,6 @@ TO DO
 
 Deck editor!
 
- - Kolonnebredde på deck manager
 
 
  - Tilføj højreklik fra allcards tilføj

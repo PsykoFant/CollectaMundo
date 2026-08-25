@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
-using CollectaMundo.Presentation.Behaviors;
 
-namespace CollectaMundo.ViewModels.Decks.Models
+namespace CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests
 {
     public sealed record DeckCardDragRequest(IReadOnlyList<DeckCardDragItem> Items, DeckSection? DestinationSection);
 }

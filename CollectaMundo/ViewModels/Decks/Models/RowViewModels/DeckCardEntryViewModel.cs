@@ -1,22 +1,13 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
-using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.ViewModels.ModifyCollection.BindinViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Windows.Media;
 
-namespace CollectaMundo.ViewModels.Decks
+namespace CollectaMundo.ViewModels.Decks.Models.RowViewModels
 {
-    public partial class DeckCardEntryViewModel : ObservableObject
+    public partial class DeckCardEntryViewModel : OracleCardRowViewModel
     {
         private readonly Action<DeckCardEntryViewModel>? _desiredQuantityChanged;
-        public required OracleCard OracleCard { get; init; }
-
-        public string OracleId => OracleCard.ScryfallOracleId;
-        public string CardName => OracleCard.Name;
-        public double? ManaValue => OracleCard.ManaValue;
-        public ImageSource? ManaCostImage => OracleCard.ManaCostImage;
-        public string? Type => OracleCard.Type;
 
         [ObservableProperty]
         private int desiredQuantity = 1;

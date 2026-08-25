@@ -3,7 +3,7 @@ using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared.CardModels;
-using CollectaMundo.ViewModels.Decks.Models;
+using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {

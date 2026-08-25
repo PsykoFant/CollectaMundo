@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ViewModels.Decks;
+using CollectaMundo.ViewModels.Decks.Models.RowViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CollectaMundo.ViewModels.Pages

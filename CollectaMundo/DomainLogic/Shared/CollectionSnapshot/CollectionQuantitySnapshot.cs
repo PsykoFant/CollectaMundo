@@ -1,7 +1,6 @@
 ﻿namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
 {
-    public sealed class CollectionQuantitySnapshot
-        : ICollectionQuantitySnapshot
+    public sealed class CollectionQuantitySnapshot : ICollectionQuantitySnapshot
     {
         private readonly IReadOnlyDictionary<string, int> _ownedByOracleId;
         private readonly IReadOnlyDictionary<OracleLocationIdentity, int> _deckAllocatedByOracleAndLocation;
