@@ -22,10 +22,11 @@
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>  <!-- 0 - Header + back button -->
-                <RowDefinition Height="3*"/>    <!-- 1 - upper deck-builder area -->
+                <RowDefinition Height="5*"/>    <!-- 1 - upper deck-builder area -->
                 <RowDefinition Height="Auto"/>  <!-- 2 - Filter criteria summary -->
                 <RowDefinition Height="40"/>    <!-- 3 - Add-buttons -->
-                <RowDefinition Height="2*"/>    <!-- 4 - Bottom: Filterable oracle card source -->
+                <RowDefinition Height="Auto"/>  <!-- 4 - In the deckbox -->
+                <RowDefinition Height="3*"/>    <!-- 5 - Bottom: Filterable oracle card source -->
             </Grid.RowDefinitions>
 
             <!-- 0 - Header + back button -->
@@ -59,7 +60,7 @@
                         <GroupBox>
                             <GroupBox.Header>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Deck"/>
+                                    <TextBlock Text="Maindeck"/>
                                     <TextBlock Text=" ⓘ" Margin="4,0,0,0" Opacity="0.65"
                                                ToolTip="Drag cards between deck zones. Hold Shift while dragging to move all copies of each selected card. Dropping outside a valid zone removes cards."/>
                                 </StackPanel>
@@ -321,8 +322,33 @@
                 </StackPanel>
             </Grid>
 
-            <!-- 4 - Bottom: Filterable oracle card source -->
-            <Grid Grid.Row="4">
+            <!-- 4 - In the deckbox -->
+            <GroupBox Grid.Row="4" Margin="0,6,0,6" Visibility="{Binding IsDeckBoxDataGridVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <GroupBox.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="In the deckbox: Allocated from collection "/>
+                        <TextBlock Text=" ⓘ" Margin="4,0,0,0" Opacity="0.65"
+                                   ToolTip="Cards currently allocated to this deck location. Drag selected cards to a deck zone to add them to the deck list. Hold Shift while dragging to add 4 copies of each. Moving or removing cards in the deck list does not change their collection location."/>
+                    </StackPanel>
+                </GroupBox.Header>
+                    <DataGrid ItemsSource="{Binding DeckBoxCards}" IsReadOnly="True"
+                          AutoGenerateColumns="False"
+                          SelectionMode="Extended"
+                          SelectionUnit="FullRow">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource OracleCardNameCellTemplate}"/>
+                        <DataGridTemplateColumn Header="Mana Cost" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
+                        <DataGridTemplateColumn Header="Card types" SortMemberPath="Type" CellTemplate="{StaticResource DeckCardTypeCellTemplate}"/>
+                        <DataGridTextColumn Header="#" Width="Auto" Binding="{Binding AllocatedQuantity}"/>
+                    </DataGrid.Columns>
+                    <i:Interaction.Behaviors>
+                        <behaviors:DeckBuilderDragOracleCardSourceBehavior/>
+                    </i:Interaction.Behaviors>
+                </DataGrid>
+            </GroupBox>
+
+            <!-- 5 - Bottom: Filterable oracle card source -->
+            <Grid Grid.Row="5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>

@@ -89,4 +89,8 @@
                 CommandParameter="{Binding}"/>
     </DataTemplate>
 
+    <DataTemplate x:Key="OracleCardNameCellTemplate">
+        <TextBlock Text="{Binding CardName}" TextWrapping="Wrap"/>
+    </DataTemplate>
+
 </ResourceDictionary>

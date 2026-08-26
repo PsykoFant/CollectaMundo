@@ -334,8 +334,6 @@ namespace CollectaMundo.ViewModels.Filtering
             {
                 OperatorSelection = OperatorType.CONTAINS;
                 SelectedSingleOption = FreetextSearch;
-
-                Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - TypingTimer_Elapsed → CONTAINS: {FreetextSearch}");
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
+using CollectaMundo.ViewModels.Decks.Models.RowViewModels;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -37,12 +38,14 @@ namespace CollectaMundo.Presentation.Behaviors
 
             var row = FindAncestor<DataGridRow>(e.OriginalSource as DependencyObject);
 
-            if (row?.DataContext is not OracleCard clickedCard)
+            var clickedCard = GetOracleCard(row?.DataContext);
+
+            if (clickedCard is null)
             {
                 return;
             }
 
-            var selectedCards = AssociatedObject.SelectedItems.OfType<OracleCard>().ToList();
+            var selectedCards = AssociatedObject.SelectedItems.Cast<object>().Select(GetOracleCard).Where(card => card is not null).Cast<OracleCard>().ToList();
 
             if (selectedCards.Contains(clickedCard))
             {
@@ -137,6 +140,15 @@ namespace CollectaMundo.Presentation.Behaviors
             return context.IsOverValidTarget
                 ? new(DragFeedbackKind.Add, $"ADD: {context.Cards.Count} cards", multiQuantityText, isBulk)
                 : new(DragFeedbackKind.NoOp, $"DO NOTHING: {context.Cards.Count} cards", multiQuantityText, isBulk);
+        }
+        private static OracleCard? GetOracleCard(object? item)
+        {
+            return item switch
+            {
+                OracleCard card => card,
+                OracleCardRowViewModel row => row.OracleCard,
+                _ => null
+            };
         }
     }
 }

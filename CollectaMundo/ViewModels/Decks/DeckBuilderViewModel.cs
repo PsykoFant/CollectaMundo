@@ -69,6 +69,8 @@ namespace CollectaMundo.ViewModels.Decks
 
             _collectionQuantitySnapshot = _cardCollectionHost.CreateCollectionQuantitySnapshot();
 
+            LoadDeckBoxCards();
+
             var deckCards = new List<DeckCardState>();
 
             foreach (var entry in entries)
@@ -94,6 +96,32 @@ namespace CollectaMundo.ViewModels.Decks
 
             RefreshAll();
         }
+        private void LoadDeckBoxCards()
+        {
+            if (DeckLocationId is not int locationId || _collectionQuantitySnapshot is null)
+            {
+                DeckBoxCards = [];
+                return;
+            }
+
+            DeckBoxCards = [.. CardsVM.Cards.Select(card => new
+            {
+                Card = card,
+                AllocatedQuantity = _collectionQuantitySnapshot.GetAllocatedQuantity(card.ScryfallOracleId,locationId)
+            })
+            .Where(x => x.AllocatedQuantity > 0).Select(x => new DeckBoxCardViewModel
+            {
+                OracleCard = x.Card,
+                AllocatedQuantity = x.AllocatedQuantity
+            })
+            .OrderBy(row => CardSort.GetTypeRank(row.OracleCard.Types, row.OracleCard.GamePlayCard))
+            .ThenBy(row => CardSort.GetColorRank(row.OracleCard.Colors))
+            .ThenBy(row => row.ManaValue ?? 0)
+            .ThenBy(row => row.CardName, StringComparer.OrdinalIgnoreCase)
+            ];
+
+            IsDeckBoxDataGridVisible = DeckBoxCards.Count > 0;
+        }
 
         #region Observable Properties
 
@@ -112,9 +140,18 @@ namespace CollectaMundo.ViewModels.Decks
 
         [ObservableProperty]
         private bool isCompanionZoneVisible;
+
+        [ObservableProperty]
+        private bool isDeckBoxDataGridVisible = false;
+
+
+        // Trigger property to force deck card datagrid columns to refresh
         [ObservableProperty]
         private int refreshColumnsTrigger;
 
+        // Cards in collection allocated to this deck
+        [ObservableProperty]
+        private IReadOnlyList<DeckBoxCardViewModel> deckBoxCards = [];
 
         // Deck identity properties
         [ObservableProperty]
@@ -459,7 +496,7 @@ namespace CollectaMundo.ViewModels.Decks
 
         #endregion
 
-        // Shared helpers
+        #region Shared helpers
         private void ApplySuccessfulMutation(DeckMutationResult result)
         {
             if (!result.Succeeded)
@@ -566,6 +603,7 @@ namespace CollectaMundo.ViewModels.Decks
             })];
         }
 
+        #endregion
 
     }
 }

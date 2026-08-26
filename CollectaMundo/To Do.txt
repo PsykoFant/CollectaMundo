@@ -2,9 +2,6 @@ TO DO
 
 Deck editor!
 
-
-
- - Tilføj højreklik fra allcards tilføj
  - Tilføj højreklik fra my collection
 
  - Tilføj stats
