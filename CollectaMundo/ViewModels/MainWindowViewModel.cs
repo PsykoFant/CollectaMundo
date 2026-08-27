@@ -84,11 +84,10 @@ namespace CollectaMundo.ViewModels
         public TopMenuViewModel TopMenuVM { get; }
 
         // Pages
-        public CardListPageViewModel<PrintingCard> SearchAndFilterPageVM { get; }
+        public PagesSearchAndFilterViewModel SearchAndFilterPageVM { get; }
         public CardListPageViewModel<CollectionCard> MyCollectionPageVM { get; }
         public PagesDecksHostViewModel PagesDecksHostVM { get; }
         public PagesUtilitiesHostViewModel PagesUtilitiesHostVM { get; }
-
 
         // Menus
         public SideMenuFilteringViewModel SideMenuFilteringVM { get; }
@@ -206,7 +205,7 @@ namespace CollectaMundo.ViewModels
             PricesVM = new PricesViewModel(_settings, cardCollectionHost);
 
             // Pages viewmodels
-            SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, filterVM: FilterPanelVM, pageTitle: "Search and Filter Cards", cardListPage: ShellPageEnum.SearchAndFilter, primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
+            SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, filterVM: FilterPanelVM, deckBuilderService: deckBuilderService, pageTitle: "Search and Filter Cards", cardListPage: ShellPageEnum.SearchAndFilter, primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, filterVM: FilterPanelVM, pageTitle: "My Collection", cardListPage: ShellPageEnum.MyCollection, primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
             PagesDecksHostVM = new PagesDecksHostViewModel(DeckManagementVM, DeckBuilderVM);
             PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, _utilitiesNavigator);
@@ -558,6 +557,8 @@ namespace CollectaMundo.ViewModels
 
             AddCardsVM.SetAvailableLocations(locations);
             EditCardsVM.SetAvailableLocations(locations);
+
+            SearchAndFilterPageVM.SetAvailableDecks([.. locations.Where(x => x.Type == CardLocationType.Deck).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)]);
 
             _cardLocationProvider = new ValueProvider<int, CardLocation>(locations.ToDictionary(x => x.Id));
 

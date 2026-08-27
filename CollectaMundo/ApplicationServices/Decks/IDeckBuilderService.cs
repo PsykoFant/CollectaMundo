@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Decks.Models;
+using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Decks.Models.Records;
@@ -10,6 +11,7 @@ namespace CollectaMundo.ApplicationServices.Decks
     public interface IDeckBuilderService
     {
         Task<DeckMutationResult> AddCardsAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<OracleCard> selectedCards, int quantity, DeckSection section);
+        Task<OperationResult> AddCardsToDeckAsync(int deckLocationId, IReadOnlyCollection<OracleCard> selectedCards, int quantity, DeckSection section);
         Task<DeckMutationResult> DeleteCardsAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<DeckCardIdentityRecord> cardsToDelete);
         Task<DeckMutationResult> SetCardQuantityAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, DeckCardIdentityRecord card, int desiredQuantity);
         Task<DeckMutationResult> MoveCardsAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<DeckCardMoveRequest> moves, DeckSection destinationSection);

@@ -8,7 +8,7 @@ using CollectaMundo.Infrastructure.CardLegalities;
 using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels.Decks;
-using CollectaMundo.ViewModels.Decks.Models.DragMoveRequests;
+using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 using Moq;
 using System.Data.SQLite;
 

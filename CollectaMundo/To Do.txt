@@ -2,8 +2,6 @@ TO DO
 
 Deck editor!
 
- - Tilføj højreklik fra my collection
-
  - Tilføj stats
  - Tilføj pris
  - Tilføj ekport decklist/want list

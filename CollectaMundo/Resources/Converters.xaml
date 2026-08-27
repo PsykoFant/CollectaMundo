@@ -11,6 +11,7 @@
                                           VisibleVisibility="Visible"
                                           HiddenVisibility="Collapsed" />
     <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+    <converters:AddCardsToDeckCommandParameterConverter x:Key="AddCardsToDeckCommandParameterConverter"/>
     <converters:SetLocationCommandParameterConverter x:Key="SetLocationCommandParameterConverter" />
     <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 </ResourceDictionary>

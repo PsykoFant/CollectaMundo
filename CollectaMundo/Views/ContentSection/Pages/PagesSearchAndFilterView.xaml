@@ -143,6 +143,22 @@
                               Command="{Binding ModifyCollectionViewModel.SubmitNewCardsWithDefaultsCommand}"
                               CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               Style="{StaticResource BelerenBold}"/>
+                    <MenuItem Header="Add selected card(s) to deck" ItemsSource="{Binding AvailableDecks}">
+                        <MenuItem.ItemContainerStyle>
+                            <Style TargetType="MenuItem">
+                                <Setter Property="Header" Value="{Binding Name}" />
+                                <Setter Property="Command" Value="{Binding DataContext.AddSelectedCardsToDeckCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                <Setter Property="CommandParameter"> 
+                                    <Setter.Value>
+                                        <MultiBinding Converter="{StaticResource AddCardsToDeckCommandParameterConverter}">
+                                            <Binding Path="PlacementTarget.SelectedItems" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                            <Binding Path="Id" />
+                                        </MultiBinding>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </MenuItem.ItemContainerStyle>
+                    </MenuItem>
                     <MenuItem Header="">
                         <MenuItem.Template>
                             <ControlTemplate>
