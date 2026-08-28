@@ -190,6 +190,10 @@ namespace CollectaMundo.ViewModels.Decks
             CardImageSelectionRequested?.Invoke(this, request);
         }
 
+        // Deck stats
+        [ObservableProperty]
+        private DeckStats stats = new();
+
         #endregion
 
         #region Commands
@@ -429,6 +433,7 @@ namespace CollectaMundo.ViewModels.Decks
                 GetZone(row.Section).Cards.Remove(row);
                 RefreshZoneVisibility();
                 RefreshOwnedQuantityStatus();
+                RefreshStats();
                 return;
             }
 
@@ -436,6 +441,7 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 row.DesiredQuantity = updatedCard.DesiredQuantity;
                 RefreshOwnedQuantityStatus();
+                RefreshStats();
             }
         }
 
@@ -448,6 +454,7 @@ namespace CollectaMundo.ViewModels.Decks
             RefreshRuleDependentProperties();
             RefreshOwnedQuantityStatus();
             RefreshColumns();
+            RefreshStats();
         }
         private void RefreshZoneVisibility()
         {
@@ -492,6 +499,10 @@ namespace CollectaMundo.ViewModels.Decks
         private void RefreshColumns()
         {
             RefreshColumnsTrigger++;
+        }
+        private void RefreshStats()
+        {
+            Stats = _deckBuilderService.CalculateDeckStats(CreateDeckCardStates());
         }
 
         #endregion

@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
+using CollectaMundo.DomainLogic.Decks.Models.Records;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 
@@ -264,6 +265,79 @@ namespace CollectaMundo.DomainLogic.Decks
         private static bool SameOracleCard(OracleCard left, OracleCard right)
         {
             return string.Equals(left.ScryfallOracleId, right.ScryfallOracleId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        // Deck stats
+        public DeckStats CalculateDeckStats(IReadOnlyCollection<DeckCardState> cards)
+        {
+            // Include cards in the mainboard and commander sections and exlude cards that are not gameplay cards (e.g., tokens, emblems, etc.)
+            var includedCards = cards.Where(card => card.Section is DeckSection.Mainboard or DeckSection.Commander && card.Card.GamePlayCard == 1).ToList();
+
+            var cardCount = includedCards.Sum(card => card.DesiredQuantity);
+            var landCount = includedCards.Where(card => GetCompositionType(card.Card) == DeckCompositionType.Land).Sum(card => card.DesiredQuantity);
+            var creatureCount = includedCards.Where(card => GetCompositionType(card.Card) == DeckCompositionType.Creature).Sum(card => card.DesiredQuantity);
+            var spellCount = includedCards.Where(card => GetCompositionType(card.Card) == DeckCompositionType.Other).Sum(card => card.DesiredQuantity);
+
+            return new DeckStats
+            {
+                CardCount = cardCount,
+
+                LandCount = landCount,
+                LandPercentage = GetPercentage(landCount, cardCount),
+
+                CreatureCount = creatureCount,
+                CreaturePercentage = GetPercentage(creatureCount, cardCount),
+
+                SpellCount = spellCount,
+                SpellPercentage = GetPercentage(spellCount, cardCount),
+
+                TypeBreakdown = CalculateTypeBreakdown(includedCards)
+            };
+
+            static double GetPercentage(int count, int total)
+            {
+                return total == 0 ? 0 : 100.0 * count / total;
+            }
+        }
+
+        private static DeckCompositionType GetCompositionType(OracleCard card)
+        {
+            if (card.Type?.Contains("Land") == true)
+            {
+                return DeckCompositionType.Land;
+            }
+
+            if (card.Type?.Contains("Creature") == true)
+            {
+                return DeckCompositionType.Creature;
+            }
+
+            return DeckCompositionType.Other;
+        }
+        private enum DeckCompositionType
+        {
+            Land,
+            Creature,
+            Other
+        }
+        private static IReadOnlyList<DeckStatsBucket> CalculateTypeBreakdown(IReadOnlyCollection<DeckCardState> cards)
+        {
+            var types = new[]
+            {
+                "Creature",
+                "Land",
+                "Instant",
+                "Sorcery",
+                "Artifact",
+                "Enchantment",
+                "Planeswalker"
+            };
+
+            return [.. types.Select(type => new DeckStatsBucket
+            {
+                Label = type,
+                Count = cards.Where(card => card.Card.Type?.Contains(type) == true).Sum(card => card.DesiredQuantity)
+            }).Where(bucket => bucket.Count > 0)];
         }
 
         // Shared helpers

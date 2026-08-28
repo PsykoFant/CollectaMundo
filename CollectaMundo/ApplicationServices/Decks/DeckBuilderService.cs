@@ -365,6 +365,12 @@ namespace CollectaMundo.ApplicationServices.Decks
             return Success(updatedCards);
         }
 
+        // Deck stats
+        public DeckStats CalculateDeckStats(IReadOnlyCollection<DeckCardState> cards)
+        {
+            return _deckBuilderLogic.CalculateDeckStats(cards);
+        }
+
         // Helpers
         private static DeckMutationResult Success(IReadOnlyList<DeckCardState> cards)
         {

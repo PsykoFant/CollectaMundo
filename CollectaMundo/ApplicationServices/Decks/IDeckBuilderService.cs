@@ -21,5 +21,6 @@ namespace CollectaMundo.ApplicationServices.Decks
         DeckCardValidationResult ValidateCard(string? format, IReadOnlyCollection<DeckCardState> deckCards, DeckCardEntry entry, OracleCard oracleCard);
         Task<DeckMutationResult> SetCommanderAsync(int deckLocationId, string? format, IReadOnlyCollection<DeckCardState> currentCards, OracleCard selectedCard);
         Task<DeckMutationResult> SetCompanionAsync(int deckLocationId, string? format, IReadOnlyCollection<DeckCardState> currentCards, OracleCard selectedCard);
+        DeckStats CalculateDeckStats(IReadOnlyCollection<DeckCardState> cards);
     }
 }
