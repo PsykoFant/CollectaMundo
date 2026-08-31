@@ -333,11 +333,24 @@ namespace CollectaMundo.DomainLogic.Decks
                 "Planeswalker"
             };
 
-            return [.. types.Select(type => new DeckStatsBucket
+            var buckets = types.Select(type => new DeckStatsBucket
             {
                 Label = type,
                 Count = cards.Where(card => card.Card.Type?.Contains(type) == true).Sum(card => card.DesiredQuantity)
-            }).Where(bucket => bucket.Count > 0)];
+            }).Where(bucket => bucket.Count > 0).ToList();
+
+            var otherCount = cards.Where(card => !types.Any(type => card.Card.Type?.Contains(type) == true)).Sum(card => card.DesiredQuantity);
+
+            if (otherCount > 0)
+            {
+                buckets.Add(new DeckStatsBucket
+                {
+                    Label = "Other",
+                    Count = otherCount
+                });
+            }
+
+            return buckets;
         }
 
         // Shared helpers
