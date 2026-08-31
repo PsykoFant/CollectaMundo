@@ -277,10 +277,12 @@ namespace CollectaMundo.DomainLogic.Decks
             var landCount = includedCards.Where(card => GetCompositionType(card.Card) == DeckCompositionType.Land).Sum(card => card.DesiredQuantity);
             var creatureCount = includedCards.Where(card => GetCompositionType(card.Card) == DeckCompositionType.Creature).Sum(card => card.DesiredQuantity);
             var spellCount = includedCards.Where(card => GetCompositionType(card.Card) == DeckCompositionType.Other).Sum(card => card.DesiredQuantity);
+            var nonLandCardCount = includedCards.Where(card => card.Card.Type?.Contains("Land") != true).Sum(card => card.DesiredQuantity);
 
             return new DeckStats
             {
                 CardCount = cardCount,
+                NonLandCardCount = nonLandCardCount,
 
                 LandCount = landCount,
                 LandPercentage = GetPercentage(landCount, cardCount),
@@ -291,7 +293,8 @@ namespace CollectaMundo.DomainLogic.Decks
                 SpellCount = spellCount,
                 SpellPercentage = GetPercentage(spellCount, cardCount),
 
-                TypeBreakdown = CalculateTypeBreakdown(includedCards)
+                TypeBreakdown = CalculateTypeBreakdown(includedCards),
+                ColorBreakdown = CalculateColorBreakdown(includedCards)
             };
 
             static double GetPercentage(int count, int total)
@@ -351,6 +354,55 @@ namespace CollectaMundo.DomainLogic.Decks
             }
 
             return buckets;
+        }
+        private static IReadOnlyList<DeckStatsBucket> CalculateColorBreakdown(IReadOnlyCollection<DeckCardState> cards)
+        {
+            var counts = new Dictionary<string, int>
+            {
+                ["W"] = 0,
+                ["U"] = 0,
+                ["B"] = 0,
+                ["R"] = 0,
+                ["G"] = 0,
+                ["M"] = 0,
+                ["C"] = 0
+            };
+
+            foreach (var card in cards)
+            {
+                if (card.Card.Type?.Contains("Land") == true)
+                {
+                    continue;
+                }
+
+                var colors = card.Card.Colors;
+
+                string bucket;
+
+                if (string.IsNullOrEmpty(colors))
+                {
+                    bucket = "C";
+                }
+                else if (colors.Length > 1)
+                {
+                    bucket = "M";
+                }
+                else
+                {
+                    bucket = colors;
+                }
+
+                counts[bucket] += card.DesiredQuantity;
+            }
+
+            return
+            [
+                .. counts.Where(x => x.Value > 0).Select(x => new DeckStatsBucket
+                {
+                    Label = x.Key,
+                    Count = x.Value
+                })
+            ];
         }
 
         // Shared helpers

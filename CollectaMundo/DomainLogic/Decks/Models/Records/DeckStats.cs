@@ -6,6 +6,7 @@
         public int CreatureCount { get; init; }
         public int LandCount { get; init; }
         public int SpellCount { get; init; }
+        public int NonLandCardCount { get; init; }
 
 
         public double CreaturePercentage { get; init; }
@@ -13,5 +14,6 @@
         public double SpellPercentage { get; init; }
 
         public IReadOnlyList<DeckStatsBucket> TypeBreakdown { get; init; } = [];
+        public IReadOnlyList<DeckStatsBucket> ColorBreakdown { get; init; } = [];
     }
 }
