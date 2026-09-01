@@ -6,6 +6,7 @@
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
              xmlns:deckPresentation="clr-namespace:CollectaMundo.Presentation.Decks"
+             xmlns:controls="clr-namespace:CollectaMundo.Presentation.Controls"
              xmlns:deckViewModels="clr-namespace:CollectaMundo.ViewModels.Decks"
              xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
              mc:Ignorable="d"
@@ -204,36 +205,88 @@
 
                     <!-- Stats -->
                     <GroupBox Grid.Row="0" Header="Stats">
-                        <StackPanel>
-                            <TextBlock Text="Types" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                            <ItemsControl ItemsSource="{Binding Stats.TypeBreakdown}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="0,1">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="75"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="30"/>
-                                            </Grid.ColumnDefinitions>
+                        <StackPanel Margin="8">
 
-                                            <TextBlock Grid.Column="0" Text="{Binding Label}"/>
+                            <!-- Type + Color charts -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                                            <ProgressBar Grid.Column="1"
-                                                         Height="10"
-                                                         Margin="4,0"
-                                                         Minimum="0"
-                                                         Maximum="{Binding DataContext.Stats.CardCount, RelativeSource={RelativeSource AncestorType=GroupBox}}"
-                                                         Value="{Binding Count}"
-                                                         Background="Transparent"
-                                                         BorderBrush="Transparent"/>
+                                <!-- Types -->
+                                <StackPanel Grid.Column="0"
+                        Margin="0,0,12,0">
 
-                                            <TextBlock Grid.Column="2" Text="{Binding Count}"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            
-                            <Grid Margin="8">
+                                    <TextBlock Text="Types"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,4"/>
+
+                                    <ItemsControl ItemsSource="{Binding Stats.TypeBreakdown}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,1">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="75"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="30"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock Grid.Column="0"
+                                           Text="{Binding Label}"/>
+
+                                                    <ProgressBar Grid.Column="1"
+                                             Height="10"
+                                             Margin="4,0"
+                                             Minimum="0"
+                                             Maximum="{Binding DataContext.Stats.CardCount,
+                                                               RelativeSource={RelativeSource AncestorType=GroupBox}}"
+                                             Value="{Binding Count}"
+                                             Background="Transparent"
+                                             BorderBrush="Transparent"
+                                             BorderThickness="0"/>
+
+                                                    <TextBlock Grid.Column="2"
+                                           Text="{Binding Count}"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <!-- Colors -->
+                                <StackPanel Grid.Column="1">
+
+                                    <TextBlock Text="Colors"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,4"/>
+
+                                    <Grid Width="120"
+                      Height="120">
+
+                                        <controls:ManaColorDonutControl
+                        ItemsSource="{Binding Stats.ColorBreakdown}"/>
+
+                                        <!-- Donut center -->
+                                        <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+
+                                            <TextBlock Text="{Binding Stats.NonLandCardCount}"
+                                   HorizontalAlignment="Center"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"/>
+
+                                            <TextBlock Text="nonlands"
+                                   HorizontalAlignment="Center"
+                                   Opacity="0.7"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Summary -->
+                            <Grid Margin="8,12,8,8">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
@@ -250,63 +303,67 @@
 
                                 <!-- Row 0 -->
                                 <TextBlock Grid.Row="0"
-                                   Grid.Column="0"
-                                   Text="Cards"
-                                   FontWeight="SemiBold"/>
+                       Grid.Column="0"
+                       Text="Cards"
+                       FontWeight="SemiBold"/>
 
                                 <TextBlock Grid.Row="0"
-                                   Grid.Column="1"
-                                   Margin="8,0,0,0"
-                                   Text="{Binding Stats.CardCount}"/>
+                       Grid.Column="1"
+                       Margin="8,0,0,0"
+                       Text="{Binding Stats.CardCount}"/>
 
                                 <TextBlock Grid.Row="0"
-                                   Grid.Column="3"
-                                   Text="Lands"
-                                   FontWeight="SemiBold"/>
+                       Grid.Column="3"
+                       Text="Lands"
+                       FontWeight="SemiBold"/>
 
                                 <TextBlock Grid.Row="0"
-                                   Grid.Column="4"
-                                   Margin="8,0,0,0"
-                                   Text="{Binding Stats.LandCount}"/>
+                       Grid.Column="4"
+                       Margin="8,0,0,0"
+                       Text="{Binding Stats.LandCount}"/>
 
                                 <TextBlock Grid.Row="0"
-                                   Grid.Column="5"
-                                   Margin="6,0,0,0"
-                                   Text="{Binding Stats.LandPercentage, StringFormat={}{0:0}%}"/>
+                       Grid.Column="5"
+                       Margin="6,0,0,0"
+                       Text="{Binding Stats.LandPercentage,
+                                      StringFormat={}{0:0}%}"/>
 
                                 <!-- Row 1 -->
                                 <TextBlock Grid.Row="1"
-                                   Grid.Column="0"
-                                   Margin="0,4,0,0"
-                                   Text="Creatures"
-                                   FontWeight="SemiBold"/>
+                       Grid.Column="0"
+                       Margin="0,4,0,0"
+                       Text="Creatures"
+                       FontWeight="SemiBold"/>
 
                                 <TextBlock Grid.Row="1"
-                                   Grid.Column="1"
-                                   Margin="8,4,0,0"
-                                   Text="{Binding Stats.CreatureCount}"/>
+                       Grid.Column="1"
+                       Margin="8,4,0,0"
+                       Text="{Binding Stats.CreatureCount}"/>
 
                                 <TextBlock Grid.Row="1"
-                                   Grid.Column="2"
-                                   Margin="6,4,0,0"
-                                   Text="{Binding Stats.CreaturePercentage, StringFormat={}{0:0}%}"/>
+                       Grid.Column="2"
+                       Margin="6,4,0,0"
+                       Text="{Binding Stats.CreaturePercentage,
+                                      StringFormat={}{0:0}%}"/>
 
                                 <TextBlock Grid.Row="1"
-                                   Grid.Column="3"
-                                   Margin="0,4,0,0"
-                                   Text="Spells"
-                                   FontWeight="SemiBold"/>
+                       Grid.Column="3"
+                       Margin="0,4,0,0"
+                       Text="Spells"
+                       FontWeight="SemiBold"/>
 
                                 <TextBlock Grid.Row="1"
-               Grid.Column="4"
-               Margin="8,4,0,0"
-               Text="{Binding Stats.SpellCount}"/>
+                       Grid.Column="4"
+                       Margin="8,4,0,0"
+                       Text="{Binding Stats.SpellCount}"/>
 
                                 <TextBlock Grid.Row="1"
-               Grid.Column="5"
-               Margin="6,4,0,0"
-               Text="{Binding Stats.SpellPercentage, StringFormat={}{0:0}%}"/>
+                       Grid.Column="5"
+                       Margin="6,4,0,0"
+                       Text="{Binding Stats.SpellPercentage,
+                                      StringFormat={}{0:0}%}"/>
                             </Grid>
+
                         </StackPanel>
                     </GroupBox>
 
