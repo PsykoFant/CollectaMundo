@@ -1,6 +1,12 @@
 TO DO 
 
 Deck editor!
+	- Bug:
+		- filtrer
+		- Klik på oracle datagrid (se drag-widget dukker op kortvarigt)
+		- Man kan ikke markere noget
+
+
 
  - Tilføj stats
  - Tilføj pris

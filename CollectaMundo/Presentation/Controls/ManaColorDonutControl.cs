@@ -1,5 +1,8 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace CollectaMundo.Presentation.Controls
@@ -13,54 +16,114 @@ namespace CollectaMundo.Presentation.Controls
             get => (IReadOnlyList<DeckStatsBucket>?)GetValue(ItemsSourceProperty);
             set => SetValue(ItemsSourceProperty, value);
         }
+        private const double DonutThickness = 18;
+
+        // ToolTip for displaying slice information
+        private readonly ToolTip _toolTip = new() { Placement = PlacementMode.Mouse };
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+
+            var item = GetSliceAtPoint(e.GetPosition(this));
+
+            if (item is null)
+            {
+                _toolTip.IsOpen = false;
+                return;
+            }
+
+            var total = GetTotalCount();
+            var percentage = total == 0 ? 0 : 100.0 * item.Count / total;
+
+            _toolTip.Content = $"{GetColorName(item.Label)}: {item.Count} ({percentage:0.#}%)";
+            _toolTip.IsOpen = true;
+        }
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            _toolTip.IsOpen = false;
+            base.OnMouseLeave(e);
+        }
+        private DeckStatsBucket? GetSliceAtPoint(Point point)
+        {
+            var slices = GetSlices();
+
+            if (slices.Count == 0)
+            {
+                return null;
+            }
+
+            var center = GetCenter();
+            var radius = GetRadius();
+
+            var dx = point.X - center.X;
+            var dy = point.Y - center.Y;
+
+            var distance = Math.Sqrt(dx * dx + dy * dy);
+
+            var innerRadius = radius - DonutThickness / 2;
+            var outerRadius = radius + DonutThickness / 2;
+
+            if (distance < innerRadius || distance > outerRadius)
+            {
+                return null;
+            }
+
+            var angle = Math.Atan2(dy, dx) * 180.0 / Math.PI;
+
+            // Convert normal trig angle to:
+            // 0° = top, increasing clockwise.
+            angle = (angle + 90 + 360) % 360;
+
+            return slices.FirstOrDefault(slice => angle >= slice.StartAngle && angle < slice.StartAngle + slice.SweepAngle)?.Bucket;
+        }
+        private static string GetColorName(string label)
+        {
+            return label switch
+            {
+                "W" => "White",
+                "U" => "Blue",
+                "B" => "Black",
+                "R" => "Red",
+                "G" => "Green",
+                "M" => "Multicolor",
+                "C" => "Colorless",
+                _ => label
+            };
+        }
+
+        // Rendering the donut chart
         protected override void OnRender(DrawingContext drawingContext)
         {
             base.OnRender(drawingContext);
 
-            var items = ItemsSource?.Where(x => x.Count > 0).ToList();
+            var slices = GetSlices();
 
-            if (items is null || items.Count == 0)
+            if (slices.Count == 0)
             {
                 return;
             }
 
-            var total = items.Sum(x => x.Count);
-
-            if (total <= 0)
-            {
-                return;
-            }
-
-            var center = new Point(ActualWidth / 2, ActualHeight / 2);
-
-            const double thickness = 18;
-
-            var radius = Math.Min(ActualWidth, ActualHeight) / 2 - thickness / 2 - 1;
+            var center = GetCenter();
+            var radius = GetRadius();
 
             if (radius <= 0)
             {
                 return;
             }
 
-            // Special case: one bucket = full circle.
-            if (items.Count == 1)
+            if (slices.Count == 1)
             {
-                var pen = new Pen(GetBrush(items[0].Label), thickness);
+                var item = slices[0].Bucket;
 
-                drawingContext.DrawEllipse(null, pen, center, radius, radius);
+                drawingContext.DrawEllipse(null, new Pen(Brushes.Black, DonutThickness + 2), center, radius, radius);
+                drawingContext.DrawEllipse(null, new Pen(GetBrush(item.Label), DonutThickness), center, radius, radius);
 
                 return;
             }
 
-            var startAngle = -90.0;
-
-            foreach (var item in items)
+            foreach (var slice in slices)
             {
-                var sweepAngle = 360.0 * item.Count / total;
-
-                DrawArc(drawingContext, center, radius, startAngle, sweepAngle, GetBrush(item.Label), thickness);
-
-                startAngle += sweepAngle;
+                DrawArc(drawingContext, center, radius, slice.StartAngle - 90, slice.SweepAngle, GetBrush(slice.Bucket.Label), DonutThickness);
             }
         }
         private static void DrawArc(DrawingContext drawingContext, Point center, double radius, double startAngle, double sweepAngle, Brush brush, double thickness)
@@ -83,7 +146,23 @@ namespace CollectaMundo.Presentation.Controls
 
             var geometry = new PathGeometry([figure]);
 
-            drawingContext.DrawGeometry(null, new Pen(brush, thickness), geometry);
+            var outlinePen = new Pen(Brushes.Black, thickness + 2)
+            {
+                StartLineCap = PenLineCap.Flat,
+                EndLineCap = PenLineCap.Flat
+            };
+
+            var colorPen = new Pen(brush, thickness)
+            {
+                StartLineCap = PenLineCap.Flat,
+                EndLineCap = PenLineCap.Flat
+            };
+
+            // Outline underneath
+            drawingContext.DrawGeometry(null, outlinePen, geometry);
+
+            // Colored segment on top
+            drawingContext.DrawGeometry(null, colorPen, geometry);
         }
         private static Point GetPoint(Point center, double radius, double angle)
         {
@@ -105,5 +184,50 @@ namespace CollectaMundo.Presentation.Controls
                 _ => Brushes.Gray
             };
         }
+
+        // Helper methods for calculating slices and geometry
+        private IReadOnlyList<DonutSlice> GetSlices()
+        {
+            var items = ItemsSource?.Where(x => x.Count > 0).ToList();
+
+            if (items is null || items.Count == 0)
+            {
+                return [];
+            }
+
+            var total = items.Sum(x => x.Count);
+
+            if (total <= 0)
+            {
+                return [];
+            }
+
+            var slices = new List<DonutSlice>();
+            var startAngle = 0.0;
+
+            foreach (var item in items)
+            {
+                var sweepAngle = 360.0 * item.Count / total;
+
+                slices.Add(new DonutSlice(item, startAngle, sweepAngle));
+
+                startAngle += sweepAngle;
+            }
+
+            return slices;
+        }
+        private Point GetCenter()
+        {
+            return new Point(ActualWidth / 2, ActualHeight / 2);
+        }
+        private double GetRadius()
+        {
+            return Math.Min(ActualWidth, ActualHeight) / 2 - DonutThickness / 2 - 1;
+        }
+        private int GetTotalCount()
+        {
+            return ItemsSource?.Where(x => x.Count > 0).Sum(x => x.Count) ?? 0;
+        }
+        private sealed record DonutSlice(DeckStatsBucket Bucket, double StartAngle, double SweepAngle);
     }
 }

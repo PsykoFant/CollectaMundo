@@ -278,6 +278,7 @@ namespace CollectaMundo.DomainLogic.Decks
             var creatureCount = includedCards.Where(card => GetCompositionType(card.Card) == DeckCompositionType.Creature).Sum(card => card.DesiredQuantity);
             var spellCount = includedCards.Where(card => GetCompositionType(card.Card) == DeckCompositionType.Other).Sum(card => card.DesiredQuantity);
             var nonLandCardCount = includedCards.Where(card => card.Card.Type?.Contains("Land") != true).Sum(card => card.DesiredQuantity);
+            var manaCurve = CalculateManaCurve(includedCards);
 
             return new DeckStats
             {
@@ -294,7 +295,9 @@ namespace CollectaMundo.DomainLogic.Decks
                 SpellPercentage = GetPercentage(spellCount, cardCount),
 
                 TypeBreakdown = CalculateTypeBreakdown(includedCards),
-                ColorBreakdown = CalculateColorBreakdown(includedCards)
+                ColorBreakdown = CalculateColorBreakdown(includedCards),
+                ManaCurve = manaCurve,
+                ManaCurveMaxCount = manaCurve.Count == 0 ? 0 : manaCurve.Max(x => x.Count)
             };
 
             static double GetPercentage(int count, int total)
@@ -302,7 +305,37 @@ namespace CollectaMundo.DomainLogic.Decks
                 return total == 0 ? 0 : 100.0 * count / total;
             }
         }
+        private static IReadOnlyList<DeckStatsBucket> CalculateManaCurve(IReadOnlyCollection<DeckCardState> cards)
+        {
+            var counts = new int[8];
 
+            foreach (var card in cards)
+            {
+                if (card.Card.Type?.Contains("Land") == true)
+                {
+                    continue;
+                }
+
+                var manaValue = card.Card.ManaValue;
+                var bucketIndex = manaValue >= 7
+                    ? 7
+                    : Math.Max(0, (int)Math.Floor(manaValue));
+
+                counts[bucketIndex] += card.DesiredQuantity;
+            }
+
+            return
+            [
+                new DeckStatsBucket { Label = "0",  Count = counts[0] },
+                new DeckStatsBucket { Label = "1",  Count = counts[1] },
+                new DeckStatsBucket { Label = "2",  Count = counts[2] },
+                new DeckStatsBucket { Label = "3",  Count = counts[3] },
+                new DeckStatsBucket { Label = "4",  Count = counts[4] },
+                new DeckStatsBucket { Label = "5",  Count = counts[5] },
+                new DeckStatsBucket { Label = "6",  Count = counts[6] },
+                new DeckStatsBucket { Label = "7+", Count = counts[7] }
+            ];
+        }
         private static DeckCompositionType GetCompositionType(OracleCard card)
         {
             if (card.Type?.Contains("Land") == true)

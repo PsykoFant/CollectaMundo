@@ -15,5 +15,7 @@
 
         public IReadOnlyList<DeckStatsBucket> TypeBreakdown { get; init; } = [];
         public IReadOnlyList<DeckStatsBucket> ColorBreakdown { get; init; } = [];
+        public IReadOnlyList<DeckStatsBucket> ManaCurve { get; init; } = [];
+        public int ManaCurveMaxCount { get; init; }
     }
 }
