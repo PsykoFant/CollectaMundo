@@ -5,8 +5,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
-             xmlns:deckPresentation="clr-namespace:CollectaMundo.Presentation.Decks"
+             xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
              xmlns:controls="clr-namespace:CollectaMundo.Presentation.Controls"
+             xmlns:deckPresentation="clr-namespace:CollectaMundo.Presentation.Decks"             
              xmlns:deckViewModels="clr-namespace:CollectaMundo.ViewModels.Decks"
              xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
              mc:Ignorable="d"
@@ -268,11 +269,11 @@
                                                     <RowDefinition Height="Auto"/>
                                                 </Grid.RowDefinitions>
 
-                                                <!-- Vertical bar area -->
-                                                <Grid Grid.Row="0" VerticalAlignment="Stretch">
-                                                    <ProgressBar Orientation="Vertical"
-                                                                 HorizontalAlignment="Stretch"
-                                                                 VerticalAlignment="Stretch"
+                                                <!-- Chart area -->
+                                                <Grid Grid.Row="0" Height="64">
+                                                    <!-- Leave some space above the maximum bar for its label -->
+                                                    <ProgressBar Orientation="Vertical" Height="46"
+                                                                 VerticalAlignment="Bottom"
                                                                  Minimum="0"
                                                                  Maximum="{Binding DataContext.Stats.ManaCurveMaxCount, RelativeSource={RelativeSource AncestorType=GroupBox}}"
                                                                  Value="{Binding Count}"
@@ -280,10 +281,43 @@
                                                                  BorderBrush="Transparent"
                                                                  BorderThickness="0"/>
 
-                                                    <TextBlock Text="{Binding Count}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                                                    <!-- Count follows the top of the bar -->
+                                                    <TextBlock Text="{Binding Count}" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Count}" Value="0">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+
+                                                        <TextBlock.RenderTransform>
+                                                            <TranslateTransform Y="{Binding RelativeHeight, Converter={StaticResource RelativeHeightToOffsetConverter}, ConverterParameter=46}"/>
+                                                            <!--<TranslateTransform>
+                                                                <TranslateTransform.Y>
+                                                                    <Binding Path="Count" Converter="{StaticResource ManaCurveLabelPositionConverter}"/>
+                                                                </TranslateTransform.Y>
+                                                            </TranslateTransform>-->
+                                                            <!--<TranslateTransform Y="{Binding Count}"/>-->
+                                                            <!--<TranslateTransform Y="-10"/>-->
+                                                            <!--<TranslateTransform>
+                                                                <TranslateTransform.Y>
+                                                                    <MultiBinding Converter="{StaticResource ManaCurveLabelPositionConverter}" ConverterParameter="46">
+                                                                        <Binding Path="Count"/>
+                                                                        <Binding Path="DataContext.Stats.ManaCurveMaxCount" RelativeSource="{RelativeSource AncestorType=GroupBox}"/>
+                                                                    </MultiBinding>
+                                                                </TranslateTransform.Y>
+                                                            </TranslateTransform>-->
+                                                        </TextBlock.RenderTransform>
+                                                    </TextBlock>
+
                                                 </Grid>
 
-                                                <!-- MV label -->
+                                                <!-- Mana value -->
                                                 <TextBlock Grid.Row="1" Text="{Binding Label}" HorizontalAlignment="Center" Margin="0,3,0,0"/>
                                             </Grid>
                                         </DataTemplate>

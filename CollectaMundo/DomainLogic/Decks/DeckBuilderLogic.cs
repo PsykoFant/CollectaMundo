@@ -297,7 +297,7 @@ namespace CollectaMundo.DomainLogic.Decks
                 TypeBreakdown = CalculateTypeBreakdown(includedCards),
                 ColorBreakdown = CalculateColorBreakdown(includedCards),
                 ManaCurve = manaCurve,
-                ManaCurveMaxCount = manaCurve.Count == 0 ? 0 : manaCurve.Max(x => x.Count)
+                ManaCurveMaxCount = manaCurve.Max(x => x.Count)
             };
 
             static double GetPercentage(int count, int total)
@@ -305,7 +305,8 @@ namespace CollectaMundo.DomainLogic.Decks
                 return total == 0 ? 0 : 100.0 * count / total;
             }
         }
-        private static IReadOnlyList<DeckStatsBucket> CalculateManaCurve(IReadOnlyCollection<DeckCardState> cards)
+        private static IReadOnlyList<ManaCurveBucket> CalculateManaCurve(
+    IReadOnlyCollection<DeckCardState> cards)
         {
             var counts = new int[8];
 
@@ -317,6 +318,7 @@ namespace CollectaMundo.DomainLogic.Decks
                 }
 
                 var manaValue = card.Card.ManaValue;
+
                 var bucketIndex = manaValue >= 7
                     ? 7
                     : Math.Max(0, (int)Math.Floor(manaValue));
@@ -324,17 +326,34 @@ namespace CollectaMundo.DomainLogic.Decks
                 counts[bucketIndex] += card.DesiredQuantity;
             }
 
+            var maxCount = counts.Max();
+
             return
             [
-                new DeckStatsBucket { Label = "0",  Count = counts[0] },
-                new DeckStatsBucket { Label = "1",  Count = counts[1] },
-                new DeckStatsBucket { Label = "2",  Count = counts[2] },
-                new DeckStatsBucket { Label = "3",  Count = counts[3] },
-                new DeckStatsBucket { Label = "4",  Count = counts[4] },
-                new DeckStatsBucket { Label = "5",  Count = counts[5] },
-                new DeckStatsBucket { Label = "6",  Count = counts[6] },
-                new DeckStatsBucket { Label = "7+", Count = counts[7] }
+                CreateBucket("0",  counts[0], maxCount),
+        CreateBucket("1",  counts[1], maxCount),
+        CreateBucket("2",  counts[2], maxCount),
+        CreateBucket("3",  counts[3], maxCount),
+        CreateBucket("4",  counts[4], maxCount),
+        CreateBucket("5",  counts[5], maxCount),
+        CreateBucket("6",  counts[6], maxCount),
+        CreateBucket("7+", counts[7], maxCount)
             ];
+        }
+
+        private static ManaCurveBucket CreateBucket(
+            string label,
+            int count,
+            int maxCount)
+        {
+            return new ManaCurveBucket
+            {
+                Label = label,
+                Count = count,
+                RelativeHeight = maxCount == 0
+                    ? 0
+                    : (double)count / maxCount
+            };
         }
         private static DeckCompositionType GetCompositionType(OracleCard card)
         {
