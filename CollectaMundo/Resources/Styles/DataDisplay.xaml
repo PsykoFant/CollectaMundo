@@ -2,7 +2,11 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors">
 
+    <!-- ============================================================
+     DATAGRID STYLES
+     ============================================================ -->
 
+    <!-- DataGrid: Base -->
     <Style x:Key="DataGridBaseStyle" TargetType="{x:Type DataGrid}">
         <Setter Property="IsReadOnly" Value="True"/>
         <Setter Property="AutoGenerateColumns" Value="False"/>
@@ -34,18 +38,18 @@
         </Setter>
     </Style>
 
-    <!-- Style for deck datagrid -->
-    <Style x:Key="ManagementGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource DataGridBaseStyle}">
-        <Setter Property="MinHeight" Value="40"/>
-    </Style>
-
-    <!-- Style for card datagrid -->
+    <!-- DataGrid: Card Grid Base -->
     <Style x:Key="CardGridBaseStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource DataGridBaseStyle}">
         <!-- your attached behaviors (static values only) -->
         <Setter Property="behaviors:DataGridPersistSortBehavior.Enable" Value="True"/>
     </Style>
 
-    <!-- Row style for deck cards -->
+    <!-- DataGrid: Management -->
+    <Style x:Key="ManagementGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource DataGridBaseStyle}">
+        <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
+    <!-- DataGrid: Deck Builder Row -->
     <Style x:Key="DeckCardRowStyle"
        TargetType="{x:Type DataGridRow}">
         <Style.Triggers>
@@ -60,21 +64,42 @@
                 <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
             </Trigger>
         </Style.Triggers>
-    </Style>    
-    
-    <!-- Style for deck card DataGrids -->
+    </Style>
+
+    <!-- DataGrid: Deck Cards -->
     <Style x:Key="DeckCardGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource CardGridBaseStyle}">
         <Setter Property="RowStyle" Value="{StaticResource DeckCardRowStyle}"/>
-        <Setter Property="AutoGenerateColumns" Value="False"/>
-        <Setter Property="CanUserAddRows" Value="False"/>
-        <Setter Property="AutoGenerateColumns" Value="False"/>
-        <Setter Property="IsReadOnly" Value="True"/>
         <Setter Property="ColumnWidth" Value="Auto"/>
     </Style>
 
+    <!-- DataGrid: Deckbox -->
+    <Style x:Key="DeckBoxDataGridStyle" TargetType="{x:Type DataGrid}" BasedOn="{StaticResource CardGridBaseStyle}">
+        <Setter Property="ColumnWidth" Value="Auto"/>
+        <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+        <Setter Property="HeadersVisibility" Value="Column"/>
+        <Setter Property="RowHeaderWidth" Value="0"/>
+        <Setter Property="RowBackground" Value="#F7F7F7"/>
+        <Setter Property="AlternatingRowBackground" Value="#EEEEEE"/>
+        <Setter Property="AlternationCount" Value="2"/>
+    </Style>
 
+    <!-- ============================================================
+     DECK BUILDER STYLES
+     ============================================================ -->
 
-    <!-- Style for stepper buttons for card to add/edit listview -->
+    <!-- Deck Builder: GroupBox -->
+    <Style x:Key="DeckBuilderGroupBoxStyle"
+       TargetType="{x:Type GroupBox}">
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
+    <!-- ============================================================
+     BUTTON STYLES
+     ============================================================ -->
+
+    <!-- Button: Quantity Stepper -->
     <Style x:Key="StepperButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="15"/>
         <Setter Property="Background" Value="#FFFBF7B4"/>
@@ -82,17 +107,27 @@
         <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
 
-    <!-- Font for MenuItem (datagrid context menu) -->
+    <!-- ============================================================
+     MENU STYLES
+     ============================================================ -->
+
+    <!-- MenuItem: Default Font -->
     <Style TargetType="MenuItem">
         <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}" />
     </Style>
 
+    <!-- ============================================================
+     DOCUMENT / TEXT DISPLAY STYLES
+     ============================================================ -->
+
+    <!-- FlowDocument: Default -->
     <Style TargetType="{x:Type FlowDocument}">
         <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}"/>
         <Setter Property="Foreground" Value="Black"/>
         <Setter Property="FontSize" Value="14"/>
     </Style>
 
+    <!-- FlowDocumentScrollViewer: Default -->
     <Style TargetType="{x:Type FlowDocumentScrollViewer}">
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="VerticalScrollBarVisibility" Value="Hidden"/>

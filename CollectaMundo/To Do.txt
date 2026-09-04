@@ -1,14 +1,21 @@
 TO DO 
 
 Deck editor!
+POLISH!
+- Oprydning i styles
+
 	- Bug:
 		- filtrer
 		- Klik på oracle datagrid (se drag-widget dukker op kortvarigt)
 		- Man kan ikke markere noget
 
+- Groupbox styles overalt
+- Højde mellem types og farvehjul
+- Obosh, the Prepiercer - ikke companion?
+- Når man markerer deckbox, skal knapper komme frem
+- Vertical scrollbar helvede
 
 
- - Tilføj stats
  - Tilføj pris
  - Tilføj ekport decklist/want list
 
