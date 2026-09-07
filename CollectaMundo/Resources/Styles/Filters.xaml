@@ -43,10 +43,9 @@
                             <TextBlock Text="{Binding ReadableLabel}" Margin="5,0"/>
                         </ToggleButton>
 
-                        <Popup x:Name="Popup"
-                                       Placement="Bottom"
-                                       IsOpen="{TemplateBinding IsDropDownOpen}"
-                                       StaysOpen="False">
+                        <Popup x:Name="PART_Popup" Placement="Bottom" 
+                               IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                               StaysOpen="False">
                             <Border Background="White"
                                 BorderThickness="1"
                                 BorderBrush="Black">

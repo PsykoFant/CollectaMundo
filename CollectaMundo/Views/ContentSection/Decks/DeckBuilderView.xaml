@@ -58,7 +58,7 @@
                     <StackPanel>
                         
                         <!-- Deck -->
-                        <GroupBox>
+                        <GroupBox Style="{StaticResource DeckBuilderGroupBoxStyle}">
                             <GroupBox.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <Label Content="Maindeck" Style="{StaticResource SmallHeaderLabelStyle}"/>
@@ -118,7 +118,7 @@
                         </GroupBox>
                         
                         <!-- Sideboard -->
-                        <GroupBox>
+                        <GroupBox Style="{StaticResource DeckBuilderGroupBoxStyle}">
                             <GroupBox.Header>
                                 <Label Content="Sideboard" Style="{StaticResource SmallHeaderLabelStyle}"/>
                             </GroupBox.Header>
@@ -159,7 +159,7 @@
                         </GroupBox>
 
                         <!-- Maybeboard -->
-                        <GroupBox>
+                        <GroupBox Style="{StaticResource DeckBuilderGroupBoxStyle}">
                             <GroupBox.Header>
                                 <Label Content="Maybeboard" Style="{StaticResource SmallHeaderLabelStyle}"/>
                             </GroupBox.Header>
@@ -402,7 +402,9 @@
             </Grid>
 
             <!-- 4 - In the deckbox -->
-            <GroupBox Grid.Row="4" Margin="0,6,0,6" Visibility="{Binding IsDeckBoxDataGridVisible, Converter={StaticResource BoolToVisibilityConverter}}" Style="{StaticResource DeckBuilderGroupBoxStyle}">
+            <GroupBox Grid.Row="4" Margin="0,6,0,6" 
+                      Visibility="{Binding IsDeckBoxDataGridVisible, Converter={StaticResource BoolToVisibilityConverter}}" 
+                      Style="{StaticResource DeckBuilderGroupBoxStyle}">
                 <GroupBox.Header>
                     <StackPanel Orientation="Horizontal">
                         <Label Content="In the deckbox" Style="{StaticResource SmallHeaderLabelStyle}"/>
