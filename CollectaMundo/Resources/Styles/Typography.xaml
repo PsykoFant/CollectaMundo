@@ -5,6 +5,7 @@
         <Setter Property="TextElement.FontFamily" Value="{StaticResource CollectaMundoHeaderFont}" />
     </Style>
 
+    <!-- Header font styles -->
     <Style x:Key="BaseHeaderLabelStyle" TargetType="Label">
         <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
@@ -23,4 +24,18 @@
     <Style x:Key="SmallHeaderLabelStyle" TargetType="Label" BasedOn="{StaticResource BaseHeaderLabelStyle}">
         <Setter Property="FontSize" Value="16" />
     </Style>
+
+    <!-- FlowDocument font style -->
+    <Style TargetType="{x:Type FlowDocument}">
+        <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}"/>
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <!-- MenuItem font style -->
+    <Style TargetType="MenuItem">
+        <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}" />
+    </Style>
+
+
 </ResourceDictionary>

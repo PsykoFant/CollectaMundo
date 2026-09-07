@@ -1,7 +1,11 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Define the Style for all buttons -->
+    <!-- ============================================================
+     BUTTON BASE
+     ============================================================ -->    
+    
+    <!-- Button base (shared properties for both button types) -->
     <Style x:Key="BaseButtonStyle" TargetType="{x:Type ButtonBase}">
         <Setter Property="Background" Value="#FFDDDDDD"/>
         <Setter Property="Foreground" Value="Black"/>
@@ -31,24 +35,35 @@
         </Setter>
     </Style>
 
+    <!-- Implicit button style -->
     <Style TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}"/>
 
+    <!-- Implicit toggle button style -->
     <Style TargetType="{x:Type ToggleButton}" BasedOn="{StaticResource BaseButtonStyle}"/>
 
-    <!-- Top menu page swiching buttons -->
+    <!-- ============================================================
+     BUTTON SPECIALIZATIONS
+     ============================================================ -->
+
+    <!-- Top menu switching buttons -->
     <Style x:Key="TopMenuButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
         <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}"/>
         <Setter Property="FontSize" Value="16"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Setter Property="Width" Value="160"/>
         <Setter Property="Height" Value="30"/>
-        <Setter Property="Foreground" Value="Black"/>
-        <Setter Property="Background" Value="#FFDDDDDD"/>
-        <Setter Property="BorderBrush" Value="#FF707070"/>
         <Setter Property="Effect">
             <Setter.Value>
                 <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- Stepper button style -->
+    <Style x:Key="StepperButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="15"/>
+        <Setter Property="Background" Value="#FFFBF7B4"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
 </ResourceDictionary>
