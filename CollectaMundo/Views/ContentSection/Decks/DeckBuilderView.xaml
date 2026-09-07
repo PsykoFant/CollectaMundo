@@ -5,7 +5,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
-             xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
              xmlns:controls="clr-namespace:CollectaMundo.Presentation.Controls"
              xmlns:deckPresentation="clr-namespace:CollectaMundo.Presentation.Decks"             
              xmlns:deckViewModels="clr-namespace:CollectaMundo.ViewModels.Decks"
@@ -62,8 +61,8 @@
                         <GroupBox>
                             <GroupBox.Header>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Maindeck"/>
-                                    <TextBlock Text=" ⓘ" Margin="4,0,0,0" Opacity="0.65"
+                                    <Label Content="Maindeck" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                    <TextBlock Text="ⓘ" Opacity="0.65"
                                                ToolTip="Drag cards between deck zones. Hold Shift while dragging to move all copies of each selected card. Dropping outside a valid zone removes cards."/>
                                 </StackPanel>
                             </GroupBox.Header>
@@ -119,7 +118,11 @@
                         </GroupBox>
                         
                         <!-- Sideboard -->
-                        <GroupBox Header="Sideboard">
+                        <GroupBox>
+                            <GroupBox.Header>
+                                <Label Content="Sideboard" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                            </GroupBox.Header>
+
                             <DataGrid x:Name="SideboardDataGrid"
                                       ItemsSource="{Binding SideboardZone.Cards}"
                                       SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}"
@@ -156,7 +159,10 @@
                         </GroupBox>
 
                         <!-- Maybeboard -->
-                        <GroupBox Header="Maybeboard">
+                        <GroupBox>
+                            <GroupBox.Header>
+                                <Label Content="Maybeboard" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                            </GroupBox.Header>
                             <DataGrid x:Name="MaybeboardDataGrid" 
                                       ItemsSource="{Binding MaybeboardZone.Cards}" 
                                       SelectedItem="{Binding SelectedDeckCard, Mode=TwoWay}" 
@@ -199,15 +205,17 @@
                 <!-- Right column: stays fixed within the upper 60% -->
                 <Grid Grid.Column="2">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/> <!-- Stats -->
+                        <RowDefinition Height="Auto"/> <!-- Command zone -->
+                        <RowDefinition Height="Auto"/> <!-- Companion zone -->
                     </Grid.RowDefinitions>
 
                     <!-- Stats -->
-                    <GroupBox Grid.Row="0" Header="Stats">
+                    <GroupBox Grid.Row="0">
+                        <GroupBox.Header>
+                            <Label Content="{Binding Stats.CardCount}" ContentStringFormat="Cards {0}" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                        </GroupBox.Header>
                         <StackPanel>
-
                             <!-- Colors -->
                             <Grid Width="120" Height="120">
                                     <controls:ManaColorDonutControl ItemsSource="{Binding Stats.ColorBreakdown}"/>
@@ -230,178 +238,56 @@
                                                         <ColumnDefinition Width="30"/>
                                                     </Grid.ColumnDefinitions>
 
-                                                    <TextBlock Grid.Column="0"
-                                           Text="{Binding Label}"/>
+                                                    <TextBlock Grid.Column="0" Text="{Binding Label}"/>
 
                                                     <ProgressBar Grid.Column="1"
-                                             Height="10"
-                                             Margin="4,0"
-                                             Minimum="0"
-                                             Maximum="{Binding DataContext.Stats.CardCount,
-                                                               RelativeSource={RelativeSource AncestorType=GroupBox}}"
-                                             Value="{Binding Count}"
-                                             Background="Transparent"
-                                             BorderBrush="Transparent"
-                                             BorderThickness="0"/>
+                                                                 Height="10"
+                                                                 Margin="4,0"
+                                                                 Minimum="0"
+                                                                 Maximum="{Binding DataContext.Stats.CardCount, RelativeSource={RelativeSource AncestorType=GroupBox}}"
+                                                                 Value="{Binding Count}"
+                                                                 Foreground="DarkSlateGray"
+                                                                 Background="Transparent"
+                                                                 BorderBrush="Transparent"
+                                                                 BorderThickness="0"/>
 
-                                                    <TextBlock Grid.Column="2"
-                                           Text="{Binding Count}"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Count}"/>
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
+                            <!-- Mana curve -->
                             <StackPanel Margin="0,12,0,0">
                                 <TextBlock Text="Mana curve" HorizontalAlignment="Center" Margin="0,0,0,4"/>
-
-                                <ItemsControl ItemsSource="{Binding Stats.ManaCurve}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <UniformGrid Rows="1"/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Height="90" Margin="2,0">
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="*"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
-
-                                                <!-- Chart area -->
-                                                <Grid Grid.Row="0" Height="64">
-                                                    <!-- Leave some space above the maximum bar for its label -->
-                                                    <ProgressBar Orientation="Vertical" Height="46"
-                                                                 VerticalAlignment="Bottom"
-                                                                 Minimum="0"
-                                                                 Maximum="{Binding DataContext.Stats.ManaCurveMaxCount, RelativeSource={RelativeSource AncestorType=GroupBox}}"
-                                                                 Value="{Binding Count}"
-                                                                 Background="Transparent"
-                                                                 BorderBrush="Transparent"
-                                                                 BorderThickness="0"/>
-
-                                                    <!-- Count follows the top of the bar -->
-                                                    <TextBlock Text="{Binding Count}" HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Visibility" Value="Visible"/>
-
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Count}" Value="0">
-                                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-
-                                                        <TextBlock.RenderTransform>
-                                                            <TranslateTransform Y="{Binding RelativeHeight, Converter={StaticResource RelativeHeightToOffsetConverter}, ConverterParameter=46}"/>
-                                                            <!--<TranslateTransform>
-                                                                <TranslateTransform.Y>
-                                                                    <Binding Path="Count" Converter="{StaticResource ManaCurveLabelPositionConverter}"/>
-                                                                </TranslateTransform.Y>
-                                                            </TranslateTransform>-->
-                                                            <!--<TranslateTransform Y="{Binding Count}"/>-->
-                                                            <!--<TranslateTransform Y="-10"/>-->
-                                                            <!--<TranslateTransform>
-                                                                <TranslateTransform.Y>
-                                                                    <MultiBinding Converter="{StaticResource ManaCurveLabelPositionConverter}" ConverterParameter="46">
-                                                                        <Binding Path="Count"/>
-                                                                        <Binding Path="DataContext.Stats.ManaCurveMaxCount" RelativeSource="{RelativeSource AncestorType=GroupBox}"/>
-                                                                    </MultiBinding>
-                                                                </TranslateTransform.Y>
-                                                            </TranslateTransform>-->
-                                                        </TextBlock.RenderTransform>
-                                                    </TextBlock>
-
-                                                </Grid>
-
-                                                <!-- Mana value -->
-                                                <TextBlock Grid.Row="1" Text="{Binding Label}" HorizontalAlignment="Center" Margin="0,3,0,0"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                                <controls:ManaCurveChartControl ItemsSource="{Binding Stats.ManaCurve}" Height="90" BarBrush="DarkSlateGray"/>
                             </StackPanel>
 
                             <!-- Summary -->
                             <Grid Margin="8,12,8,8">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="60"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Row 0 -->
-                                <TextBlock Grid.Row="0"
-                       Grid.Column="0"
-                       Text="Cards"
-                       FontWeight="SemiBold"/>
+                                <!-- Lands: left -->
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
+                                    <TextBlock Text="Lands"/>
+                                    <TextBlock Margin="6,0,0,0" Text="{Binding Stats.LandPercentage,StringFormat={}{0:0}%}"/>
+                                </StackPanel>
 
-                                <TextBlock Grid.Row="0"
-                       Grid.Column="1"
-                       Margin="8,0,0,0"
-                       Text="{Binding Stats.CardCount}"/>
+                                <!-- Creatures: center -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="Creatures"/>
+                                    <TextBlock Margin="6,0,0,0" Text="{Binding Stats.CreaturePercentage,StringFormat={}{0:0}%}"/>
+                                </StackPanel>
 
-                                <TextBlock Grid.Row="0"
-                       Grid.Column="3"
-                       Text="Lands"
-                       FontWeight="SemiBold"/>
-
-                                <TextBlock Grid.Row="0"
-                       Grid.Column="4"
-                       Margin="8,0,0,0"
-                       Text="{Binding Stats.LandCount}"/>
-
-                                <TextBlock Grid.Row="0"
-                       Grid.Column="5"
-                       Margin="6,0,0,0"
-                       Text="{Binding Stats.LandPercentage,
-                                      StringFormat={}{0:0}%}"/>
-
-                                <!-- Row 1 -->
-                                <TextBlock Grid.Row="1"
-                       Grid.Column="0"
-                       Margin="0,4,0,0"
-                       Text="Creatures"
-                       FontWeight="SemiBold"/>
-
-                                <TextBlock Grid.Row="1"
-                       Grid.Column="1"
-                       Margin="8,4,0,0"
-                       Text="{Binding Stats.CreatureCount}"/>
-
-                                <TextBlock Grid.Row="1"
-                       Grid.Column="2"
-                       Margin="6,4,0,0"
-                       Text="{Binding Stats.CreaturePercentage,
-                                      StringFormat={}{0:0}%}"/>
-
-                                <TextBlock Grid.Row="1"
-                       Grid.Column="3"
-                       Margin="0,4,0,0"
-                       Text="Spells"
-                       FontWeight="SemiBold"/>
-
-                                <TextBlock Grid.Row="1"
-                       Grid.Column="4"
-                       Margin="8,4,0,0"
-                       Text="{Binding Stats.SpellCount}"/>
-
-                                <TextBlock Grid.Row="1"
-                       Grid.Column="5"
-                       Margin="6,4,0,0"
-                       Text="{Binding Stats.SpellPercentage,
-                                      StringFormat={}{0:0}%}"/>
+                                <!-- Spells: right -->
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="Spells"/>
+                                    <TextBlock Margin="6,0,0,0" Text="{Binding Stats.SpellPercentage,StringFormat={}{0:0}%}"/>
+                                </StackPanel>
                             </Grid>
 
                         </StackPanel>
@@ -516,18 +402,15 @@
             </Grid>
 
             <!-- 4 - In the deckbox -->
-            <GroupBox Grid.Row="4" Margin="0,6,0,6" Visibility="{Binding IsDeckBoxDataGridVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <GroupBox Grid.Row="4" Margin="0,6,0,6" Visibility="{Binding IsDeckBoxDataGridVisible, Converter={StaticResource BoolToVisibilityConverter}}" Style="{StaticResource DeckBuilderGroupBoxStyle}">
                 <GroupBox.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="In the deckbox: Allocated from collection "/>
-                        <TextBlock Text=" ⓘ" Margin="4,0,0,0" Opacity="0.65"
-                                   ToolTip="Cards currently allocated to this deck location. Drag selected cards to a deck zone to add them to the deck list. Hold Shift while dragging to add 4 copies of each. Moving or removing cards in the deck list does not change their collection location."/>
+                        <Label Content="In the deckbox" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                        <TextBlock Text="ⓘ" Opacity="0.65"
+                                   ToolTip="Collection cards currently allocated to this deck location. Drag selected cards to a deck zone to add them to the deck list. Hold Shift while dragging to add 4 copies of each. Moving or removing cards in the deck list does not change their collection location."/>
                     </StackPanel>
                 </GroupBox.Header>
-                    <DataGrid ItemsSource="{Binding DeckBoxCards}" IsReadOnly="True"
-                          AutoGenerateColumns="False"
-                          SelectionMode="Extended"
-                          SelectionUnit="FullRow">
+                <DataGrid ItemsSource="{Binding DeckBoxCards}" Style="{StaticResource DeckBoxDataGridStyle}">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource OracleCardNameCellTemplate}"/>
                         <DataGridTemplateColumn Header="Mana Cost" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
