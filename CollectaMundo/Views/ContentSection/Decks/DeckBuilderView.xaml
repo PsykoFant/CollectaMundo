@@ -120,6 +120,11 @@
                                                                                DragCommand="{Binding HandleDeckCardDragCommand}"
                                                                                AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
                                 </i:Interaction.Behaviors>
+                                <i:Interaction.Triggers>
+                                    <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
+                                        <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                    </i:EventTrigger>
+                                </i:Interaction.Triggers>
                             </DataGrid>
                         </GroupBox>
                         
@@ -162,6 +167,11 @@
                                                                         DragCommand="{Binding HandleDeckCardDragCommand}"
                                                                         AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
                                 </i:Interaction.Behaviors>
+                                <i:Interaction.Triggers>
+                                    <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
+                                        <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                    </i:EventTrigger>
+                                </i:Interaction.Triggers>
                             </DataGrid>
                         </GroupBox>
 
@@ -203,6 +213,11 @@
                                                                         DragCommand="{Binding HandleDeckCardDragCommand}"
                                                                         AddOracleCardCommand="{Binding AddDraggedOracleCardCommand}"/>
                                 </i:Interaction.Behaviors>
+                                <i:Interaction.Triggers>
+                                    <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
+                                        <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                    </i:EventTrigger>
+                                </i:Interaction.Triggers>
                             </DataGrid>
                         </GroupBox>
 
@@ -322,6 +337,11 @@
                                             Command="{Binding DeleteDeckCardsCommand}"
                                             CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                             </DataGrid.InputBindings>
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
+                                    <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                </i:EventTrigger>
+                            </i:Interaction.Triggers>
                         </DataGrid>
                     </GroupBox>
                     
@@ -349,6 +369,11 @@
                                             Command="{Binding DeleteDeckCardsCommand}"
                                             CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
                             </DataGrid.InputBindings>
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
+                                    <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                </i:EventTrigger>
+                            </i:Interaction.Triggers>
                         </DataGrid>
                     </GroupBox>
                 </Grid>

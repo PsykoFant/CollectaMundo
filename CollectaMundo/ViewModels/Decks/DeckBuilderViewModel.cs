@@ -186,7 +186,6 @@ namespace CollectaMundo.ViewModels.Decks
 
         [ObservableProperty]
         private DeckBoxCardViewModel? selectedDeckBoxCard;
-
         partial void OnSelectedDeckBoxCardChanged(DeckBoxCardViewModel? value)
         {
             OnPropertyChanged(nameof(SelectedAddCard));
@@ -194,8 +193,8 @@ namespace CollectaMundo.ViewModels.Decks
             ShowCardImage(value?.OracleId, value?.CardName);
         }
 
+        // Helper property to determine which card is currently selected for adding to the deck
         public OracleCard? SelectedAddCard => SelectedDeckBoxCard?.OracleCard ?? SelectedOracleCard;
-
 
         // Helper method to raise the CardImageSelectionRequested event
         private void ShowCardImage(string? oracleId, string? name)
@@ -220,6 +219,13 @@ namespace CollectaMundo.ViewModels.Decks
         {
             SelectedOracleCard = null;
             ExitEditorRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        [RelayCommand]
+        private void ClearAddSourceSelections()
+        {
+            SelectedOracleCard = null;
+            SelectedDeckBoxCard = null;
         }
 
         [RelayCommand]
