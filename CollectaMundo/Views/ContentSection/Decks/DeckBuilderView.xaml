@@ -122,7 +122,7 @@
                                 </i:Interaction.Behaviors>
                                 <i:Interaction.Triggers>
                                     <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
-                                        <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                        <i:InvokeCommandAction Command="{Binding ActivateDeckSelectionCommand}"/>
                                     </i:EventTrigger>
                                 </i:Interaction.Triggers>
                             </DataGrid>
@@ -169,7 +169,7 @@
                                 </i:Interaction.Behaviors>
                                 <i:Interaction.Triggers>
                                     <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
-                                        <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                        <i:InvokeCommandAction Command="{Binding ActivateDeckSelectionCommand}"/>
                                     </i:EventTrigger>
                                 </i:Interaction.Triggers>
                             </DataGrid>
@@ -198,7 +198,7 @@
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="-" CellTemplate="{StaticResource DeckCardDecrementCellTemplate}"/>
                                 </DataGrid.Columns>
-
+                                
                                 <DataGrid.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Remove from maybeboard" Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -215,7 +215,7 @@
                                 </i:Interaction.Behaviors>
                                 <i:Interaction.Triggers>
                                     <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
-                                        <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                        <i:InvokeCommandAction Command="{Binding ActivateDeckSelectionCommand}"/>
                                     </i:EventTrigger>
                                 </i:Interaction.Triggers>
                             </DataGrid>
@@ -339,7 +339,7 @@
                             </DataGrid.InputBindings>
                             <i:Interaction.Triggers>
                                 <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
-                                    <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                    <i:InvokeCommandAction Command="{Binding ActivateDeckSelectionCommand}"/>
                                 </i:EventTrigger>
                             </i:Interaction.Triggers>
                         </DataGrid>
@@ -371,7 +371,7 @@
                             </DataGrid.InputBindings>
                             <i:Interaction.Triggers>
                                 <i:EventTrigger EventName="PreviewMouseLeftButtonDown">
-                                    <i:InvokeCommandAction Command="{Binding ClearAddSourceSelectionsCommand}"/>
+                                    <i:InvokeCommandAction Command="{Binding ActivateDeckSelectionCommand}"/>
                                 </i:EventTrigger>
                             </i:Interaction.Triggers>
                         </DataGrid>
@@ -392,15 +392,15 @@
                     <Button Content="  Set as Companion  "
                         Height="20"
                         Margin="0,0,6,0"
-                        Visibility="{Binding CanSetSelectedOracleCardAsCompanion, Converter={StaticResource BoolToVisibilityConverter}}"
-                        Command="{Binding SetOracleCardAsCompanionCommand}"
+                        Visibility="{Binding CanSetSelectedCardAsCompanion, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Command="{Binding SetCardAsCompanionCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
                     <Button Content="  Set as Commander  "
                         Height="20"
                         Margin="0,0,6,0"
-                        Visibility="{Binding CanSetSelectedOracleCardAsCommander, Converter={StaticResource BoolToVisibilityConverter}}"
-                        Command="{Binding SetOracleCardAsCommanderCommand}"
+                        Visibility="{Binding CanSetSelectedCardAsCommander, Converter={StaticResource BoolToVisibilityConverter}}"
+                        Command="{Binding SetCardAsCommanderCommand}"
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
                     <Button Content="  + 1 to Maybeboard  "
@@ -425,10 +425,8 @@
                         CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
 
                     <Button Content="  + 1 to deck  "
-                        Visibility="{Binding IsAddButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                        Height="20"
-                        Command="{Binding AddOracleCardToDeckCommand}"
-                        CommandParameter="{Binding SelectedItems, ElementName=AvailableCardsDataGrid}"/>
+                            Visibility="{Binding IsAddButtonVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Command="{Binding AddCardToDeckCommand}"/>
 
                 </StackPanel>
             </Grid>
@@ -494,12 +492,12 @@
                                   Command="{Binding AddOracleCardToMaybeboardCommand}"
                                   CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                             <MenuItem Header="Set as Commander" Style="{StaticResource BelerenBold}"
-                                  Visibility="{Binding CanSetSelectedOracleCardAsCommander, Converter={StaticResource BoolToVisibilityConverter}}"
-                                  Command="{Binding SetOracleCardAsCommanderCommand}"
+                                  Visibility="{Binding CanSetSelectedCardAsCommander, Converter={StaticResource BoolToVisibilityConverter}}"
+                                  Command="{Binding SetCardAsCommanderCommand}"
                                   CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                             <MenuItem Header="Set as Companion" Style="{StaticResource BelerenBold}"
-                                  Visibility="{Binding CanSetSelectedOracleCardAsCompanion, Converter={StaticResource BoolToVisibilityConverter}}"
-                                  Command="{Binding SetOracleCardAsCompanionCommand}"
+                                  Visibility="{Binding CanSetSelectedCardAsCompanion, Converter={StaticResource BoolToVisibilityConverter}}"
+                                  Command="{Binding SetCardAsCompanionCommand}"
                                   CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
 
                         </ContextMenu>

@@ -3,7 +3,8 @@ TO DO
 Deck editor!
 POLISH!
 
-- Når man markerer deckbox, skal knapper komme frem
+- refresh
+- Højreklik og drag fra deckbox
 - Vertical scrollbar helvede
 
 
