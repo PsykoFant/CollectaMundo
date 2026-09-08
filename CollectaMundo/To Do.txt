@@ -3,9 +3,6 @@ TO DO
 Deck editor!
 POLISH!
 
-- Højde mellem types og farvehjul
-- Obosh, the Prepiercer - ikke companion?
-- Sideboard visibility
 - Når man markerer deckbox, skal knapper komme frem
 - Vertical scrollbar helvede
 

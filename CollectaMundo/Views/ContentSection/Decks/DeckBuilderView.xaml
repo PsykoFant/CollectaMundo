@@ -100,7 +100,13 @@
                                 </DataGrid.Columns>
                                 
                                 <DataGrid.ContextMenu>
+                                    
                                     <ContextMenu>
+                                        <MenuItem Header="Move 1 to sideboard" Command="{Binding PlacementTarget.DataContext.MoveOneToSideboardCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        <MenuItem Header="Move all to sideboard" Command="{Binding PlacementTarget.DataContext.MoveAllToSideboardCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                        <Separator/>
                                         <MenuItem Header="Remove from deck" 
                                                   Command="{Binding PlacementTarget.DataContext.DeleteDeckCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                   CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
@@ -118,7 +124,8 @@
                         </GroupBox>
                         
                         <!-- Sideboard -->
-                        <GroupBox Style="{StaticResource DeckBuilderGroupBoxStyle}">
+                        <GroupBox Visibility="{Binding IsSideboardZoneVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Style="{StaticResource DeckBuilderGroupBoxStyle}">
                             <GroupBox.Header>
                                 <Label Content="Sideboard" Style="{StaticResource SmallHeaderLabelStyle}"/>
                             </GroupBox.Header>
@@ -211,13 +218,13 @@
                     </Grid.RowDefinitions>
 
                     <!-- Stats -->
-                    <GroupBox Grid.Row="0">
+                    <GroupBox Grid.Row="0"  Style="{StaticResource DeckBuilderGroupBoxStyle}">
                         <GroupBox.Header>
                             <Label Content="{Binding Stats.CardCount}" ContentStringFormat="Cards {0}" Style="{StaticResource SmallHeaderLabelStyle}"/>
                         </GroupBox.Header>
                         <StackPanel>
                             <!-- Colors -->
-                            <Grid Width="120" Height="120">
+                            <Grid Width="120" Height="120" Margin="0,0,0,10">
                                     <controls:ManaColorDonutControl ItemsSource="{Binding Stats.ColorBreakdown}"/>
 
                                     <!-- Donut center -->
@@ -402,8 +409,7 @@
             </Grid>
 
             <!-- 4 - In the deckbox -->
-            <GroupBox Grid.Row="4" Margin="0,6,0,6" 
-                      Visibility="{Binding IsDeckBoxDataGridVisible, Converter={StaticResource BoolToVisibilityConverter}}" 
+            <GroupBox Grid.Row="4" Visibility="{Binding IsDeckBoxDataGridVisible, Converter={StaticResource BoolToVisibilityConverter}}" 
                       Style="{StaticResource DeckBuilderGroupBoxStyle}">
                 <GroupBox.Header>
                     <StackPanel Orientation="Horizontal">
@@ -412,7 +418,9 @@
                                    ToolTip="Collection cards currently allocated to this deck location. Drag selected cards to a deck zone to add them to the deck list. Hold Shift while dragging to add 4 copies of each. Moving or removing cards in the deck list does not change their collection location."/>
                     </StackPanel>
                 </GroupBox.Header>
-                <DataGrid ItemsSource="{Binding DeckBoxCards}" Style="{StaticResource DeckBoxDataGridStyle}">
+                <DataGrid ItemsSource="{Binding DeckBoxCards}"
+                          Style="{StaticResource DeckBoxDataGridStyle}"
+                          SelectedItem="{Binding SelectedDeckBoxCard, Mode=TwoWay}">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="CardName" CellTemplate="{StaticResource OracleCardNameCellTemplate}"/>
                         <DataGridTemplateColumn Header="Mana Cost" SortMemberPath="ManaValue" CellTemplate="{StaticResource DeckCardManaCostCellTemplate}"/>
@@ -440,9 +448,6 @@
                           Grid.Row="1"
                           ItemsSource="{Binding CardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
                           SelectedItem="{Binding SelectedOracleCard, Mode=TwoWay}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True"
                           Style="{StaticResource CardGridBaseStyle}">
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="MouseDoubleClick">

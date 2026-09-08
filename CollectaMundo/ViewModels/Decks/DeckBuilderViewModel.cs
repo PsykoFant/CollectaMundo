@@ -130,6 +130,9 @@ namespace CollectaMundo.ViewModels.Decks
         private bool isAddButtonVisible;
 
         [ObservableProperty]
+        private bool isSideboardZoneVisible;
+
+        [ObservableProperty]
         private bool canSetSelectedOracleCardAsCommander;
 
         [ObservableProperty]
@@ -173,12 +176,26 @@ namespace CollectaMundo.ViewModels.Decks
         }
 
         [ObservableProperty]
-        private OracleCard? selectedOracleCard; // OracleCard datagrid
+        private OracleCard? selectedOracleCard;
         partial void OnSelectedOracleCardChanged(OracleCard? value)
         {
+            OnPropertyChanged(nameof(SelectedAddCard));
             RefreshRuleDependentProperties();
             ShowCardImage(value?.ScryfallOracleId, value?.Name);
         }
+
+        [ObservableProperty]
+        private DeckBoxCardViewModel? selectedDeckBoxCard;
+
+        partial void OnSelectedDeckBoxCardChanged(DeckBoxCardViewModel? value)
+        {
+            OnPropertyChanged(nameof(SelectedAddCard));
+            RefreshRuleDependentProperties();
+            ShowCardImage(value?.OracleId, value?.CardName);
+        }
+
+        public OracleCard? SelectedAddCard => SelectedDeckBoxCard?.OracleCard ?? SelectedOracleCard;
+
 
         // Helper method to raise the CardImageSelectionRequested event
         private void ShowCardImage(string? oracleId, string? name)
@@ -210,6 +227,7 @@ namespace CollectaMundo.ViewModels.Decks
         {
             SelectedOracleCard = null;
             SelectedDeckCard = null;
+            SelectedDeckBoxCard = null;
         }
 
         // Adding a card
@@ -278,7 +296,6 @@ namespace CollectaMundo.ViewModels.Decks
             ApplySuccessfulMutation(result);
         }
 
-
         // Add OracleCard helpers
         private async Task AddOracleCardsToDeckZoneAsync(object? parameter, int quantity, DeckSection section)
         {
@@ -318,6 +335,22 @@ namespace CollectaMundo.ViewModels.Decks
             }
         }
 
+        // Moving cards to sideboard from right-click context menu
+        [RelayCommand]
+        private Task MoveOneToSideboardAsync(object? parameter)
+        {
+            var moves = GetDeckRowsFromCommandParameter(parameter).Where(row => row.Section != DeckSection.Sideboard).Select(row => new DeckCardMoveRequest(row.OracleCard, row.Section, 1)).ToList();
+            return MoveCardsAsync(moves, DeckSection.Sideboard);
+        }
+
+        [RelayCommand]
+        private Task MoveAllToSideboardAsync(object? parameter)
+        {
+            var moves = GetDeckRowsFromCommandParameter(parameter).Where(row => row.Section != DeckSection.Sideboard).Select(row => new DeckCardMoveRequest(row.OracleCard, row.Section, row.DesiredQuantity)).ToList();
+            return MoveCardsAsync(moves, DeckSection.Sideboard);
+        }
+
+        // Drag-and-drop card movement
         [RelayCommand]
         private async Task HandleDeckCardDragAsync(DeckCardDragRequest? request)
         {
@@ -328,19 +361,12 @@ namespace CollectaMundo.ViewModels.Decks
 
             if (request.DestinationSection is DeckSection destinationSection)
             {
-                await MoveDeckCardsAsync(request.Items, destinationSection);
-
+                var moves = request.Items.Select(item => new DeckCardMoveRequest(item.Card.OracleCard, item.Card.Section, item.Quantity)).ToList();
+                await MoveCardsAsync(moves, destinationSection);
                 return;
             }
 
             await RemoveDraggedCardQuantitiesAsync(request.Items);
-        }
-        private async Task MoveDeckCardsAsync(IReadOnlyList<DeckCardDragItem> items, DeckSection destinationSection)
-        {
-            var moves = items.Select(item => new DeckCardMoveRequest(item.Card.OracleCard, item.Card.Section, item.Quantity)).ToList();
-            var result = await _deckBuilderService.MoveCardsAsync(DeckLocationId!.Value, CreateDeckCardStates(), moves, destinationSection);
-
-            ApplySuccessfulMutation(result);
         }
         private async Task RemoveDraggedCardQuantitiesAsync(IReadOnlyList<DeckCardDragItem> items)
         {
@@ -458,18 +484,22 @@ namespace CollectaMundo.ViewModels.Decks
         }
         private void RefreshZoneVisibility()
         {
+            IsSideboardZoneVisible = SideboardZone.Cards.Count > 0;
             IsCommanderZoneVisible = CommanderZone.Cards.Count > 0 && CommanderFormats.IsCommanderLike(DeckFormat);
             IsCompanionZoneVisible = CompanionZone.Cards.Count > 0;
         }
         private void RefreshRuleDependentProperties()
         {
-            var availability = SelectedOracleCard is null
-                ? new DeckActionAvailability()
-                : _deckBuilderService.GetActionAvailability(DeckFormat, CreateDeckCardStates(), SelectedOracleCard);
+            var selectedCard = SelectedAddCard;
 
-            IsAddButtonVisible = SelectedOracleCard is not null;
-            CanSetSelectedOracleCardAsCommander = availability.CanSetAsCommander && IsAddButtonVisible is true;
-            CanSetSelectedOracleCardAsCompanion = availability.CanSetAsCompanion && IsAddButtonVisible is true;
+            var availability = selectedCard is null
+                ? new DeckActionAvailability()
+                : _deckBuilderService.GetActionAvailability(DeckFormat, CreateDeckCardStates(), selectedCard);
+
+            IsAddButtonVisible = selectedCard is not null;
+
+            CanSetSelectedOracleCardAsCommander = availability.CanSetAsCommander && IsAddButtonVisible;
+            CanSetSelectedOracleCardAsCompanion = availability.CanSetAsCompanion && IsAddButtonVisible;
         }
         private void RefreshOwnedQuantityStatus()
         {
@@ -508,6 +538,17 @@ namespace CollectaMundo.ViewModels.Decks
         #endregion
 
         #region Shared helpers
+        private async Task MoveCardsAsync(IReadOnlyList<DeckCardMoveRequest> moves, DeckSection destinationSection)
+        {
+            if (DeckLocationId is null || moves.Count == 0)
+            {
+                return;
+            }
+
+            var result = await _deckBuilderService.MoveCardsAsync(DeckLocationId.Value, CreateDeckCardStates(), moves, destinationSection);
+
+            ApplySuccessfulMutation(result);
+        }
         private void ApplySuccessfulMutation(DeckMutationResult result)
         {
             if (!result.Succeeded)
