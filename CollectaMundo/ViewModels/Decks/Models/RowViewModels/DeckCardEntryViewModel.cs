@@ -32,14 +32,18 @@ namespace CollectaMundo.ViewModels.Decks.Models.RowViewModels
 
         public NumericBindingViewModel DesiredQuantityBinding { get; }
 
-        public DeckCardEntryViewModel(Func<DeckCardEntryViewModel, Task> quantityCommitAsync, Action<DeckCardEntryViewModel>? desiredQuantityChanged = null)
+        public DeckCardEntryViewModel(Func<DeckCardEntryViewModel, Task> quantityCommitAsync, int initialDesiredQuantity, Action<DeckCardEntryViewModel>? desiredQuantityChanged = null)
         {
+            desiredQuantity = initialDesiredQuantity;
+
             _desiredQuantityChanged = desiredQuantityChanged;
 
             DesiredQuantityBinding = new NumericBindingViewModel(
                 getter: () => DesiredQuantity,
                 setter: value => DesiredQuantity = value,
-                commitCommand: new AsyncRelayCommand(() => quantityCommitAsync(this)), min: 0, delayMs: 300);
+                commitCommand: new AsyncRelayCommand(() => quantityCommitAsync(this)),
+                min: 0,
+                delayMs: 300);
         }
         partial void OnDesiredQuantityChanged(int value)
         {

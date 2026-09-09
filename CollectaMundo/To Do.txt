@@ -3,8 +3,7 @@ TO DO
 Deck editor!
 POLISH!
 
-- refresh
-- Højreklik og drag fra deckbox
+
 - Vertical scrollbar helvede
 
 

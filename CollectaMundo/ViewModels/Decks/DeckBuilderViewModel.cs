@@ -504,17 +504,13 @@ namespace CollectaMundo.ViewModels.Decks
             if (updatedCard is null)
             {
                 GetZone(row.Section).Cards.Remove(row);
-                RefreshZoneVisibility();
-                RefreshOwnedQuantityStatus();
-                RefreshStats();
+                RefreshAll();
                 return;
             }
 
             if (row.DesiredQuantity != updatedCard.DesiredQuantity)
             {
                 row.DesiredQuantity = updatedCard.DesiredQuantity;
-                RefreshOwnedQuantityStatus();
-                RefreshStats();
             }
         }
 
@@ -525,6 +521,12 @@ namespace CollectaMundo.ViewModels.Decks
         {
             RefreshZoneVisibility();
             RefreshRuleDependentProperties();
+            RefreshOwnedQuantityStatus();
+            RefreshColumns();
+            RefreshStats();
+        }
+        private void RefreshAfterQuantityChanged()
+        {
             RefreshOwnedQuantityStatus();
             RefreshColumns();
             RefreshStats();
@@ -603,50 +605,6 @@ namespace CollectaMundo.ViewModels.Decks
 
             RefreshAll();
         }
-        private DeckCardEntryViewModel CreateDeckRow(DeckCardState card, IReadOnlyCollection<DeckCardState> deckCards)
-        {
-            var entry = new DeckCardEntry
-            {
-                DeckLocationId = DeckLocationId ?? 0,
-                OracleId = card.Card.ScryfallOracleId,
-                CardName = card.Card.Name,
-                DesiredQuantity = card.DesiredQuantity,
-                Section = card.Section
-            };
-
-            var validation = new DeckCardValidationResult { IsLegal = true };
-
-            // Only validate if the deck format is not null and not casual
-            if (DeckFormat != null && DeckFormat != "casual")
-            {
-                validation = _deckBuilderService.ValidateCard(DeckFormat, deckCards, entry, card.Card);
-            }
-
-            var oracleId = card.Card.ScryfallOracleId;
-
-            var ownedQuantity = _collectionQuantitySnapshot?.GetOwnedQuantity(oracleId) ?? 0;
-
-            var allocatedQuantity = DeckLocationId is int locationId ? _collectionQuantitySnapshot?.GetAllocatedQuantity(oracleId, locationId) ?? 0 : 0;
-
-            var availableQuantity = DeckLocationId is int currentLocationId
-                ? _collectionQuantitySnapshot?.GetAvailableQuantity(oracleId, currentLocationId) ?? 0
-                : ownedQuantity;
-
-            return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync, desiredQuantityChanged: _ =>
-            {
-                RefreshOwnedQuantityStatus();
-                RefreshColumns();
-            })
-            {
-                OracleCard = card.Card,
-                DesiredQuantity = card.DesiredQuantity,
-                Section = card.Section,
-                IsLegal = validation.IsLegal,
-                OwnedQuantity = ownedQuantity,
-                AllocatedQuantity = allocatedQuantity,
-                AvailableQuantity = availableQuantity
-            };
-        }
         private Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel? row)
         {
             if (row is null)
@@ -682,6 +640,45 @@ namespace CollectaMundo.ViewModels.Decks
             {
                 AddRowToZone(row);
             }
+        }
+        private DeckCardEntryViewModel CreateDeckRow(DeckCardState card, IReadOnlyCollection<DeckCardState> deckCards)
+        {
+            var entry = new DeckCardEntry
+            {
+                DeckLocationId = DeckLocationId ?? 0,
+                OracleId = card.Card.ScryfallOracleId,
+                CardName = card.Card.Name,
+                DesiredQuantity = card.DesiredQuantity,
+                Section = card.Section
+            };
+
+            var validation = new DeckCardValidationResult { IsLegal = true };
+
+            // Only validate if the deck format is not null and not casual
+            if (DeckFormat != null && DeckFormat != "casual")
+            {
+                validation = _deckBuilderService.ValidateCard(DeckFormat, deckCards, entry, card.Card);
+            }
+
+            var oracleId = card.Card.ScryfallOracleId;
+
+            var ownedQuantity = _collectionQuantitySnapshot?.GetOwnedQuantity(oracleId) ?? 0;
+
+            var allocatedQuantity = DeckLocationId is int locationId ? _collectionQuantitySnapshot?.GetAllocatedQuantity(oracleId, locationId) ?? 0 : 0;
+
+            var availableQuantity = DeckLocationId is int currentLocationId
+                ? _collectionQuantitySnapshot?.GetAvailableQuantity(oracleId, currentLocationId) ?? 0
+                : ownedQuantity;
+
+            return new DeckCardEntryViewModel(quantityCommitAsync: OnDeckCardQuantityCommitAsync, initialDesiredQuantity: card.DesiredQuantity, desiredQuantityChanged: _ => RefreshAfterQuantityChanged())
+            {
+                OracleCard = card.Card,
+                Section = card.Section,
+                IsLegal = validation.IsLegal,
+                OwnedQuantity = ownedQuantity,
+                AllocatedQuantity = allocatedQuantity,
+                AvailableQuantity = availableQuantity
+            };
         }
         private IReadOnlyList<DeckCardState> CreateDeckCardStates()
         {
