@@ -136,6 +136,12 @@ namespace CollectaMundo.ViewModels.Decks
 
         #region Observable Properties
 
+        // Deck identity properties
+        public int? DeckLocationId { get; private set; }
+        public string DeckName { get; private set; } = string.Empty;
+        public string? DeckFormat { get; private set; }
+
+
         // Visibility rules
         [ObservableProperty]
         private bool isAddButtonVisible;
@@ -166,15 +172,6 @@ namespace CollectaMundo.ViewModels.Decks
         [ObservableProperty]
         private IReadOnlyList<DeckBoxCardViewModel> deckBoxCards = [];
 
-        // Deck identity properties
-        [ObservableProperty]
-        private int? deckLocationId;
-
-        [ObservableProperty]
-        private string deckName = string.Empty;
-
-        [ObservableProperty]
-        private string? deckFormat;
 
         // Selected card properties
 

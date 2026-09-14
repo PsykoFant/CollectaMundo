@@ -2,9 +2,6 @@ TO DO
 
 Deck editor!
 POLISH!
-- Rarity oracle
-- deckbox og oracle datagrid samme stil
-
 
  - Tilføj pris
  - Tilføj ekport decklist/want list

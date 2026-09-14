@@ -256,7 +256,12 @@
                                     <!-- Stats -->
                                     <GroupBox Grid.Row="0"  Style="{StaticResource DeckBuilderGroupBoxStyle}">
                                         <GroupBox.Header>
-                                            <Label Content="{Binding Stats.CardCount}" ContentStringFormat="Cards {0}" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Label Content="Cards:" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                                <Label Content="{Binding Stats.CardCount}" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                                <Label Content=" -- Format:" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                                <Label Content="{Binding DeckFormat}" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                            </StackPanel>
                                         </GroupBox.Header>
                                         <StackPanel>
                                             <!-- Colors -->
@@ -451,20 +456,23 @@
                             </Grid>
 
                             <!-- 3 - deckbox -->
-                            <GroupBox Grid.Row="3" 
-                                  Visibility="{Binding IsDeckBoxDataGridVisible, Converter={StaticResource BoolToVisibilityConverter}}" 
-                                  Style="{StaticResource DeckBuilderGroupBoxStyle}">
-                                <GroupBox.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Label Content="In the deckbox" Style="{StaticResource SmallHeaderLabelStyle}"/>
-                                        <TextBlock Text="ⓘ" Opacity="0.65"
-                                       ToolTip="Collection cards currently allocated to this deck location. Drag selected cards to a deck zone to add them to the deck list. Hold Shift while dragging to add 4 copies of each. Moving or removing cards in the deck list does not change their collection location."/>
-                                    </StackPanel>
-                                </GroupBox.Header>
-                                <DataGrid x:Name="DeckBoxDataGrid" ItemsSource="{Binding DeckBoxCards}"
-                                      SelectedItem="{Binding SelectedDeckBoxCard, Mode=TwoWay}"
-                                      behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedDeckBoxCards}"
-                                      Style="{StaticResource DeckBoxDataGridStyle}">
+                            <Grid Grid.Row="3" Visibility="{Binding IsDeckBoxDataGridVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Label Content="In the deckbox" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                    <TextBlock Text="ⓘ" Opacity="0.65"
+                                               ToolTip="Collection cards currently allocated to this deck location. Drag selected cards to a deck zone to add them to the deck list. Hold Shift while dragging to add 4 copies of each. Moving or removing cards in the deck list does not change their collection location."/>
+                                </StackPanel>
+
+                                <DataGrid x:Name="DeckBoxDataGrid" Grid.Row="1"
+                                          ItemsSource="{Binding DeckBoxCards}"
+                                          SelectedItem="{Binding SelectedDeckBoxCard, Mode=TwoWay}"
+                                          behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedDeckBoxCards}"
+                                          Style="{StaticResource DeckBoxDataGridStyle}">
                                     <i:Interaction.Behaviors>
                                         <behaviors:DeckBuilderDragOracleCardSourceBehavior/>
                                     </i:Interaction.Behaviors>
@@ -502,7 +510,7 @@
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                 </DataGrid>
-                            </GroupBox>
+                            </Grid>                            
                         </Grid>
                     </ScrollViewer>
 
@@ -513,10 +521,8 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0"
-                                    Orientation="Horizontal"
-                                    Margin="0,0,0,4">
-                            <TextBlock Text="Card pool" FontWeight="SemiBold"/>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                            <Label Content="Card pool" Style="{StaticResource SmallHeaderLabelStyle}"/>
                             <TextBlock Text="ⓘ" Margin="5,0,0,0" Opacity="0.65"
                                    ToolTip="Drag selected cards to a deck zone to add 1 copy of each. Hold Shift while dragging to add 4 copies of each."/>
                         </StackPanel>
