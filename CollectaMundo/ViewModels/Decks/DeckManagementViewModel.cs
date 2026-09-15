@@ -95,19 +95,11 @@ namespace CollectaMundo.ViewModels.Decks
         }
         private DeckManagementRowViewModel CreateRow(DeckManagementRecord record)
         {
-            return new DeckManagementRowViewModel(record, GetDeckFormatDisplayName);
-        }
-        private string GetDeckFormatDisplayName(string? format)
-        {
-            if (string.IsNullOrWhiteSpace(format))
-            {
-                return string.Empty;
-            }
+            var formatOption = string.IsNullOrWhiteSpace(record.Format)
+                ? null
+                : DeckFormats.FirstOrDefault(option => option.Value == record.Format);
 
-            return DeckFormats
-                .FirstOrDefault(option => option.Value == format)
-                ?.DisplayName
-                ?? format;
+            return new DeckManagementRowViewModel(record, formatOption);
         }
 
         // CRUD operations

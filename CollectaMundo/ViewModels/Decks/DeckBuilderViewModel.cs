@@ -8,6 +8,7 @@ using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.ViewModels.CardLists;
+using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 using CollectaMundo.ViewModels.Decks.Models.RowViewModels;
 using CollectaMundo.ViewModels.Filtering;
@@ -22,20 +23,155 @@ namespace CollectaMundo.ViewModels.Decks
 {
     public partial class DeckBuilderViewModel(IDeckBuilderService deckBuilderService, CardListViewModel<OracleCard> oracleCardsVM, FilterPanelViewModel filterPanelViewModel, ICardCollectionHost cardCollectionHost) : ObservableObject
     {
+        #region Dependencies and private state
         private readonly IDeckBuilderService _deckBuilderService = deckBuilderService;
         private readonly CardListViewModel<OracleCard> _oracleCardsVM = oracleCardsVM;
         private readonly FilterPanelViewModel _filterPanelViewModel = filterPanelViewModel;
         private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
         private ICollectionQuantitySnapshot? _collectionQuantitySnapshot;
+        private readonly IReadOnlyList<DeckZoneViewModel> _zones =
+        [
+            new() { Section = DeckSection.Mainboard, DisplayName = "Deck" },
+            new() { Section = DeckSection.Sideboard, DisplayName = "Sideboard" },
+            new() { Section = DeckSection.Maybeboard, DisplayName = "Maybeboard" },
+            new() { Section = DeckSection.Commander, DisplayName = "Command zone" },
+            new() { Section = DeckSection.Companion, DisplayName = "Companion zone" }
+        ];
 
-        // Begin editing a deck - initializes the view model with the deck's current state
-        public async Task BeginEditAsync(DeckManagementRecord deck)
+        #endregion
+
+        #region Public state
+
+        // Child ViewModels / filters
+        public CardListViewModel<OracleCard> CardsVM => _oracleCardsVM;
+        public FilterPanelViewModel FilterVM => _filterPanelViewModel;
+        public FilterItemViewModel? NameFilter => FilterVM.Filters.TryGetValue("Name", out var filter) ? filter : null;
+
+        // Deck identity
+        public int? DeckLocationId { get; private set; }
+        public string DeckName { get; private set; } = string.Empty;
+        public string? DeckFormat { get; private set; }
+        public string DeckFormatDisplayName { get; private set; } = string.Empty;
+
+        // Deck zones
+        public DeckZoneViewModel MainboardZone => GetZone(DeckSection.Mainboard);
+        public DeckZoneViewModel SideboardZone => GetZone(DeckSection.Sideboard);
+        public DeckZoneViewModel MaybeboardZone => GetZone(DeckSection.Maybeboard);
+        public DeckZoneViewModel CommanderZone => GetZone(DeckSection.Commander);
+        public DeckZoneViewModel CompanionZone => GetZone(DeckSection.Companion);
+
+        // Selection state
+        public ObservableCollection<OracleCard> SelectedOracleCards { get; } = [];
+        public ObservableCollection<DeckBoxCardViewModel> SelectedDeckBoxCards { get; } = [];
+        public IList SelectedAddItems => SelectedDeckBoxCard is not null
+            ? SelectedDeckBoxCards
+            : SelectedOracleCards;
+        public OracleCard? SelectedAddCard => SelectedDeckBoxCard?.OracleCard ?? SelectedOracleCard;
+
+        [ObservableProperty]
+        private DeckCardEntryViewModel? selectedDeckCard;
+
+        [ObservableProperty]
+        private OracleCard? selectedOracleCard;
+
+        [ObservableProperty]
+        private DeckBoxCardViewModel? selectedDeckBoxCard;
+
+        // Presentation state
+
+        [ObservableProperty]
+        private bool isAddButtonVisible;
+
+        [ObservableProperty]
+        private bool canSetSelectedCardAsCommander;
+
+        [ObservableProperty]
+        private bool canSetSelectedCardAsCompanion;
+
+        [ObservableProperty]
+        private bool isSideboardZoneVisible;
+
+        [ObservableProperty]
+        private bool isCommanderZoneVisible;
+
+        [ObservableProperty]
+        private bool isCompanionZoneVisible;
+
+        [ObservableProperty]
+        private bool isDeckBoxDataGridVisible;
+
+        [ObservableProperty]
+        private int refreshColumnsTrigger;
+
+        [ObservableProperty]
+        private IReadOnlyList<DeckBoxCardViewModel> deckBoxCards = [];
+
+        [ObservableProperty]
+        private DeckStats stats = new();
+
+        #endregion
+
+        #region Events and property callbacks
+
+        // Events
+
+        public event EventHandler? ExitEditorRequested;
+        public event EventHandler<OracleCardImageSelectionRequest?>? CardImageSelectionRequested;
+
+        // Observable property callbacks
+        partial void OnSelectedDeckCardChanged(DeckCardEntryViewModel? value)
+        {
+            ShowCardImage(value?.OracleId, value?.CardName);
+        }
+        partial void OnSelectedOracleCardChanged(OracleCard? value)
+        {
+            if (value is null && SelectedDeckBoxCard is not null)
+            {
+                return;
+            }
+
+            if (value is not null)
+            {
+                SelectedDeckBoxCard = null;
+            }
+
+            OnPropertyChanged(nameof(SelectedAddCard));
+            OnPropertyChanged(nameof(SelectedAddItems));
+
+            RefreshRuleDependentProperties();
+            ShowCardImage(value?.ScryfallOracleId, value?.Name);
+        }
+        partial void OnSelectedDeckBoxCardChanged(DeckBoxCardViewModel? value)
+        {
+            if (value is null && SelectedOracleCard is not null)
+            {
+                return;
+            }
+
+            if (value is not null)
+            {
+                SelectedOracleCard = null;
+            }
+
+            OnPropertyChanged(nameof(SelectedAddCard));
+            OnPropertyChanged(nameof(SelectedAddItems));
+
+            RefreshRuleDependentProperties();
+            ShowCardImage(value?.OracleId, value?.CardName);
+        }
+
+        #endregion
+
+        #region Lifecycle
+        public async Task BeginEditAsync(DeckManagementRecord deck, DeckFormatOption? formatOption)
         {
             var entries = await _deckBuilderService.LoadDeckAsync(deck.LocationId);
 
             DeckLocationId = deck.LocationId;
             DeckName = deck.Name;
+
             DeckFormat = deck.Format;
+            DeckFormatDisplayName = formatOption?.DisplayName ?? deck.Format ?? string.Empty;
 
             _collectionQuantitySnapshot = _cardCollectionHost.CreateCollectionQuantitySnapshot();
 
@@ -61,9 +197,7 @@ namespace CollectaMundo.ViewModels.Decks
             }
 
             ClearZones();
-
             AddDeckRows(deckCards);
-
             RefreshAll();
         }
         private void LoadDeckBoxCards()
@@ -76,170 +210,22 @@ namespace CollectaMundo.ViewModels.Decks
             }
 
             DeckBoxCards = [.. CardsVM.Cards.Select(card => new
-            {
-                Card = card,
-                AllocatedQuantity = _collectionQuantitySnapshot.GetAllocatedQuantity(card.ScryfallOracleId,locationId)
-            })
-            .Where(x => x.AllocatedQuantity > 0).Select(x => new DeckBoxCardViewModel
-            {
-                OracleCard = x.Card,
-                AllocatedQuantity = x.AllocatedQuantity
-            })
-            .OrderBy(row => CardSort.GetTypeRank(row.OracleCard.Types, row.OracleCard.GamePlayCard))
-            .ThenBy(row => CardSort.GetColorRank(row.OracleCard.Colors))
-            .ThenBy(row => row.ManaValue ?? 0)
-            .ThenBy(row => row.CardName, StringComparer.OrdinalIgnoreCase)
+                {
+                    Card = card,
+                    AllocatedQuantity = _collectionQuantitySnapshot.GetAllocatedQuantity(card.ScryfallOracleId,locationId)
+                }).Where(x => x.AllocatedQuantity > 0).Select(x => new DeckBoxCardViewModel
+                {
+                    OracleCard = x.Card,
+                    AllocatedQuantity = x.AllocatedQuantity
+                })
+                .OrderBy(row => CardSort.GetTypeRank(row.OracleCard.Types, row.OracleCard.GamePlayCard))
+                .ThenBy(row => CardSort.GetColorRank(row.OracleCard.Colors))
+                .ThenBy(row => row.ManaValue ?? 0)
+                .ThenBy(row => row.CardName, StringComparer.OrdinalIgnoreCase)
             ];
 
             IsDeckBoxDataGridVisible = DeckBoxCards.Count > 0;
         }
-
-        // Helper property to get all deck cards across all zones
-        private IEnumerable<DeckCardEntryViewModel> AllDeckCards => Zones.SelectMany(z => z.Cards);
-
-        // Selected cards for adding to the deck zones
-        public ObservableCollection<OracleCard> SelectedOracleCards { get; } = [];
-        public ObservableCollection<DeckBoxCardViewModel> SelectedDeckBoxCards { get; } = [];
-        public IList SelectedAddItems => SelectedDeckBoxCard is not null
-            ? SelectedDeckBoxCards
-            : SelectedOracleCards;
-
-        // Filtered OracleCard list view model
-        public CardListViewModel<OracleCard> CardsVM => _oracleCardsVM;
-
-        // Filter panel view model
-        public FilterPanelViewModel FilterVM => _filterPanelViewModel;
-
-        // Bindable pass-through properties for the filters 
-        public FilterItemViewModel? NameFilter => FilterVM.Filters.TryGetValue("Name", out var f) ? f : null;
-
-        // Events for external notifications
-        public event EventHandler? ExitEditorRequested;
-        public event EventHandler<OracleCardImageSelectionRequest?>? CardImageSelectionRequested;
-
-
-        // DeckZoneViewModels for each deck section
-        public DeckZoneViewModel MainboardZone => GetZone(DeckSection.Mainboard);
-        public DeckZoneViewModel SideboardZone => GetZone(DeckSection.Sideboard);
-        public DeckZoneViewModel MaybeboardZone => GetZone(DeckSection.Maybeboard);
-        public DeckZoneViewModel CommanderZone => GetZone(DeckSection.Commander);
-        public DeckZoneViewModel CompanionZone => GetZone(DeckSection.Companion);
-        private IReadOnlyList<DeckZoneViewModel> Zones { get; } =
-        [
-            new() { Section = DeckSection.Mainboard, DisplayName = "Deck" },
-            new() { Section = DeckSection.Sideboard, DisplayName = "Sideboard" },
-            new() { Section = DeckSection.Maybeboard, DisplayName = "Maybeboard" },
-            new() { Section = DeckSection.Commander, DisplayName = "Command zone" },
-            new() { Section = DeckSection.Companion, DisplayName = "Companion zone" }
-        ];
-        private DeckZoneViewModel GetZone(DeckSection section) { return Zones.First(z => z.Section == section); }
-
-        #region Observable Properties
-
-        // Deck identity properties
-        public int? DeckLocationId { get; private set; }
-        public string DeckName { get; private set; } = string.Empty;
-        public string? DeckFormat { get; private set; }
-
-
-        // Visibility rules
-        [ObservableProperty]
-        private bool isAddButtonVisible;
-
-        [ObservableProperty]
-        private bool isSideboardZoneVisible;
-
-        [ObservableProperty]
-        private bool canSetSelectedCardAsCommander;
-
-        [ObservableProperty]
-        private bool canSetSelectedCardAsCompanion;
-
-        [ObservableProperty]
-        private bool isCommanderZoneVisible;
-
-        [ObservableProperty]
-        private bool isCompanionZoneVisible;
-
-        [ObservableProperty]
-        private bool isDeckBoxDataGridVisible = false;
-
-        // Trigger property to force deck card datagrid columns to refresh
-        [ObservableProperty]
-        private int refreshColumnsTrigger;
-
-        // Cards in collection allocated to this deck
-        [ObservableProperty]
-        private IReadOnlyList<DeckBoxCardViewModel> deckBoxCards = [];
-
-
-        // Selected card properties
-
-        [ObservableProperty]
-        private DeckCardEntryViewModel? selectedDeckCard; // DeckCards datagrids
-        partial void OnSelectedDeckCardChanged(DeckCardEntryViewModel? value)
-        {
-            ShowCardImage(value?.OracleId, value?.CardName);
-        }
-
-        [ObservableProperty]
-        private OracleCard? selectedOracleCard;
-        partial void OnSelectedOracleCardChanged(OracleCard? value)
-        {
-            if (value is null && SelectedDeckBoxCard is not null)
-            {
-                return;
-            }
-
-            if (value is not null)
-            {
-                SelectedDeckBoxCard = null;
-            }
-
-            OnPropertyChanged(nameof(SelectedAddCard));
-            OnPropertyChanged(nameof(SelectedAddItems));
-
-            RefreshRuleDependentProperties();
-            ShowCardImage(value?.ScryfallOracleId, value?.Name);
-        }
-
-        [ObservableProperty]
-        private DeckBoxCardViewModel? selectedDeckBoxCard;
-        partial void OnSelectedDeckBoxCardChanged(DeckBoxCardViewModel? value)
-        {
-            if (value is null && SelectedOracleCard is not null)
-            {
-                return;
-            }
-
-            if (value is not null)
-            {
-                SelectedOracleCard = null;
-            }
-
-            OnPropertyChanged(nameof(SelectedAddCard));
-            OnPropertyChanged(nameof(SelectedAddItems));
-
-            RefreshRuleDependentProperties();
-            ShowCardImage(value?.OracleId, value?.CardName);
-        }
-
-        // Helper property to determine which card is currently selected for adding to the deck
-        public OracleCard? SelectedAddCard => SelectedDeckBoxCard?.OracleCard ?? SelectedOracleCard;
-
-        // Helper method to raise the CardImageSelectionRequested event
-        private void ShowCardImage(string? oracleId, string? name)
-        {
-            var request = string.IsNullOrWhiteSpace(oracleId)
-                ? new OracleCardImageSelectionRequest()
-                : new OracleCardImageSelectionRequest(OracleId: oracleId, Name: name);
-
-            CardImageSelectionRequested?.Invoke(this, request);
-        }
-
-        // Deck stats
-        [ObservableProperty]
-        private DeckStats stats = new();
 
         #endregion
 
@@ -513,7 +499,9 @@ namespace CollectaMundo.ViewModels.Decks
 
         #endregion
 
-        #region Refresh Methods
+        #region Refresh and Helpers
+
+        // Refresh methods
         private void RefreshAll()
         {
             RefreshZoneVisibility();
@@ -574,9 +562,7 @@ namespace CollectaMundo.ViewModels.Decks
             Stats = _deckBuilderService.CalculateDeckStats(CreateDeckCardStates());
         }
 
-        #endregion
-
-        #region Shared helpers
+        // Mutation orchestration
         private async Task MoveCardsAsync(IReadOnlyList<DeckCardMoveRequest> moves, DeckSection destinationSection)
         {
             if (DeckLocationId is null || moves.Count == 0)
@@ -602,23 +588,26 @@ namespace CollectaMundo.ViewModels.Decks
 
             RefreshAll();
         }
-        private Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel? row)
-        {
-            if (row is null)
-            {
-                return Task.CompletedTask;
-            }
 
-            return SetCardQuantityAsync(row, row.DesiredQuantity);
+        // Deck-state projection
+        private IReadOnlyList<DeckCardState> CreateDeckCardStates()
+        {
+            return [.. AllDeckCards.Select(x => new DeckCardState
+            {
+                Card = x.OracleCard,
+                DesiredQuantity = x.DesiredQuantity,
+                Section = x.Section
+            })];
         }
+
+        // Deck row / zone population
         private void ClearZones()
         {
-            foreach (var zone in Zones)
+            foreach (var zone in _zones)
             {
                 zone.Cards.Clear();
             }
         }
-        private void AddRowToZone(DeckCardEntryViewModel row) { GetZone(row.Section).Cards.Add(row); }
         private void AddDeckRows(IReadOnlyCollection<DeckCardState> deckCards)
         {
             var rows = deckCards.Select(card => CreateDeckRow(card, deckCards)).ToList();
@@ -677,14 +666,31 @@ namespace CollectaMundo.ViewModels.Decks
                 AvailableQuantity = availableQuantity
             };
         }
-        private IReadOnlyList<DeckCardState> CreateDeckCardStates()
+        private void AddRowToZone(DeckCardEntryViewModel row) { GetZone(row.Section).Cards.Add(row); }
+        private DeckZoneViewModel GetZone(DeckSection section) { return _zones.First(z => z.Section == section); }
+
+        // Quantity editing
+        private Task OnDeckCardQuantityCommitAsync(DeckCardEntryViewModel? row)
         {
-            return [.. AllDeckCards.Select(x => new DeckCardState
+            if (row is null)
             {
-                Card = x.OracleCard,
-                DesiredQuantity = x.DesiredQuantity,
-                Section = x.Section
-            })];
+                return Task.CompletedTask;
+            }
+
+            return SetCardQuantityAsync(row, row.DesiredQuantity);
+        }
+
+        // Derived deck collections
+        private IEnumerable<DeckCardEntryViewModel> AllDeckCards => _zones.SelectMany(z => z.Cards);
+
+        // Card image display
+        private void ShowCardImage(string? oracleId, string? name)
+        {
+            var request = string.IsNullOrWhiteSpace(oracleId)
+                ? new OracleCardImageSelectionRequest()
+                : new OracleCardImageSelectionRequest(OracleId: oracleId, Name: name);
+
+            CardImageSelectionRequested?.Invoke(this, request);
         }
 
         #endregion

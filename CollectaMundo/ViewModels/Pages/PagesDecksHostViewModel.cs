@@ -24,7 +24,7 @@ namespace CollectaMundo.ViewModels.Pages
         private object currentDecksContentViewModel;
         private async void OnEditDeckRequested(object? sender, DeckManagementRowViewModel selectedDeck)
         {
-            await DeckBuilderVM.BeginEditAsync(selectedDeck.Record);
+            await DeckBuilderVM.BeginEditAsync(selectedDeck.Record, selectedDeck.FormatOption);
 
             CurrentDecksContentViewModel = DeckBuilderVM;
             DecksContentChanged?.Invoke(this, EventArgs.Empty);

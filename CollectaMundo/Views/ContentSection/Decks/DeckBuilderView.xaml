@@ -256,12 +256,36 @@
                                     <!-- Stats -->
                                     <GroupBox Grid.Row="0"  Style="{StaticResource DeckBuilderGroupBoxStyle}">
                                         <GroupBox.Header>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Label Content="Cards:" Style="{StaticResource SmallHeaderLabelStyle}"/>
-                                                <Label Content="{Binding Stats.CardCount}" Style="{StaticResource SmallHeaderLabelStyle}"/>
-                                                <Label Content=" -- Format:" Style="{StaticResource SmallHeaderLabelStyle}"/>
-                                                <Label Content="{Binding DeckFormat}" Style="{StaticResource SmallHeaderLabelStyle}"/>
-                                            </StackPanel>
+                                            <Grid Margin="0,0,0,20">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Left -->
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                    <Label Content="Cards:" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                                    <Label Content="{Binding Stats.CardCount}" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                                </StackPanel>
+
+                                                <!-- Right -->
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                    <StackPanel.Style>
+                                                        <Style TargetType="StackPanel">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding DeckFormatDisplayName}" Value="">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </StackPanel.Style>
+
+                                                    <Label Content="Format:" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                                    <Label Content="{Binding DeckFormatDisplayName}" Style="{StaticResource SmallHeaderLabelStyle}"/>
+                                                </StackPanel>
+                                            </Grid>
                                         </GroupBox.Header>
                                         <StackPanel>
                                             <!-- Colors -->

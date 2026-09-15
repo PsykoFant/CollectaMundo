@@ -2,17 +2,14 @@
 
 namespace CollectaMundo.ViewModels.Decks.Models.RowViewModels
 {
-    public sealed class DeckManagementRowViewModel(DeckManagementRecord record, Func<string?, string> formatDisplayNameResolver)
+    public sealed class DeckManagementRowViewModel(DeckManagementRecord record, DeckFormatOption? formatOption)
     {
-        private readonly Func<string?, string> _formatDisplayNameResolver = formatDisplayNameResolver;
-
         public DeckManagementRecord Record { get; } = record;
-
         public int LocationId => Record.LocationId;
         public string Name => Record.Name;
         public string? Format => Record.Format;
         public string? Description => Record.Description;
-
-        public string FormatDisplayName => _formatDisplayNameResolver(Format);
+        public DeckFormatOption? FormatOption { get; } = formatOption;
+        public string FormatDisplayName => FormatOption?.DisplayName ?? Format ?? string.Empty;
     }
 }
