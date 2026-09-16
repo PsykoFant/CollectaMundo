@@ -1,10 +1,9 @@
 TO DO 
 
 Deck editor!
-POLISH!
 
- - Tilføj pris
  - Tilføj ekport decklist/want list
+ - Skriv test
 
 Db optimering
 
