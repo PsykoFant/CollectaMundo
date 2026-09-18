@@ -386,7 +386,7 @@ namespace CollectaMundo.ApplicationServices.Import
             var defaultFileName = $"unimportable-items-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
 
             // Ask user where and under what name to save
-            var filePath = _fileSystemPicker.PickSaveFile(title: "Save unimportable items", defaultFileName: defaultFileName, filter: "CSV Files (*.csv)|*.csv");
+            var filePath = _fileSystemPicker.PickSaveFile(title: "Save unimportable items", defaultFileName: defaultFileName, filter: "CSV Files (*.csv)|*.csv", defaultExtension: "csv");
 
             if (string.IsNullOrWhiteSpace(filePath))
             {

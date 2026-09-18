@@ -31,20 +31,20 @@ namespace CollectaMundo.Infrastructure.Shared
             var result = dialog.ShowDialog(Application.Current?.MainWindow);
             return result == true ? dialog.SelectedPath : null;
         }
-        public string? PickSaveFile(string title, string defaultFileName, string filter)
+        public string? PickSaveFile(string title, string defaultFileName, string filter, string defaultExtension)
         {
             var dialog = new SaveFileDialog
             {
                 Title = title,
                 FileName = defaultFileName,
                 Filter = filter,
-                DefaultExt = ".csv",
+                DefaultExt = defaultExtension,
                 AddExtension = true,
                 OverwritePrompt = true
             };
-
             var result = dialog.ShowDialog(Application.Current?.MainWindow);
             return result == true ? dialog.FileName : null;
         }
     }
 }
+

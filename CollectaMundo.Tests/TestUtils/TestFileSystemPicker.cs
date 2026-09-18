@@ -18,7 +18,7 @@ namespace CollectaMundo.Tests.TestUtils
             throw new NotSupportedException("PickFolder is not used in import tests.");
         }
 
-        public string? PickSaveFile(string title, string defaultFileName, string filter)
+        public string? PickSaveFile(string title, string defaultFileName, string filter, string defaultExtension)
         {
             throw new NotSupportedException("PickSaveFile is not used in import tests.");
         }
