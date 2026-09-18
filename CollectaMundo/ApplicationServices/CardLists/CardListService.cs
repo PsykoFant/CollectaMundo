@@ -146,7 +146,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
         {
             await _keyedDataProviderService.ResetPricesMetaProviderAsync(retailerKey);
         }
-
         private static List<TCard> SortCards<TCard>(IEnumerable<TCard> cards) where TCard : ICardListSortable
         {
             return
@@ -158,7 +157,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
             .ThenBy(c => CardSort.GetTypeRank(c.Types, c.GamePlayCard))
             ];
         }
-
         private static List<OracleCard> SortOracleCards(IEnumerable<OracleCard> cards)
         {
             return

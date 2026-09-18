@@ -48,9 +48,9 @@ namespace CollectaMundo.ViewModels.Decks
         public FilterItemViewModel? NameFilter => FilterVM.Filters.TryGetValue("Name", out var filter) ? filter : null;
 
         // Deck identity
-        public int? DeckLocationId { get; private set; }
+        public int? DeckLocationId { get; internal set; }
         public string DeckName { get; private set; } = string.Empty;
-        public string? DeckFormat { get; private set; }
+        public string? DeckFormat { get; internal set; }
         public string DeckFormatDisplayName { get; private set; } = string.Empty;
 
         // Deck zones

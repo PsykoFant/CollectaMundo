@@ -22,7 +22,7 @@ namespace CollectaMundo.Tests.UnitTests
             var sut = CreateSuite(format: "standard");
             var card = TestCardFactory.CreateLegendaryCreature();
             sut.ViewModel.SelectedOracleCard = card;
-            Assert.False(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+            Assert.False(sut.ViewModel.CanSetSelectedCardAsCommander);
         }
 
         [Fact]
@@ -33,7 +33,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             sut.ViewModel.SelectedOracleCard = card;
 
-            Assert.True(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+            Assert.True(sut.ViewModel.CanSetSelectedCardAsCommander);
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             sut.ViewModel.SelectedOracleCard = card;
 
-            Assert.False(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+            Assert.False(sut.ViewModel.CanSetSelectedCardAsCommander);
         }
 
         [Theory]
@@ -75,7 +75,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             sut.ViewModel.SelectedOracleCard = card;
 
-            Assert.True(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+            Assert.True(sut.ViewModel.CanSetSelectedCardAsCommander);
         }
 
         [Fact]
@@ -86,7 +86,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             sut.ViewModel.SelectedOracleCard = card;
 
-            Assert.True(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+            Assert.True(sut.ViewModel.CanSetSelectedCardAsCommander);
         }
 
         [Fact]
@@ -97,9 +97,9 @@ namespace CollectaMundo.Tests.UnitTests
 
             sut.ViewModel.SelectedOracleCard = card;
 
-            Assert.True(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+            Assert.True(sut.ViewModel.CanSetSelectedCardAsCommander);
             sut.ViewModel.SelectedOracleCard = null;
-            Assert.False(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+            Assert.False(sut.ViewModel.CanSetSelectedCardAsCommander);
         }
 
         [Fact]
@@ -121,7 +121,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             sut.ViewModel.SelectedOracleCard = card;
 
-            await sut.ViewModel.SetOracleCardAsCommanderCommand.ExecuteAsync(card);
+            await sut.ViewModel.SetCardAsCommanderCommand.ExecuteAsync(card);
 
             var commander = Assert.Single(sut.ViewModel.CommanderZone.Cards);
 
@@ -145,7 +145,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Select same card again
             sut.ViewModel.SelectedOracleCard = card;
 
-            Assert.False(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+            Assert.False(sut.ViewModel.CanSetSelectedCardAsCommander);
         }
 
         [Fact]
@@ -166,10 +166,10 @@ namespace CollectaMundo.Tests.UnitTests
             sut.ViewModel.SelectedOracleCard = second;
 
             Assert.True(
-                sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+                sut.ViewModel.CanSetSelectedCardAsCommander);
 
             await sut.ViewModel
-                .SetOracleCardAsCommanderCommand
+                .SetCardAsCommanderCommand
                 .ExecuteAsync(second);
 
             var commander = Assert.Single(
@@ -195,9 +195,9 @@ namespace CollectaMundo.Tests.UnitTests
 
             sut.ViewModel.SelectedOracleCard = partner;
 
-            Assert.True(sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+            Assert.True(sut.ViewModel.CanSetSelectedCardAsCommander);
 
-            await sut.ViewModel.SetOracleCardAsCommanderCommand.ExecuteAsync(partner);
+            await sut.ViewModel.SetCardAsCommanderCommand.ExecuteAsync(partner);
 
             Assert.Equal(2, sut.ViewModel.CommanderZone.Cards.Count);
         }
@@ -218,10 +218,10 @@ namespace CollectaMundo.Tests.UnitTests
             sut.ViewModel.SelectedOracleCard = normalLegend;
 
             Assert.True(
-                sut.ViewModel.CanSetSelectedOracleCardAsCommander);
+                sut.ViewModel.CanSetSelectedCardAsCommander);
 
             await sut.ViewModel
-                .SetOracleCardAsCommanderCommand
+                .SetCardAsCommanderCommand
                 .ExecuteAsync(normalLegend);
 
             Assert.Equal(
@@ -274,7 +274,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             sut.ViewModel.SelectedOracleCard = card;
 
-            Assert.False(sut.ViewModel.CanSetSelectedOracleCardAsCompanion);
+            Assert.False(sut.ViewModel.CanSetSelectedCardAsCompanion);
         }
 
         [Fact]
@@ -292,7 +292,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             sut.ViewModel.SelectedOracleCard = card;
 
-            Assert.True(sut.ViewModel.CanSetSelectedOracleCardAsCompanion);
+            Assert.True(sut.ViewModel.CanSetSelectedCardAsCompanion);
         }
 
         #endregion
@@ -338,8 +338,8 @@ namespace CollectaMundo.Tests.UnitTests
         private static async Task SetCommanderAsync(DeckBuilderViewModel viewModel, OracleCard card)
         {
             viewModel.SelectedOracleCard = card;
-            Assert.True(viewModel.CanSetSelectedOracleCardAsCommander);
-            await viewModel.SetOracleCardAsCommanderCommand.ExecuteAsync(card);
+            Assert.True(viewModel.CanSetSelectedCardAsCommander);
+            await viewModel.SetCardAsCommanderCommand.ExecuteAsync(card);
         }
         private static CommanderTestSuite CreateSuite(string format)
         {
