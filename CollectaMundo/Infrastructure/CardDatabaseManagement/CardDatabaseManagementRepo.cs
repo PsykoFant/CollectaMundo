@@ -1,14 +1,18 @@
-﻿using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
+﻿using CollectaMundo.ApplicationServices.Shared.Files;
+using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
 using CollectaMundo.Infrastructure.Shared;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 {
-    public class CardDatabaseManagementRepo : ICardDatabaseManagementRepo
+    public class CardDatabaseManagementRepo(ICsvFileWriter csvFileWriter) : ICardDatabaseManagementRepo
     {
+        private readonly ICsvFileWriter _csvFileWriter = csvFileWriter;
+
         // Create
         public async Task CreateTablesAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
@@ -139,43 +143,31 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 return null;
             }
 
-            string filePath = Path.Combine(backupFolderPath, $"MyCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
-            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+            var filePath = Path.Combine(backupFolderPath, $"MyCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
+            var headers = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
 
-            // Write header
-            for (int i = 0; i < reader.FieldCount; i++)
-            {
-                ct.ThrowIfCancellationRequested();
+            await _csvFileWriter.WriteAsync(filePath, headers, ReadRowsAsync(reader, ct), ';', ct);
 
-                writer.Write(reader.GetName(i));
-                if (i < reader.FieldCount - 1)
-                {
-                    writer.Write(";");
-                }
-            }
-            writer.WriteLine();
-
-            // Write rows
+            return filePath;
+        }
+        private static async IAsyncEnumerable<IReadOnlyList<string?>> ReadRowsAsync(DbDataReader reader, [EnumeratorCancellation] CancellationToken ct)
+        {
             while (await reader.ReadAsync(ct))
             {
                 ct.ThrowIfCancellationRequested();
 
-                for (int i = 0; i < reader.FieldCount; i++)
+                var row = new string?[reader.FieldCount];
+
+                for (var i = 0; i < reader.FieldCount; i++)
                 {
-                    string value = reader[i]?.ToString()?.Replace(";", ",") ?? string.Empty;
-                    writer.Write(value);
-                    if (i < reader.FieldCount - 1)
-                    {
-                        writer.Write(";");
-                    }
+                    row[i] = reader.IsDBNull(i)
+                        ? null
+                        : reader.GetValue(i)?.ToString();
                 }
-                writer.WriteLine();
+
+                yield return row;
             }
-
-            return filePath;
-        }
-
-        // Helper
+        }        // Helper
         private static readonly Dictionary<string, string> TablesToCopy = new()
             {
                 {"cardForeignData", "DROP TABLE IF EXISTS cardForeignData;" },

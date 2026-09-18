@@ -39,6 +39,7 @@ using CollectaMundo.Infrastructure.KeyedDataProvider;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Files;
 using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.Tests.ScenarioTests;
 using CollectaMundo.ViewModels;
@@ -82,7 +83,7 @@ public static class TestAppBuilder
             dbFactory,
             uowRunner,
             CreateProgressSinks(operationOverlayController),
-            new CardDatabaseManagementRepo(),
+            new CardDatabaseManagementRepo(new CsvFileWriter()),
             priceService,
             missingPngSvc,
             remoteLookups);

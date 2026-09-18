@@ -38,6 +38,7 @@ using CollectaMundo.Infrastructure.KeyedDataProvider;
 using CollectaMundo.Infrastructure.ModifyCollection;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Files;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
@@ -67,7 +68,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var priceService = new CardPriceService(new CardPriceRepository());
 
                 var progressSinks = CreateProgressSinks(operationOverlayController);
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(), priceService, missingPngService, remoteLookups);
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), priceService, missingPngService, remoteLookups);
                 var integrityService = new DatabaseIntegrityService(uowRunner, settings);
 
                 // Status overlay
