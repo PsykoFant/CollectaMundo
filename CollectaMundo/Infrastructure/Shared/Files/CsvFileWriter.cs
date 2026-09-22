@@ -34,18 +34,31 @@ namespace CollectaMundo.Infrastructure.Shared.Files
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var line = string.Join(delimiter, values.Select(value => PrepareValue(value, delimiter)));
+            var line = string.Join(delimiter, values.Select(value => EscapeField(value, delimiter)));
 
             await writer.WriteLineAsync(line.AsMemory(), cancellationToken);
         }
-        private static string PrepareValue(string? value, char delimiter)
+        private static string EscapeField(string? value, char delimiter)
         {
             if (string.IsNullOrEmpty(value))
             {
                 return string.Empty;
             }
 
-            return value.Replace(delimiter, ',');
+            bool requiresQuotes =
+                value.Contains(delimiter) ||
+                value.Contains('"') ||
+                value.Contains('\r') ||
+                value.Contains('\n');
+
+            if (!requiresQuotes)
+            {
+                return value;
+            }
+
+            var escaped = value.Replace("\"", "\"\"");
+
+            return $"\"{escaped}\"";
         }
     }
 }

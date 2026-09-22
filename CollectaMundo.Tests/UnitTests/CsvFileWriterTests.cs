@@ -160,7 +160,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public async Task WriteAsync_ReplacesDelimiterInValues()
+        public async Task WriteAsync_QuotesValueContainingDelimiter()
         {
             // Arrange
             var writer = new CsvFileWriter();
@@ -168,26 +168,16 @@ namespace CollectaMundo.Tests.UnitTests
 
             try
             {
-                var headers = new[]
-                {
-                    "Name",
-                    "Description"
-                };
-
-                var rows = CreateRows(
-                    ["Lightning Bolt", "Fast; efficient"]);
+                var headers = new[] { "Name", "Description" };
+                var rows = CreateRows(["Lightning Bolt", "Fast; efficient"]);
 
                 // Act
-                await writer.WriteAsync(
-                    filePath,
-                    headers,
-                    rows,
-                    ';');
+                await writer.WriteAsync(filePath, headers, rows, ';');
 
                 // Assert
                 var lines = await File.ReadAllLinesAsync(filePath);
 
-                Assert.Equal("Lightning Bolt;Fast, efficient", lines[1]);
+                Assert.Equal("Lightning Bolt;\"Fast; efficient\"", lines[1]);
             }
             finally
             {
