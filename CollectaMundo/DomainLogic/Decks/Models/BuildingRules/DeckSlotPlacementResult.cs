@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
 
-namespace CollectaMundo.DomainLogic.Decks.Models
+namespace CollectaMundo.DomainLogic.Decks.Models.BuildingRules
 {
     public sealed class DeckSlotPlacementResult
     {

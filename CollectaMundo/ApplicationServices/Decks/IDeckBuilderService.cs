@@ -1,8 +1,9 @@
 ﻿using CollectaMundo.ApplicationServices.Decks.Models;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Decks.Models.BuildingRules;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
-using CollectaMundo.DomainLogic.Decks.Models.Records;
+using CollectaMundo.DomainLogic.Decks.Models.Stats;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 

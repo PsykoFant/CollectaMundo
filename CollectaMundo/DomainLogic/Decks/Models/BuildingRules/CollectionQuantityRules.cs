@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Shared.CardModels;
 
-namespace CollectaMundo.DomainLogic.Decks
+namespace CollectaMundo.DomainLogic.Decks.Models.BuildingRules
 {
     public static class CollectionQuantityRules
     {

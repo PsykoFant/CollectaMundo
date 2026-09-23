@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.DomainLogic.Decks.Models
+﻿namespace CollectaMundo.DomainLogic.Decks.Models.Stats
 {
     public sealed record DeckStatsBucket
     {

@@ -139,8 +139,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             phase3cSw.Stop();
             Debug.WriteLine($"[InitializeCardListsAsync] phase 3c (build filters): {phase3cSw.ElapsedMilliseconds} ms");
-
-
         }
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {

@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Decks.Models.BuildingRules;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
-using CollectaMundo.DomainLogic.Decks.Models.Records;
+using CollectaMundo.DomainLogic.Decks.Models.Stats;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 
 namespace CollectaMundo.DomainLogic.Decks

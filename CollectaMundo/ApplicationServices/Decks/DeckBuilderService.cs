@@ -4,26 +4,25 @@ using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Decks.Models;
+using CollectaMundo.DomainLogic.Decks.Models.BuildingRules;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
-using CollectaMundo.DomainLogic.Decks.Models.Records;
+using CollectaMundo.DomainLogic.Decks.Models.Stats;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
-    public sealed class DeckBuilderService(IUnitOfWorkRunner uowRunner, ICardLegalityProviderService cardLegalityProviderService, IDeckBuilderLogic deckBuilderLogic, IDeckBuilderRepo deckBuilderRepo) : IDeckBuilderService
+    public sealed class DeckBuilderService(IUnitOfWorkRunner uowRunner, IDeckCardReader deckCardReader, ICardLegalityProviderService cardLegalityProviderService, IDeckBuilderLogic deckBuilderLogic, IDeckBuilderRepo deckBuilderRepo) : IDeckBuilderService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
+        private readonly IDeckCardReader _deckCardReader = deckCardReader;
         private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
         private readonly IDeckBuilderLogic _deckBuilderLogic = deckBuilderLogic;
         private readonly IDeckBuilderRepo _deckBuilderRepo = deckBuilderRepo;
         public Task<IReadOnlyList<DeckCardEntry>> LoadDeckAsync(int locationId)
         {
-            return _uowRunner.ExecuteReadOnlyAsync(async conn =>
-            {
-                return await _deckBuilderRepo.GetByDeckLocationIdAsync(conn, locationId);
-            });
+            return _deckCardReader.LoadAsync(locationId);
         }
         public async Task<DeckMutationResult> AddCardsAsync(int deckLocationId, IReadOnlyCollection<DeckCardState> currentCards, IReadOnlyCollection<OracleCard> selectedCards, int quantity, DeckSection section)
         {

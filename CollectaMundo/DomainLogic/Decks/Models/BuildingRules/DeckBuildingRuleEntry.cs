@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 
-namespace CollectaMundo.DomainLogic.Decks.Models
+namespace CollectaMundo.DomainLogic.Decks.Models.BuildingRules
 {
     public sealed class DeckBuildingRuleEntry
     {
