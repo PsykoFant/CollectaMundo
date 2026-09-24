@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardLegalities;
 using CollectaMundo.ApplicationServices.Decks.Models;
+using CollectaMundo.ApplicationServices.Decks.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Decks;

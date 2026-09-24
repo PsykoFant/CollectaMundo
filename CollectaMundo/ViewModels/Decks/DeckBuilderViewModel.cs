@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.Models;
+using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Decks.Models.BuildingRules;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
@@ -166,6 +167,7 @@ namespace CollectaMundo.ViewModels.Decks
         public async Task BeginEditAsync(DeckManagementRecord deck, DeckFormatOption? formatOption)
         {
             var entries = await _deckBuilderService.LoadDeckAsync(deck.LocationId);
+            var deckCards = DeckCardStateMapper.CreateStates(entries, CardsVM.Cards);
 
             DeckLocationId = deck.LocationId;
             DeckName = deck.Name;
@@ -176,25 +178,6 @@ namespace CollectaMundo.ViewModels.Decks
             _collectionQuantitySnapshot = _cardCollectionHost.CreateCollectionQuantitySnapshot();
 
             LoadDeckBoxCards();
-
-            var deckCards = new List<DeckCardState>();
-
-            foreach (var entry in entries)
-            {
-                var oracleCard = CardsVM.Cards.FirstOrDefault(card => string.Equals(card.ScryfallOracleId, entry.OracleId, StringComparison.OrdinalIgnoreCase));
-
-                if (oracleCard is null)
-                {
-                    continue;
-                }
-
-                deckCards.Add(new DeckCardState
-                {
-                    Card = oracleCard,
-                    DesiredQuantity = entry.DesiredQuantity,
-                    Section = entry.Section
-                });
-            }
 
             ClearZones();
             AddDeckRows(deckCards);

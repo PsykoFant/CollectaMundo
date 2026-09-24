@@ -79,10 +79,10 @@ namespace CollectaMundo.DomainLogic.Filtering
             var manaCost = GetPropertyValue(card, "ManaCost");
             var colors = GetPropertyValue(card, "Colors");
 
-            var manaCostSymbols = CsvValues.Split(manaCost)
+            var manaCostSymbols = CommaSeparatedValues.Split(manaCost)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var colorSymbols = CsvValues.Split(colors)
+            var colorSymbols = CommaSeparatedValues.Split(colors)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             var isColorless = string.IsNullOrWhiteSpace(colors);
@@ -186,9 +186,9 @@ namespace CollectaMundo.DomainLogic.Filtering
 
             return OperatorSelection switch
             {
-                OperatorType.AND => CsvValues.ContainsAll(cardValue, SelectedOptions),
-                OperatorType.NOT => !CsvValues.ContainsAny(cardValue, SelectedOptions),
-                _ => CsvValues.ContainsAny(cardValue, SelectedOptions)
+                OperatorType.AND => CommaSeparatedValues.ContainsAll(cardValue, SelectedOptions),
+                OperatorType.NOT => !CommaSeparatedValues.ContainsAny(cardValue, SelectedOptions),
+                _ => CommaSeparatedValues.ContainsAny(cardValue, SelectedOptions)
             };
         }
         private bool MatchesNumeric(string cardValue)

@@ -2,7 +2,7 @@
 using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.Infrastructure.Decks;
 
-namespace CollectaMundo.ApplicationServices.Decks
+namespace CollectaMundo.ApplicationServices.Decks.Shared
 {
     public sealed class DeckCardReader(IUnitOfWorkRunner uowRunner, IDeckBuilderRepo deckBuilderRepo) : IDeckCardReader
     {

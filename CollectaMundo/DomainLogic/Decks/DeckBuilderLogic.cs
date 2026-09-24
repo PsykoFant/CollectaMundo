@@ -197,16 +197,16 @@ namespace CollectaMundo.DomainLogic.Decks
         }
         private static bool AllowsAdditionalCommander(OracleCard card)
         {
-            return CsvValues.Contains(card.Keywords, "Partner")
-                || CsvValues.Contains(card.Keywords, "Partner with")
-                || CsvValues.Contains(card.Keywords, "Friends forever")
-                || CsvValues.Contains(card.Keywords, "Doctor's Companion")
-                || CsvValues.Contains(card.Keywords, "Choose a Background")
-                || CsvValues.Contains(card.SubTypes, "Background");
+            return CommaSeparatedValues.Contains(card.Keywords, "Partner")
+                || CommaSeparatedValues.Contains(card.Keywords, "Partner with")
+                || CommaSeparatedValues.Contains(card.Keywords, "Friends forever")
+                || CommaSeparatedValues.Contains(card.Keywords, "Doctor's Companion")
+                || CommaSeparatedValues.Contains(card.Keywords, "Choose a Background")
+                || CommaSeparatedValues.Contains(card.SubTypes, "Background");
         }
         private static bool IsLegendaryCreature(OracleCard card)
         {
-            return CsvValues.Contains(card.SuperTypes, "Legendary") && CsvValues.Contains(card.Types, "Creature");
+            return CommaSeparatedValues.Contains(card.SuperTypes, "Legendary") && CommaSeparatedValues.Contains(card.Types, "Creature");
         }
         private static bool RulesTextAllowsCommander(OracleCard card)
         {
@@ -216,7 +216,7 @@ namespace CollectaMundo.DomainLogic.Decks
         }
         private static bool IsBackground(OracleCard card)
         {
-            return CsvValues.Contains(card.SubTypes, "Background");
+            return CommaSeparatedValues.Contains(card.SubTypes, "Background");
         }
 
         // Companion rules
@@ -441,7 +441,7 @@ namespace CollectaMundo.DomainLogic.Decks
         // Shared helpers
         private static bool HasKeyword(OracleCard card, string keyword)
         {
-            return CsvValues.Contains(card.Keywords, keyword);
+            return CommaSeparatedValues.Contains(card.Keywords, keyword);
         }
 
     }

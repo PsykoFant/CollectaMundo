@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Decks.Models;
 
-namespace CollectaMundo.ApplicationServices.Decks
+namespace CollectaMundo.ApplicationServices.Decks.Shared
 {
     public interface IDeckCardReader
     {
