@@ -49,6 +49,12 @@ namespace CollectaMundo.ViewModels.Decks
         [ObservableProperty]
         private int refreshColumnsTrigger;
 
+        [ObservableProperty]
+        private bool canExportCsv;
+
+        [ObservableProperty]
+        private bool canGenerateCardmarketWantList;
+
         // View data
         public ObservableCollection<DeckManagementRowViewModel> Decks { get; } = [];
         public ObservableCollection<DeckFormatOption> DeckFormats => _deckManagementStore.DeckFormats;

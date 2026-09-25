@@ -12,6 +12,14 @@ namespace CollectaMundo.ApplicationServices.Decks.DeckExport
         private readonly IDeckCardReader _deckCardReader = deckCardReader;
         private readonly IDeckExportLogic _deckExportLogic = deckExportLogic;
         private readonly ICsvFileWriter _csvFileWriter = csvFileWriter;
+        public async Task<DeckExportAvailability> GetAvailabilityAsync(int deckLocationId, IReadOnlyList<OracleCard> oracleCards, ICollectionQuantitySnapshot quantitySnapshot)
+        {
+            var states = await LoadDeckStatesAsync(deckLocationId, oracleCards);
+            var completeDeck = _deckExportLogic.GetCompleteDeck(states);
+            var missingCards = _deckExportLogic.GetMissingCards(states, quantitySnapshot, deckLocationId);
+
+            return new DeckExportAvailability(CanExportCsv: completeDeck.Count > 0, CanGenerateCardmarketWantList: missingCards.Count > 0);
+        }
         public async Task ExportCompleteDeckCsvAsync(int deckLocationId, IReadOnlyList<OracleCard> oracleCards, string filePath, CancellationToken cancellationToken = default)
         {
             var states = await LoadDeckStatesAsync(deckLocationId, oracleCards);
