@@ -1,22 +1,31 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.Decks;
+using CollectaMundo.ApplicationServices.Decks.DeckExport;
 using CollectaMundo.ApplicationServices.Decks.Models;
 using CollectaMundo.ApplicationServices.Shared.Operation;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Decks.Models.RowViewModels;
 using CollectaMundo.ViewModels.Shared;
+using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Decks
 {
-    public partial class DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore) : LocationManagementViewModel<DeckManagementRowViewModel>
+    public partial class DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore, IDeckExportService deckExportService, ICardCollectionHost cardCollectionHost, Func<IReadOnlyList<OracleCard>> oracleCardsProvider) : LocationManagementViewModel<DeckManagementRowViewModel>
     {
         private readonly ICardLocationService _cardLocationService = cardLocationService;
         private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
+        private readonly IDeckExportService _deckExportService = deckExportService;
+        private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
+        private readonly Func<IReadOnlyList<OracleCard>> _oracleCardsProvider = oracleCardsProvider;
+
+        private int _exportAvailabilityRequestVersion;
 
         // External notifications
         public event EventHandler<CollectionChangeSet<CollectionCardDbRow>>? CollectionChanged;
@@ -66,6 +75,8 @@ namespace CollectaMundo.ViewModels.Decks
             SelectedDeckFormat = selectedItem.Format ?? string.Empty;
             Description = selectedItem.Description ?? string.Empty;
             IsEnterDeckBuilderButtonEnabled = true;
+
+            BeginExportAvailabilityRefresh(selectedItem);
         }
         protected override void OnEnterEditMultipleMode(IReadOnlyList<DeckManagementRowViewModel> selectedItems)
         {
@@ -73,12 +84,16 @@ namespace CollectaMundo.ViewModels.Decks
             Description = string.Empty;
             SelectedDeckFormat = null;
             IsEnterDeckBuilderButtonEnabled = false;
+
+            ClearExportAvailability();
         }
         protected override void ClearEditorFields()
         {
             DeckName = string.Empty;
             Description = string.Empty;
             SelectedDeckFormat = string.Empty;
+
+            ClearExportAvailability();
         }
 
         // Data loading
@@ -245,6 +260,57 @@ namespace CollectaMundo.ViewModels.Decks
         private void RefreshColumns()
         {
             RefreshColumnsTrigger++;
+        }
+        private void BeginExportAvailabilityRefresh(DeckManagementRowViewModel selectedDeck)
+        {
+            CanExportCsv = false;
+            CanGenerateCardmarketWantList = false;
+
+            var requestVersion = ++_exportAvailabilityRequestVersion;
+
+            _ = RefreshExportAvailabilityAsync(selectedDeck.LocationId, requestVersion);
+        }
+        private async Task RefreshExportAvailabilityAsync(int deckLocationId, int requestVersion)
+        {
+            try
+            {
+                var quantitySnapshot = _cardCollectionHost.CreateCollectionQuantitySnapshot();
+
+                var availability = await _deckExportService.GetAvailabilityAsync(deckLocationId, _oracleCardsProvider(), quantitySnapshot);
+
+                // Selection may have changed while awaiting the DB read.
+                if (requestVersion != _exportAvailabilityRequestVersion || SelectedItem?.LocationId != deckLocationId)
+                {
+                    return;
+                }
+
+                CanExportCsv = availability.CanExportCsv;
+
+                CanGenerateCardmarketWantList = availability.CanGenerateCardmarketWantList;
+
+                Debug.WriteLine($"Deck export availability refreshed: CanExportCsv={CanExportCsv}, CanGenerateCardmarketWantList={CanGenerateCardmarketWantList}");
+            }
+            catch (Exception ex)
+            {
+                // Ignore failures belonging to an old selection.
+                if (requestVersion != _exportAvailabilityRequestVersion)
+                {
+                    return;
+                }
+
+                CanExportCsv = false;
+                CanGenerateCardmarketWantList = false;
+
+                ShowStatus($"Failed to determine deck export availability: {ex.Message}");
+            }
+        }
+        private void ClearExportAvailability()
+        {
+            // Invalidates an availability calculation that may still be running.
+            _exportAvailabilityRequestVersion++;
+
+            CanExportCsv = false;
+            CanGenerateCardmarketWantList = false;
         }
     }
 }

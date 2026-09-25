@@ -8,6 +8,7 @@ using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
+using CollectaMundo.ApplicationServices.Decks.DeckExport;
 using CollectaMundo.ApplicationServices.Decks.Shared;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
@@ -117,11 +118,12 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityProviderService);
                 var deckBuilderService = new DeckBuilderService(uowRunner, new DeckCardReader(uowRunner, new DeckBuilderRepo()), cardLegalityProviderService, new DeckBuilderLogic(), new DeckBuilderRepo());
+                var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter());
 
                 var importService = new ImportService(uowRunner, new ImportRepo(), fileSystemPicker, new ImportLogic(), cardLocationService);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings));
 
                 operationOverlayController.Hide();
                 return new RootViewModel(mainVM, operationOverlayViewModel);

@@ -5,6 +5,7 @@ using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
+using CollectaMundo.ApplicationServices.Decks.DeckExport;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Import.Models;
@@ -152,6 +153,7 @@ namespace CollectaMundo.ViewModels
             ICardLocationLookupStore cardLocationLookupStore,
             IDeckManagementStore deckManagementStore,
             IDeckBuilderService deckBuilderService,
+            IDeckExportService deckExportService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null)
@@ -193,7 +195,7 @@ namespace CollectaMundo.ViewModels
             CardImageVM = new CardImageViewModel(cardImageService);
 
             // Deck management viewmodels
-            DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore);
+            DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore, deckExportService, cardCollectionHost, () => OracleCardsVM.Cards);
             DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, OracleCardsVM, FilterPanelVM, cardCollectionHost);
 
             // Utility viewmodels
@@ -241,12 +243,13 @@ namespace CollectaMundo.ViewModels
             ICardLocationLookupStore cardLocationLookupStore,
             IDeckManagementStore deckManagementStore,
             IDeckBuilderService deckBuilderService,
+            IDeckExportService deckExportService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
