@@ -6,34 +6,32 @@ namespace CollectaMundo.Infrastructure.Shared.Files
 {
     public sealed class CsvFileWriter : ICsvFileWriter
     {
-        public async Task WriteAsync(string filePath, IReadOnlyList<string> headers, IAsyncEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
+        public async Task WriteAsync(string filePath, IReadOnlyList<string> headers, IEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-            ArgumentNullException.ThrowIfNull(headers);
-            ArgumentNullException.ThrowIfNull(rows);
+            await using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
 
-            var directoryPath = Path.GetDirectoryName(filePath);
+            await WriteLineAsync(writer, headers, delimiter, cancellationToken);
 
-            if (!string.IsNullOrWhiteSpace(directoryPath))
-            {
-                Directory.CreateDirectory(directoryPath);
-            }
-
-            await using var writer = new StreamWriter(filePath, append: false, encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-
-            await WriteRowAsync(writer, headers, delimiter, cancellationToken);
-
-            await foreach (var row in rows.WithCancellation(cancellationToken))
+            foreach (var row in rows)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                await WriteRowAsync(writer, row, delimiter, cancellationToken);
+                await WriteLineAsync(writer, row, delimiter, cancellationToken);
             }
         }
-        private static async Task WriteRowAsync(StreamWriter writer, IEnumerable<string?> values, char delimiter, CancellationToken cancellationToken)
+        public async Task WriteAsync(string filePath, IReadOnlyList<string> headers, IAsyncEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            await using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
 
+            await WriteLineAsync(writer, headers, delimiter, cancellationToken);
+
+            await foreach (var row in rows.WithCancellation(cancellationToken))
+            {
+                await WriteLineAsync(writer, row, delimiter, cancellationToken);
+            }
+        }
+        private static async Task WriteLineAsync(StreamWriter writer, IEnumerable<string?> values, char delimiter, CancellationToken cancellationToken)
+        {
             var line = string.Join(delimiter, values.Select(value => EscapeField(value, delimiter)));
 
             await writer.WriteLineAsync(line.AsMemory(), cancellationToken);
@@ -45,7 +43,7 @@ namespace CollectaMundo.Infrastructure.Shared.Files
                 return string.Empty;
             }
 
-            bool requiresQuotes =
+            var requiresQuotes =
                 value.Contains(delimiter) ||
                 value.Contains('"') ||
                 value.Contains('\r') ||
@@ -56,9 +54,7 @@ namespace CollectaMundo.Infrastructure.Shared.Files
                 return value;
             }
 
-            var escaped = value.Replace("\"", "\"\"");
-
-            return $"\"{escaped}\"";
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
     }
 }
