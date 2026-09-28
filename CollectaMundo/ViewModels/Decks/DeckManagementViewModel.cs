@@ -2,9 +2,11 @@
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.DeckExport;
 using CollectaMundo.ApplicationServices.Decks.Models;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Infrastructure.Shared.Models;
 using CollectaMundo.ViewModels.Decks.Models;
 using CollectaMundo.ViewModels.Decks.Models.RowViewModels;
@@ -17,15 +19,18 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Decks
 {
-    public partial class DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore, IDeckExportService deckExportService, ICardCollectionHost cardCollectionHost, Func<IReadOnlyList<OracleCard>> oracleCardsProvider) : LocationManagementViewModel<DeckManagementRowViewModel>
+    public partial class DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore, IDeckExportService deckExportService, ICardCollectionHost cardCollectionHost, Func<IReadOnlyList<OracleCard>> oracleCardsProvider, IFileSystemPicker fileSystemPicker, IClipboardWriter clipboardWriter) : LocationManagementViewModel<DeckManagementRowViewModel>
     {
         private readonly ICardLocationService _cardLocationService = cardLocationService;
         private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
         private readonly IDeckExportService _deckExportService = deckExportService;
         private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
         private readonly Func<IReadOnlyList<OracleCard>> _oracleCardsProvider = oracleCardsProvider;
+        private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
+        private readonly IClipboardWriter _clipboardWriter = clipboardWriter;
 
-        private int _exportAvailabilityRequestVersion;
+        private int _exportAvailabilityRequestVersion; // Invalidates stale async availability results when deck selection changes.
+        private bool CanCopyCardmarketWantList => !string.IsNullOrWhiteSpace(CardmarketWantListText);
 
         // External notifications
         public event EventHandler<CollectionChangeSet<CollectionCardDbRow>>? CollectionChanged;
@@ -58,11 +63,19 @@ namespace CollectaMundo.ViewModels.Decks
         [ObservableProperty]
         private int refreshColumnsTrigger;
 
+        // Cached async export availability. Changes automatically refresh command CanExecute state.
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(ExportDeckCsvCommand))]
         private bool canExportCsv;
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(GenerateCardmarketWantListCommand))]
         private bool canGenerateCardmarketWantList;
+
+        // Holds the generated wants list for display/copy; non-empty text enables the Copy command.
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(CopyCardmarketWantListCommand))]
+        private string cardmarketWantListText = string.Empty;
 
         // View data
         public ObservableCollection<DeckManagementRowViewModel> Decks { get; } = [];
@@ -76,7 +89,51 @@ namespace CollectaMundo.ViewModels.Decks
             Description = selectedItem.Description ?? string.Empty;
             IsEnterDeckBuilderButtonEnabled = true;
 
+            // Disable export commands immediately, then recompute availability for the newly selected deck.
             BeginExportAvailabilityRefresh(selectedItem);
+        }
+        private void BeginExportAvailabilityRefresh(DeckManagementRowViewModel selectedDeck)
+        {
+            CanExportCsv = false;
+            CanGenerateCardmarketWantList = false;
+
+            var requestVersion = ++_exportAvailabilityRequestVersion;
+
+            _ = RefreshExportAvailabilityAsync(selectedDeck.LocationId, requestVersion);
+        }
+        private async Task RefreshExportAvailabilityAsync(int deckLocationId, int requestVersion)
+        {
+            try
+            {
+                var quantitySnapshot = _cardCollectionHost.CreateCollectionQuantitySnapshot();
+
+                var availability = await _deckExportService.GetAvailabilityAsync(deckLocationId, _oracleCardsProvider(), quantitySnapshot);
+
+                // Selection may have changed while awaiting the DB read.
+                if (requestVersion != _exportAvailabilityRequestVersion || SelectedItem?.LocationId != deckLocationId)
+                {
+                    return;
+                }
+
+                CanExportCsv = availability.CanExportCsv;
+
+                CanGenerateCardmarketWantList = availability.CanGenerateCardmarketWantList;
+
+                Debug.WriteLine($"Deck export availability refreshed: CanExportCsv={CanExportCsv}, CanGenerateCardmarketWantList={CanGenerateCardmarketWantList}");
+            }
+            catch (Exception ex)
+            {
+                // Ignore failures belonging to an old selection.
+                if (requestVersion != _exportAvailabilityRequestVersion)
+                {
+                    return;
+                }
+
+                CanExportCsv = false;
+                CanGenerateCardmarketWantList = false;
+
+                ShowStatus($"Failed to determine deck export availability: {ex.Message}");
+            }
         }
         protected override void OnEnterEditMultipleMode(IReadOnlyList<DeckManagementRowViewModel> selectedItems)
         {
@@ -217,6 +274,66 @@ namespace CollectaMundo.ViewModels.Decks
             ResetEditorAndSelection();
         }
 
+        [RelayCommand(CanExecute = nameof(CanGenerateCardmarketWantList))]
+        private async Task GenerateCardmarketWantListAsync()
+        {
+            if (SelectedItem is null)
+            {
+                return;
+            }
+
+            var selectedDeck = SelectedItem;
+
+            await RunBusyOperationAsync(async () =>
+            {
+                var quantitySnapshot = _cardCollectionHost.CreateCollectionQuantitySnapshot();
+
+                CardmarketWantListText = await _deckExportService.GenerateCardmarketWantListAsync(selectedDeck.LocationId, _oracleCardsProvider(), quantitySnapshot);
+
+                if (string.IsNullOrWhiteSpace(CardmarketWantListText))
+                {
+                    CanGenerateCardmarketWantList = false;
+                    ShowStatus("There are no missing cards for this deck.");
+                    return;
+                }
+
+                ShowStatus("Cardmarket wants list generated.");
+            },
+                "Failed to generate Cardmarket wants list");
+        }
+
+        [RelayCommand(CanExecute = nameof(CanCopyCardmarketWantList))]
+        private void CopyCardmarketWantList()
+        {
+            _clipboardWriter.SetText(CardmarketWantListText);
+
+            ShowStatus("Cardmarket wants list copied to clipboard.");
+        }
+
+        [RelayCommand(CanExecute = nameof(CanExportCsv))]
+        private async Task ExportDeckCsvAsync()
+        {
+            if (SelectedItem is null)
+            {
+                return;
+            }
+
+            var selectedDeck = SelectedItem;
+            var filePath = _fileSystemPicker.PickSaveFile("Export deck as CSV", $"{selectedDeck.Name}.csv", "CSV Files (*.csv)|*.csv", ".csv");
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return;
+            }
+
+            await RunBusyOperationAsync(
+                async () =>
+                {
+                    await _deckExportService.ExportCompleteDeckCsvAsync(selectedDeck.LocationId, _oracleCardsProvider(), filePath);
+                    ShowStatus($"Deck exported to {filePath}");
+                }, "Failed to export deck");
+        }
+
         // Helper methods
         private DeckManagementInput CreateInput()
         {
@@ -261,49 +378,6 @@ namespace CollectaMundo.ViewModels.Decks
         {
             RefreshColumnsTrigger++;
         }
-        private void BeginExportAvailabilityRefresh(DeckManagementRowViewModel selectedDeck)
-        {
-            CanExportCsv = false;
-            CanGenerateCardmarketWantList = false;
-
-            var requestVersion = ++_exportAvailabilityRequestVersion;
-
-            _ = RefreshExportAvailabilityAsync(selectedDeck.LocationId, requestVersion);
-        }
-        private async Task RefreshExportAvailabilityAsync(int deckLocationId, int requestVersion)
-        {
-            try
-            {
-                var quantitySnapshot = _cardCollectionHost.CreateCollectionQuantitySnapshot();
-
-                var availability = await _deckExportService.GetAvailabilityAsync(deckLocationId, _oracleCardsProvider(), quantitySnapshot);
-
-                // Selection may have changed while awaiting the DB read.
-                if (requestVersion != _exportAvailabilityRequestVersion || SelectedItem?.LocationId != deckLocationId)
-                {
-                    return;
-                }
-
-                CanExportCsv = availability.CanExportCsv;
-
-                CanGenerateCardmarketWantList = availability.CanGenerateCardmarketWantList;
-
-                Debug.WriteLine($"Deck export availability refreshed: CanExportCsv={CanExportCsv}, CanGenerateCardmarketWantList={CanGenerateCardmarketWantList}");
-            }
-            catch (Exception ex)
-            {
-                // Ignore failures belonging to an old selection.
-                if (requestVersion != _exportAvailabilityRequestVersion)
-                {
-                    return;
-                }
-
-                CanExportCsv = false;
-                CanGenerateCardmarketWantList = false;
-
-                ShowStatus($"Failed to determine deck export availability: {ex.Message}");
-            }
-        }
         private void ClearExportAvailability()
         {
             // Invalidates an availability calculation that may still be running.
@@ -311,6 +385,8 @@ namespace CollectaMundo.ViewModels.Decks
 
             CanExportCsv = false;
             CanGenerateCardmarketWantList = false;
+
+            CardmarketWantListText = string.Empty;
         }
     }
 }

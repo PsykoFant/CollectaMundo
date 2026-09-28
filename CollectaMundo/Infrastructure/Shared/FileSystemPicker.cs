@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using Ookii.Dialogs.Wpf;
+using System.IO;
 using System.Windows;
 
 namespace CollectaMundo.Infrastructure.Shared
@@ -36,14 +37,22 @@ namespace CollectaMundo.Infrastructure.Shared
             var dialog = new SaveFileDialog
             {
                 Title = title,
-                FileName = defaultFileName,
+                FileName = MakeValidFileName(defaultFileName),
                 Filter = filter,
                 DefaultExt = defaultExtension,
                 AddExtension = true,
                 OverwritePrompt = true
             };
+
             var result = dialog.ShowDialog(Application.Current?.MainWindow);
             return result == true ? dialog.FileName : null;
+        }
+        private static string MakeValidFileName(string fileName)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var sanitized = new string([.. fileName.Select(c => invalidChars.Contains(c) ? '-' : c)]);
+
+            return sanitized.Trim();
         }
     }
 }

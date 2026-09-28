@@ -305,6 +305,7 @@ namespace CollectaMundo.ViewModels.Shared
         {
             SelectedItem = null;
             SelectedItems.Clear();
+            StatusMessage = string.Empty;
 
             ClearEditorFields();
 

@@ -195,7 +195,7 @@ namespace CollectaMundo.ViewModels
             CardImageVM = new CardImageViewModel(cardImageService);
 
             // Deck management viewmodels
-            DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore, deckExportService, cardCollectionHost, () => OracleCardsVM.Cards);
+            DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore, deckExportService, cardCollectionHost, () => OracleCardsVM.Cards, _filesystemPicker, new ClipboardWriter());
             DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, OracleCardsVM, FilterPanelVM, cardCollectionHost);
 
             // Utility viewmodels

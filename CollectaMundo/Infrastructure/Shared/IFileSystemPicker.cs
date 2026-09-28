@@ -6,5 +6,4 @@
         string? PickFolder(string title, string? initialPath = null);
         string? PickSaveFile(string title, string defaultFileName, string filter, string defaultExtension);
     }
-
 }
