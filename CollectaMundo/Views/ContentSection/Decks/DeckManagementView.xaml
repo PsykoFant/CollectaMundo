@@ -25,6 +25,7 @@
             <RowDefinition Height="Auto"/>  <!-- Form for adding/editing deck -->
             <RowDefinition Height="30"/>    <!-- Status message -->
             <RowDefinition Height="50"/>    <!-- Selected deck actions -->
+            <RowDefinition Height="Auto"/>  <!-- Copy list  -->
             <RowDefinition Height="*"/>     <!-- Data grid  -->
         </Grid.RowDefinitions>
 
@@ -115,17 +116,56 @@
             <Button Grid.Column="1" Content="Export deck as CSV"
                     Margin="4,0"
                     Style="{StaticResource TopMenuButtonStyle}"
-                    Command="{Binding ExportDeckCsvCommand}" />
+                    Command="{Binding ExportDeckCsvCommand}" 
+                    ToolTip="Exports the complete deck list as a CSV file, including Mainboard, Sideboard, Commander, and Companion. Maybeboard cards are excluded."/>
 
-            <Button Grid.Column="2" Content="Cardmarket want list"
+            <Button Grid.Column="2" Content="Generate want list"
                     Margin="4,0,0,0"
                     Style="{StaticResource TopMenuButtonStyle}"
-                    Command="{Binding GenerateCardmarketWantListCommand}" />
+                    Command="{Binding GenerateCardmarketWantListCommand}" 
+                    ToolTip="Generates a wants list containing only missing copies for this deck, based on cards currently available to this deck. Maybeboard cards are excluded."/>
         </Grid>
 
-        <!-- Data grid for displaying decks -->
-        
-        <DataGrid Grid.Row="5"
+        <!-- Copy list  -->
+        <Border Grid.Row="5" Margin="0,5,0,5" Padding="8">
+
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding CardmarketWantListText}" Value="">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Content="Cardmarket wants list" Style="{StaticResource SmallHeaderLabelStyle}"  Margin="0,0,0,5"/>
+
+                <TextBox Grid.Row="1" Text="{Binding CardmarketWantListText}"
+                         IsReadOnly="True"
+                         AcceptsReturn="True"
+                         TextWrapping="NoWrap"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         MinHeight="80"
+                         MaxHeight="180" 
+                         MinWidth="200"
+                         HorizontalAlignment="Center"/>
+
+                <Button Grid.Row="2" Content="   Copy to clipboard   " Command="{Binding CopyCardmarketWantListCommand}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Data grid for displaying decks -->        
+        <DataGrid Grid.Row="6"
                   ItemsSource="{Binding Decks}"
                   SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                   behaviors:DataGridSelectedItemsBehavior.SyncedSelectedItems="{Binding SelectedItems}"

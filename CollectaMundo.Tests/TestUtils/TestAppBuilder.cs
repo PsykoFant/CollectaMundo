@@ -6,6 +6,7 @@ using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
+using CollectaMundo.ApplicationServices.Decks.DeckExport;
 using CollectaMundo.ApplicationServices.Decks.Shared;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
@@ -104,6 +105,7 @@ public static class TestAppBuilder
         var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
         var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityProviderService);
         var deckBuilderService = new DeckBuilderService(uowRunner, new DeckCardReader(uowRunner, new DeckBuilderRepo()), cardLegalityProviderService, new DeckBuilderLogic(), new DeckBuilderRepo());
+        var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter());
 
         var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
 
@@ -133,6 +135,7 @@ public static class TestAppBuilder
             cardLocationLookupStore,
             deckManagementStore,
             deckBuilderService,
+            deckExportService,
             settings,
             scheduler);
 

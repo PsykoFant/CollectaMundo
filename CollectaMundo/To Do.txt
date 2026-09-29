@@ -2,7 +2,6 @@ TO DO
 
 Deck editor!
 
- - Tilføj ekport decklist/want list
  - Skriv test
 
 Db optimering
