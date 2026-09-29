@@ -1424,7 +1424,6 @@ namespace CollectaMundo.Tests.ScenarioTests
             #endregion
         }
     }
-
     public sealed class LocationAndDeckManagementScenarioTests(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         private readonly InMemoryDatabaseFixture _fx = fx;
