@@ -116,30 +116,20 @@
             <Button Grid.Column="1" Content="Export deck as CSV"
                     Margin="4,0"
                     Style="{StaticResource TopMenuButtonStyle}"
+                    IsEnabled="{Binding CanExportCsv}"
                     Command="{Binding ExportDeckCsvCommand}" 
                     ToolTip="Exports the complete deck list as a CSV file, including Mainboard, Sideboard, Commander, and Companion. Maybeboard cards are excluded."/>
 
             <Button Grid.Column="2" Content="Generate want list"
                     Margin="4,0,0,0"
                     Style="{StaticResource TopMenuButtonStyle}"
-                    Command="{Binding GenerateCardmarketWantListCommand}" 
+                    IsEnabled="{Binding CanGenerateWantList}"
+                    Command="{Binding GenerateWantListCommand}" 
                     ToolTip="Generates a wants list containing only missing copies for this deck, based on cards currently available to this deck. Maybeboard cards are excluded."/>
         </Grid>
 
         <!-- Copy list  -->
-        <Border Grid.Row="5" Margin="0,5,0,5" Padding="8">
-
-            <Border.Style>
-                <Style TargetType="Border">
-                    <Setter Property="Visibility" Value="Visible"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding CardmarketWantListText}" Value="">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
-
+        <Border Grid.Row="5" Margin="0,5,0,5" Padding="8" Visibility="{Binding HasWantList, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -147,9 +137,9 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Label Grid.Row="0" Content="Cardmarket wants list" Style="{StaticResource SmallHeaderLabelStyle}"  Margin="0,0,0,5"/>
+                <Label Grid.Row="0" Content="Wants list" Style="{StaticResource SmallHeaderLabelStyle}"  Margin="0,0,0,5"/>
 
-                <TextBox Grid.Row="1" Text="{Binding CardmarketWantListText}"
+                <TextBox Grid.Row="1" Text="{Binding WantListText}"
                          IsReadOnly="True"
                          AcceptsReturn="True"
                          TextWrapping="NoWrap"
@@ -160,7 +150,7 @@
                          MinWidth="200"
                          HorizontalAlignment="Center"/>
 
-                <Button Grid.Row="2" Content="   Copy to clipboard   " Command="{Binding CopyCardmarketWantListCommand}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                <Button Grid.Row="2" Content="   Copy to clipboard   " Command="{Binding CopyWantListCommand}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
             </Grid>
         </Border>
 

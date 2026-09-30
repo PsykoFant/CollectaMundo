@@ -148,37 +148,13 @@ namespace CollectaMundo.Tests.TestUtils
 
     public static class StatusTestDriver
     {
-        public static async Task WaitUntilPrimaryButtonTextAsync(OperationOverlayViewModel overlayVm, string expectedText, TimeSpan? timeout = null)
+        public static Task WaitUntilPrimaryButtonTextAsync(OperationOverlayViewModel overlayVm, string expectedText, TimeSpan? timeout = null)
         {
-            timeout ??= TimeSpan.FromSeconds(5);
-            var sw = Stopwatch.StartNew();
-
-            while (overlayVm.PrimaryButtonText != expectedText)
-            {
-                if (sw.Elapsed > timeout)
-                {
-                    throw new TimeoutException(
-                        $"Timed out waiting for PrimaryButtonText == \"{expectedText}\"");
-                }
-
-                await Task.Delay(10);
-            }
+            return WaitUntilAsync(() => overlayVm.PrimaryButtonText == expectedText, $"Timed out waiting for PrimaryButtonText == \"{expectedText}\"", timeout);
         }
-        public static async Task WaitUntilSecondaryButtonTextAsync(OperationOverlayViewModel overlayVm, string expectedText, TimeSpan? timeout = null)
+        public static Task WaitUntilSecondaryButtonTextAsync(OperationOverlayViewModel overlayVm, string expectedText, TimeSpan? timeout = null)
         {
-            timeout ??= TimeSpan.FromSeconds(5);
-            var sw = Stopwatch.StartNew();
-
-            while (overlayVm.SecondaryButtonText != expectedText)
-            {
-                if (sw.Elapsed > timeout)
-                {
-                    throw new TimeoutException(
-                        $"Timed out waiting for SecondaryButtonText == \"{expectedText}\"");
-                }
-
-                await Task.Delay(10);
-            }
+            return WaitUntilAsync(() => overlayVm.SecondaryButtonText == expectedText, $"Timed out waiting for SecondaryButtonText == \"{expectedText}\"", timeout);
         }
         public static void ClickPrimaryButton(OperationOverlayViewModel overlayVm)
         {
@@ -197,6 +173,21 @@ namespace CollectaMundo.Tests.TestUtils
             }
 
             overlayVm.SecondaryActionCommand.Execute(null);
+        }
+        public static async Task WaitUntilAsync(Func<bool> condition, string timeoutMessage, TimeSpan? timeout = null)
+        {
+            timeout ??= TimeSpan.FromSeconds(5);
+            var sw = Stopwatch.StartNew();
+
+            while (!condition())
+            {
+                if (sw.Elapsed > timeout)
+                {
+                    throw new TimeoutException(timeoutMessage);
+                }
+
+                await Task.Delay(10);
+            }
         }
     }
 }

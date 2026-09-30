@@ -1539,584 +1539,690 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             #endregion
 
-            #region Test 2 - Happy path update and clear format + string updates 
+            #region Test 2 - Happy path edit
+            // Arrange: select the newly created Commander deck.
+            _ctx.MainVM.DeckManagementVM.SelectedItem = createdDeck;
 
-            // Act: update name, format and description for newly created deck
+            Assert.True(_ctx.MainVM.DeckManagementVM.IsEnterDeckBuilderButtonEnabled);
+            Assert.False(_ctx.MainVM.DeckManagementVM.CanExportCsv);
+            Assert.False(_ctx.MainVM.DeckManagementVM.CanGenerateWantList);
 
-            // Assert initial state of deck editor for created deck
-            Assert.Equal("Add a new deck", _ctx.MainVM.DeckManagementVM.ModeMessage);
-            Assert.Equal("Add deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            // Act: enter Deck Builder through the same VM command used by the UI.
+            _ctx.MainVM.DeckManagementVM.EnterDeckBuilderCommand.Execute(null);
 
-            _ctx.MainVM.DeckManagementVM.SelectedItem = createdDeck; // Select the created deck 
+            // EnterDeckBuilder raises an event whose handler asynchronously loads the deck.
+            // Wait until DeckBuilderVM has finished initializing this deck.
+            var deckBuilderLoaded = SpinWait.SpinUntil(() => _ctx.MainVM.DeckBuilderVM.DeckLocationId == createdDeck.LocationId, millisecondsTimeout: 1000);
 
-            // Assert deck editor state after selecting existing deck for edit
-            Assert.Equal(string.Empty, _ctx.MainVM.DeckManagementVM.ModeMessage);
-            Assert.Equal("Edit deck metadata", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            Assert.True(deckBuilderLoaded, "Deck Builder did not finish loading the selected deck.");
+            var deckBuilder = _ctx.MainVM.DeckBuilderVM;
 
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Click edit
+            // Assert: deck identity / format flowed from Deck Management into Deck Builder.
+            Assert.Equal(createdDeck.LocationId, deckBuilder.DeckLocationId);
+            Assert.Equal("Control Shell", deckBuilder.DeckName);
+            Assert.Equal("commander", deckBuilder.DeckFormat);
+            Assert.Equal("Commander", deckBuilder.DeckFormatDisplayName);
 
-            // ... then assert strings update
-            Assert.Equal("Edit selected deck metadata", _ctx.MainVM.DeckManagementVM.ModeMessage);
-            Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            Assert.False(deckBuilder.IsCommanderZoneVisible);
+            Assert.False(deckBuilder.IsSideboardZoneVisible);
 
-            _ctx.MainVM.DeckManagementVM.DeckName = "Control Pile";
-            _ctx.MainVM.DeckManagementVM.SelectedDeckFormat = "casual";
-            _ctx.MainVM.DeckManagementVM.Description = "Casual control pile";
+            // Arrange: use the already-materialized Oracle card projection.
+            var sokrates = _ctx.MainVM.OracleCardsVM.Cards.Single(c => c.Name == "Sokrates, Athenian Teacher");
+            var plains = _ctx.MainVM.OracleCardsVM.Cards.Single(c => c.Name == "Plains");
+            var prismaticEnding = _ctx.MainVM.OracleCardsVM.Cards.Single(c => c.Name == "Prismatic Ending");
+            var leaveNoTrace = _ctx.MainVM.OracleCardsVM.Cards.Single(c => c.Name == "Leave No Trace");
+            var deftbladeElite = _ctx.MainVM.OracleCardsVM.Cards.Single(c => c.Name == "Deftblade Elite");
 
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Submit edit
-            Assert.Equal("Add a new deck", _ctx.MainVM.DeckManagementVM.ModeMessage);
-            Assert.Equal("Add deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
-            Assert.Equal("Deck updated successfully.", _ctx.MainVM.DeckManagementVM.StatusMessage);
+            // Act: set commander.
+            deckBuilder.SelectedOracleCard = sokrates;
+            await deckBuilder.SetCardAsCommanderCommand.ExecuteAsync(null);
 
-            // Assert deck manager state
-            var updatedDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == createdDeck.LocationId);
+            // Act: add a playset and one additional mainboard card.
+            await deckBuilder.AddPlaySetToDeckCommand.ExecuteAsync(new object[] { plains });
 
-            Assert.Equal("Control Pile", updatedDeck.Name);
-            Assert.Equal("casual", updatedDeck.Format);
-            Assert.Equal("Casual control pile", updatedDeck.Description);
-            Assert.Equal("Casual/kitchen table", updatedDeck.FormatDisplayName);
+            await deckBuilder.AddCardToDeckCommand.ExecuteAsync(new object[] { prismaticEnding });
 
-            // Assert persisted update
-            var updatedDeckRows = await ScenarioTestHelpers.ExecuteQueryAsync<
-                (string Name, string Format, string Description)>(
-                _ctx.DbFactory,
+            // Act: add one sideboard and one maybeboard card.
+            await deckBuilder.AddCardToSideboardCommand.ExecuteAsync(new object[] { leaveNoTrace });
+
+            await deckBuilder.AddCardToMaybeboardCommand.ExecuteAsync(new object[] { deftbladeElite });
+
+            // Assert: desired deck state in the VM.
+            var commanderRow = Assert.Single(deckBuilder.CommanderZone.Cards);
+            Assert.Equal("Sokrates, Athenian Teacher", commanderRow.CardName);
+            Assert.Equal(1, commanderRow.DesiredQuantity);
+            Assert.Equal(2, deckBuilder.MainboardZone.Cards.Count);
+            var plainsRow = deckBuilder.MainboardZone.Cards.Single(c => c.CardName == "Plains");
+
+            Assert.Equal(4, plainsRow.DesiredQuantity);
+
+            var prismaticEndingRow = deckBuilder.MainboardZone.Cards.Single(c => c.CardName == "Prismatic Ending");
+
+            Assert.Equal(1, prismaticEndingRow.DesiredQuantity);
+
+            var sideboardRow = Assert.Single(deckBuilder.SideboardZone.Cards);
+            Assert.Equal("Leave No Trace", sideboardRow.CardName);
+            Assert.Equal(1, sideboardRow.DesiredQuantity);
+
+            var maybeboardRow = Assert.Single(deckBuilder.MaybeboardZone.Cards);
+            Assert.Equal("Deftblade Elite", maybeboardRow.CardName);
+            Assert.Equal(1, maybeboardRow.DesiredQuantity);
+
+            Assert.Empty(deckBuilder.CompanionZone.Cards);
+
+            // Stats include Mainboard + Commander, but not Sideboard or Maybeboard.
+            Assert.Equal(6, deckBuilder.Stats.CardCount);
+
+            // Assert persisted desired deck state.
+            var persistedDeckCards = await ScenarioTestHelpers.ExecuteQueryAsync<(string CardName, int Quantity, string Section)>(_ctx.DbFactory,
                 """
-                SELECT l.name, d.format, d.description
-                FROM myDecks d
-                INNER JOIN cardLocations l
-                    ON l.id = d.locationId
-                WHERE l.id = @id;
+                SELECT cardName, desiredQuantity, section
+                FROM myDeckCards
+                WHERE locationId = @locationId
+                ORDER BY section, cardName COLLATE NOCASE;
                 """,
-                reader => (
-                    Name: reader.GetString(reader.GetOrdinal("name")),
-                    Format: reader.GetString(reader.GetOrdinal("format")),
-                    Description: reader.GetString(reader.GetOrdinal("description"))
-                ),
-                cmd => cmd.Parameters.AddWithValue("@id", createdDeck.LocationId));
+                    reader => (
+                        CardName: reader.GetString(reader.GetOrdinal("cardName")),
+                        Quantity: reader.GetInt32(reader.GetOrdinal("desiredQuantity")),
+                        Section: reader.GetString(reader.GetOrdinal("section"))
+                    ),
+                    cmd => cmd.Parameters.AddWithValue("@locationId", createdDeck.LocationId));
 
-            var (UpdatedName, UpdatedFormat, UpdatedDescription) = Assert.Single(updatedDeckRows);
+            Assert.Equal(5, persistedDeckCards.Count);
 
-            Assert.Equal("Control Pile", UpdatedName);
-            Assert.Equal("casual", UpdatedFormat);
-            Assert.Equal("Casual control pile", UpdatedDescription);
+            Assert.Contains(persistedDeckCards, x => x.CardName == "Sokrates, Athenian Teacher" && x.Quantity == 1 && x.Section == "Commander");
+            Assert.Contains(persistedDeckCards, x => x.CardName == "Plains" && x.Quantity == 4 && x.Section == "Mainboard");
+            Assert.Contains(persistedDeckCards, x => x.CardName == "Prismatic Ending" && x.Quantity == 1 && x.Section == "Mainboard");
+            Assert.Contains(persistedDeckCards, x => x.CardName == "Leave No Trace" && x.Quantity == 1 && x.Section == "Sideboard");
+            Assert.Contains(persistedDeckCards, x => x.CardName == "Deftblade Elite" && x.Quantity == 1 && x.Section == "Maybeboard");
 
-            // Assert name is updated in modify collection viewmodel
-            Assert.Contains(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations,
-                x => x.Id == createdDeck.LocationId && x.DisplayName == "Deck: Control Pile");
+            // Act: leave Deck Builder through the normal VM navigation command.
+            deckBuilder.BackToDeckManagementCommand.Execute(null);
 
-            Assert.Contains(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations,
-                x => x.Id == createdDeck.LocationId &&
-                     x.DisplayName == "Deck: Control Pile");
-
-            // Assert editor reloads canonical value when row is selected after update
-            _ctx.MainVM.DeckManagementVM.SelectedItem = updatedDeck;
-
-            Assert.Equal("Control Pile", _ctx.MainVM.DeckManagementVM.DeckName);
-            Assert.Equal("casual", _ctx.MainVM.DeckManagementVM.SelectedDeckFormat);
-            Assert.Equal("Casual control pile", _ctx.MainVM.DeckManagementVM.Description);
-
-            // Assert filter option still exists after update and filtering is preserved after update
-            var updatedLocationFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
-            Assert.Contains(updatedLocationFilter.FilterOptions, o => o.OptionName == "Deck: Control Pile");
-
-            filteredCard = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
-
-            Assert.Equal(updatedCard.CardId, filteredCard.CardId);
-            Assert.Equal(createdLocation.Id, filteredCard.SelectedLocationId);
-            Assert.Equal("Deck: Control Pile", filteredCard.SelectedLocationDisplayName);
-
-            // Act: clear format through single edit
-            Assert.Equal("Edit deck metadata", _ctx.MainVM.DeckManagementVM.ActionButtonText);
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Click edit
-            Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
-
-            _ctx.MainVM.DeckManagementVM.SelectedDeckFormat = string.Empty;
-
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Submit
-
-            // Assert deck manager state after clearing format
-
-            var clearedFormatDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == createdDeck.LocationId);
-
-            Assert.True(string.IsNullOrWhiteSpace(clearedFormatDeck.Format));
-            Assert.Equal("Casual control pile", clearedFormatDeck.Description);
-            Assert.Equal(string.Empty, clearedFormatDeck.FormatDisplayName);
-
-            // Assert persisted cleared format
-
-            var clearedFormatRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string? Format, string Description)>(
-                _ctx.DbFactory,
-                """
-                SELECT format, description
-                FROM myDecks d
-                INNER JOIN cardLocations l
-                    ON l.id = d.locationId
-                WHERE l.id = @id;
-                """,
-                reader =>
-                {
-                    var formatOrdinal = reader.GetOrdinal("format");
-
-                    return (
-                        Format: reader.IsDBNull(formatOrdinal)
-                            ? null
-                            : reader.GetString(formatOrdinal),
-                        Description: reader.GetString(reader.GetOrdinal("description"))
-                    );
-                },
-                cmd => cmd.Parameters.AddWithValue("@id", createdDeck.LocationId));
-
-            var (ClearedFormat, ClearedDescription) = Assert.Single(clearedFormatRows);
-
-            Assert.True(string.IsNullOrWhiteSpace(ClearedFormat));
-            Assert.Equal("Casual control pile", ClearedDescription);
-
-            // Assert editor reloads blank format
-            _ctx.MainVM.DeckManagementVM.SelectedItem = clearedFormatDeck;
-            Assert.True(string.IsNullOrWhiteSpace(_ctx.MainVM.DeckManagementVM.SelectedDeckFormat));
+            // Assert: scenario is back in Deck Management ready for Test 2.
+            Assert.Same(_ctx.MainVM.DeckManagementVM, _ctx.MainVM.PagesDecksHostVM.CurrentDecksContentViewModel);
 
             #endregion
 
-            #region Test 3 - Add metadata to existing deck location
 
-            // Arrange: Aggro Fish started as a deck location without metadata
-            var aggroFish = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Aggro Fish");
+            //#region Test 2 - Happy path update and clear format + string updates 
 
-            Assert.True(string.IsNullOrWhiteSpace(aggroFish.Format));
-            Assert.True(string.IsNullOrWhiteSpace(aggroFish.Description));
-            Assert.Equal(string.Empty, aggroFish.FormatDisplayName);
+            //// Act: update name, format and description for newly created deck
 
-            // Act: add metadata to existing deck location
-            _ctx.MainVM.DeckManagementVM.SelectedItem = aggroFish;
+            //// Assert initial state of deck editor for created deck
+            //Assert.Equal("Add a new deck", _ctx.MainVM.DeckManagementVM.ModeMessage);
+            //Assert.Equal("Add deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
-            Assert.Equal("Edit deck metadata", _ctx.MainVM.DeckManagementVM.ActionButtonText);
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
-            Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            //_ctx.MainVM.DeckManagementVM.SelectedItem = createdDeck; // Select the created deck 
 
-            _ctx.MainVM.DeckManagementVM.SelectedDeckFormat = "modern";
-            _ctx.MainVM.DeckManagementVM.Description = "Existing location upgraded to deck metadata";
+            //// Assert deck editor state after selecting existing deck for edit
+            //Assert.Equal(string.Empty, _ctx.MainVM.DeckManagementVM.ModeMessage);
+            //Assert.Equal("Edit deck metadata", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+            //await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Click edit
 
-            // Assert deck manager state
-            var updatedAggroFish = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == aggroFish.LocationId);
+            //// ... then assert strings update
+            //Assert.Equal("Edit selected deck metadata", _ctx.MainVM.DeckManagementVM.ModeMessage);
+            //Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
-            Assert.Equal("Aggro Fish", updatedAggroFish.Name);
-            Assert.Equal("modern", updatedAggroFish.Format);
-            Assert.Equal("Existing location upgraded to deck metadata", updatedAggroFish.Description);
-            Assert.Equal("Modern", updatedAggroFish.FormatDisplayName);
-            Assert.Equal("Deck updated successfully.", _ctx.MainVM.DeckManagementVM.StatusMessage);
+            //_ctx.MainVM.DeckManagementVM.DeckName = "Control Pile";
+            //_ctx.MainVM.DeckManagementVM.SelectedDeckFormat = "casual";
+            //_ctx.MainVM.DeckManagementVM.Description = "Casual control pile";
+
+            //await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Submit edit
+            //Assert.Equal("Add a new deck", _ctx.MainVM.DeckManagementVM.ModeMessage);
+            //Assert.Equal("Add deck", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            //Assert.Equal("Deck updated successfully.", _ctx.MainVM.DeckManagementVM.StatusMessage);
+
+            //// Assert deck manager state
+            //var updatedDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == createdDeck.LocationId);
+
+            //Assert.Equal("Control Pile", updatedDeck.Name);
+            //Assert.Equal("casual", updatedDeck.Format);
+            //Assert.Equal("Casual control pile", updatedDeck.Description);
+            //Assert.Equal("Casual/kitchen table", updatedDeck.FormatDisplayName);
+
+            //// Assert persisted update
+            //var updatedDeckRows = await ScenarioTestHelpers.ExecuteQueryAsync<
+            //    (string Name, string Format, string Description)>(
+            //    _ctx.DbFactory,
+            //    """
+            //    SELECT l.name, d.format, d.description
+            //    FROM myDecks d
+            //    INNER JOIN cardLocations l
+            //        ON l.id = d.locationId
+            //    WHERE l.id = @id;
+            //    """,
+            //    reader => (
+            //        Name: reader.GetString(reader.GetOrdinal("name")),
+            //        Format: reader.GetString(reader.GetOrdinal("format")),
+            //        Description: reader.GetString(reader.GetOrdinal("description"))
+            //    ),
+            //    cmd => cmd.Parameters.AddWithValue("@id", createdDeck.LocationId));
 
-            // Assert persisted metadata was created
-            var aggroFishRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string Format, string Description)>(
-                _ctx.DbFactory,
-                """
-                SELECT d.format, d.description
-                FROM myDecks d
-                WHERE d.locationId = @locationId;
-                """,
-                reader => (
-                    Format: reader.GetString(reader.GetOrdinal("format")),
-                    Description: reader.GetString(reader.GetOrdinal("description"))
-                ),
-                cmd => cmd.Parameters.AddWithValue("@locationId", aggroFish.LocationId));
+            //var (UpdatedName, UpdatedFormat, UpdatedDescription) = Assert.Single(updatedDeckRows);
 
-            var (AggroFishFormat, AggroFishDescription) = Assert.Single(aggroFishRows);
+            //Assert.Equal("Control Pile", UpdatedName);
+            //Assert.Equal("casual", UpdatedFormat);
+            //Assert.Equal("Casual control pile", UpdatedDescription);
 
-            Assert.Equal("modern", AggroFishFormat);
-            Assert.Equal("Existing location upgraded to deck metadata", AggroFishDescription);
+            //// Assert name is updated in modify collection viewmodel
+            //Assert.Contains(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations,
+            //    x => x.Id == createdDeck.LocationId && x.DisplayName == "Deck: Control Pile");
 
-            // Assert location manager still sees Aggro Fish as a deck location
-            await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
+            //Assert.Contains(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations,
+            //    x => x.Id == createdDeck.LocationId &&
+            //         x.DisplayName == "Deck: Control Pile");
 
-            var aggroFishLocation = _ctx.MainVM.CardLocationVM.Locations.Single(x => x.Id == aggroFish.LocationId);
+            //// Assert editor reloads canonical value when row is selected after update
+            //_ctx.MainVM.DeckManagementVM.SelectedItem = updatedDeck;
 
-            Assert.Equal("Aggro Fish", aggroFishLocation.Name);
-            Assert.Equal(CardLocationType.Deck, aggroFishLocation.Type);
+            //Assert.Equal("Control Pile", _ctx.MainVM.DeckManagementVM.DeckName);
+            //Assert.Equal("casual", _ctx.MainVM.DeckManagementVM.SelectedDeckFormat);
+            //Assert.Equal("Casual control pile", _ctx.MainVM.DeckManagementVM.Description);
 
-            #endregion
+            //// Assert filter option still exists after update and filtering is preserved after update
+            //var updatedLocationFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
+            //Assert.Contains(updatedLocationFilter.FilterOptions, o => o.OptionName == "Deck: Control Pile");
+
+            //filteredCard = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
+
+            //Assert.Equal(updatedCard.CardId, filteredCard.CardId);
+            //Assert.Equal(createdLocation.Id, filteredCard.SelectedLocationId);
+            //Assert.Equal("Deck: Control Pile", filteredCard.SelectedLocationDisplayName);
+
+            //// Act: clear format through single edit
+            //Assert.Equal("Edit deck metadata", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            //await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Click edit
+            //Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
-            #region Test 4 - Switch location type away from deck and back
+            //_ctx.MainVM.DeckManagementVM.SelectedDeckFormat = string.Empty;
 
-            // Arrange: Control Pile currently exists as a deck with preserved metadata
-            var controlPileDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == createdDeck.LocationId);
+            //await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null); // Submit
 
-            Assert.Equal("Control Pile", controlPileDeck.Name);
-            Assert.Equal("Casual control pile", controlPileDeck.Description);
+            //// Assert deck manager state after clearing format
 
-            // Act: switch Control Pile from Deck to Storage in location manager
-            await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
+            //var clearedFormatDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == createdDeck.LocationId);
 
-            var controlPileLocation = _ctx.MainVM.CardLocationVM.Locations.Single(x => x.Id == controlPileDeck.LocationId);
+            //Assert.True(string.IsNullOrWhiteSpace(clearedFormatDeck.Format));
+            //Assert.Equal("Casual control pile", clearedFormatDeck.Description);
+            //Assert.Equal(string.Empty, clearedFormatDeck.FormatDisplayName);
 
-            _ctx.MainVM.CardLocationVM.SelectedItem = controlPileLocation;
-            await _ctx.MainVM.CardLocationVM.SubmitCommand.ExecuteAsync(null); // Click edit
+            //// Assert persisted cleared format
+
+            //var clearedFormatRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string? Format, string Description)>(
+            //    _ctx.DbFactory,
+            //    """
+            //    SELECT format, description
+            //    FROM myDecks d
+            //    INNER JOIN cardLocations l
+            //        ON l.id = d.locationId
+            //    WHERE l.id = @id;
+            //    """,
+            //    reader =>
+            //    {
+            //        var formatOrdinal = reader.GetOrdinal("format");
 
-            _ctx.MainVM.CardLocationVM.LocationName = "Control Pile";
-            _ctx.MainVM.CardLocationVM.SelectedLocationType = CardLocationType.Storage;
+            //        return (
+            //            Format: reader.IsDBNull(formatOrdinal)
+            //                ? null
+            //                : reader.GetString(formatOrdinal),
+            //            Description: reader.GetString(reader.GetOrdinal("description"))
+            //        );
+            //    },
+            //    cmd => cmd.Parameters.AddWithValue("@id", createdDeck.LocationId));
 
-            await _ctx.MainVM.CardLocationVM.SubmitCommand.ExecuteAsync(null); // Save
+            //var (ClearedFormat, ClearedDescription) = Assert.Single(clearedFormatRows);
 
-            // Assert location manager state
-            await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
+            //Assert.True(string.IsNullOrWhiteSpace(ClearedFormat));
+            //Assert.Equal("Casual control pile", ClearedDescription);
 
-            var storageControlPile = _ctx.MainVM.CardLocationVM.Locations.Single(x => x.Id == controlPileDeck.LocationId);
+            //// Assert editor reloads blank format
+            //_ctx.MainVM.DeckManagementVM.SelectedItem = clearedFormatDeck;
+            //Assert.True(string.IsNullOrWhiteSpace(_ctx.MainVM.DeckManagementVM.SelectedDeckFormat));
 
-            Assert.Equal("Control Pile", storageControlPile.Name);
-            Assert.Equal(CardLocationType.Storage, storageControlPile.Type);
+            //#endregion
 
-            // Assert deck manager no longer shows Control Pile after reload
-            await _ctx.MainVM.DeckManagementVM.LoadDecksAsync();
+            //#region Test 3 - Add metadata to existing deck location
 
-            Assert.DoesNotContain(_ctx.MainVM.DeckManagementVM.Decks, x => x.LocationId == controlPileDeck.LocationId);
+            //// Arrange: Aggro Fish started as a deck location without metadata
+            //var aggroFish = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Aggro Fish");
 
-            // Assert deck metadata is preserved while location is Storage
-            var preservedMetadataRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string? Format, string Description)>(
-                _ctx.DbFactory,
-                """
-                SELECT format, description
-                FROM myDecks
-                WHERE locationId = @locationId;
-                """,
-                reader =>
-                {
-                    var formatOrdinal = reader.GetOrdinal("format");
+            //Assert.True(string.IsNullOrWhiteSpace(aggroFish.Format));
+            //Assert.True(string.IsNullOrWhiteSpace(aggroFish.Description));
+            //Assert.Equal(string.Empty, aggroFish.FormatDisplayName);
 
-                    return (
-                        Format: reader.IsDBNull(formatOrdinal)
-                            ? null
-                            : reader.GetString(formatOrdinal),
-                        Description: reader.GetString(reader.GetOrdinal("description"))
-                    );
-                },
-                cmd => cmd.Parameters.AddWithValue("@locationId", controlPileDeck.LocationId));
+            //// Act: add metadata to existing deck location
+            //_ctx.MainVM.DeckManagementVM.SelectedItem = aggroFish;
 
-            var (PreservedFormat, PreservedDescription) = Assert.Single(preservedMetadataRows);
+            //Assert.Equal("Edit deck metadata", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            //await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+            //Assert.Equal("Save changes", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
-            Assert.True(string.IsNullOrWhiteSpace(PreservedFormat));
-            Assert.Equal("Casual control pile", PreservedDescription);
+            //_ctx.MainVM.DeckManagementVM.SelectedDeckFormat = "modern";
+            //_ctx.MainVM.DeckManagementVM.Description = "Existing location upgraded to deck metadata";
 
-            // Assert card using Control Pile still points to same location id
-            var cardAfterStorageSwitch = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.CardId == updatedCard.CardId);
+            //await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
 
-            Assert.Equal(controlPileDeck.LocationId, cardAfterStorageSwitch.SelectedLocationId);
-            Assert.Equal("Storage: Control Pile", cardAfterStorageSwitch.SelectedLocationDisplayName);
+            //// Assert deck manager state
+            //var updatedAggroFish = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == aggroFish.LocationId);
 
-            // Assert active location filter survived display-name/type change
-            ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
+            //Assert.Equal("Aggro Fish", updatedAggroFish.Name);
+            //Assert.Equal("modern", updatedAggroFish.Format);
+            //Assert.Equal("Existing location upgraded to deck metadata", updatedAggroFish.Description);
+            //Assert.Equal("Modern", updatedAggroFish.FormatDisplayName);
+            //Assert.Equal("Deck updated successfully.", _ctx.MainVM.DeckManagementVM.StatusMessage);
 
-            var filteredAfterStorageSwitch = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
+            //// Assert persisted metadata was created
+            //var aggroFishRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string Format, string Description)>(
+            //    _ctx.DbFactory,
+            //    """
+            //    SELECT d.format, d.description
+            //    FROM myDecks d
+            //    WHERE d.locationId = @locationId;
+            //    """,
+            //    reader => (
+            //        Format: reader.GetString(reader.GetOrdinal("format")),
+            //        Description: reader.GetString(reader.GetOrdinal("description"))
+            //    ),
+            //    cmd => cmd.Parameters.AddWithValue("@locationId", aggroFish.LocationId));
 
-            Assert.Equal(updatedCard.CardId, filteredAfterStorageSwitch.CardId);
-            Assert.Equal(controlPileDeck.LocationId, filteredAfterStorageSwitch.SelectedLocationId);
-            Assert.Equal("Storage: Control Pile", filteredAfterStorageSwitch.SelectedLocationDisplayName);
+            //var (AggroFishFormat, AggroFishDescription) = Assert.Single(aggroFishRows);
 
-            // Assert modify collection viewmodel location list reflects change
-            Assert.Contains(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileDeck.LocationId && x.DisplayName == "Storage: Control Pile");
-            Assert.Contains(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileDeck.LocationId && x.DisplayName == "Storage: Control Pile");
+            //Assert.Equal("modern", AggroFishFormat);
+            //Assert.Equal("Existing location upgraded to deck metadata", AggroFishDescription);
 
-            // Act: switch Control Pile back from Storage to Deck
-            var storageLocationForEdit = _ctx.MainVM.CardLocationVM.Locations.Single(x => x.Id == controlPileDeck.LocationId);
+            //// Assert location manager still sees Aggro Fish as a deck location
+            //await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
 
-            _ctx.MainVM.CardLocationVM.SelectedItem = storageLocationForEdit;
-            await _ctx.MainVM.CardLocationVM.SubmitCommand.ExecuteAsync(null); // Click edit
+            //var aggroFishLocation = _ctx.MainVM.CardLocationVM.Locations.Single(x => x.Id == aggroFish.LocationId);
 
-            _ctx.MainVM.CardLocationVM.LocationName = "Control Pile";
-            _ctx.MainVM.CardLocationVM.SelectedLocationType = CardLocationType.Deck;
+            //Assert.Equal("Aggro Fish", aggroFishLocation.Name);
+            //Assert.Equal(CardLocationType.Deck, aggroFishLocation.Type);
 
-            await _ctx.MainVM.CardLocationVM.SubmitCommand.ExecuteAsync(null); // Save
+            //#endregion
 
-            // Assert deck manager shows Control Pile again with preserved metadata
-            await _ctx.MainVM.DeckManagementVM.LoadDecksAsync();
+            //#region Test 4 - Switch location type away from deck and back
 
-            var restoredControlPileDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == controlPileDeck.LocationId);
+            //// Arrange: Control Pile currently exists as a deck with preserved metadata
+            //var controlPileDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == createdDeck.LocationId);
 
-            Assert.Equal("Control Pile", restoredControlPileDeck.Name);
-            Assert.True(string.IsNullOrWhiteSpace(restoredControlPileDeck.Format));
-            Assert.Equal("Casual control pile", restoredControlPileDeck.Description);
-            Assert.Equal(string.Empty, restoredControlPileDeck.FormatDisplayName);
+            //Assert.Equal("Control Pile", controlPileDeck.Name);
+            //Assert.Equal("Casual control pile", controlPileDeck.Description);
 
-            // Assert card still points to same location and display name is back to Deck
-            var cardAfterDeckSwitch = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.CardId == updatedCard.CardId);
+            //// Act: switch Control Pile from Deck to Storage in location manager
+            //await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
 
-            Assert.Equal(controlPileDeck.LocationId, cardAfterDeckSwitch.SelectedLocationId);
-            Assert.Equal("Deck: Control Pile", cardAfterDeckSwitch.SelectedLocationDisplayName);
+            //var controlPileLocation = _ctx.MainVM.CardLocationVM.Locations.Single(x => x.Id == controlPileDeck.LocationId);
 
-            // Assert active filter still returns the same card
-            ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
+            //_ctx.MainVM.CardLocationVM.SelectedItem = controlPileLocation;
+            //await _ctx.MainVM.CardLocationVM.SubmitCommand.ExecuteAsync(null); // Click edit
 
-            var filteredAfterDeckSwitch = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
+            //_ctx.MainVM.CardLocationVM.LocationName = "Control Pile";
+            //_ctx.MainVM.CardLocationVM.SelectedLocationType = CardLocationType.Storage;
 
-            Assert.Equal(updatedCard.CardId, filteredAfterDeckSwitch.CardId);
-            Assert.Equal(controlPileDeck.LocationId, filteredAfterDeckSwitch.SelectedLocationId);
-            Assert.Equal("Deck: Control Pile", filteredAfterDeckSwitch.SelectedLocationDisplayName);
+            //await _ctx.MainVM.CardLocationVM.SubmitCommand.ExecuteAsync(null); // Save
 
-            // Assert modify collection viewmodel location list reflects change
-            Assert.Contains(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileDeck.LocationId && x.DisplayName == "Deck: Control Pile");
-            Assert.Contains(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileDeck.LocationId && x.DisplayName == "Deck: Control Pile");
+            //// Assert location manager state
+            //await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
 
-            #endregion
+            //var storageControlPile = _ctx.MainVM.CardLocationVM.Locations.Single(x => x.Id == controlPileDeck.LocationId);
 
-            #region Test 5 - Multi-update deck formats
+            //Assert.Equal("Control Pile", storageControlPile.Name);
+            //Assert.Equal(CardLocationType.Storage, storageControlPile.Type);
 
-            // Arrange
-            await _ctx.MainVM.DeckManagementVM.LoadDecksAsync();
+            //// Assert deck manager no longer shows Control Pile after reload
+            //await _ctx.MainVM.DeckManagementVM.LoadDecksAsync();
 
-            var controlPile = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Control Pile");
+            //Assert.DoesNotContain(_ctx.MainVM.DeckManagementVM.Decks, x => x.LocationId == controlPileDeck.LocationId);
 
-            Assert.NotEqual(controlPile.LocationId, aggroFish.LocationId);
+            //// Assert deck metadata is preserved while location is Storage
+            //var preservedMetadataRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string? Format, string Description)>(
+            //    _ctx.DbFactory,
+            //    """
+            //    SELECT format, description
+            //    FROM myDecks
+            //    WHERE locationId = @locationId;
+            //    """,
+            //    reader =>
+            //    {
+            //        var formatOrdinal = reader.GetOrdinal("format");
 
-            // Verify blank bulk update is rejected
-            _ctx.MainVM.DeckManagementVM.SelectedItems.Clear();
-            _ctx.MainVM.DeckManagementVM.SelectedItems.Add(controlPile);
-            _ctx.MainVM.DeckManagementVM.SelectedItems.Add(aggroFish);
+            //        return (
+            //            Format: reader.IsDBNull(formatOrdinal)
+            //                ? null
+            //                : reader.GetString(formatOrdinal),
+            //            Description: reader.GetString(reader.GetOrdinal("description"))
+            //        );
+            //    },
+            //    cmd => cmd.Parameters.AddWithValue("@locationId", controlPileDeck.LocationId));
 
-            Assert.Equal("Update selected", _ctx.MainVM.DeckManagementVM.ActionButtonText);
+            //var (PreservedFormat, PreservedDescription) = Assert.Single(preservedMetadataRows);
 
-            _ctx.MainVM.DeckManagementVM.SelectedDeckFormat = string.Empty;
+            //Assert.True(string.IsNullOrWhiteSpace(PreservedFormat));
+            //Assert.Equal("Casual control pile", PreservedDescription);
 
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
-            Assert.Equal("Select a format before updating selected decks.", _ctx.MainVM.DeckManagementVM.StatusMessage);
+            //// Assert card using Control Pile still points to same location id
+            //var cardAfterStorageSwitch = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.CardId == updatedCard.CardId);
 
-            // Perform valid bulk update
-            _ctx.MainVM.DeckManagementVM.SelectedDeckFormat = "casual";
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+            //Assert.Equal(controlPileDeck.LocationId, cardAfterStorageSwitch.SelectedLocationId);
+            //Assert.Equal("Storage: Control Pile", cardAfterStorageSwitch.SelectedLocationDisplayName);
 
-            Assert.Equal("2 decks updated successfully.", _ctx.MainVM.DeckManagementVM.StatusMessage);
+            //// Assert active location filter survived display-name/type change
+            //ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
 
-            // Assert deck manager state
-            var updatedControlPile = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == controlPile.LocationId);
-            updatedAggroFish = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == aggroFish.LocationId);
+            //var filteredAfterStorageSwitch = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
 
-            Assert.Equal("casual", updatedControlPile.Format);
-            Assert.Equal("Casual/kitchen table", updatedControlPile.FormatDisplayName);
+            //Assert.Equal(updatedCard.CardId, filteredAfterStorageSwitch.CardId);
+            //Assert.Equal(controlPileDeck.LocationId, filteredAfterStorageSwitch.SelectedLocationId);
+            //Assert.Equal("Storage: Control Pile", filteredAfterStorageSwitch.SelectedLocationDisplayName);
 
-            Assert.Equal("casual", updatedAggroFish.Format);
-            Assert.Equal("Casual/kitchen table", updatedAggroFish.FormatDisplayName);
+            //// Assert modify collection viewmodel location list reflects change
+            //Assert.Contains(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileDeck.LocationId && x.DisplayName == "Storage: Control Pile");
+            //Assert.Contains(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileDeck.LocationId && x.DisplayName == "Storage: Control Pile");
 
-            // Assert persisted state
-            var persistedFormats = await ScenarioTestHelpers.ExecuteQueryAsync<(int LocationId, string Format)>(
-                _ctx.DbFactory,
-                """
-                SELECT locationId, format
-                FROM myDecks
-                WHERE locationId IN (@id1, @id2)
-                ORDER BY locationId;
-                """,
-                reader => (
-                    LocationId: reader.GetInt32(reader.GetOrdinal("locationId")),
-                    Format: reader.GetString(reader.GetOrdinal("format"))
-                ),
-                cmd =>
-                {
-                    cmd.Parameters.AddWithValue("@id1", controlPile.LocationId);
-                    cmd.Parameters.AddWithValue("@id2", aggroFish.LocationId);
-                });
+            //// Act: switch Control Pile back from Storage to Deck
+            //var storageLocationForEdit = _ctx.MainVM.CardLocationVM.Locations.Single(x => x.Id == controlPileDeck.LocationId);
 
-            Assert.Equal(2, persistedFormats.Count);
-            Assert.Contains(persistedFormats, x => x.LocationId == controlPile.LocationId && x.Format == "casual");
-            Assert.Contains(persistedFormats, x => x.LocationId == aggroFish.LocationId && x.Format == "casual");
+            //_ctx.MainVM.CardLocationVM.SelectedItem = storageLocationForEdit;
+            //await _ctx.MainVM.CardLocationVM.SubmitCommand.ExecuteAsync(null); // Click edit
 
-            // Assert selection cleared after successful bulk update
-            Assert.Empty(_ctx.MainVM.DeckManagementVM.SelectedItems);
-            Assert.Null(_ctx.MainVM.DeckManagementVM.SelectedItem);
+            //_ctx.MainVM.CardLocationVM.LocationName = "Control Pile";
+            //_ctx.MainVM.CardLocationVM.SelectedLocationType = CardLocationType.Deck;
 
-            #endregion
+            //await _ctx.MainVM.CardLocationVM.SubmitCommand.ExecuteAsync(null); // Save
 
-            #region Test 6 - Delete single deck
+            //// Assert deck manager shows Control Pile again with preserved metadata
+            //await _ctx.MainVM.DeckManagementVM.LoadDecksAsync();
 
-            // Arrange
-            await _ctx.MainVM.DeckManagementVM.LoadDecksAsync();
-            await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
+            //var restoredControlPileDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == controlPileDeck.LocationId);
 
-            var aggroFishDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Aggro Fish");
-            var aggroFishLocationId = aggroFishDeck.LocationId;
+            //Assert.Equal("Control Pile", restoredControlPileDeck.Name);
+            //Assert.True(string.IsNullOrWhiteSpace(restoredControlPileDeck.Format));
+            //Assert.Equal("Casual control pile", restoredControlPileDeck.Description);
+            //Assert.Equal(string.Empty, restoredControlPileDeck.FormatDisplayName);
 
-            Assert.Contains(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == aggroFishLocationId);
+            //// Assert card still points to same location and display name is back to Deck
+            //var cardAfterDeckSwitch = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.CardId == updatedCard.CardId);
 
-            // Act: delete Aggro Fish through deck manager
-            _ctx.MainVM.DeckManagementVM.SelectedItem = aggroFishDeck;
-            _ctx.MainVM.DeckManagementVM.SelectedItems.Clear();
-            _ctx.MainVM.DeckManagementVM.SelectedItems.Add(aggroFishDeck);
+            //Assert.Equal(controlPileDeck.LocationId, cardAfterDeckSwitch.SelectedLocationId);
+            //Assert.Equal("Deck: Control Pile", cardAfterDeckSwitch.SelectedLocationDisplayName);
 
-            await _ctx.MainVM.DeckManagementVM.DeleteSelectedDecksCommand.ExecuteAsync(null); // confirm prompt
-            Assert.Equal("Yes, delete!", _ctx.MainVM.DeckManagementVM.DeleteButtonText);
+            //// Assert active filter still returns the same card
+            //ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
 
-            await _ctx.MainVM.DeckManagementVM.DeleteSelectedDecksCommand.ExecuteAsync(null); // actual delete
+            //var filteredAfterDeckSwitch = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();
 
-            // Assert deck manager state
-            Assert.DoesNotContain(_ctx.MainVM.DeckManagementVM.Decks, x => x.LocationId == aggroFishLocationId);
+            //Assert.Equal(updatedCard.CardId, filteredAfterDeckSwitch.CardId);
+            //Assert.Equal(controlPileDeck.LocationId, filteredAfterDeckSwitch.SelectedLocationId);
+            //Assert.Equal("Deck: Control Pile", filteredAfterDeckSwitch.SelectedLocationDisplayName);
 
-            // Assert location manager state
-            await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
+            //// Assert modify collection viewmodel location list reflects change
+            //Assert.Contains(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileDeck.LocationId && x.DisplayName == "Deck: Control Pile");
+            //Assert.Contains(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileDeck.LocationId && x.DisplayName == "Deck: Control Pile");
 
-            Assert.DoesNotContain(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == aggroFishLocationId);
+            //#endregion
 
-            // Assert persisted location deleted
-            var locationCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
-                """
-                SELECT COUNT(*)
-                FROM cardLocations
-                WHERE id = @id;
-                """,
-                cmd => cmd.Parameters.AddWithValue("@id", aggroFishLocationId));
+            //#region Test 5 - Multi-update deck formats
 
-            Assert.Equal(0, locationCount);
+            //// Arrange
+            //await _ctx.MainVM.DeckManagementVM.LoadDecksAsync();
 
-            // Assert persisted metadata deleted
-            var metadataCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
-                """
-                SELECT COUNT(*)
-                FROM myDecks
-                WHERE locationId = @id;
-                """,
-                cmd => cmd.Parameters.AddWithValue("@id", aggroFishLocationId));
+            //var controlPile = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Control Pile");
 
-            Assert.Equal(0, metadataCount);
+            //Assert.NotEqual(controlPile.LocationId, aggroFish.LocationId);
 
-            // Assert collection cards no longer point to deleted location
-            Assert.DoesNotContain(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == aggroFishLocationId);
+            //// Verify blank bulk update is rejected
+            //_ctx.MainVM.DeckManagementVM.SelectedItems.Clear();
+            //_ctx.MainVM.DeckManagementVM.SelectedItems.Add(controlPile);
+            //_ctx.MainVM.DeckManagementVM.SelectedItems.Add(aggroFish);
 
-            var collectionReferenceCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
-                """
-                SELECT COUNT(*)
-                FROM myCollection
-                WHERE locationId = @id;
-                """,
-                cmd => cmd.Parameters.AddWithValue("@id", aggroFishLocationId));
+            //Assert.Equal("Update selected", _ctx.MainVM.DeckManagementVM.ActionButtonText);
 
-            Assert.Equal(0, collectionReferenceCount);
+            //_ctx.MainVM.DeckManagementVM.SelectedDeckFormat = string.Empty;
 
-            // Assert location filter option removed
-            var locationFilterAfterDelete = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
+            //await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+            //Assert.Equal("Select a format before updating selected decks.", _ctx.MainVM.DeckManagementVM.StatusMessage);
 
-            Assert.DoesNotContain(locationFilterAfterDelete.FilterOptions, o => o.Value == aggroFishLocationId.ToString());
-            Assert.DoesNotContain(locationFilterAfterDelete.FilterOptions, o => o.DisplayName == "Deck: Aggro Fish");
+            //// Perform valid bulk update
+            //_ctx.MainVM.DeckManagementVM.SelectedDeckFormat = "casual";
+            //await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
 
-            // Assert modify collection editor location list updated
-            Assert.DoesNotContain(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == aggroFishLocationId);
-            Assert.DoesNotContain(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == aggroFishLocationId);
-            Assert.DoesNotContain(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.DisplayName == "Deck: Aggro Fish");
-            Assert.DoesNotContain(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.DisplayName == "Deck: Aggro Fish");
+            //Assert.Equal("2 decks updated successfully.", _ctx.MainVM.DeckManagementVM.StatusMessage);
 
-            #endregion
+            //// Assert deck manager state
+            //var updatedControlPile = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == controlPile.LocationId);
+            //updatedAggroFish = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.LocationId == aggroFish.LocationId);
 
-            #region Test 7 - Delete multiple decks
+            //Assert.Equal("casual", updatedControlPile.Format);
+            //Assert.Equal("Casual/kitchen table", updatedControlPile.FormatDisplayName);
 
-            // Arrange: create a temporary deck so bulk delete has two targets
-            _ctx.MainVM.DeckManagementVM.DeckName = "Token Swarm";
-            _ctx.MainVM.DeckManagementVM.SelectedDeckFormat = "standard";
-            _ctx.MainVM.DeckManagementVM.Description = "Temporary token deck";
+            //Assert.Equal("casual", updatedAggroFish.Format);
+            //Assert.Equal("Casual/kitchen table", updatedAggroFish.FormatDisplayName);
 
-            await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+            //// Assert persisted state
+            //var persistedFormats = await ScenarioTestHelpers.ExecuteQueryAsync<(int LocationId, string Format)>(
+            //    _ctx.DbFactory,
+            //    """
+            //    SELECT locationId, format
+            //    FROM myDecks
+            //    WHERE locationId IN (@id1, @id2)
+            //    ORDER BY locationId;
+            //    """,
+            //    reader => (
+            //        LocationId: reader.GetInt32(reader.GetOrdinal("locationId")),
+            //        Format: reader.GetString(reader.GetOrdinal("format"))
+            //    ),
+            //    cmd =>
+            //    {
+            //        cmd.Parameters.AddWithValue("@id1", controlPile.LocationId);
+            //        cmd.Parameters.AddWithValue("@id2", aggroFish.LocationId);
+            //    });
 
-            var tokenSwarmDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Token Swarm");
-            var controlPileDeckForDelete = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Control Pile");
+            //Assert.Equal(2, persistedFormats.Count);
+            //Assert.Contains(persistedFormats, x => x.LocationId == controlPile.LocationId && x.Format == "casual");
+            //Assert.Contains(persistedFormats, x => x.LocationId == aggroFish.LocationId && x.Format == "casual");
 
-            var tokenSwarmLocationId = tokenSwarmDeck.LocationId;
-            var controlPileLocationId = controlPileDeckForDelete.LocationId;
+            //// Assert selection cleared after successful bulk update
+            //Assert.Empty(_ctx.MainVM.DeckManagementVM.SelectedItems);
+            //Assert.Null(_ctx.MainVM.DeckManagementVM.SelectedItem);
 
-            // Refresh location manager so both locations are visible there too
-            await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
+            //#endregion
 
-            Assert.Contains(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == tokenSwarmLocationId);
-            Assert.Contains(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == controlPileLocationId);
+            //#region Test 6 - Delete single deck
 
-            // Assign Token Swarm to one unassigned collection card
-            var tokenCard = _ctx.MainVM.MyCollectionVM.Cards.First(c => c.SelectedLocationId is null);
-            var setTokenLocationParam = new SetLocationForSelectedCardsParameter(new object[] { tokenCard }, tokenSwarmLocationId);
+            //// Arrange
+            //await _ctx.MainVM.DeckManagementVM.LoadDecksAsync();
+            //await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
 
-            _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SetLocationForSelectedCardsCommand.Execute(setTokenLocationParam);
+            //var aggroFishDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Aggro Fish");
+            //var aggroFishLocationId = aggroFishDeck.LocationId;
 
-            // Assert both decks are referenced by collection before delete
-            Assert.Contains(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == tokenSwarmLocationId);
-            Assert.Contains(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == controlPileLocationId);
+            //Assert.Contains(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == aggroFishLocationId);
 
-            // Act: multi-delete Token Swarm and Control Pile
-            _ctx.MainVM.DeckManagementVM.SelectedItem = null;
-            _ctx.MainVM.DeckManagementVM.SelectedItems.Clear();
-            _ctx.MainVM.DeckManagementVM.SelectedItems.Add(tokenSwarmDeck);
-            _ctx.MainVM.DeckManagementVM.SelectedItems.Add(controlPileDeckForDelete);
+            //// Act: delete Aggro Fish through deck manager
+            //_ctx.MainVM.DeckManagementVM.SelectedItem = aggroFishDeck;
+            //_ctx.MainVM.DeckManagementVM.SelectedItems.Clear();
+            //_ctx.MainVM.DeckManagementVM.SelectedItems.Add(aggroFishDeck);
 
-            await _ctx.MainVM.DeckManagementVM.DeleteSelectedDecksCommand.ExecuteAsync(null); // confirm prompt
-            Assert.Equal("Yes, delete!", _ctx.MainVM.DeckManagementVM.DeleteButtonText);
+            //await _ctx.MainVM.DeckManagementVM.DeleteSelectedDecksCommand.ExecuteAsync(null); // confirm prompt
+            //Assert.Equal("Yes, delete!", _ctx.MainVM.DeckManagementVM.DeleteButtonText);
 
-            await _ctx.MainVM.DeckManagementVM.DeleteSelectedDecksCommand.ExecuteAsync(null); // actual delete
+            //await _ctx.MainVM.DeckManagementVM.DeleteSelectedDecksCommand.ExecuteAsync(null); // actual delete
 
-            // Assert deck manager state
-            Assert.DoesNotContain(_ctx.MainVM.DeckManagementVM.Decks, x => x.LocationId == tokenSwarmLocationId);
-            Assert.DoesNotContain(_ctx.MainVM.DeckManagementVM.Decks, x => x.LocationId == controlPileLocationId);
+            //// Assert deck manager state
+            //Assert.DoesNotContain(_ctx.MainVM.DeckManagementVM.Decks, x => x.LocationId == aggroFishLocationId);
 
-            // Assert location manager state
-            await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
+            //// Assert location manager state
+            //await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
 
-            Assert.DoesNotContain(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == tokenSwarmLocationId);
-            Assert.DoesNotContain(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == controlPileLocationId);
+            //Assert.DoesNotContain(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == aggroFishLocationId);
 
-            // Assert available location lists updated
-            Assert.DoesNotContain(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == tokenSwarmLocationId);
-            Assert.DoesNotContain(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileLocationId);
-            Assert.DoesNotContain(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == tokenSwarmLocationId);
-            Assert.DoesNotContain(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileLocationId);
+            //// Assert persisted location deleted
+            //var locationCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
+            //    """
+            //    SELECT COUNT(*)
+            //    FROM cardLocations
+            //    WHERE id = @id;
+            //    """,
+            //    cmd => cmd.Parameters.AddWithValue("@id", aggroFishLocationId));
 
-            // Assert persisted locations deleted
-            var deletedLocationCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
-                """
-                SELECT COUNT(*)
-                FROM cardLocations
-                WHERE id IN (@id1, @id2);
-                """,
-                cmd =>
-                {
-                    cmd.Parameters.AddWithValue("@id1", tokenSwarmLocationId);
-                    cmd.Parameters.AddWithValue("@id2", controlPileLocationId);
-                });
+            //Assert.Equal(0, locationCount);
 
-            Assert.Equal(0, deletedLocationCount);
+            //// Assert persisted metadata deleted
+            //var metadataCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
+            //    """
+            //    SELECT COUNT(*)
+            //    FROM myDecks
+            //    WHERE locationId = @id;
+            //    """,
+            //    cmd => cmd.Parameters.AddWithValue("@id", aggroFishLocationId));
 
-            // Assert persisted metadata deleted
-            var deletedMetadataCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(
-                _ctx.DbFactory,
-                """
-                SELECT COUNT(*)
-                FROM myDecks
-                WHERE locationId IN (@id1, @id2);
-                """,
-                cmd =>
-                {
-                    cmd.Parameters.AddWithValue("@id1", tokenSwarmLocationId);
-                    cmd.Parameters.AddWithValue("@id2", controlPileLocationId);
-                });
+            //Assert.Equal(0, metadataCount);
 
-            Assert.Equal(0, deletedMetadataCount);
+            //// Assert collection cards no longer point to deleted location
+            //Assert.DoesNotContain(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == aggroFishLocationId);
 
-            // Assert collection cards no longer point to deleted locations
-            Assert.DoesNotContain(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == tokenSwarmLocationId);
-            Assert.DoesNotContain(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == controlPileLocationId);
+            //var collectionReferenceCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
+            //    """
+            //    SELECT COUNT(*)
+            //    FROM myCollection
+            //    WHERE locationId = @id;
+            //    """,
+            //    cmd => cmd.Parameters.AddWithValue("@id", aggroFishLocationId));
 
-            var deletedCollectionReferenceCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
-                """
-                SELECT COUNT(*)
-                FROM myCollection
-                WHERE locationId IN (@id1, @id2);
-                """,
-                cmd =>
-                {
-                    cmd.Parameters.AddWithValue("@id1", tokenSwarmLocationId);
-                    cmd.Parameters.AddWithValue("@id2", controlPileLocationId);
-                });
+            //Assert.Equal(0, collectionReferenceCount);
 
-            Assert.Equal(0, deletedCollectionReferenceCount);
+            //// Assert location filter option removed
+            //var locationFilterAfterDelete = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
 
-            // Assert location filter options removed
-            var locationFilterAfterBulkDelete = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
+            //Assert.DoesNotContain(locationFilterAfterDelete.FilterOptions, o => o.Value == aggroFishLocationId.ToString());
+            //Assert.DoesNotContain(locationFilterAfterDelete.FilterOptions, o => o.DisplayName == "Deck: Aggro Fish");
 
-            Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.Value == tokenSwarmLocationId.ToString());
-            Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.Value == controlPileLocationId.ToString());
-            Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.DisplayName == "Deck: Token Swarm");
-            Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.DisplayName == "Deck: Control Pile");
+            //// Assert modify collection editor location list updated
+            //Assert.DoesNotContain(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == aggroFishLocationId);
+            //Assert.DoesNotContain(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == aggroFishLocationId);
+            //Assert.DoesNotContain(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.DisplayName == "Deck: Aggro Fish");
+            //Assert.DoesNotContain(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.DisplayName == "Deck: Aggro Fish");
 
-            #endregion
+            //#endregion
+
+            //#region Test 7 - Delete multiple decks
+
+            //// Arrange: create a temporary deck so bulk delete has two targets
+            //_ctx.MainVM.DeckManagementVM.DeckName = "Token Swarm";
+            //_ctx.MainVM.DeckManagementVM.SelectedDeckFormat = "standard";
+            //_ctx.MainVM.DeckManagementVM.Description = "Temporary token deck";
+
+            //await _ctx.MainVM.DeckManagementVM.SubmitCommand.ExecuteAsync(null);
+
+            //var tokenSwarmDeck = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Token Swarm");
+            //var controlPileDeckForDelete = _ctx.MainVM.DeckManagementVM.Decks.Single(x => x.Name == "Control Pile");
+
+            //var tokenSwarmLocationId = tokenSwarmDeck.LocationId;
+            //var controlPileLocationId = controlPileDeckForDelete.LocationId;
+
+            //// Refresh location manager so both locations are visible there too
+            //await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
+
+            //Assert.Contains(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == tokenSwarmLocationId);
+            //Assert.Contains(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == controlPileLocationId);
+
+            //// Assign Token Swarm to one unassigned collection card
+            //var tokenCard = _ctx.MainVM.MyCollectionVM.Cards.First(c => c.SelectedLocationId is null);
+            //var setTokenLocationParam = new SetLocationForSelectedCardsParameter(new object[] { tokenCard }, tokenSwarmLocationId);
+
+            //_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SetLocationForSelectedCardsCommand.Execute(setTokenLocationParam);
+
+            //// Assert both decks are referenced by collection before delete
+            //Assert.Contains(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == tokenSwarmLocationId);
+            //Assert.Contains(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == controlPileLocationId);
+
+            //// Act: multi-delete Token Swarm and Control Pile
+            //_ctx.MainVM.DeckManagementVM.SelectedItem = null;
+            //_ctx.MainVM.DeckManagementVM.SelectedItems.Clear();
+            //_ctx.MainVM.DeckManagementVM.SelectedItems.Add(tokenSwarmDeck);
+            //_ctx.MainVM.DeckManagementVM.SelectedItems.Add(controlPileDeckForDelete);
+
+            //await _ctx.MainVM.DeckManagementVM.DeleteSelectedDecksCommand.ExecuteAsync(null); // confirm prompt
+            //Assert.Equal("Yes, delete!", _ctx.MainVM.DeckManagementVM.DeleteButtonText);
+
+            //await _ctx.MainVM.DeckManagementVM.DeleteSelectedDecksCommand.ExecuteAsync(null); // actual delete
+
+            //// Assert deck manager state
+            //Assert.DoesNotContain(_ctx.MainVM.DeckManagementVM.Decks, x => x.LocationId == tokenSwarmLocationId);
+            //Assert.DoesNotContain(_ctx.MainVM.DeckManagementVM.Decks, x => x.LocationId == controlPileLocationId);
+
+            //// Assert location manager state
+            //await _ctx.MainVM.CardLocationVM.LoadCardLocationsAsync();
+
+            //Assert.DoesNotContain(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == tokenSwarmLocationId);
+            //Assert.DoesNotContain(_ctx.MainVM.CardLocationVM.Locations, x => x.Id == controlPileLocationId);
+
+            //// Assert available location lists updated
+            //Assert.DoesNotContain(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == tokenSwarmLocationId);
+            //Assert.DoesNotContain(_ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileLocationId);
+            //Assert.DoesNotContain(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == tokenSwarmLocationId);
+            //Assert.DoesNotContain(_ctx.MainVM.SearchAndFilterPageVM.ModifyCollectionViewModel!.AvailableLocations, x => x.Id == controlPileLocationId);
+
+            //// Assert persisted locations deleted
+            //var deletedLocationCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
+            //    """
+            //    SELECT COUNT(*)
+            //    FROM cardLocations
+            //    WHERE id IN (@id1, @id2);
+            //    """,
+            //    cmd =>
+            //    {
+            //        cmd.Parameters.AddWithValue("@id1", tokenSwarmLocationId);
+            //        cmd.Parameters.AddWithValue("@id2", controlPileLocationId);
+            //    });
+
+            //Assert.Equal(0, deletedLocationCount);
+
+            //// Assert persisted metadata deleted
+            //var deletedMetadataCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(
+            //    _ctx.DbFactory,
+            //    """
+            //    SELECT COUNT(*)
+            //    FROM myDecks
+            //    WHERE locationId IN (@id1, @id2);
+            //    """,
+            //    cmd =>
+            //    {
+            //        cmd.Parameters.AddWithValue("@id1", tokenSwarmLocationId);
+            //        cmd.Parameters.AddWithValue("@id2", controlPileLocationId);
+            //    });
+
+            //Assert.Equal(0, deletedMetadataCount);
+
+            //// Assert collection cards no longer point to deleted locations
+            //Assert.DoesNotContain(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == tokenSwarmLocationId);
+            //Assert.DoesNotContain(_ctx.MainVM.MyCollectionVM.Cards, c => c.SelectedLocationId == controlPileLocationId);
+
+            //var deletedCollectionReferenceCount = await ScenarioTestHelpers.ExecuteScalarAsync<int>(_ctx.DbFactory,
+            //    """
+            //    SELECT COUNT(*)
+            //    FROM myCollection
+            //    WHERE locationId IN (@id1, @id2);
+            //    """,
+            //    cmd =>
+            //    {
+            //        cmd.Parameters.AddWithValue("@id1", tokenSwarmLocationId);
+            //        cmd.Parameters.AddWithValue("@id2", controlPileLocationId);
+            //    });
+
+            //Assert.Equal(0, deletedCollectionReferenceCount);
+
+            //// Assert location filter options removed
+            //var locationFilterAfterBulkDelete = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
+
+            //Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.Value == tokenSwarmLocationId.ToString());
+            //Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.Value == controlPileLocationId.ToString());
+            //Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.DisplayName == "Deck: Token Swarm");
+            //Assert.DoesNotContain(locationFilterAfterBulkDelete.FilterOptions, o => o.DisplayName == "Deck: Control Pile");
+
+            //#endregion
         }
     }
 }

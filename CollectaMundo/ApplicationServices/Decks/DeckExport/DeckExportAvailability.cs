@@ -1,4 +1,4 @@
 ﻿namespace CollectaMundo.ApplicationServices.Decks.DeckExport
 {
-    public sealed record DeckExportAvailability(bool CanExportCsv, bool CanGenerateCardmarketWantList);
+    public sealed record DeckExportAvailability(bool CanExportCsv, bool CanGenerateWantList);
 }

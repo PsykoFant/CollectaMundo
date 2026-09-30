@@ -18,7 +18,7 @@ namespace CollectaMundo.ApplicationServices.Decks.DeckExport
             var completeDeck = _deckExportLogic.GetCompleteDeck(states);
             var missingCards = _deckExportLogic.GetMissingCards(states, quantitySnapshot, deckLocationId);
 
-            return new DeckExportAvailability(CanExportCsv: completeDeck.Count > 0, CanGenerateCardmarketWantList: missingCards.Count > 0);
+            return new DeckExportAvailability(CanExportCsv: completeDeck.Count > 0, CanGenerateWantList: missingCards.Count > 0);
         }
         public async Task ExportCompleteDeckCsvAsync(int deckLocationId, IReadOnlyList<OracleCard> oracleCards, string filePath, CancellationToken cancellationToken = default)
         {
@@ -29,7 +29,7 @@ namespace CollectaMundo.ApplicationServices.Decks.DeckExport
 
             await _csvFileWriter.WriteAsync(filePath, headers, rows, ',', cancellationToken);
         }
-        public async Task<string> GenerateCardmarketWantListAsync(int deckLocationId, IReadOnlyList<OracleCard> oracleCards, ICollectionQuantitySnapshot quantitySnapshot)
+        public async Task<string> GenerateWantListAsync(int deckLocationId, IReadOnlyList<OracleCard> oracleCards, ICollectionQuantitySnapshot quantitySnapshot)
         {
             var states = await LoadDeckStatesAsync(deckLocationId, oracleCards);
             var missingCards = _deckExportLogic.GetMissingCards(states, quantitySnapshot, deckLocationId);
