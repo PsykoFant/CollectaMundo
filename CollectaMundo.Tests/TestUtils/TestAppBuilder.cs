@@ -8,6 +8,7 @@ using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.DeckExport;
 using CollectaMundo.ApplicationServices.Decks.Shared;
+using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.KeyedDataProvider;
@@ -43,7 +44,6 @@ using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Infrastructure.Shared.Files;
 using CollectaMundo.Infrastructure.Shared.Models;
-using CollectaMundo.Tests.ScenarioTests;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
 
@@ -51,12 +51,7 @@ namespace CollectaMundo.Tests.TestUtils;
 
 public static class TestAppBuilder
 {
-    public static async Task<(MainWindowViewModel VM, OperationOverlayViewModel OperationOverlayVM)> BuildAsync(
-        InMemoryDatabaseFixture fixture,
-        IDbConnectionFactory dbFactory,
-        List<CollectionChangeSet<CollectionCardDbRow>>? eventSink = null,
-        IUserPromptService? promptOverride = null,
-        IFileSystemPicker? filePickerOverride = null)
+    public static async Task<(MainWindowViewModel VM, OperationOverlayViewModel OperationOverlayVM)> BuildAsync(InMemoryDatabaseFixture fixture, IDbConnectionFactory dbFactory, List<CollectionChangeSet<CollectionCardDbRow>>? eventSink = null, IUserPromptService? promptOverride = null, IFileSystemPicker? filePickerOverride = null)
     {
         await fixture.InitializeAsync();
 
@@ -178,7 +173,6 @@ public static class TestAppBuilder
 
         return (mainVM, operationOverlayViewModel);
     }
-
     private static ProgressSinks CreateProgressSinks(IOperationOverlayController operationOverlayController) => new()
     {
         Headline = new Progress<string>(s => operationOverlayController.SetHeadline(s)),
@@ -200,4 +194,9 @@ public static class TestAppBuilder
             }
         })
     };
+    private sealed class ImmediateScheduler : IFacetUpdateScheduler
+    {
+        public void Schedule(Action run) => run();
+        public void Cancel() { }
+    }
 }
