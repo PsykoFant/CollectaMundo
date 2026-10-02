@@ -93,7 +93,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                 Keywords = GetFieldValue<string>(r, "Keywords"),
                 RulesText = GetFieldValue<string>(r, "RulesText"),
                 Side = GetFieldValue<string>(r, "Side"),
-                IsPromo = GetFieldValue<bool>(r, "IsPromo"),
+                IsPromo = GetBooleanValue(r, "IsPromo"),
                 OtherFaceIds = GetFieldValue<string>(r, "OtherFaceIds"),
                 Availability = GetFieldValue<string>(r, "Availability"),
                 GamePlayCard = GetFieldValue<int>(r, "GamePlayCard"),
@@ -186,6 +186,23 @@ namespace CollectaMundo.Infrastructure.CardLists
             }
 
             return (T)value;
+        }
+        private static bool GetBooleanValue(DbDataReader reader, string columnName)
+        {
+            var value = reader[columnName];
+
+            if (value == DBNull.Value)
+            {
+                return false;
+            }
+
+            return value switch
+            {
+                bool boolValue => boolValue,
+                long longValue => longValue != 0,
+                int intValue => intValue != 0,
+                _ => Convert.ToBoolean(value)
+            };
         }
     }
 }
