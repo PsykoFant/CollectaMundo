@@ -39,10 +39,16 @@ namespace CollectaMundo.ApplicationServices.CardImages
             else if (!string.IsNullOrWhiteSpace(name))
             {
                 var idTuple = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetScryfallIdByNameAsync(name, conn));
+
+                if (idTuple is null)
+                {
+                    Debug.WriteLine($"No card identifiers found for name '{name}'.");
+                    return null;
+                }
+
                 scryfallID = idTuple.Value.ScryfallId;
                 uuid = idTuple.Value.Uuid;
 
-                // Now that we have UUID, fetch metadata (same UoW style, read-only)
                 if (!string.IsNullOrWhiteSpace(uuid))
                 {
                     metadata = await _uowRunner.ExecuteReadOnlyAsync(conn => _repo.GetImageMetadataByUuidAsync(uuid, conn));

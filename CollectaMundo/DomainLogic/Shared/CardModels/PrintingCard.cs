@@ -8,7 +8,6 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
     public sealed class PrintingCard : ICardListSortable, ICardImageSourceCard
     {
         public required OracleCard Oracle { get; init; }
-
         public string? Availability { get; init; }
         public string? Colors => Oracle.Colors;
         public decimal? EtchedPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.EtchedPrice;
@@ -19,6 +18,7 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
                 : Finishes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         public decimal? FoilPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.FoilPrice;
         public int GamePlayCard => Oracle.GamePlayCard;
+        public bool IsPromo { get; init; }
 
         private ImageSource? _keyRuneImage;
         public ImageSource? KeyRuneImage

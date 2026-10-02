@@ -30,6 +30,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                                     1                   AS GameplayCard,
                                     c.finishes          AS Finishes,
                                     c.side              AS Side,
+                                    c.isPromo           AS IsPromo,
                                     c.rarity            AS Rarity
                                 FROM cards c
                                 LEFT JOIN cardIdentifiers ci
@@ -57,6 +58,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                                     0                   AS GameplayCard,
                                     t.finishes          AS Finishes,
                                     t.side              AS Side,
+                                    t.isPromo           AS IsPromo,
                                     NULL                AS Rarity
                                 FROM tokens t
                                 LEFT JOIN tokenIdentifiers ti
@@ -91,6 +93,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                 Keywords = GetFieldValue<string>(r, "Keywords"),
                 RulesText = GetFieldValue<string>(r, "RulesText"),
                 Side = GetFieldValue<string>(r, "Side"),
+                IsPromo = GetFieldValue<bool>(r, "IsPromo"),
                 OtherFaceIds = GetFieldValue<string>(r, "OtherFaceIds"),
                 Availability = GetFieldValue<string>(r, "Availability"),
                 GamePlayCard = GetFieldValue<int>(r, "GamePlayCard"),

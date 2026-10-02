@@ -84,7 +84,8 @@ namespace CollectaMundo.DomainLogic.CardLists
                     Language = printing.Language,
                     Rarity = printing.Rarity,
                     Finishes = printing.Finishes,
-                    Availability = printing.Availability
+                    Availability = printing.Availability,
+                    IsPromo = printing.IsPromo
                 });
             }
 

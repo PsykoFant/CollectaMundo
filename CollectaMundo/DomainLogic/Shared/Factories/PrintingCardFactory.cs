@@ -33,6 +33,7 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
             {
                 Availability = row.Availability,
                 Finishes = row.Finishes,
+                IsPromo = row.IsPromo,
                 Language = row.Language,
                 LegalityMasks = legalityMasks,
                 Oracle = oracle,

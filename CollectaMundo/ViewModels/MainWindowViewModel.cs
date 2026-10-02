@@ -634,12 +634,10 @@ namespace CollectaMundo.ViewModels
 
             if (!string.IsNullOrWhiteSpace(oracleId))
             {
-                return AllCardsVM.Cards
-                    .Where(card => string.Equals(
-                        card.Oracle.ScryfallOracleId,
-                        oracleId,
-                        StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(card => card.ReleaseDate ?? DateTime.MaxValue)
+                return AllCardsVM.Cards.Where(card =>
+                string.Equals(card.Oracle.ScryfallOracleId, oracleId, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(card => card.IsPromo)
+                    .ThenBy(card => card.ReleaseDate ?? DateTime.MaxValue)
                     .ThenBy(card => card.SetCode, StringComparer.OrdinalIgnoreCase)
                     .FirstOrDefault();
             }
