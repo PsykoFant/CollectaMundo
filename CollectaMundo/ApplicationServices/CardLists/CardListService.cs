@@ -25,45 +25,40 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
         public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, CardListViewModel<OracleCard> oracleCardsVM, Dictionary<string, FilterItemViewModel> filters, FilterPanelViewModel filterVM)
         {
-            var dbIoSw = Stopwatch.StartNew();
+            var phase1Sw = Stopwatch.StartNew();
 
-            // Phase 1: DB I/O + materialization
+            // Phase 1: Load database-backed startup data
 
-            // Small workload: keep sequential
+            // Small workload: keep sequential.
             var keyedSw = Stopwatch.StartNew();
-
             var lookupPackage = await _uowRunner.ExecuteReadOnlyAsync(conn => _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All));
 
             keyedSw.Stop();
 
             Debug.WriteLine($"[Phase 1] Keyed data: {keyedSw.ElapsedMilliseconds} ms");
 
-            // Heavy workloads: run concurrently on separate connections
-
-            var legalitySw = Stopwatch.StartNew();
-
+            // Heavy workloads:
+            // run concurrently on separate SQLite connections / worker threads.
             var legalityTask = Task.Run(async () =>
             {
-                Debug.WriteLine($"[Phase 1] Legalities START T{Environment.CurrentManagedThreadId}");
+                var sw = Stopwatch.StartNew();
 
                 await _uowRunner.ExecuteReadOnlyAsync(conn => _cardLegalityProviderService.LoadLegalitiesAsync(conn));
 
-                legalitySw.Stop();
+                sw.Stop();
 
-                Debug.WriteLine($"[Phase 1] Legalities END T{Environment.CurrentManagedThreadId} - {legalitySw.ElapsedMilliseconds} ms");
+                Debug.WriteLine($"[Phase 1] Legalities: {sw.ElapsedMilliseconds} ms");
             });
-
-            var printingSw = Stopwatch.StartNew();
 
             var printingRowsTask = Task.Run(async () =>
             {
-                Debug.WriteLine($"[Phase 1] Printing rows START T{Environment.CurrentManagedThreadId}");
+                var sw = Stopwatch.StartNew();
 
                 var rows = await _uowRunner.ExecuteReadOnlyAsync(conn => _cardListRepo.ReadAllCardPrintingDbRowsAsync(conn));
 
-                printingSw.Stop();
+                sw.Stop();
 
-                Debug.WriteLine($"[Phase 1] Printing rows END T{Environment.CurrentManagedThreadId} - {printingSw.ElapsedMilliseconds} ms");
+                Debug.WriteLine($"[Phase 1] Printing rows: {sw.ElapsedMilliseconds} ms");
 
                 return rows;
             });
@@ -72,18 +67,20 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             var printingRows = await printingRowsTask;
 
-
-            // Small workload: keep sequential for now
+            // Small workload: keep sequential.
             var collectionSw = Stopwatch.StartNew();
-            var collectionRows = await _uowRunner.ExecuteReadOnlyAsync(conn => _cardListRepo.ReadMyCollectionAsync(conn));
+
+            var collectionRows = await _uowRunner.ExecuteReadOnlyAsync(
+                conn => _cardListRepo.ReadMyCollectionAsync(conn));
+
             collectionSw.Stop();
 
             Debug.WriteLine($"[Phase 1] Collection rows: {collectionSw.ElapsedMilliseconds} ms");
 
+            phase1Sw.Stop();
 
-            dbIoSw.Stop();
+            Debug.WriteLine($"[InitializeCardListsAsync] Phase 1 (load startup data): {phase1Sw.ElapsedMilliseconds} ms");
 
-            Debug.WriteLine($"[InitializeCardListsAsync] phase 1 (DB I/O): {dbIoSw.ElapsedMilliseconds} ms");
 
             // Phase 2a: Static provider setup
             CardDataProviders.ManaCostImages = lookupPackage.ManaCostImages;
@@ -97,20 +94,24 @@ namespace CollectaMundo.ApplicationServices.CardLists
             var printings = new PrintingCard[printingRows.Count];
 
             Parallel.For(0, printingRows.Count, i =>
-            {
-                var row = printingRows[i];
-                var uuid = row.Uuid ?? string.Empty;
-                _cardLegalityProviderService.MasksByUuid.TryGetValue(uuid, out var legalityMasks);
-                printings[i] = PrintingCardFactory.FromRow(row, legalityMasks);
-            });
+                {
+                    var row = printingRows[i];
+                    var uuid = row.Uuid ?? string.Empty;
+
+                    _cardLegalityProviderService.MasksByUuid.TryGetValue(uuid, out var legalityMasks);
+
+                    printings[i] = PrintingCardFactory.FromRow(row, legalityMasks);
+                });
 
             var aggregatedPrintings = PrintingCardAggregator.Aggregate(printings);
             var printingByUuid = aggregatedPrintings.Where(p => !string.IsNullOrWhiteSpace(p.Uuid)).ToDictionary(p => p.Uuid, StringComparer.OrdinalIgnoreCase);
 
             phase2bSw.Stop();
-            Debug.WriteLine($"[InitializeCardListsAsync] phase 2b (Hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
 
-            // PHASE 3a, 3b in parallel
+            Debug.WriteLine($"[InitializeCardListsAsync] Phase 2b (hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
+
+            // Phase 3a + 3b:
+            // build independent application-facing collections concurrently.
             var phase3abSw = Stopwatch.StartNew();
 
             var allCardsTask = Task.Run(() =>
@@ -126,14 +127,14 @@ namespace CollectaMundo.ApplicationServices.CardLists
             var myCollectionTask = Task.Run(() =>
             {
                 var myCollection = collectionRows.Select(row =>
-                {
-                    if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
                     {
-                        throw new InvalidOperationException($"Cannot materialize collection card. Printing not found for UUID '{row.Identity.Uuid}'.");
-                    }
+                        if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
+                        {
+                            throw new InvalidOperationException($"Cannot materialize collection card. " + $"Printing not found for UUID '{row.Identity.Uuid}'.");
+                        }
 
-                    return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
-                }).ToList();
+                        return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
+                    }).ToList();
 
                 myCollectionVM.Cards = SortCards(myCollection);
                 myCollectionVM.FilteredCards = myCollectionVM.Cards;
@@ -143,10 +144,8 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             var oracleCardsTask = Task.Run(() =>
             {
-                var oracleCards = aggregatedPrintings
-                    .Select(p => p.Oracle)
-                    .Where(o => !string.IsNullOrWhiteSpace(o.ScryfallOracleId))
-                    .GroupBy(o => o.ScryfallOracleId, StringComparer.OrdinalIgnoreCase)
+                var oracleCards = aggregatedPrintings.Select(p => p.Oracle).Where(o => !string.IsNullOrWhiteSpace(o.ScryfallOracleId))
+                .GroupBy(o => o.ScryfallOracleId, StringComparer.OrdinalIgnoreCase)
                     .Select(g => g.First())
                     .ToList();
 
@@ -159,8 +158,11 @@ namespace CollectaMundo.ApplicationServices.CardLists
             await Task.WhenAll(allCardsTask, myCollectionTask, oracleCardsTask);
 
             phase3abSw.Stop();
-            Debug.WriteLine($"[InitializeCardListsAsync] phase 3a and 3b (build AllCards, MyCollection, and OracleCards objects): {phase3abSw.ElapsedMilliseconds} ms");
 
+            Debug.WriteLine($"[InitializeCardListsAsync] Phase 3a/3b (build card lists): {phase3abSw.ElapsedMilliseconds} ms");
+
+
+            // Phase 3c: Build filter defaults
             var phase3cSw = Stopwatch.StartNew();
 
             var filterDefaults = _filterDefaultsLogic.Build(allCardsTask.Result, myCollectionTask.Result);
@@ -169,18 +171,20 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             foreach (var def in filterDefaults)
             {
-                filters[def.CriteriaKey] = new FilterItemViewModel(
-                    def.CriteriaKey,
-                    def.FilterOptions,
-                    def.DefaultText,
-                    def.ReadableLabel,
-                    filterVM,
-                    new FilterItemSearchLogic(),
-                    def.NumericCriteria);
+                filters[def.CriteriaKey] =
+                    new FilterItemViewModel(
+                        def.CriteriaKey,
+                        def.FilterOptions,
+                        def.DefaultText,
+                        def.ReadableLabel,
+                        filterVM,
+                        new FilterItemSearchLogic(),
+                        def.NumericCriteria);
             }
 
             phase3cSw.Stop();
-            Debug.WriteLine($"[InitializeCardListsAsync] phase 3c (build filters): {phase3cSw.ElapsedMilliseconds} ms");
+
+            Debug.WriteLine($"[InitializeCardListsAsync] Phase 3c (build filters): {phase3cSw.ElapsedMilliseconds} ms");
         }
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {
@@ -209,39 +213,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
             .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)
             ];
-        }
-
-        // Debug timing helper
-        private static async Task<T> MeasureAsync<T>(string name, Func<Task<T>> action)
-        {
-            var sw = Stopwatch.StartNew();
-
-            try
-            {
-                return await action();
-            }
-            finally
-            {
-                sw.Stop();
-                Debug.WriteLine($"[Phase 1] {name}: {sw.ElapsedMilliseconds} ms");
-            }
-        }
-
-        private static async Task MeasureAsync(
-            string name,
-            Func<Task> action)
-        {
-            var sw = Stopwatch.StartNew();
-
-            try
-            {
-                await action();
-            }
-            finally
-            {
-                sw.Stop();
-                Debug.WriteLine($"[Phase 1] {name}: {sw.ElapsedMilliseconds} ms");
-            }
         }
     }
 }
