@@ -2,6 +2,7 @@
 using CollectaMundo.Infrastructure.Shared.Models;
 using System.Data.Common;
 using System.Data.SQLite;
+using System.Diagnostics;
 
 namespace CollectaMundo.Infrastructure.CardLists
 {
@@ -66,16 +67,40 @@ namespace CollectaMundo.Infrastructure.CardLists
                          """;
 
             using var cmd = new SQLiteCommand(query, conn);
+
+            var executeSw = Stopwatch.StartNew();
+
             using var reader = await cmd.ExecuteReaderAsync();
+
+            executeSw.Stop();
+
+            Debug.WriteLine(
+                $"[Printing] ExecuteReader: {executeSw.ElapsedMilliseconds} ms");
+
+
+            var ordinalSw = Stopwatch.StartNew();
 
             var ordinals = PrintingCardOrdinals.FromReader(reader);
 
+            ordinalSw.Stop();
+
+            Debug.WriteLine(
+                $"[Printing] Resolve ordinals: {ordinalSw.ElapsedMilliseconds} ms");
+
+
             var list = new List<PrintingCardDbRow>(capacity: 122000);
+
+            var readSw = Stopwatch.StartNew();
 
             while (await reader.ReadAsync())
             {
                 list.Add(CardPrintingDbRowFromReader(reader, ordinals));
             }
+
+            readSw.Stop();
+
+            Debug.WriteLine(
+                $"[Printing] Read/materialize {list.Count} rows: {readSw.ElapsedMilliseconds} ms");
 
             return list;
         }
