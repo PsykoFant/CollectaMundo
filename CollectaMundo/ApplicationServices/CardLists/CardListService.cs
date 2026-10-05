@@ -31,11 +31,34 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             var (lookupPackage, printingRows, collectionRows) = await _uowRunner.ExecuteReadOnlyAsync(async conn =>
             {
-                var lookupPackageTask = _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All); var legalityTask = _cardLegalityProviderService.LoadAsync(conn);
-                var printingRowsTask = _cardListRepo.ReadAllCardPrintingDbRowsAsync(conn);
-                var collectionRowsTask = _cardListRepo.ReadMyCollectionAsync(conn);
+                var lookupPackageTask = _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All);
 
-                await Task.WhenAll(lookupPackageTask, legalityTask, printingRowsTask, collectionRowsTask);
+                Debug.WriteLine(
+                    $"[Phase 1] Keyed task completed immediately: {lookupPackageTask.IsCompleted}");
+
+                var legalityTask =
+                    _cardLegalityProviderService.LoadLegalitiesAsync(conn);
+
+                Debug.WriteLine(
+                    $"[Phase 1] Legality task completed immediately: {legalityTask.IsCompleted}");
+
+                var printingRowsTask =
+                    _cardListRepo.ReadAllCardPrintingDbRowsAsync(conn);
+
+                Debug.WriteLine(
+                    $"[Phase 1] Printing task completed immediately: {printingRowsTask.IsCompleted}");
+
+                var collectionRowsTask =
+                    _cardListRepo.ReadMyCollectionAsync(conn);
+
+                Debug.WriteLine(
+                    $"[Phase 1] Collection task completed immediately: {collectionRowsTask.IsCompleted}");
+
+                await Task.WhenAll(
+                    lookupPackageTask,
+                    legalityTask,
+                    printingRowsTask,
+                    collectionRowsTask);
 
                 return (lookupPackageTask.Result, printingRowsTask.Result, collectionRowsTask.Result);
             });
@@ -167,6 +190,39 @@ namespace CollectaMundo.ApplicationServices.CardLists
             .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)
             ];
+        }
+
+        // Debug timing helper
+        private static async Task<T> MeasureAsync<T>(string name, Func<Task<T>> action)
+        {
+            var sw = Stopwatch.StartNew();
+
+            try
+            {
+                return await action();
+            }
+            finally
+            {
+                sw.Stop();
+                Debug.WriteLine($"[Phase 1] {name}: {sw.ElapsedMilliseconds} ms");
+            }
+        }
+
+        private static async Task MeasureAsync(
+            string name,
+            Func<Task> action)
+        {
+            var sw = Stopwatch.StartNew();
+
+            try
+            {
+                await action();
+            }
+            finally
+            {
+                sw.Stop();
+                Debug.WriteLine($"[Phase 1] {name}: {sw.ElapsedMilliseconds} ms");
+            }
         }
     }
 }

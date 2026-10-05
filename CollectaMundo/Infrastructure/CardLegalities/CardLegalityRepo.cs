@@ -9,37 +9,26 @@ namespace CollectaMundo.Infrastructure.CardLegalities
         public async Task<IReadOnlyList<CardLegalityDbRow>> GetAllAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
         {
             const string sql = """
-                                SELECT *
-                                FROM cardLegalities;
-                                """;
+                       SELECT *
+                       FROM cardLegalities;
+                       """;
 
             using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
-
             using var reader = await cmd.ExecuteReaderAsync();
 
-            var rows = new List<CardLegalityDbRow>();
+            var uuidOrdinal = reader.GetOrdinal("uuid");
+            var legalityColumns = Enumerable.Range(0, reader.FieldCount).Where(i => i != uuidOrdinal).Select(i => (Ordinal: i, Name: reader.GetName(i))).ToArray();
+            var rows = new List<CardLegalityDbRow>(capacity: 112000);
 
             while (await reader.ReadAsync())
             {
-                var legalities = new Dictionary<string, string?>(
-                    StringComparer.OrdinalIgnoreCase);
+                var uuid = reader.GetString(uuidOrdinal);
 
-                string uuid = string.Empty;
+                var legalities = new Dictionary<string, string?>(capacity: legalityColumns.Length, comparer: StringComparer.OrdinalIgnoreCase);
 
-                for (int i = 0; i < reader.FieldCount; i++)
+                foreach (var (ordinal, name) in legalityColumns)
                 {
-                    var column = reader.GetName(i);
-
-                    if (column.Equals("uuid", StringComparison.OrdinalIgnoreCase))
-                    {
-                        uuid = reader.GetString(i);
-                        continue;
-                    }
-
-                    legalities[column] =
-                        reader.IsDBNull(i)
-                            ? null
-                            : reader.GetString(i);
+                    legalities[name] = reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
                 }
 
                 rows.Add(new CardLegalityDbRow

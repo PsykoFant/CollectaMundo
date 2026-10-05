@@ -3,6 +3,7 @@ using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.Infrastructure.CardLegalities;
 using CollectaMundo.Infrastructure.CardLegalities.Models.CollectaMundo.Infrastructure.CardLegalities.Models;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace CollectaMundo.ApplicationServices.CardLegalities
@@ -25,11 +26,21 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
         }
         public IReadOnlyList<CardLegalityFormat> Formats => _formats;
         public IReadOnlyDictionary<string, CardLegalityMasks> MasksByUuid => _masksByUuid;
-        public async Task LoadAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
+        public async Task LoadLegalitiesAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
         {
-            var rows = await _uowRunner.ExecuteReadOnlyAsync(conn => _cardLegalityRepo.GetAllAsync(conn));
+            var readSw = Stopwatch.StartNew();
+
+            var rows = await _cardLegalityRepo.GetAllAsync(conn, tx);
+
+            readSw.Stop();
+            Debug.WriteLine($"[Legalities] Read/materialize rows: {readSw.ElapsedMilliseconds} ms");
+
+            var buildSw = Stopwatch.StartNew();
 
             LoadFromRows(rows);
+
+            buildSw.Stop();
+            Debug.WriteLine($"[Legalities] Build masks: {buildSw.ElapsedMilliseconds} ms");
         }
         private void LoadFromRows(IReadOnlyList<CardLegalityDbRow> rows)
         {

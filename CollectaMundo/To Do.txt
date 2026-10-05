@@ -1,8 +1,6 @@
 TO DO 
 
-Deck editor!
 
- - Skriv test
 
 Db optimering
 
