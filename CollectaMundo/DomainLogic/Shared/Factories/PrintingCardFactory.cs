@@ -7,6 +7,7 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
 {
     public static class PrintingCardFactory
     {
+        private static readonly char[] ManaCostSeparators = ['{', '}'];
         public static PrintingCard FromRow(PrintingCardDbRow row, CardLegalityMasks legalityMasks = default)
         {
             var oracle = new OracleCard
@@ -42,7 +43,6 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 Uuid = row.Uuid ?? string.Empty
             };
         }
-
         private static string JoinAndDedupCsv(string? csv)
         {
             if (string.IsNullOrWhiteSpace(csv))
@@ -50,9 +50,15 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 return string.Empty;
             }
 
+            // A single value cannot contain duplicates.
+            // Avoid HashSet, Split and StringBuilder entirely.
+            if (csv.IndexOf(',') < 0)
+            {
+                return csv.Trim();
+            }
+
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var segments = csv.Split(',');
-
             var sb = new StringBuilder();
 
             foreach (var segment in segments)
@@ -93,11 +99,7 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 return string.Empty;
             }
 
-            char[] separators = ['{', '}'];
-
-            return string
-                .Join(",", raw.Split(separators, StringSplitOptions.RemoveEmptyEntries))
-                .Trim(',');
+            return string.Join(",", raw.Split(ManaCostSeparators, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
     }
 }

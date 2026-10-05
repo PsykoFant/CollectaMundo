@@ -91,24 +91,101 @@ namespace CollectaMundo.ApplicationServices.CardLists
             // Phase 2b: Hydrate and aggregate
             var phase2bSw = Stopwatch.StartNew();
 
+            var gen0Start = GC.CollectionCount(0);
+            var gen1Start = GC.CollectionCount(1);
+            var gen2Start = GC.CollectionCount(2);
+
+
+            // Hydrate PrintingCard objects
+            var hydrateSw = Stopwatch.StartNew();
+
             var printings = new PrintingCard[printingRows.Count];
 
             Parallel.For(0, printingRows.Count, i =>
-                {
-                    var row = printingRows[i];
-                    var uuid = row.Uuid ?? string.Empty;
+            {
+                var row = printingRows[i];
+                var uuid = row.Uuid ?? string.Empty;
 
-                    _cardLegalityProviderService.MasksByUuid.TryGetValue(uuid, out var legalityMasks);
+                _cardLegalityProviderService.MasksByUuid.TryGetValue(
+                    uuid,
+                    out var legalityMasks);
 
-                    printings[i] = PrintingCardFactory.FromRow(row, legalityMasks);
-                });
+                printings[i] = PrintingCardFactory.FromRow(
+                    row,
+                    legalityMasks);
+            });
 
-            var aggregatedPrintings = PrintingCardAggregator.Aggregate(printings);
-            var printingByUuid = aggregatedPrintings.Where(p => !string.IsNullOrWhiteSpace(p.Uuid)).ToDictionary(p => p.Uuid, StringComparer.OrdinalIgnoreCase);
+            hydrateSw.Stop();
+
+            var gen0AfterHydrate = GC.CollectionCount(0);
+            var gen1AfterHydrate = GC.CollectionCount(1);
+            var gen2AfterHydrate = GC.CollectionCount(2);
+
+            Debug.WriteLine(
+                $"[Phase 2b] Hydrate {printings.Length} printings: " +
+                $"{hydrateSw.ElapsedMilliseconds} ms");
+
+            Debug.WriteLine(
+                $"[Phase 2b] GC during hydrate: " +
+                $"Gen0 +{gen0AfterHydrate - gen0Start}, " +
+                $"Gen1 +{gen1AfterHydrate - gen1Start}, " +
+                $"Gen2 +{gen2AfterHydrate - gen2Start}");
+
+
+            // Aggregate printings
+            var aggregateSw = Stopwatch.StartNew();
+
+            var aggregatedPrintings =
+                PrintingCardAggregator.Aggregate(printings);
+
+            aggregateSw.Stop();
+
+            var gen0AfterAggregate = GC.CollectionCount(0);
+            var gen1AfterAggregate = GC.CollectionCount(1);
+            var gen2AfterAggregate = GC.CollectionCount(2);
+
+            Debug.WriteLine(
+                $"[Phase 2b] Aggregate printings: " +
+                $"{aggregateSw.ElapsedMilliseconds} ms");
+
+            Debug.WriteLine(
+                $"[Phase 2b] GC during aggregate: " +
+                $"Gen0 +{gen0AfterAggregate - gen0AfterHydrate}, " +
+                $"Gen1 +{gen1AfterAggregate - gen1AfterHydrate}, " +
+                $"Gen2 +{gen2AfterAggregate - gen2AfterHydrate}");
+
+
+            // Build UUID lookup
+            var dictionarySw = Stopwatch.StartNew();
+
+            var printingByUuid = aggregatedPrintings
+                .Where(p => !string.IsNullOrWhiteSpace(p.Uuid))
+                .ToDictionary(
+                    p => p.Uuid,
+                    StringComparer.OrdinalIgnoreCase);
+
+            dictionarySw.Stop();
+
+            var gen0AfterDictionary = GC.CollectionCount(0);
+            var gen1AfterDictionary = GC.CollectionCount(1);
+            var gen2AfterDictionary = GC.CollectionCount(2);
+
+            Debug.WriteLine(
+                $"[Phase 2b] Build UUID dictionary: " +
+                $"{dictionarySw.ElapsedMilliseconds} ms");
+
+            Debug.WriteLine(
+                $"[Phase 2b] GC during dictionary: " +
+                $"Gen0 +{gen0AfterDictionary - gen0AfterAggregate}, " +
+                $"Gen1 +{gen1AfterDictionary - gen1AfterAggregate}, " +
+                $"Gen2 +{gen2AfterDictionary - gen2AfterAggregate}");
+
 
             phase2bSw.Stop();
 
-            Debug.WriteLine($"[InitializeCardListsAsync] Phase 2b (hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine(
+                $"[InitializeCardListsAsync] Phase 2b " +
+                $"(hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
 
             // Phase 3a + 3b:
             // build independent application-facing collections concurrently.
