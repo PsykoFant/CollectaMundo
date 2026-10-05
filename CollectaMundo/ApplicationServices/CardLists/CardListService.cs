@@ -91,14 +91,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
             // Phase 2b: Hydrate and aggregate
             var phase2bSw = Stopwatch.StartNew();
 
-            var gen0Start = GC.CollectionCount(0);
-            var gen1Start = GC.CollectionCount(1);
-            var gen2Start = GC.CollectionCount(2);
-
-
-            // Hydrate PrintingCard objects
-            var hydrateSw = Stopwatch.StartNew();
-
             var printings = new PrintingCard[printingRows.Count];
 
             Parallel.For(0, printingRows.Count, i =>
@@ -106,94 +98,33 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 var row = printingRows[i];
                 var uuid = row.Uuid ?? string.Empty;
 
-                _cardLegalityProviderService.MasksByUuid.TryGetValue(
-                    uuid,
-                    out var legalityMasks);
+                _cardLegalityProviderService.MasksByUuid.TryGetValue(uuid, out var legalityMasks);
 
-                printings[i] = PrintingCardFactory.FromRow(
-                    row,
-                    legalityMasks);
+                printings[i] = PrintingCardFactory.FromRow(row, legalityMasks);
             });
 
-            hydrateSw.Stop();
+            var aggregatedPrintings = PrintingCardAggregator.AggregatePrintingCards(printings);
 
-            var gen0AfterHydrate = GC.CollectionCount(0);
-            var gen1AfterHydrate = GC.CollectionCount(1);
-            var gen2AfterHydrate = GC.CollectionCount(2);
-
-            Debug.WriteLine(
-                $"[Phase 2b] Hydrate {printings.Length} printings: " +
-                $"{hydrateSw.ElapsedMilliseconds} ms");
-
-            Debug.WriteLine(
-                $"[Phase 2b] GC during hydrate: " +
-                $"Gen0 +{gen0AfterHydrate - gen0Start}, " +
-                $"Gen1 +{gen1AfterHydrate - gen1Start}, " +
-                $"Gen2 +{gen2AfterHydrate - gen2Start}");
-
-
-            // Aggregate printings
-            var aggregateSw = Stopwatch.StartNew();
-
-            var aggregatedPrintings =
-                PrintingCardAggregator.Aggregate(printings);
-
-            aggregateSw.Stop();
-
-            var gen0AfterAggregate = GC.CollectionCount(0);
-            var gen1AfterAggregate = GC.CollectionCount(1);
-            var gen2AfterAggregate = GC.CollectionCount(2);
-
-            Debug.WriteLine(
-                $"[Phase 2b] Aggregate printings: " +
-                $"{aggregateSw.ElapsedMilliseconds} ms");
-
-            Debug.WriteLine(
-                $"[Phase 2b] GC during aggregate: " +
-                $"Gen0 +{gen0AfterAggregate - gen0AfterHydrate}, " +
-                $"Gen1 +{gen1AfterAggregate - gen1AfterHydrate}, " +
-                $"Gen2 +{gen2AfterAggregate - gen2AfterHydrate}");
-
-
-            // Build UUID lookup
-            var dictionarySw = Stopwatch.StartNew();
-
-            var printingByUuid = aggregatedPrintings
-                .Where(p => !string.IsNullOrWhiteSpace(p.Uuid))
-                .ToDictionary(
-                    p => p.Uuid,
-                    StringComparer.OrdinalIgnoreCase);
-
-            dictionarySw.Stop();
-
-            var gen0AfterDictionary = GC.CollectionCount(0);
-            var gen1AfterDictionary = GC.CollectionCount(1);
-            var gen2AfterDictionary = GC.CollectionCount(2);
-
-            Debug.WriteLine(
-                $"[Phase 2b] Build UUID dictionary: " +
-                $"{dictionarySw.ElapsedMilliseconds} ms");
-
-            Debug.WriteLine(
-                $"[Phase 2b] GC during dictionary: " +
-                $"Gen0 +{gen0AfterDictionary - gen0AfterAggregate}, " +
-                $"Gen1 +{gen1AfterDictionary - gen1AfterAggregate}, " +
-                $"Gen2 +{gen2AfterDictionary - gen2AfterAggregate}");
-
+            var printingByUuid = aggregatedPrintings.Where(p => !string.IsNullOrWhiteSpace(p.Uuid)).ToDictionary(p => p.Uuid, StringComparer.OrdinalIgnoreCase);
 
             phase2bSw.Stop();
 
-            Debug.WriteLine(
-                $"[InitializeCardListsAsync] Phase 2b " +
-                $"(hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"[InitializeCardListsAsync] Phase 2b " + $"(hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
+
 
             // Phase 3a + 3b:
-            // build independent application-facing collections concurrently.
+            // Build independent application-facing collections concurrently.
             var phase3abSw = Stopwatch.StartNew();
 
             var allCardsTask = Task.Run(() =>
             {
+                var sortSw = Stopwatch.StartNew();
+
                 var allCards = SortCards(aggregatedPrintings);
+
+                sortSw.Stop();
+
+                Debug.WriteLine($"[Phase 3a/3b] AllCards sort: " + $"{sortSw.ElapsedMilliseconds} ms");
 
                 allCardsVM.Cards = allCards;
                 allCardsVM.FilteredCards = allCardsVM.Cards;
@@ -201,32 +132,59 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 return allCards;
             });
 
+
             var myCollectionTask = Task.Run(() =>
             {
-                var myCollection = collectionRows.Select(row =>
-                    {
-                        if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
-                        {
-                            throw new InvalidOperationException($"Cannot materialize collection card. " + $"Printing not found for UUID '{row.Identity.Uuid}'.");
-                        }
+                var materializeSw = Stopwatch.StartNew();
 
-                        return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
-                    }).ToList();
+                var myCollection = collectionRows.Select(row =>
+                {
+                    if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
+                    {
+                        throw new InvalidOperationException($"Cannot materialize collection card. " + $"Printing not found for UUID " + $"'{row.Identity.Uuid}'.");
+                    }
+
+                    return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
+                }).ToList();
+
+                materializeSw.Stop();
+
+                Debug.WriteLine($"[Phase 3a/3b] MyCollection materialize " + $"{myCollection.Count} cards: " + $"{materializeSw.ElapsedMilliseconds} ms");
+
+                var sortSw = Stopwatch.StartNew();
 
                 myCollectionVM.Cards = SortCards(myCollection);
+
+                sortSw.Stop();
+
+                Debug.WriteLine($"[Phase 3a/3b] MyCollection sort: " + $"{sortSw.ElapsedMilliseconds} ms");
                 myCollectionVM.FilteredCards = myCollectionVM.Cards;
 
                 return myCollection;
             });
 
+
             var oracleCardsTask = Task.Run(() =>
             {
+                var buildSw = Stopwatch.StartNew();
+
                 var oracleCards = aggregatedPrintings.Select(p => p.Oracle).Where(o => !string.IsNullOrWhiteSpace(o.ScryfallOracleId))
-                .GroupBy(o => o.ScryfallOracleId, StringComparer.OrdinalIgnoreCase)
+                    .GroupBy(o => o.ScryfallOracleId, StringComparer.OrdinalIgnoreCase)
                     .Select(g => g.First())
                     .ToList();
 
+                buildSw.Stop();
+
+                Debug.WriteLine($"[Phase 3a/3b] OracleCards build/deduplicate " + $"{oracleCards.Count} cards: " + $"{buildSw.ElapsedMilliseconds} ms");
+
+                var sortSw = Stopwatch.StartNew();
+
                 oracleCardsVM.Cards = SortOracleCards(oracleCards);
+
+                sortSw.Stop();
+
+                Debug.WriteLine($"[Phase 3a/3b] OracleCards sort: " + $"{sortSw.ElapsedMilliseconds} ms");
+
                 oracleCardsVM.FilteredCards = oracleCardsVM.Cards;
 
                 return oracleCards;
@@ -236,7 +194,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             phase3abSw.Stop();
 
-            Debug.WriteLine($"[InitializeCardListsAsync] Phase 3a/3b (build card lists): {phase3abSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"[InitializeCardListsAsync] Phase 3a/3b " + $"(build card lists): {phase3abSw.ElapsedMilliseconds} ms");
 
 
             // Phase 3c: Build filter defaults

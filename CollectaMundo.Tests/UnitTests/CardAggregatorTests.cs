@@ -14,7 +14,7 @@ namespace CollectaMundo.Tests.UnitTests
                 TestCardFactory.CreatePrinting(uuid: "card1",keywords: "Flying",colors: "W",types: "Creature",text: "Some ability",side: "a")
             };
 
-            var result = PrintingCardAggregator.Aggregate(input);
+            var result = PrintingCardAggregator.AggregatePrintingCards(input);
 
             Assert.Single(result);
 
@@ -35,7 +35,7 @@ namespace CollectaMundo.Tests.UnitTests
                 TestCardFactory.CreatePrinting(uuid: "back",keywords: "Haste, Trample",colors: "R, G",types: "Artifact",text: "Back text",side: "b",otherFaceIds: ["front"])
             };
 
-            var result = PrintingCardAggregator.Aggregate(input);
+            var result = PrintingCardAggregator.AggregatePrintingCards(input);
 
             Assert.Single(result);
             var card = result[0];
@@ -54,7 +54,7 @@ namespace CollectaMundo.Tests.UnitTests
                 TestCardFactory.CreatePrinting(name: "Back Only", uuid: "back", side: "b")
             };
 
-            var result = PrintingCardAggregator.Aggregate(input);
+            var result = PrintingCardAggregator.AggregatePrintingCards(input);
 
             Assert.Empty(result);
         }
@@ -67,7 +67,7 @@ namespace CollectaMundo.Tests.UnitTests
                     TestCardFactory.CreatePrinting(name: "Test Card", uuid: "card1", side: "a", keywords: "Flying, flying, FLYING", colors: "W, w, W", types: "Creature, creature")
                 };
 
-            var result = PrintingCardAggregator.Aggregate(input);
+            var result = PrintingCardAggregator.AggregatePrintingCards(input);
             Assert.Single(result);
 
             var card = result[0];
@@ -85,7 +85,7 @@ namespace CollectaMundo.Tests.UnitTests
                     TestCardFactory.CreatePrinting(name: "Test Card2", uuid: "card2", side: "a")
                 };
 
-            var result = PrintingCardAggregator.Aggregate(input);
+            var result = PrintingCardAggregator.AggregatePrintingCards(input);
             Assert.Equal(2, result.Count);
         }
     }
