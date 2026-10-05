@@ -6,6 +6,7 @@ namespace CollectaMundo.ApplicationServices.Shared.UnitOfWork
     {
         Task<T> ExecuteWriteAsync<T>(Func<SQLiteConnection, SQLiteTransaction, Task<(T Result, bool Commit)>> action);
         Task<T> ExecuteReadOnlyAsync<T>(Func<SQLiteConnection, Task<T>> action);
+        Task ExecuteReadOnlyAsync(Func<SQLiteConnection, Task> action);
     }
 }
 

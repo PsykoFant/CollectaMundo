@@ -27,43 +27,62 @@ namespace CollectaMundo.ApplicationServices.CardLists
         {
             var dbIoSw = Stopwatch.StartNew();
 
-            // Phase 1: DB I/O
+            // Phase 1: DB I/O + materialization
 
-            var (lookupPackage, printingRows, collectionRows) = await _uowRunner.ExecuteReadOnlyAsync(async conn =>
+            // Small workload: keep sequential
+            var keyedSw = Stopwatch.StartNew();
+
+            var lookupPackage = await _uowRunner.ExecuteReadOnlyAsync(conn => _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All));
+
+            keyedSw.Stop();
+
+            Debug.WriteLine($"[Phase 1] Keyed data: {keyedSw.ElapsedMilliseconds} ms");
+
+            // Heavy workloads: run concurrently on separate connections
+
+            var legalitySw = Stopwatch.StartNew();
+
+            var legalityTask = Task.Run(async () =>
             {
-                var lookupPackageTask = _keyedDataProviderService.LoadKeyedDataAsync(conn, KeyedDataProviderOptions.All);
+                Debug.WriteLine($"[Phase 1] Legalities START T{Environment.CurrentManagedThreadId}");
 
-                Debug.WriteLine(
-                    $"[Phase 1] Keyed task completed immediately: {lookupPackageTask.IsCompleted}");
+                await _uowRunner.ExecuteReadOnlyAsync(conn => _cardLegalityProviderService.LoadLegalitiesAsync(conn));
 
-                var legalityTask =
-                    _cardLegalityProviderService.LoadLegalitiesAsync(conn);
+                legalitySw.Stop();
 
-                Debug.WriteLine(
-                    $"[Phase 1] Legality task completed immediately: {legalityTask.IsCompleted}");
-
-                var printingRowsTask =
-                    _cardListRepo.ReadAllCardPrintingDbRowsAsync(conn);
-
-                Debug.WriteLine(
-                    $"[Phase 1] Printing task completed immediately: {printingRowsTask.IsCompleted}");
-
-                var collectionRowsTask =
-                    _cardListRepo.ReadMyCollectionAsync(conn);
-
-                Debug.WriteLine(
-                    $"[Phase 1] Collection task completed immediately: {collectionRowsTask.IsCompleted}");
-
-                await Task.WhenAll(
-                    lookupPackageTask,
-                    legalityTask,
-                    printingRowsTask,
-                    collectionRowsTask);
-
-                return (lookupPackageTask.Result, printingRowsTask.Result, collectionRowsTask.Result);
+                Debug.WriteLine($"[Phase 1] Legalities END T{Environment.CurrentManagedThreadId} - {legalitySw.ElapsedMilliseconds} ms");
             });
 
+            var printingSw = Stopwatch.StartNew();
+
+            var printingRowsTask = Task.Run(async () =>
+            {
+                Debug.WriteLine($"[Phase 1] Printing rows START T{Environment.CurrentManagedThreadId}");
+
+                var rows = await _uowRunner.ExecuteReadOnlyAsync(conn => _cardListRepo.ReadAllCardPrintingDbRowsAsync(conn));
+
+                printingSw.Stop();
+
+                Debug.WriteLine($"[Phase 1] Printing rows END T{Environment.CurrentManagedThreadId} - {printingSw.ElapsedMilliseconds} ms");
+
+                return rows;
+            });
+
+            await Task.WhenAll(legalityTask, printingRowsTask);
+
+            var printingRows = await printingRowsTask;
+
+
+            // Small workload: keep sequential for now
+            var collectionSw = Stopwatch.StartNew();
+            var collectionRows = await _uowRunner.ExecuteReadOnlyAsync(conn => _cardListRepo.ReadMyCollectionAsync(conn));
+            collectionSw.Stop();
+
+            Debug.WriteLine($"[Phase 1] Collection rows: {collectionSw.ElapsedMilliseconds} ms");
+
+
             dbIoSw.Stop();
+
             Debug.WriteLine($"[InitializeCardListsAsync] phase 1 (DB I/O): {dbIoSw.ElapsedMilliseconds} ms");
 
             // Phase 2a: Static provider setup

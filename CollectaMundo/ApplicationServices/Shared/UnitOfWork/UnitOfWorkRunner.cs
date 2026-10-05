@@ -40,5 +40,14 @@ namespace CollectaMundo.ApplicationServices.Shared.UnitOfWork
 
             return await action(uow.CurrentConnection);
         }
+
+        public Task ExecuteReadOnlyAsync(Func<SQLiteConnection, Task> action)
+        {
+            return ExecuteReadOnlyAsync<object?>(async conn =>
+            {
+                await action(conn);
+                return null;
+            });
+        }
     }
 }
