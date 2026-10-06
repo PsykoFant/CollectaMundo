@@ -381,7 +381,7 @@ namespace CollectaMundo.Tests.TestUtils
 
             try
             {
-                // Build-in tables
+                // BuildFilters-in tables
                 await SeedTableAsync("cards", Path.Combine(basePath, "cards.csv"));
                 await SeedTableAsync("tokens", Path.Combine(basePath, "tokens.csv"));
                 await SeedTableAsync("sets", Path.Combine(basePath, "sets.csv"));

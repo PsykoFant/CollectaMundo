@@ -876,7 +876,7 @@ namespace CollectaMundo.DomainLogic.Import
         {
             var sb = new StringBuilder();
 
-            // Build lookup: key -> joined warnings (only for unimportable)
+            // BuildFilters lookup: key -> joined warnings (only for unimportable)
             var warningsByKey = resolvedItems
                 .Where(r => !r.IsImportable)
                 .ToDictionary(

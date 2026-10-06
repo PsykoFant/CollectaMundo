@@ -27,7 +27,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
         {
             var phase1Sw = Stopwatch.StartNew();
 
-            // Phase 1: Load database-backed startup data
+            #region Phase 1: Load database-backed startup data
 
             // Small workload: keep sequential.
             var keyedSw = Stopwatch.StartNew();
@@ -81,6 +81,9 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             Debug.WriteLine($"[InitializeCardListsAsync] Phase 1 (load startup data): {phase1Sw.ElapsedMilliseconds} ms");
 
+            #endregion
+
+            #region Phase 2: Hydrate and aggregate printing cards
 
             // Phase 2a: Static provider setup
             CardDataProviders.ManaCostImages = lookupPackage.ManaCostImages;
@@ -111,20 +114,17 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             Debug.WriteLine($"[InitializeCardListsAsync] Phase 2b " + $"(hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
 
+            #endregion
+
+            #region Phase 3: Build application-facing card lists and filters
 
             // Phase 3a + 3b:
-            // Build independent application-facing collections concurrently.
+            // BuildFilters independent application-facing collections concurrently.
             var phase3abSw = Stopwatch.StartNew();
 
             var allCardsTask = Task.Run(() =>
             {
-                var sortSw = Stopwatch.StartNew();
-
                 var allCards = SortCards(aggregatedPrintings);
-
-                sortSw.Stop();
-
-                Debug.WriteLine($"[Phase 3a/3b] AllCards sort: " + $"{sortSw.ElapsedMilliseconds} ms");
 
                 allCardsVM.Cards = allCards;
                 allCardsVM.FilteredCards = allCardsVM.Cards;
@@ -132,59 +132,31 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 return allCards;
             });
 
-
             var myCollectionTask = Task.Run(() =>
             {
-                var materializeSw = Stopwatch.StartNew();
-
                 var myCollection = collectionRows.Select(row =>
-                {
-                    if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
                     {
-                        throw new InvalidOperationException($"Cannot materialize collection card. " + $"Printing not found for UUID " + $"'{row.Identity.Uuid}'.");
-                    }
+                        if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
+                        {
+                            throw new InvalidOperationException($"Cannot materialize collection card. " + $"Printing not found for UUID '{row.Identity.Uuid}'.");
+                        }
 
-                    return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
-                }).ToList();
-
-                materializeSw.Stop();
-
-                Debug.WriteLine($"[Phase 3a/3b] MyCollection materialize " + $"{myCollection.Count} cards: " + $"{materializeSw.ElapsedMilliseconds} ms");
-
-                var sortSw = Stopwatch.StartNew();
+                        return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
+                    }).ToList();
 
                 myCollectionVM.Cards = SortCards(myCollection);
-
-                sortSw.Stop();
-
-                Debug.WriteLine($"[Phase 3a/3b] MyCollection sort: " + $"{sortSw.ElapsedMilliseconds} ms");
                 myCollectionVM.FilteredCards = myCollectionVM.Cards;
 
                 return myCollection;
             });
 
-
             var oracleCardsTask = Task.Run(() =>
             {
-                var buildSw = Stopwatch.StartNew();
-
                 var oracleCards = aggregatedPrintings.Select(p => p.Oracle).Where(o => !string.IsNullOrWhiteSpace(o.ScryfallOracleId))
                     .GroupBy(o => o.ScryfallOracleId, StringComparer.OrdinalIgnoreCase)
-                    .Select(g => g.First())
-                    .ToList();
-
-                buildSw.Stop();
-
-                Debug.WriteLine($"[Phase 3a/3b] OracleCards build/deduplicate " + $"{oracleCards.Count} cards: " + $"{buildSw.ElapsedMilliseconds} ms");
-
-                var sortSw = Stopwatch.StartNew();
+                    .Select(g => g.First()).ToList();
 
                 oracleCardsVM.Cards = SortOracleCards(oracleCards);
-
-                sortSw.Stop();
-
-                Debug.WriteLine($"[Phase 3a/3b] OracleCards sort: " + $"{sortSw.ElapsedMilliseconds} ms");
-
                 oracleCardsVM.FilteredCards = oracleCardsVM.Cards;
 
                 return oracleCards;
@@ -200,7 +172,15 @@ namespace CollectaMundo.ApplicationServices.CardLists
             // Phase 3c: Build filter defaults
             var phase3cSw = Stopwatch.StartNew();
 
-            var filterDefaults = _filterDefaultsLogic.Build(allCardsTask.Result, myCollectionTask.Result);
+            var buildDefaultsSw = Stopwatch.StartNew();
+
+            var filterDefaults = _filterDefaultsLogic.BuildFilters(allCardsTask.Result, myCollectionTask.Result);
+
+            buildDefaultsSw.Stop();
+
+            Debug.WriteLine($"[Phase 3c] Build filter defaults: " + $"{buildDefaultsSw.ElapsedMilliseconds} ms");
+
+            var buildViewModelsSw = Stopwatch.StartNew();
 
             filters.Clear();
 
@@ -217,9 +197,15 @@ namespace CollectaMundo.ApplicationServices.CardLists
                         def.NumericCriteria);
             }
 
+            buildViewModelsSw.Stop();
+
+            Debug.WriteLine($"[Phase 3c] Build FilterItemViewModels: " + $"{buildViewModelsSw.ElapsedMilliseconds} ms");
+
             phase3cSw.Stop();
 
-            Debug.WriteLine($"[InitializeCardListsAsync] Phase 3c (build filters): {phase3cSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"[InitializeCardListsAsync] Phase 3c " + $"(build filters): {phase3cSw.ElapsedMilliseconds} ms");
+
+            #endregion
         }
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {

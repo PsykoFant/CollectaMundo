@@ -51,6 +51,69 @@ namespace CollectaMundo.DomainLogic.Shared
 
             return builder.ToString();
         }
+        public static string[] SplitPreservingThousandsSeparators(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return [];
+            }
+
+            if (value.IndexOf(',') < 0)
+            {
+                return [value.Trim()];
+            }
+
+            var parts = new List<string>();
+            var start = 0;
+
+            for (var i = 0; i < value.Length; i++)
+            {
+                if (value[i] != ',')
+                {
+                    continue;
+                }
+
+                if (IsThousandsSeparator(value, i))
+                {
+                    continue;
+                }
+
+                AddPart(start, i - start);
+                start = i + 1;
+            }
+
+            AddPart(start, value.Length - start);
+
+            return [.. parts];
+
+            void AddPart(int startIndex, int length)
+            {
+                var part = value.Substring(startIndex, length).Trim();
+
+                if (part.Length > 0)
+                {
+                    parts.Add(part);
+                }
+            }
+        }
+        private static bool IsThousandsSeparator(string value, int commaIndex)
+        {
+            var firstDigit = commaIndex + 1;
+
+            if (firstDigit + 2 >= value.Length)
+            {
+                return false;
+            }
+
+            if (!char.IsDigit(value[firstDigit]) || !char.IsDigit(value[firstDigit + 1]) || !char.IsDigit(value[firstDigit + 2]))
+            {
+                return false;
+            }
+
+            var afterDigits = firstDigit + 3;
+
+            return afterDigits == value.Length || !char.IsLetterOrDigit(value[afterDigits]) && value[afterDigits] != '_';
+        }
         public static bool Contains(string? csv, string value)
         {
             return Split(csv).Any(x => x.Equals(value, StringComparison.OrdinalIgnoreCase));

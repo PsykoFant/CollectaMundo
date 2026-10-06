@@ -40,7 +40,7 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
             LoadFromRows(rows);
 
             buildSw.Stop();
-            Debug.WriteLine($"[Legalities] Build masks: {buildSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"[Legalities] BuildFilters masks: {buildSw.ElapsedMilliseconds} ms");
         }
         private void LoadFromRows(IReadOnlyList<CardLegalityDbRow> rows)
         {

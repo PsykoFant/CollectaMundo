@@ -6,6 +6,6 @@ namespace CollectaMundo.DomainLogic.Filtering
 {
     public interface IFilterDefaultsLogic
     {
-        List<FilterDefaults> Build(IReadOnlyList<PrintingCard> allCards, IReadOnlyList<CollectionCard> myCollection);
+        List<FilterDefaults> BuildFilters(IReadOnlyList<PrintingCard> allCards, IReadOnlyList<CollectionCard> myCollection);
     }
 }
