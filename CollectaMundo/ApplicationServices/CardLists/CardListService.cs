@@ -169,37 +169,23 @@ namespace CollectaMundo.ApplicationServices.CardLists
             Debug.WriteLine($"[InitializeCardListsAsync] Phase 3a/3b " + $"(build card lists): {phase3abSw.ElapsedMilliseconds} ms");
 
 
-            // Phase 3c: Build filter defaults
             var phase3cSw = Stopwatch.StartNew();
 
-            var buildDefaultsSw = Stopwatch.StartNew();
-
             var filterDefaults = _filterDefaultsLogic.BuildFilters(allCardsTask.Result, myCollectionTask.Result);
-
-            buildDefaultsSw.Stop();
-
-            Debug.WriteLine($"[Phase 3c] Build filter defaults: " + $"{buildDefaultsSw.ElapsedMilliseconds} ms");
-
-            var buildViewModelsSw = Stopwatch.StartNew();
 
             filters.Clear();
 
             foreach (var def in filterDefaults)
             {
-                filters[def.CriteriaKey] =
-                    new FilterItemViewModel(
-                        def.CriteriaKey,
-                        def.FilterOptions,
-                        def.DefaultText,
-                        def.ReadableLabel,
-                        filterVM,
-                        new FilterItemSearchLogic(),
-                        def.NumericCriteria);
+                filters[def.CriteriaKey] = new FilterItemViewModel(
+                    def.CriteriaKey,
+                    def.FilterOptions,
+                    def.DefaultText,
+                    def.ReadableLabel,
+                    filterVM,
+                    new FilterItemSearchLogic(),
+                    def.NumericCriteria);
             }
-
-            buildViewModelsSw.Stop();
-
-            Debug.WriteLine($"[Phase 3c] Build FilterItemViewModels: " + $"{buildViewModelsSw.ElapsedMilliseconds} ms");
 
             phase3cSw.Stop();
 

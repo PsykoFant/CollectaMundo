@@ -7,7 +7,6 @@ using CollectaMundo.DomainLogic.Filtering.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace CollectaMundo.Data.Filtering
 {
@@ -29,121 +28,40 @@ namespace CollectaMundo.Data.Filtering
                     filterDefaultsDict[criteriaKey] = filterDefaults;
                 });
 
-            foreach (var criteriaKey
-         in FilterCriteriaMappings.CriteriaMappings.Keys)
-            {
-                if (!_buildTimings.TryGetValue(
-                        criteriaKey,
-                        out var timing))
-                {
-                    continue;
-                }
-
-                Debug.WriteLine(
-                    $"[FilterDefaults] {criteriaKey}: " +
-                    $"extract {timing.ExtractMilliseconds} ms, " +
-                    $"process {timing.BuildMilliseconds} ms, " +
-                    $"raw {timing.RawValueCount}");
-            }
-
             return [.. FilterCriteriaMappings.CriteriaMappings.Keys.Select(k => filterDefaultsDict[k])];
         }
         private FilterDefaults BuildPrintingDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<PrintingCard> cards)
         {
-            if (criteriaKey.Equals(
-                    "LegalFormats",
-                    StringComparison.OrdinalIgnoreCase))
+            if (criteriaKey.Equals("LegalFormats", StringComparison.OrdinalIgnoreCase))
             {
-                var explicitOptions =
-                    _cardLegalityProviderService.Formats
-                        .Select(format =>
-                            new FilterOption(
-                                format.Mask.ToString(),
-                                format.DisplayName))
-                        .ToList();
+                var explicitOptions = _cardLegalityProviderService.Formats.Select(format => new FilterOption(format.Mask.ToString(), format.DisplayName)).ToList();
 
-                return BuildDefaultFromRawValues(
-                    criteriaKey,
-                    mapping,
-                    rawValues: [],
-                    explicitOptions);
+                return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues: [], explicitOptions);
             }
-
-            var extractSw = Stopwatch.StartNew();
 
             List<string> rawValues = criteriaKey switch
             {
-                "Colors" =>
-                    ["W", "U", "B", "R", "G", "C", "X", "Colorless"],
+                "Colors" => ["W", "U", "B", "R", "G", "C", "X", "Colorless"],
+                "Text" or "Comment" or "CardsForTrade" => [],
+                "ManaValue" => [.. cards.Select(c => c.ManaValue.ToString())],
+                "Name" => ExtractValues(cards, c => c.Name),
+                "SetName" => ExtractValues(cards, c => c.SetName),
+                "Rarity" => ExtractValues(cards, c => c.Rarity),
+                "SuperTypes" => ExtractValues(cards, c => c.SuperTypes),
+                "Types" => ExtractValues(cards, c => c.Types),
+                "SubTypes" => ExtractValues(cards, c => c.SubTypes),
+                "Keywords" => ExtractValues(cards, c => c.Keywords),
+                "Finishes" => ExtractValues(cards, c => c.Finishes),
+                "Availability" => ExtractValues(cards, c => c.Availability),
+                "GamePlayCard" => ["0", "1"],
 
-                "Text" or "Comment" or "CardsForTrade" =>
-                    [],
-
-                "ManaValue" =>
-                    [.. cards.Select(c => c.ManaValue.ToString())],
-
-                "Name" =>
-                    ExtractValues(cards, c => c.Name),
-
-                "SetName" =>
-                    ExtractValues(cards, c => c.SetName),
-
-                "Rarity" =>
-                    ExtractValues(cards, c => c.Rarity),
-
-                "SuperTypes" =>
-                    ExtractValues(cards, c => c.SuperTypes),
-
-                "Types" =>
-                    ExtractValues(cards, c => c.Types),
-
-                "SubTypes" =>
-                    ExtractValues(cards, c => c.SubTypes),
-
-                "Keywords" =>
-                    ExtractValues(cards, c => c.Keywords),
-
-                "Finishes" =>
-                    ExtractValues(cards, c => c.Finishes),
-
-                "Availability" =>
-                    ExtractValues(cards, c => c.Availability),
-
-                "GamePlayCard" =>
-                    ["0", "1"],
-
-                _ => throw new Exception(
-                    $"Unhandled printing criteria key: {criteriaKey}")
+                _ => throw new Exception($"Unhandled printing criteria key: {criteriaKey}")
             };
 
-            extractSw.Stop();
-
-            var buildSw = Stopwatch.StartNew();
-
-            var result = BuildDefaultFromRawValues(
-                criteriaKey,
-                mapping,
-                rawValues,
-                explicitOptions: null);
-
-            buildSw.Stop();
-
-            _buildTimings[criteriaKey] =
-                new FilterBuildTiming(
-                    extractSw.ElapsedMilliseconds,
-                    buildSw.ElapsedMilliseconds,
-                    rawValues.Count);
+            var result = BuildDefaultFromRawValues(criteriaKey, mapping, rawValues, explicitOptions: null);
 
             return result;
         }
-        private readonly record struct FilterBuildTiming(
-    long ExtractMilliseconds,
-    long BuildMilliseconds,
-    int RawValueCount);
-
-        private readonly ConcurrentDictionary<string, FilterBuildTiming>
-    _buildTimings = new();
-
         private static FilterDefaults BuildCollectionDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<CollectionCard> cards)
         {
             if (!mapping.GenerateFilterOptions)
@@ -173,11 +91,7 @@ namespace CollectaMundo.Data.Filtering
                     $"Collection criteria key '{criteriaKey}' generates options but has no CollectionOptionExtractor.");
             }
 
-            var rawValues = cards
-                .Select(mapping.CollectionOptionExtractor)
-                .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Select(v => v!)
-                .ToList();
+            var rawValues = cards.Select(mapping.CollectionOptionExtractor).Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v!).ToList();
 
             return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues, explicitOptions: null);
         }
@@ -281,9 +195,7 @@ namespace CollectaMundo.Data.Filtering
                     continue;
                 }
 
-                // Fast path:
-                // If splitting is disabled OR there is no comma,
-                // there is no reason to invoke the regex splitter.
+                // Fast path: If splitting is disabled or there is no comma, process the value directly.
                 if (shouldNotSplit || item.IndexOf(',') < 0)
                 {
                     AddValue(item);
