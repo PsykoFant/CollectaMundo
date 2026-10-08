@@ -49,6 +49,7 @@
         <ProgressBar Grid.Row="2"
                      Value="{Binding ProgressValue}"
                      Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                     IsIndeterminate="{Binding IsProgressIndeterminate}"
                      Margin="0,0,0,20"
                      Style="{StaticResource CollectaMundoProgressBarStyle}" />
 

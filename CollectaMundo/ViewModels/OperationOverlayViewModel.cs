@@ -29,6 +29,10 @@ namespace CollectaMundo.ViewModels.Shared
         private bool isProgressVisible;
 
         [ObservableProperty]
+        private bool isProgressIndeterminate;
+
+
+        [ObservableProperty]
         private bool isPrimaryButtonVisible;
 
         [ObservableProperty]
@@ -123,7 +127,6 @@ namespace CollectaMundo.ViewModels.Shared
         {
             Reset();
             IsOverlayVisible = true;
-            IsProgressVisible = showProgress;
             Headline = message;
             IsProgressVisible = showProgress;
         }
@@ -136,6 +139,7 @@ namespace CollectaMundo.ViewModels.Shared
         {
             IsLogoVisible = true;
             IsProgressVisible = false;
+            IsProgressIndeterminate = false;
 
             IsPrimaryButtonVisible = false;
             IsSecondaryButtonVisible = false;

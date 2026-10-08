@@ -144,6 +144,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 Step = new Progress<string>(s => operationOverlayController.SetStep(s)),
                 Percent = new Progress<int>(p => operationOverlayController.SetProgress(p)),
                 ProgressBarVisible = new Progress<bool>(v => operationOverlayController.ShowProgress(v)),
+                ProgressBarIndeterminate = new Progress<bool>(operationOverlayController.SetProgressIndeterminate),
                 CancelEnabled = new Progress<bool>(enabled =>
                 {
                     if (enabled)

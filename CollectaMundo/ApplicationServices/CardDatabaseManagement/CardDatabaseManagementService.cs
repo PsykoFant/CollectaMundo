@@ -4,6 +4,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
+using CollectaMundo.DomainLogic.CardData;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardDatabaseManagement.CardData;
 using CollectaMundo.Infrastructure.RemoteLookups;
@@ -66,7 +67,8 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     stepName: step1Name,
                     stepNameAndNumberProgress: _progressSinks.Step,
                     stepDetailAndErrorProgress: _progressSinks.Detail,
-                    percentProgress: _progressSinks.Percent);
+                    percentProgress: _progressSinks.Percent,
+                    indeterminateProgress: _progressSinks.ProgressBarIndeterminate);
 
                 if (downloadResult.Code != OperationResultCode.Success)
                 {
@@ -100,7 +102,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 return new OperationResult(OperationResultCode.Error, ex.Message);
             }
         }
-
         private static readonly IReadOnlyList<DbPrepStep> FullPrepSteps = [
             DbPrepStep.CreateTables,
             DbPrepStep.CreateIndices,
@@ -269,7 +270,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
             return new OperationResult(OperationResultCode.Success);
         }
-
         private static readonly IReadOnlyList<DbPrepStep> UpdateDbSteps = [
             DbPrepStep.CreateIndices,
             DbPrepStep.BuildCanonicalOracleFaces,
@@ -399,8 +399,9 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         {
             return
             [
-                (DbPrepStep.CreateTables,"Creating custom tables...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateTablesAsync(conn, tx);return (Result: true, Commit: true);}),false),
-                (DbPrepStep.CreateIndices,"Creating indices...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateIndicesAsync(conn, tx);return (Result: true, Commit: true);}),false),
+                (DbPrepStep.CreateTables,"Creating custom tables...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateTablesAsync(conn, tx); return (Result: true, Commit: true);}),false),
+                (DbPrepStep.CreateIndices,"Creating indices...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateIndicesAsync(conn, tx); return (Result: true, Commit: true);}),false),
+                (DbPrepStep.BuildCanonicalOracleFaces, "Preparing canonical card data...", () => _uowRunner.ExecuteWriteAsync(async (conn, tx) => {await BuildCanonicalOracleFacesAsync(conn, tx); return (Result: true, Commit: true);}), false),
                 (DbPrepStep.GenerateManaSymbols,"Generating mana symbols...",() => _missingPngService.GenerateMissingManaSymbolImagesAsync(_progressSinks.Percent),true),
                 (DbPrepStep.GenerateManaCostImages,"Generating mana cost images...",() => _missingPngService.GenerateMissingManaCostImagesAsync(_progressSinks.Percent),true),
                 (DbPrepStep.GenerateSetIcons,"Generating set icon images...",() => _missingPngService.GenerateMissingKeyRuneImagesAsync(_progressSinks.Percent),true),
@@ -431,17 +432,26 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 await action(conn);
             }
         }
-        private enum DbPrepStep
+        private async Task BuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
-            CreateTables,
-            CreateIndices,
-            BuildCanonicalOracleFaces,
-            GenerateManaSymbols,
-            GenerateManaCostImages,
-            GenerateSetIcons,
-            ImportPrices,
-            CreateViews,
-            OptimizeDatabase
+            var candidates = await _cardDataRepo.GetOracleFaceCandidatesAsync(conn, tx);
+            var canonicalFaces = OracleFaceCanonicalizer.Canonicalize(candidates);
+            if (canonicalFaces.Count == 0)
+            {
+                throw new InvalidOperationException("Canonical Oracle face generation produced no rows.");
+            }
+
+            var inserted = await _cardDataRepo.RebuildCanonicalOracleFacesAsync(conn, tx, canonicalFaces);
+
+            if (inserted != canonicalFaces.Count)
+            {
+                throw new InvalidOperationException($"Canonical Oracle face rebuild inserted {inserted:N0} " + $"rows, but {canonicalFaces.Count:N0} were expected.");
+            }
+
+            var conflicts = canonicalFaces.Count(face => face.HasConflict);
+            var ambiguous = canonicalFaces.Count(face => face.IsAmbiguous);
+
+            Debug.WriteLine($"[CardDatabasePrep] Canonical Oracle faces: " + $"{canonicalFaces.Count:N0}, " + $"conflicts={conflicts:N0}, " + $"ambiguous={ambiguous:N0}");
         }
 
         // Use case: Backup/export collection to CSV
@@ -510,6 +520,20 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
 
             Debug.WriteLine("[CardDatabasePrep] Deleted corrupt or partial DB file(s).");
+        }
+
+        // Enum representing the various steps in the database preparation process
+        private enum DbPrepStep
+        {
+            CreateTables,
+            CreateIndices,
+            BuildCanonicalOracleFaces,
+            GenerateManaSymbols,
+            GenerateManaCostImages,
+            GenerateSetIcons,
+            ImportPrices,
+            CreateViews,
+            OptimizeDatabase
         }
     }
 }

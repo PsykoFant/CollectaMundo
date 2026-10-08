@@ -1,4 +1,5 @@
 ﻿namespace CollectaMundo.ApplicationServices.Shared.Progress;
+
 public sealed record ProgressSinks
 {
     public required IProgress<string> Headline { get; init; }
@@ -7,6 +8,7 @@ public sealed record ProgressSinks
     public required IProgress<int> Percent { get; init; }
     public required IProgress<bool> ProgressBarVisible { get; init; }
     public IProgress<bool>? CancelEnabled { get; init; } // optional
+    public required IProgress<bool> ProgressBarIndeterminate { get; init; }
 
     public static readonly ProgressSinks NoOp = new()
     {
@@ -14,6 +16,7 @@ public sealed record ProgressSinks
         Detail = new Progress<string>(_ => { }),
         Step = new Progress<string>(_ => { }),
         Percent = new Progress<int>(_ => { }),
-        ProgressBarVisible = new Progress<bool>(_ => { })
+        ProgressBarVisible = new Progress<bool>(_ => { }),
+        ProgressBarIndeterminate = new Progress<bool>(_ => { })
     };
 }

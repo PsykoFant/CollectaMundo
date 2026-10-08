@@ -12,6 +12,7 @@ namespace CollectaMundo.ApplicationServices.Shared.Operation
         void SetDetail(string text);
         void SetStep(string text);
         void SetProgress(int value);
+        void SetProgressIndeterminate(bool value);
 
         void ShowLogo(bool show);
         void ShowProgress(bool show);

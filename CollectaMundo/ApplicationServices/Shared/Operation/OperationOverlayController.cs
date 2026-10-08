@@ -16,6 +16,8 @@ namespace CollectaMundo.ApplicationServices.Shared.Operation
         public void SetDetail(string text) => _operationOverlayVm.Detail = text;
         public void SetStep(string text) => _operationOverlayVm.Step = text;
         public void SetProgress(int value) => _operationOverlayVm.ProgressValue = value;
+        public void SetProgressIndeterminate(bool value) => _operationOverlayVm.IsProgressIndeterminate = value;
+
         public void ShowLogo(bool show)
         {
             _operationOverlayVm.IsLogoVisible = show;
@@ -48,7 +50,7 @@ namespace CollectaMundo.ApplicationServices.Shared.Operation
         }
         public void SetSecondaryButtonText(string text)
         {
-            _operationOverlayVm.IsSecondaryButtonVisible= true;
+            _operationOverlayVm.IsSecondaryButtonVisible = true;
             _operationOverlayVm.SecondaryButtonText = text;
         }
         public void HideSecondaryButton()

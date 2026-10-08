@@ -85,7 +85,8 @@ namespace CollectaMundo.ViewModels.Import
             Headline = new Progress<string>(v => ProgressHeadline = v),
             Step = new Progress<string>(v => ProgressStep = v),
             Detail = new Progress<string>(v => ProgressDetailMessage = v),
-            CancelEnabled = new Progress<bool>(_ => { })
+            CancelEnabled = new Progress<bool>(_ => { }),
+            ProgressBarIndeterminate = new Progress<bool>(_ => { })
         };
         public event EventHandler<ImportCollectionUpsertResult>? CollectionMutationRequested; // To notify parent VM of collection changes
         public event EventHandler<OracleCardImageSelectionRequest?>? CardImageSelectionRequested; // To notify parent VM to show card image for given UUID

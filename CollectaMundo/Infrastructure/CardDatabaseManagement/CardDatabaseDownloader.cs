@@ -11,7 +11,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
     {
         private readonly HttpClient _httpClient = httpClient ?? new HttpClient();
 
-        public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, int retryDelayInMs, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken cancelToken = default)
+        public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, int retryDelayInMs, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, IProgress<bool>? indeterminateProgress = null, CancellationToken cancelToken = default)
         {
             return await RetryHelper.RetryLoopAsync(async () =>
             {
@@ -19,6 +19,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                     url, targetPath, label,
                     stepDetailAndErrorProgress,
                     percentProgress,
+                    indeterminateProgress,
                     _httpClient,
                     cancelToken);
 
@@ -36,7 +37,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
         public async Task<OperationResult> DownloadParallelAsync(
             string url1, string targetPath1, string label1,
             string url2, string targetPath2, string label2,
-            int retryDelayInMs, string stepName, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken cancelToken = default)
+            int retryDelayInMs, string stepName, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, IProgress<bool>? indeterminateProgress = null, CancellationToken cancelToken = default)
         {
             return await RetryHelper.RetryLoopAsync(
                 async () =>
@@ -45,8 +46,8 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                     using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token, cancelToken);
                     var linkedToken = linkedCts.Token;
 
-                    var task1 = DownloadFileAsync(url1, targetPath1, label1, stepDetailAndErrorProgress, percentProgress, _httpClient, linkedToken);
-                    var task2 = DownloadFileAsync(url2, targetPath2, label2, null, null, _httpClient, linkedToken);
+                    var task1 = DownloadFileAsync(url1, targetPath1, label1, stepDetailAndErrorProgress, percentProgress, indeterminateProgress, _httpClient, linkedToken);
+                    var task2 = DownloadFileAsync(url2, targetPath2, label2, null, null, null, _httpClient, linkedToken);
 
                     try
                     {
@@ -102,7 +103,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 }, retryDelayInMs, stepName, stepNameAndNumberProgress, stepDetailAndErrorProgress, cancelToken: cancelToken);
         }
 
-        private static async Task<(bool success, string? errorMessage, bool cancelled)> DownloadFileAsync(string url, string targetPath, string label, IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, HttpClient httpClient, CancellationToken cancelToken)
+        private static async Task<(bool success, string? errorMessage, bool cancelled)> DownloadFileAsync(string url, string targetPath, string label, IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, IProgress<bool>? indeterminateProgress, HttpClient httpClient, CancellationToken cancelToken)
         {
             Debug.WriteLine($"[Download] Starting download: {label} from {url} to {targetPath}");
 
@@ -111,8 +112,47 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
             try
             {
                 Debug.WriteLine($"[Download] Sending GET request for: {url}");
-                var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancelToken)
-                                               .ConfigureAwait(false);
+                var expectedLength = await TryGetContentLengthAsync(url, httpClient, cancelToken);
+
+                using var request =
+    new HttpRequestMessage(
+        HttpMethod.Get,
+        url);
+
+                request.Headers.AcceptEncoding.Clear();
+                request.Headers.AcceptEncoding.Add(
+                    new System.Net.Http.Headers.StringWithQualityHeaderValue(
+                        "identity"));
+
+                using var response =
+                    await httpClient.SendAsync(
+                        request,
+                        HttpCompletionOption.ResponseHeadersRead,
+                        cancelToken)
+                    .ConfigureAwait(false);
+
+                Debug.WriteLine(
+    $"[Download headers] " +
+    $"HTTP/{response.Version} " +
+    $"{(int)response.StatusCode} {response.StatusCode}");
+
+                Debug.WriteLine(
+                    $"[Download headers] Final URI: " +
+                    $"{response.RequestMessage?.RequestUri}");
+
+                foreach (var header in response.Headers)
+                {
+                    Debug.WriteLine(
+                        $"[Download header] " +
+                        $"{header.Key}: {string.Join(", ", header.Value)}");
+                }
+
+                foreach (var header in response.Content.Headers)
+                {
+                    Debug.WriteLine(
+                        $"[Download content header] " +
+                        $"{header.Key}: {string.Join(", ", header.Value)}");
+                }
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -121,30 +161,44 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                     return (false, msg, false);
                 }
 
-                var totalBytes = response.Content.Headers.ContentLength ?? -1L;
+                var totalBytes = response.Content.Headers.ContentLength ?? expectedLength;
+
+                var hasKnownLength = totalBytes is > 0;
+
+                percentProgress?.Report(0);
+                indeterminateProgress?.Report(!hasKnownLength);
                 var buffer = new byte[8192];
 
                 using var contentStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
                 using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
 
-                stepDetailAndErrorProgress?.Report($"{label} size: {totalBytes / 1_000_000.0:0.0} MB");
+                if (hasKnownLength)
+                {
+                    stepDetailAndErrorProgress?.Report($"{label} size: {totalBytes!.Value / 1_000_000.0:0.0} MB");
+                }
+                else
+                {
+                    stepDetailAndErrorProgress?.Report($"{label}: downloading...");
+                }
 
                 long totalBytesRead = 0;
                 int lastReportedPercent = 0;
 
                 while (true)
                 {
-                    var bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancelToken)
-                                                       .ConfigureAwait(false);
+                    var bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancelToken).ConfigureAwait(false);
                     if (bytesRead == 0)
                         break;
 
-                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
+                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancelToken).ConfigureAwait(false);
                     totalBytesRead += bytesRead;
 
-                    if (totalBytes > 0 && percentProgress != null)
+                    if (totalBytes is > 0 && percentProgress != null)
                     {
-                        int percent = (int)((double)totalBytesRead / totalBytes * 100);
+                        var percent = (int)((double)totalBytesRead / totalBytes.Value * 100);
+
+                        percent = Math.Clamp(percent, 0, 100);
+
                         if (percent > lastReportedPercent)
                         {
                             lastReportedPercent = percent;
@@ -160,7 +214,22 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                     }
                 }
 
+                if (hasKnownLength)
+                {
+                    percentProgress?.Report(100);
+                }
+                else
+                {
+                    stepDetailAndErrorProgress?.Report($"{label}: {totalBytesRead / 1_000_000.0:0.0} MB downloaded");
+                }
+
                 Debug.WriteLine($"[Download] Completed successfully: {label}");
+
+                Debug.WriteLine(
+    $"[Download] {label}: " +
+    $"expected={totalBytes?.ToString() ?? "unknown"}, " +
+    $"actual={totalBytesRead}");
+
                 return (true, null, false);
             }
             catch (OperationCanceledException)
@@ -189,6 +258,8 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
             }
             finally
             {
+                indeterminateProgress?.Report(false);
+
                 if (shouldDeletePartialFile)
                 {
                     try
@@ -202,7 +273,47 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 }
             }
         }
+        private static async Task<long?> TryGetContentLengthAsync(
+    string url,
+    HttpClient httpClient,
+    CancellationToken cancellationToken)
+        {
+            using var request =
+                new HttpRequestMessage(
+                    HttpMethod.Get,
+                    url);
 
+            request.Headers.Range =
+                new System.Net.Http.Headers.RangeHeaderValue(0, 0);
+
+            request.Headers.AcceptEncoding.Clear();
+            request.Headers.AcceptEncoding.Add(
+                new System.Net.Http.Headers.StringWithQualityHeaderValue(
+                    "identity"));
+
+            using var response =
+                await httpClient.SendAsync(
+                    request,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            Debug.WriteLine(
+                $"[Range probe] " +
+                $"{(int)response.StatusCode} {response.StatusCode}");
+
+            Debug.WriteLine(
+                $"[Range probe] Content-Range: " +
+                $"{response.Content.Headers.ContentRange}");
+
+            Debug.WriteLine(
+                $"[Range probe] Content-Encoding: " +
+                $"{string.Join(", ", response.Content.Headers.ContentEncoding)}");
+
+            return response.Content.Headers
+                .ContentRange?
+                .Length;
+        }
         private static void CleanupPartialDownload(string filePath)
         {
             try

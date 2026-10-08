@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardData.Models;
+using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.IO;
@@ -8,7 +9,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
 {
     public sealed class CardDataRepo : ICardDataRepo
     {
-        public async Task<List<OracleFaceCandidate>> GetOracleFaceCandidatesAsync(SQLiteConnection connection)
+        public async Task<List<OracleFaceCandidate>> GetOracleFaceCandidatesAsync(SQLiteConnection connection, SQLiteTransaction? tx)
         {
             const string query = """
                      SELECT
@@ -120,6 +121,106 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     reader.GetOrdinal("SubTypes"),
                     reader.GetOrdinal("Type"));
             }
+        }
+        public async Task<int> RebuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<CanonicalOracleFace> faces)
+        {
+            const string deleteSql = "DELETE FROM canonicalOracleFaces;";
+
+            using (var deleteCommand = new SQLiteCommand(deleteSql, conn, tx))
+            {
+                await deleteCommand.ExecuteNonQueryAsync();
+            }
+
+            const string insertSql = """
+                INSERT INTO canonicalOracleFaces
+                (
+                    scryfallOracleId,
+                    side,
+                    name,
+                    manaCostRaw,
+                    manaValue,
+                    colors,
+                    keywords,
+                    rulesText,
+                    superTypes,
+                    types,
+                    subTypes,
+                    type,
+                    selectedSourceUuid,
+                    sourceRowCount,
+                    winningRowCount,
+                    variantCount,
+                    isAmbiguous
+                )
+                VALUES
+                (
+                    @scryfallOracleId,
+                    @side,
+                    @name,
+                    @manaCostRaw,
+                    @manaValue,
+                    @colors,
+                    @keywords,
+                    @rulesText,
+                    @superTypes,
+                    @types,
+                    @subTypes,
+                    @type,
+                    @selectedSourceUuid,
+                    @sourceRowCount,
+                    @winningRowCount,
+                    @variantCount,
+                    @isAmbiguous
+                );
+                """;
+
+            using var command = new SQLiteCommand(insertSql, conn, tx);
+
+            var oracleId = command.Parameters.Add("@scryfallOracleId", DbType.String);
+            var side = command.Parameters.Add("@side", DbType.String);
+            var name = command.Parameters.Add("@name", DbType.String);
+            var manaCostRaw = command.Parameters.Add("@manaCostRaw", DbType.String);
+            var manaValue = command.Parameters.Add("@manaValue", DbType.Double);
+            var colors = command.Parameters.Add("@colors", DbType.String);
+            var keywords = command.Parameters.Add("@keywords", DbType.String);
+            var rulesText = command.Parameters.Add("@rulesText", DbType.String);
+            var superTypes = command.Parameters.Add("@superTypes", DbType.String);
+            var types = command.Parameters.Add("@types", DbType.String);
+            var subTypes = command.Parameters.Add("@subTypes", DbType.String);
+            var type = command.Parameters.Add("@type", DbType.String);
+            var selectedSourceUuid = command.Parameters.Add("@selectedSourceUuid", DbType.String);
+            var sourceRowCount = command.Parameters.Add("@sourceRowCount", DbType.Int32);
+            var winningRowCount = command.Parameters.Add("@winningRowCount", DbType.Int32);
+            var variantCount = command.Parameters.Add("@variantCount", DbType.Int32);
+            var isAmbiguous = command.Parameters.Add("@isAmbiguous", DbType.Int32);
+
+            command.Prepare();
+
+            var inserted = 0;
+
+            foreach (var face in faces)
+            {
+                oracleId.Value = face.Key.ScryfallOracleId;
+                side.Value = face.Key.Side;
+                name.Value = (object?)face.Payload.Name ?? DBNull.Value;
+                manaCostRaw.Value = (object?)face.Payload.ManaCostRaw ?? DBNull.Value;
+                manaValue.Value = face.Payload.ManaValue is double value ? value : DBNull.Value;
+                colors.Value = (object?)face.Payload.Colors ?? DBNull.Value;
+                keywords.Value = (object?)face.Payload.Keywords ?? DBNull.Value; rulesText.Value = (object?)face.Payload.RulesText ?? DBNull.Value;
+                superTypes.Value = (object?)face.Payload.SuperTypes ?? DBNull.Value;
+                types.Value = (object?)face.Payload.Types ?? DBNull.Value;
+                subTypes.Value = (object?)face.Payload.SubTypes ?? DBNull.Value;
+                type.Value = (object?)face.Payload.Type ?? DBNull.Value;
+                selectedSourceUuid.Value = face.SelectedSourceUuid;
+                sourceRowCount.Value = face.SourceRowCount;
+                winningRowCount.Value = face.WinningRowCount;
+                variantCount.Value = face.VariantCount;
+                isAmbiguous.Value = face.IsAmbiguous ? 1 : 0;
+
+                inserted += await command.ExecuteNonQueryAsync();
+            }
+
+            return inserted;
         }
     }
 }
