@@ -27,6 +27,7 @@ using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
+using CollectaMundo.Infrastructure.CardDatabaseManagement.CardData;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLegalities;
 using CollectaMundo.Infrastructure.CardLists;
@@ -70,7 +71,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var priceService = new CardPriceService(new CardPriceRepository());
 
                 var progressSinks = CreateProgressSinks(operationOverlayController);
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), priceService, missingPngService, remoteLookups);
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), priceService, missingPngService, remoteLookups);
                 var integrityService = new DatabaseIntegrityService(uowRunner, settings);
 
                 // Status overlay

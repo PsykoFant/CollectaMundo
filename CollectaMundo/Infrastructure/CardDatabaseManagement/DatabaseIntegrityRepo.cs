@@ -6,7 +6,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
     {
         private static readonly List<string> RequiredObjects =
         [
-            "cards", "myCollection", "uniqueManaCostImages", "uniqueManaSymbols",
+            "cards", "myCollection", "canonicalOracleFaces", "uniqueManaCostImages", "uniqueManaSymbols",
             "keyruneImages", "view_cardToken"
         ];
         public async Task<bool> HasExpectedTablesAndViewsAsync(SQLiteConnection conn)
@@ -22,6 +22,19 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
             }
 
             return RequiredObjects.All(existing.Contains);
+        }
+        public async Task<bool> HasCanonicalOracleFacesAsync(SQLiteConnection conn)
+        {
+            const string sql =
+                "SELECT EXISTS (" +
+                "SELECT 1 FROM canonicalOracleFaces LIMIT 1" +
+                ");";
+
+            await using var cmd = new SQLiteCommand(sql, conn);
+
+            var result = await cmd.ExecuteScalarAsync();
+
+            return Convert.ToInt32(result) == 1;
         }
 
         public async Task<bool> QuickCheckAsync(SQLiteConnection conn)

@@ -27,6 +27,29 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     "defaultSvgUsed BOOLEAN" +
                     ");",
 
+                ["canonicalOracleFaces"] =
+                    "CREATE TABLE IF NOT EXISTS canonicalOracleFaces (" +
+                    "id INTEGER PRIMARY KEY, " +
+                    "scryfallOracleId TEXT NOT NULL, " +
+                    "side TEXT NOT NULL, " +
+                    "name TEXT NULL, " +
+                    "manaCostRaw TEXT NULL, " +
+                    "manaValue REAL NULL, " +
+                    "colors TEXT NULL, " +
+                    "keywords TEXT NULL, " +
+                    "rulesText TEXT NULL, " +
+                    "superTypes TEXT NULL, " +
+                    "types TEXT NULL, " +
+                    "subTypes TEXT NULL, " +
+                    "type TEXT NULL, " +
+                    "selectedSourceUuid TEXT NOT NULL, " +
+                    "sourceRowCount INTEGER NOT NULL CHECK (sourceRowCount > 0), " +
+                    "winningRowCount INTEGER NOT NULL CHECK (winningRowCount > 0), " +
+                    "variantCount INTEGER NOT NULL CHECK (variantCount > 0), " +
+                    "isAmbiguous INTEGER NOT NULL CHECK (isAmbiguous IN (0, 1)), " +
+                    "UNIQUE (scryfallOracleId, side)" +
+                    ");",
+
                 ["myCollection"] =
                     "CREATE TABLE IF NOT EXISTS myCollection (" +
                     "id INTEGER PRIMARY KEY, " +
@@ -49,7 +72,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     ");",
 
                 ["myDecks"] =
-                    "CREATE TABLE myDecks ( " +
+                    "CREATE TABLE IF NOT EXISTS myDecks ( " +
                     "locationId INTEGER PRIMARY KEY, " +
                     "format TEXT NULL, " +
                     "description TEXT NULL, " +

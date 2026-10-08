@@ -5,6 +5,7 @@ using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
+using CollectaMundo.Infrastructure.CardDatabaseManagement.CardData;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
@@ -13,13 +14,14 @@ using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
-    public class CardDatabaseManagementService(IAppSettings settings, IDbConnectionFactory dbFactory, IUnitOfWorkRunner uowRunner, ProgressSinks progressSinks, ICardDatabaseManagementRepo dbMgmtRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IRemoteLookups remoteLookups, ICardDatabaseDownloader? downloader = null) : ICardDatabaseManagementService
+    public class CardDatabaseManagementService(IAppSettings settings, IDbConnectionFactory dbFactory, IUnitOfWorkRunner uowRunner, ProgressSinks progressSinks, ICardDatabaseManagementRepo dbMgmtRepo, ICardDataRepo cardDataRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IRemoteLookups remoteLookups, ICardDatabaseDownloader? downloader = null) : ICardDatabaseManagementService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ProgressSinks _progressSinks = progressSinks ?? ProgressSinks.NoOp;
         private readonly ICardDatabaseManagementRepo _dbMgmtRepo = dbMgmtRepo;
+        private readonly ICardDataRepo _cardDataRepo = cardDataRepo;
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
         private readonly ICardDatabaseDownloader _downloader = downloader ?? new CardDatabaseDownloader(); // default create new, allow mock to be injected for unit test
@@ -99,17 +101,17 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
         }
 
-        private static readonly IReadOnlyList<DbPrepStep> FullPrepSteps =
-            [
-                DbPrepStep.CreateTables,
-                DbPrepStep.GenerateManaSymbols,
-                DbPrepStep.GenerateManaCostImages,
-                DbPrepStep.GenerateSetIcons,
-                DbPrepStep.ImportPrices,
-                DbPrepStep.CreateViews,
-                DbPrepStep.CreateIndices,
-                DbPrepStep.OptimizeDatabase
-            ];
+        private static readonly IReadOnlyList<DbPrepStep> FullPrepSteps = [
+            DbPrepStep.CreateTables,
+            DbPrepStep.CreateIndices,
+            DbPrepStep.BuildCanonicalOracleFaces,
+            DbPrepStep.GenerateManaSymbols,
+            DbPrepStep.GenerateManaCostImages,
+            DbPrepStep.GenerateSetIcons,
+            DbPrepStep.ImportPrices,
+            DbPrepStep.CreateViews,
+            DbPrepStep.OptimizeDatabase
+        ];
 
         // Use case: check for updates to the card database
         public async Task<OperationResult> CheckForDbUpdatesAsync(CancellationToken ct = default)
@@ -268,14 +270,15 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             return new OperationResult(OperationResultCode.Success);
         }
 
-        private static readonly IReadOnlyList<DbPrepStep> UpdateDbSteps =
-            [
-                DbPrepStep.GenerateManaSymbols,
-                DbPrepStep.GenerateManaCostImages,
-                DbPrepStep.GenerateSetIcons,
-                DbPrepStep.ImportPrices,
-                DbPrepStep.OptimizeDatabase
-            ];
+        private static readonly IReadOnlyList<DbPrepStep> UpdateDbSteps = [
+            DbPrepStep.CreateIndices,
+            DbPrepStep.BuildCanonicalOracleFaces,
+            DbPrepStep.GenerateManaSymbols,
+            DbPrepStep.GenerateManaCostImages,
+            DbPrepStep.GenerateSetIcons,
+            DbPrepStep.ImportPrices,
+            DbPrepStep.OptimizeDatabase
+        ];
 
         // Use case: orchestrates card database update
         public async Task<OperationResult> UpdateCardPricesOrchetrator(int defaultDelay = 3000, CancellationToken ct = default)
@@ -397,6 +400,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             return
             [
                 (DbPrepStep.CreateTables,"Creating custom tables...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateTablesAsync(conn, tx);return (Result: true, Commit: true);}),false),
+                (DbPrepStep.CreateIndices,"Creating indices...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateIndicesAsync(conn, tx);return (Result: true, Commit: true);}),false),
                 (DbPrepStep.GenerateManaSymbols,"Generating mana symbols...",() => _missingPngService.GenerateMissingManaSymbolImagesAsync(_progressSinks.Percent),true),
                 (DbPrepStep.GenerateManaCostImages,"Generating mana cost images...",() => _missingPngService.GenerateMissingManaCostImagesAsync(_progressSinks.Percent),true),
                 (DbPrepStep.GenerateSetIcons,"Generating set icon images...",() => _missingPngService.GenerateMissingKeyRuneImagesAsync(_progressSinks.Percent),true),
@@ -418,7 +422,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     }
                 },true),
                 (DbPrepStep.CreateViews,"Creating views...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateViewsAsync(conn, tx);return (Result: true, Commit: true);}),false),
-                (DbPrepStep.CreateIndices,"Creating indices...",() => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>{await _dbMgmtRepo.CreateIndicesAsync(conn, tx);return (Result: true, Commit: true);}),false),
                 (DbPrepStep.OptimizeDatabase, "Optimizing database...", () => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbMgmtRepo.OptimizeAsync(conn))), false),
             ];
 
@@ -431,12 +434,13 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         private enum DbPrepStep
         {
             CreateTables,
+            CreateIndices,
+            BuildCanonicalOracleFaces,
             GenerateManaSymbols,
             GenerateManaCostImages,
             GenerateSetIcons,
             ImportPrices,
             CreateViews,
-            CreateIndices,
             OptimizeDatabase
         }
 
