@@ -29,6 +29,7 @@ using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
+using CollectaMundo.Infrastructure.CardDatabaseManagement.CardData;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLegalities;
 using CollectaMundo.Infrastructure.CardLists;
@@ -44,8 +45,10 @@ using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Infrastructure.Shared.Files;
 using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.Shared.RemoteFiles;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
+using System.Net.Http;
 
 namespace CollectaMundo.Tests.TestUtils;
 
@@ -67,23 +70,16 @@ public static class TestAppBuilder
 
         var remoteLookups = new RemoteLookups();
 
-        var missingPngSvc = new GenerateMissingPngService(
+        var missingPngService = new GenerateMissingPngService(
             uowRunner,
             new GenerateMissingPngRepo(),
             remoteLookups,
             new GenerateMissingPngLogic());
 
         var priceService = new CardPriceService(new CardPriceRepository());
+        var progressSinks = CreateProgressSinks(operationOverlayController);
 
-        var prepService = new CardDatabaseManagementService(
-            settings,
-            dbFactory,
-            uowRunner,
-            CreateProgressSinks(operationOverlayController),
-            new CardDatabaseManagementRepo(new CsvFileWriter()),
-            priceService,
-            missingPngSvc,
-            remoteLookups);
+        var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor());
 
         var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
 
@@ -120,7 +116,7 @@ public static class TestAppBuilder
         var mainVM = await MainWindowViewModel.CreateAsync(
             modifyService,
             cardImageService,
-            prepService,
+            cardDbManagementService,
             importService,
             operationOverlayController,
             userPromptService,
@@ -180,6 +176,7 @@ public static class TestAppBuilder
         Step = new Progress<string>(s => operationOverlayController.SetStep(s)),
         Percent = new Progress<int>(p => operationOverlayController.SetProgress(p)),
         ProgressBarVisible = new Progress<bool>(v => operationOverlayController.ShowProgress(v)),
+        ProgressBarIndeterminate = new Progress<bool>(operationOverlayController.SetProgressIndeterminate),
         CancelEnabled = new Progress<bool>(enabled =>
         {
             if (enabled)

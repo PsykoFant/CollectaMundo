@@ -1,11 +1,9 @@
 ﻿using CollectaMundo.ApplicationServices.Shared.Operation;
-using CollectaMundo.Infrastructure.CardDatabaseManagement;
+using CollectaMundo.Infrastructure.Shared.IO;
 using CollectaMundo.Tests.TestUtils;
 using Moq;
 using System.Data.SQLite;
-using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 
 
@@ -13,6 +11,8 @@ namespace CollectaMundo.Tests.UnitTests
 {
     public class FirstTimeSetupTests
     {
+        private const string DatabaseUrl = "http://localhost/dummy.sqlite.gz";
+        private const string PricesUrl = "http://localhost/dummy.json.gz";
 
         [Fact]
         public async Task FirstTimeDbPrepOrchetrator_AllStepsSucceed_ReturnsSuccess_AndProgressFinishes()
@@ -20,28 +20,6 @@ namespace CollectaMundo.Tests.UnitTests
             using var ctx = new FirstTimeSetupTestContext();
             ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
             ctx.StubAllStepsAsSuccess();
-
-            ctx.CardDatabaseDownloaderMock
-                .Setup(d => d.DownloadParallelAsync(
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .Callback((
-                    string u1, string p1, string l1,
-                    string u2, string p2, string l2,
-                    int retryDelay, string stepName,
-                    IProgress<string> stepProg, IProgress<string> detailProg,
-                    IProgress<int> percentProg, CancellationToken _) =>
-                {
-                    stepProg?.Report(stepName);
-                    detailProg?.Report("starting…");
-                    percentProg?.Report(15);
-                    percentProg?.Report(60);
-                    percentProg?.Report(100);
-                })
-                .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
 
             var svc = ctx.BuildService();
 
@@ -52,12 +30,27 @@ namespace CollectaMundo.Tests.UnitTests
             // repo/service calls
             ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Once);
 
+            ctx.RemoteFileDownloaderMock.Verify(d => d.DownloadAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IProgress<FileTransferProgress>?>(),
+                It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+
+            ctx.GzipFileDecompressorMock.Verify(d => d.DecompressAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IProgress<FileTransferProgress>?>(),
+                It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+
             // progress assertions
             Assert.Contains(ctx.VisibleToggles, v => v);          // bar was shown
             Assert.Contains(ctx.VisibleToggles, v => v == false); // bar was hidden
             Assert.Contains(ctx.PercentSamples, p => p == 100);   // finished
             Assert.NotEmpty(ctx.Steps);                         // at least one step label
         }
+
         [Fact]
         public async Task FirstTimeDbPrepOrchetrator_RetriesCreateTables_ThenSucceeds()
         {
@@ -78,15 +71,6 @@ namespace CollectaMundo.Tests.UnitTests
                    }
                });
 
-            ctx.CardDatabaseDownloaderMock
-                .Setup(d => d.DownloadParallelAsync(
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
-
             var svc = ctx.BuildService();
 
             var result = await svc.FirstTimeDbPrepOrchestrator(0);
@@ -94,21 +78,13 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(OperationResultCode.Success, result.Code);
             Assert.Equal(3, attempts); // 2 failures + 1 success
         }
+
         [Fact]
         public async Task Step2FailsAfterRetries_ReturnsError_AndStopsPipeline()
         {
             using var ctx = new FirstTimeSetupTestContext();
             ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
             ctx.StubAllStepsAsSuccess();
-
-            ctx.CardDatabaseDownloaderMock
-                .Setup(d => d.DownloadParallelAsync(
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
 
             int createCalls = 0;
             ctx.SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>())).Returns(async () => { createCalls++; await Task.Yield(); throw new Exception("Step 2 fails"); });
@@ -121,36 +97,51 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(3, createCalls); // max retries
             ctx.SchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Never);
         }
+
         [Fact]
-        public async Task DownloadFails_ReturnsDownloadFailed_DoesNotRunSteps()
+        public async Task UpdateDbPrepOrchetrator_OneArtifactFails_ReturnsDownloadFailed_AndStopsPipeline()
         {
             using var ctx = new FirstTimeSetupTestContext();
-            ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
             ctx.StubAllStepsAsSuccess();
 
-            ctx.CardDatabaseDownloaderMock
-                .Setup(d => d.DownloadParallelAsync(
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new OperationResult(OperationResultCode.DownloadFailed, "net fail"));
+            ctx.RemoteFileDownloaderMock
+                .Setup(d => d.DownloadAsync(
+                    PricesUrl,
+                    It.IsAny<string>(),
+                    It.IsAny<IProgress<FileTransferProgress>?>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(
+                    new HttpRequestException(
+                        "One file failed"));
 
             var svc = ctx.BuildService();
 
-            var result = await svc.FirstTimeDbPrepOrchestrator(0);
+            var result =
+                await svc.UpdateDbPrepOrchetrator(
+                    0,
+                    CancellationToken.None);
 
-            Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
-            ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Never);
-            ctx.CardDatabaseDownloaderMock.Verify(d => d.DownloadParallelAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<int>(), It.IsAny<string>(),
-                It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
-                Times.Once);
+            Assert.Equal(
+                OperationResultCode.DownloadFailed,
+                result.Code);
+
+            ctx.RemoteFileDownloaderMock.Verify(
+                d => d.DownloadAsync(
+                    PricesUrl,
+                    It.IsAny<string>(),
+                    It.IsAny<IProgress<FileTransferProgress>?>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Exactly(3));
+
+            ctx.SchemaRepo.VerifyNoOtherCalls();
         }
+
         [Fact]
         public async Task NoInternet_ReturnsNoInternet_AndSkipsEverything()
         {
@@ -161,92 +152,141 @@ namespace CollectaMundo.Tests.UnitTests
             var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.NoInternet, result.Code);
-            ctx.CardDatabaseDownloaderMock.VerifyNoOtherCalls();
+
+            ctx.RemoteFileDownloaderMock.VerifyNoOtherCalls();
+            ctx.GzipFileDecompressorMock.VerifyNoOtherCalls();
             ctx.SchemaRepo.VerifyNoOtherCalls();
         }
+
         [Fact]
-        public async Task UpdateDbPrepOrchetrator_UserCancelsDuringDownload_ReturnsCancelledByUser()
+        public async Task UpdateDbPrepOrchetrator_UserCancelsBeforeAcquisition_ReturnsCancelledByUser()
         {
             using var ctx = new FirstTimeSetupTestContext();
-            ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
             ctx.StubAllStepsAsSuccess();
 
-            var cts = new CancellationTokenSource();
-            cts.Cancel(); // Simulate user cancellation before download starts
+            using var cts =
+                new CancellationTokenSource();
 
-            ctx.CardDatabaseDownloaderMock
-                .Setup(d => d.DownloadParallelAsync(
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new OperationResult(OperationResultCode.CancelledByUser, "User cancelled"));
+            cts.Cancel();
 
             var svc = ctx.BuildService();
 
-            var result = await svc.UpdateDbPrepOrchetrator(0, cts.Token);
+            var result =
+                await svc.UpdateDbPrepOrchetrator(
+                    0,
+                    cts.Token);
 
-            Assert.Equal(OperationResultCode.CancelledByUser, result.Code);
-            ctx.SchemaRepo.VerifyNoOtherCalls(); // No further steps run
+            Assert.Equal(
+                OperationResultCode.CancelledByUser,
+                result.Code);
+
+            ctx.RemoteFileDownloaderMock.VerifyNoOtherCalls();
+            ctx.GzipFileDecompressorMock.VerifyNoOtherCalls();
+            ctx.SchemaRepo.VerifyNoOtherCalls();
         }
+
         [Fact]
         public async Task FirstTimeDbPrepOrchetrator_DownloadThrowsHttpException_ReturnsDownloadFailed()
         {
             using var ctx = new FirstTimeSetupTestContext();
-            ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
             ctx.StubAllStepsAsSuccess();
 
-            ctx.CardDatabaseDownloaderMock
-            .Setup(d => d.DownloadParallelAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<int>(), It.IsAny<string>(),
-                It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new OperationResult(OperationResultCode.DownloadFailed, "boom"));
-
+            // Override the default successful downloader setup.
+            ctx.RemoteFileDownloaderMock
+                .Setup(d => d.DownloadAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<IProgress<FileTransferProgress>?>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(
+                    new HttpRequestException("boom"));
 
             var svc = ctx.BuildService();
-            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
-            Assert.Equal(OperationResultCode.DownloadFailed, result.Code); // Gracefully mapped
+            var result =
+                await svc.FirstTimeDbPrepOrchestrator(0);
+
+            Assert.Equal(
+                OperationResultCode.DownloadFailed,
+                result.Code);
         }
+
         [Fact]
         public async Task UpdateDbPrepOrchetrator_ProgressReportsBeforeCancel_AreCaptured()
         {
             using var ctx = new FirstTimeSetupTestContext();
-            ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
             ctx.StubAllStepsAsSuccess();
 
-            var cts = new CancellationTokenSource();
+            using var cts =
+                new CancellationTokenSource();
 
-            ctx.CardDatabaseDownloaderMock
-                .Setup(d => d.DownloadParallelAsync(
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .Callback((
-                    string u1, string p1, string l1,
-                    string u2, string p2, string l2,
-                    int retryDelay, string stepName,
-                    IProgress<string> stepProg, IProgress<string> detailProg,
-                    IProgress<int> percentProg, CancellationToken _) =>
+            // Override only the database artifact.
+            // Leave the price artifact using the normal successful stub.
+            ctx.RemoteFileDownloaderMock
+                .Setup(d => d.DownloadAsync(
+                    It.Is<string>(
+                        url => url.Contains(
+                            "dummy.sqlite",
+                            StringComparison.OrdinalIgnoreCase)),
+                    It.IsAny<string>(),
+                    It.IsAny<IProgress<FileTransferProgress>?>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns((
+                    string _,
+                    string __,
+                    IProgress<FileTransferProgress>? progress,
+                    CancellationToken ___) =>
                 {
-                    percentProg.Report(15);
-                    percentProg.Report(50);
-                    cts.Cancel(); // simulate cancel mid-progress
-                })
-                .ReturnsAsync(new OperationResult(OperationResultCode.CancelledByUser, "cancelled"));
+                    progress?.Report(
+                        new FileTransferProgress(
+                            BytesTransferred: 15,
+                            TotalBytes: 100));
+
+                    progress?.Report(
+                        new FileTransferProgress(
+                            BytesTransferred: 50,
+                            TotalBytes: 100));
+
+                    cts.Cancel();
+
+                    return Task.FromCanceled<long>(
+                        cts.Token);
+                });
 
             var svc = ctx.BuildService();
-            var result = await svc.UpdateDbPrepOrchetrator(0, cts.Token);
 
-            Assert.Equal(OperationResultCode.CancelledByUser, result.Code);
-            Assert.Contains(ctx.PercentSamples, p => p == 50); // Assert progress was tracked
+            var result =
+                await svc.UpdateDbPrepOrchetrator(
+                    0,
+                    cts.Token);
+
+            Assert.Equal(
+                OperationResultCode.CancelledByUser,
+                result.Code);
+
+            Assert.Contains(
+                ctx.PercentSamples,
+                p => p == 50);
         }
+
         [Fact]
         public async Task UpdateDbPrepOrchetrator_CancelDuringRetryDelay_AbortsImmediately()
         {
@@ -256,26 +296,28 @@ namespace CollectaMundo.Tests.UnitTests
 
             var cts = new CancellationTokenSource();
 
-            int callCount = 0;
-            ctx.CardDatabaseDownloaderMock
-                .Setup(d => d.DownloadParallelAsync(
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .Returns(async () =>
+            var callCount = 0;
+
+            ctx.RemoteFileDownloaderMock
+                .Setup(d => d.DownloadAsync(
+                    DatabaseUrl,
+                    It.IsAny<string>(),
+                    It.IsAny<IProgress<FileTransferProgress>?>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns((
+                    string _,
+                    string __,
+                    IProgress<FileTransferProgress>? ___,
+                    CancellationToken ____) =>
                 {
-                    await Task.Yield(); // Prevents compiler warning
+                    Interlocked.Increment(
+                        ref callCount);
 
-                    callCount++;
-                    if (callCount == 1)
-                    {
-                        cts.Cancel(); // simulate user cancelling *after* first failure
-                        return new OperationResult(OperationResultCode.DownloadFailed, "Simulated failure");
-                    }
+                    cts.Cancel();
 
-                    return new OperationResult(OperationResultCode.Success);
+                    return Task.FromException<long>(
+                        new HttpRequestException(
+                            "Simulated failure"));
                 });
 
 
@@ -285,139 +327,138 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(OperationResultCode.CancelledByUser, result.Code);
             Assert.Equal(1, callCount); // Should abort before retrying
         }
+
         [Fact]
-        public async Task UpdateDbPrepOrchetrator_OneFileFailsInParallel_ReturnsDownloadFailed()
+        public async Task FirstTimeDbPrepOrchetrator_TransientDownloadFailures_AreRetried_AndRecover()
         {
-            using var ctx = new FirstTimeSetupTestContext();
-            ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            using var ctx =
+                new FirstTimeSetupTestContext();
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
             ctx.StubAllStepsAsSuccess();
 
-            // Simulate a download result where one file failed
-            ctx.CardDatabaseDownloaderMock
-                .Setup(d => d.DownloadParallelAsync(
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                    It.IsAny<int>(), It.IsAny<string>(),
-                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new OperationResult(OperationResultCode.DownloadFailed, "One file failed"));
+            var databaseAttempts = 0;
+            var priceAttempts = 0;
 
-            var svc = ctx.BuildService();
-            var result = await svc.UpdateDbPrepOrchetrator(0, CancellationToken.None);
-
-            Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
-            Assert.Contains("One file failed", result.Message);
-            ctx.SchemaRepo.VerifyNoOtherCalls(); // No further processing after failed download
-        }
-        [Fact]
-        public async Task FirstTimeDbPrepOrchetrator_UsesRealDownloader_WithFakeHttpClient()
-        {
-            // Arrange: Create a fake HTTP response
-            var httpClient = FakeHttpMessageHandler.WithStaticResponse("{\"status\":\"ok\"}");
-            var downloader = new CardDatabaseDownloader(httpClient);
-
-            // Pass the real downloader into the context constructor
-            using var ctx = new FirstTimeSetupTestContext(downloader);
-
-            ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            ctx.StubAllStepsAsSuccess();
-
-            var svc = ctx.BuildService();
-
-            // Act
-            var result = await svc.FirstTimeDbPrepOrchestrator(0);
-
-            // Assert
-            Assert.Equal(OperationResultCode.Success, result.Code);
-        }
-        [Fact]
-        public async Task FirstTimeDbPrepOrchetrator_RealDownloader_Http500_ReturnsDownloadFailed()
-        {
-            var httpClient = FakeHttpMessageHandler.WithStatusCode(HttpStatusCode.InternalServerError);
-            var downloader = new CardDatabaseDownloader(httpClient);
-
-            using var ctx = new FirstTimeSetupTestContext(downloader);
-            ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            ctx.StubAllStepsAsSuccess();
-
-            var svc = ctx.BuildService();
-
-            var result = await svc.FirstTimeDbPrepOrchestrator(0);
-
-            Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
-            Debug.WriteLine(result.Message);
-            Assert.Contains("Step 1. Downloading card database and prices... failed after 3 attempts.", result.Message, StringComparison.OrdinalIgnoreCase);
-        }
-        [Fact]
-        public async Task FirstTimeDbPrepOrchetrator_RealDownloader_ThrowsDuringRead_ReturnsDownloadFailed()
-        {
-            var httpClient = FakeHttpMessageHandler.WithStreamFailure(new IOException("Simulated stream crash"));
-            var downloader = new CardDatabaseDownloader(httpClient);
-
-            using var ctx = new FirstTimeSetupTestContext(downloader);
-            ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            ctx.StubAllStepsAsSuccess();
-
-            var svc = ctx.BuildService();
-
-            var result = await svc.FirstTimeDbPrepOrchestrator(0);
-
-            Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
-            Assert.Contains("Step 1. Downloading card database and prices... failed after 3 attempts.", result.Message, StringComparison.OrdinalIgnoreCase);
-        }
-        [Fact]
-        public async Task FirstTimeDbPrepOrchetrator_RealDownloader_RecoversAfterTransientHttpFailure()
-        {
-            var attemptsPerUrl = new Dictionary<string, int>
-            {
-                ["http://localhost/dummy.sqlite"] = 0,
-                ["http://localhost/dummy.json"] = 0
-            };
-
-            var httpClient = new HttpClient(new FakeHttpMessageHandler((req, token) =>
-            {
-                var url = req.RequestUri?.ToString() ?? "";
-                if (!attemptsPerUrl.ContainsKey(url))
+            ctx.RemoteFileDownloaderMock
+                .Setup(d => d.DownloadAsync(
+                    DatabaseUrl,
+                    It.IsAny<string>(),
+                    It.IsAny<IProgress<FileTransferProgress>?>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns((
+                    string _,
+                    string __,
+                    IProgress<FileTransferProgress>? ___,
+                    CancellationToken ____) =>
                 {
-                    throw new InvalidOperationException("Unexpected URL in test: " + url);
-                }
+                    var attempt =
+                        Interlocked.Increment(
+                            ref databaseAttempts);
 
-                attemptsPerUrl[url]++;
-
-                if (attemptsPerUrl[url] < 2)
-                {
-                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
-                }
-
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("{\"status\":\"ok\"}")
+                    return attempt == 1
+                        ? Task.FromException<long>(
+                            new HttpRequestException(
+                                "Transient DB failure"))
+                        : Task.FromResult(1L);
                 });
-            }));
 
-            var downloader = new CardDatabaseDownloader(httpClient);
-            using var ctx = new FirstTimeSetupTestContext(downloader);
+            ctx.RemoteFileDownloaderMock
+                .Setup(d => d.DownloadAsync(
+                    PricesUrl,
+                    It.IsAny<string>(),
+                    It.IsAny<IProgress<FileTransferProgress>?>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns((
+                    string _,
+                    string __,
+                    IProgress<FileTransferProgress>? ___,
+                    CancellationToken ____) =>
+                {
+                    var attempt =
+                        Interlocked.Increment(
+                            ref priceAttempts);
 
-            ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+                    return attempt == 1
+                        ? Task.FromException<long>(
+                            new HttpRequestException(
+                                "Transient price failure"))
+                        : Task.FromResult(1L);
+                });
+
+            var svc =
+                ctx.BuildService();
+
+            var result =
+                await svc.FirstTimeDbPrepOrchestrator(0);
+
+            Assert.Equal(
+                OperationResultCode.Success,
+                result.Code);
+
+            Assert.Equal(
+                2,
+                databaseAttempts);
+
+            Assert.Equal(
+                2,
+                priceAttempts);
+
+            ctx.PriceService.Verify(
+                p => p.ImportPricesFromJsonAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>(),
+                    It.IsAny<IProgress<string>?>(),
+                    It.IsAny<IProgress<int>?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task FirstTimeDbPrepOrchetrator_DecompressionFails_ReturnsDownloadFailed_AndStopsPipeline()
+        {
+            using var ctx =
+                new FirstTimeSetupTestContext();
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
             ctx.StubAllStepsAsSuccess();
 
-            var svc = ctx.BuildService();
-            var result = await svc.FirstTimeDbPrepOrchestrator(0);
+            ctx.GzipFileDecompressorMock
+                .Setup(d => d.DecompressAsync(
+                    It.IsAny<string>(),
+                    It.Is<string>(
+                        path => path.EndsWith(
+                            "AllPrintings.sqlite",
+                            StringComparison.OrdinalIgnoreCase)),
+                    It.IsAny<IProgress<FileTransferProgress>?>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(
+                    new InvalidDataException(
+                        "Corrupt gzip"));
 
-            ctx.PriceService.Verify(p => p.ImportPricesFromJsonAsync(
-        It.IsAny<string>(),
-        It.IsAny<SQLiteConnection>(),
-        It.IsAny<SQLiteTransaction>(),
-        It.IsAny<IProgress<string>?>(),
-        It.IsAny<IProgress<int>?>()),
-    Times.Once);
+            var svc =
+                ctx.BuildService();
 
-            Assert.Equal(OperationResultCode.Success, result.Code);
+            var result =
+                await svc.FirstTimeDbPrepOrchestrator(0);
 
+            Assert.Equal(
+                OperationResultCode.DownloadFailed,
+                result.Code);
 
-            // ✅ Validate each URL retried once and then succeeded
-            Assert.Equal(2, attemptsPerUrl["http://localhost/dummy.sqlite"]);
-            Assert.Equal(2, attemptsPerUrl["http://localhost/dummy.json"]);
+            ctx.SchemaRepo.Verify(
+                r => r.CreateTablesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()),
+                Times.Never);
         }
 
     }

@@ -16,14 +16,16 @@ namespace CollectaMundo.Tests.UnitTests
 
             var result = PrintingCardAggregator.AggregatePrintingCards(input);
 
-            Assert.Single(result);
+            Assert.Single(result.Printings);
 
-            var card = result[0];
+            var card = result.Printings[0];
 
             Assert.Equal("Flying", card.Keywords);
             Assert.Equal("W", card.Colors);
             Assert.Equal("Creature", card.Types);
             Assert.Equal("Some ability", card.Text);
+            Assert.True(result.BySourceUuid.TryGetValue("card1", out var mappedCard));
+            Assert.Same(card, mappedCard);
         }
 
         [Fact]
@@ -37,8 +39,8 @@ namespace CollectaMundo.Tests.UnitTests
 
             var result = PrintingCardAggregator.AggregatePrintingCards(input);
 
-            Assert.Single(result);
-            var card = result[0];
+            Assert.Single(result.Printings);
+            var card = result.Printings[0];
             Assert.Equal("W,R,G", card.Colors); // deduplicated & joined
             Assert.Equal("Flying,Haste,Trample", card.Keywords); // deduplicated
             Assert.Contains("Creature", card.Types);
@@ -56,7 +58,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var result = PrintingCardAggregator.AggregatePrintingCards(input);
 
-            Assert.Empty(result);
+            Assert.Empty(result.Printings);
         }
 
         [Fact]
@@ -68,9 +70,9 @@ namespace CollectaMundo.Tests.UnitTests
                 };
 
             var result = PrintingCardAggregator.AggregatePrintingCards(input);
-            Assert.Single(result);
+            Assert.Single(result.Printings);
 
-            var card = result[0];
+            var card = result.Printings[0];
             Assert.Equal("Flying", card.Keywords);
             Assert.Equal("W", card.Colors);
             Assert.Equal("Creature", card.Types);
@@ -86,7 +88,7 @@ namespace CollectaMundo.Tests.UnitTests
                 };
 
             var result = PrintingCardAggregator.AggregatePrintingCards(input);
-            Assert.Equal(2, result.Count);
+            Assert.Equal(2, result.Printings.Count);
         }
     }
 }

@@ -4,8 +4,12 @@ using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
+using CollectaMundo.DomainLogic.CardData.Models;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
+using CollectaMundo.Infrastructure.CardDatabaseManagement.CardData;
 using CollectaMundo.Infrastructure.RemoteLookups;
+using CollectaMundo.Infrastructure.Shared.IO;
+using CollectaMundo.Infrastructure.Shared.RemoteFiles;
 using Moq;
 using System.Data.SQLite;
 using System.IO;
@@ -23,30 +27,45 @@ namespace CollectaMundo.Tests.TestUtils
 
         public List<int> PercentSamples { get; }
         public List<bool> VisibleToggles { get; }
+        public List<bool> IndeterminateToggles { get; }
         public List<string> Steps { get; }
 
         private IDisposable? _dbFactoryDisposable;
         private string? _tmpRoot;
 
-        public Mock<ICardDatabaseDownloader> CardDatabaseDownloaderMock { get; }
-
-        private readonly ICardDatabaseDownloader? _realDownloader;
-        public ICardDatabaseDownloader CardDatabaseDownloader => _realDownloader ?? CardDatabaseDownloaderMock.Object;
-        public FirstTimeSetupTestContext(ICardDatabaseDownloader? downloaderOverride = null)
+        public Mock<ICardDataRepo> CardDataRepo { get; }
+        public Mock<IRemoteFileDownloader> RemoteFileDownloaderMock { get; }
+        public Mock<IGzipFileDecompressor> GzipFileDecompressorMock { get; }
+        private readonly IRemoteFileDownloader? _realRemoteFileDownloader;
+        private readonly IGzipFileDecompressor? _realGzipFileDecompressor;
+        public IRemoteFileDownloader RemoteFileDownloader => _realRemoteFileDownloader ?? RemoteFileDownloaderMock.Object;
+        public IGzipFileDecompressor GzipFileDecompressor => _realGzipFileDecompressor ?? GzipFileDecompressorMock.Object;
+        public FirstTimeSetupTestContext(IRemoteFileDownloader? remoteFileDownloaderOverride = null, IGzipFileDecompressor? gzipFileDecompressorOverride = null)
         {
-            // Always create a mock to prevent null refs
-            CardDatabaseDownloaderMock = new Mock<ICardDatabaseDownloader>();
+            RemoteFileDownloaderMock = new Mock<IRemoteFileDownloader>();
 
-            if (downloaderOverride is IMocked<ICardDatabaseDownloader> mocked)
+            GzipFileDecompressorMock = new Mock<IGzipFileDecompressor>();
+
+            if (remoteFileDownloaderOverride is IMocked<IRemoteFileDownloader> mockedDownloader)
             {
-                CardDatabaseDownloaderMock = mocked.Mock;
+                RemoteFileDownloaderMock = mockedDownloader.Mock;
             }
-            else if (downloaderOverride != null)
+            else if (remoteFileDownloaderOverride is not null)
             {
-                _realDownloader = downloaderOverride;
+                _realRemoteFileDownloader = remoteFileDownloaderOverride;
+            }
+
+            if (gzipFileDecompressorOverride is IMocked<IGzipFileDecompressor> mockedDecompressor)
+            {
+                GzipFileDecompressorMock = mockedDecompressor.Mock;
+            }
+            else if (gzipFileDecompressorOverride is not null)
+            {
+                _realGzipFileDecompressor = gzipFileDecompressorOverride;
             }
 
             SchemaRepo = new();
+            CardDataRepo = new();
             PriceService = new();
             PngService = new();
             RemoteLookups = new();
@@ -54,6 +73,7 @@ namespace CollectaMundo.Tests.TestUtils
 
             PercentSamples = [];
             VisibleToggles = [];
+            IndeterminateToggles = [];
             Steps = [];
         }
         public CardDatabaseManagementService BuildService()
@@ -73,8 +93,8 @@ namespace CollectaMundo.Tests.TestUtils
                 SQLitePath = _tmpRoot
             });
             Settings.Setup(s => s.UserDownloadsPath).Returns(_tmpRoot);
-            Settings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
-            Settings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
+            Settings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite.gz");
+            Settings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json.gz");
             Settings.Setup(s => s.PriceInfo).Returns(new PriceInfo
             {
                 Retailer = "CardMarket"
@@ -87,7 +107,8 @@ namespace CollectaMundo.Tests.TestUtils
                 Detail = new InlineProgress<string>(_ => { }),
                 Step = new InlineProgress<string>(s => Steps.Add(s)),
                 Percent = new InlineProgress<int>(p => PercentSamples.Add(p)),
-                ProgressBarVisible = new InlineProgress<bool>(v => VisibleToggles.Add(v))
+                ProgressBarVisible = new InlineProgress<bool>(v => VisibleToggles.Add(v)),
+                ProgressBarIndeterminate = new InlineProgress<bool>(value => IndeterminateToggles.Add(value))
             };
 
             // 4. Inject everything explicitly (no AppGlobals)
@@ -97,13 +118,14 @@ namespace CollectaMundo.Tests.TestUtils
                 uowRunner,
                 sinks,
                 SchemaRepo.Object,
+                CardDataRepo.Object,
                 PriceService.Object,
                 PngService.Object,
                 RemoteLookups.Object,
-                CardDatabaseDownloader
+                RemoteFileDownloader,
+                GzipFileDecompressor
             );
         }
-
         public void StubAllStepsAsSuccess()
         {
             SchemaRepo
@@ -151,9 +173,46 @@ namespace CollectaMundo.Tests.TestUtils
                 .Setup(p => p.GenerateMissingKeyRuneImagesAsync(
                     It.IsAny<IProgress<int>>()))
                 .Returns(Task.CompletedTask);
+
+            RemoteFileDownloaderMock.Setup(d => d.DownloadAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IProgress<FileTransferProgress>?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1L);
+
+            GzipFileDecompressorMock.Setup(d => d.DecompressAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<IProgress<FileTransferProgress>?>(),
+                It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var candidate = new OracleFaceCandidate(SourceUuid: "test-uuid", ScryfallOracleId: "test-oracle-id", Side: null, Payload: new OracleFacePayload(
+                Name: "Test Card",
+                ManaCostRaw: null,
+                ManaValue: null,
+                Colors: null,
+                Keywords: null,
+                RulesText: null,
+                SuperTypes: null,
+                Types: "Creature",
+                SubTypes: null,
+                Type: "Creature"));
+
+            CardDataRepo
+                .Setup(r => r.GetOracleFaceCandidatesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()))
+                .ReturnsAsync([candidate]);
+
+            CardDataRepo
+                .Setup(r => r.RebuildCanonicalOracleFacesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>(),
+                    It.IsAny<IReadOnlyList<CanonicalOracleFace>>()))
+                .ReturnsAsync(1);
         }
-
-
         public void Dispose()
         {
             try
@@ -168,10 +227,10 @@ namespace CollectaMundo.Tests.TestUtils
         }
 
         // test helper
-        sealed class InlineProgress<T> : IProgress<T>
+        sealed class InlineProgress<T>(Action<T> onReport) : IProgress<T>
         {
-            private readonly Action<T> _onReport;
-            public InlineProgress(Action<T> onReport) => _onReport = onReport;
+            private readonly Action<T> _onReport = onReport;
+
             public void Report(T value) => _onReport(value);
         }
     }

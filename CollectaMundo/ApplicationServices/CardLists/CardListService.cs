@@ -106,9 +106,9 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 printings[i] = PrintingCardFactory.FromRow(row, legalityMasks);
             });
 
-            var aggregatedPrintings = PrintingCardAggregator.AggregatePrintingCards(printings);
-
-            var printingByUuid = aggregatedPrintings.Where(p => !string.IsNullOrWhiteSpace(p.Uuid)).ToDictionary(p => p.Uuid, StringComparer.OrdinalIgnoreCase);
+            var aggregation = PrintingCardAggregator.AggregatePrintingCards(printings);
+            var aggregatedPrintings = aggregation.Printings;
+            var printingByUuid = aggregation.BySourceUuid;
 
             phase2bSw.Stop();
 
@@ -138,7 +138,15 @@ namespace CollectaMundo.ApplicationServices.CardLists
                     {
                         if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
                         {
-                            throw new InvalidOperationException($"Cannot materialize collection card. " + $"Printing not found for UUID '{row.Identity.Uuid}'.");
+                            var sourcePrinting = printings.FirstOrDefault(p => string.Equals(p.Uuid, row.Identity.Uuid, StringComparison.OrdinalIgnoreCase));
+
+                            throw new InvalidOperationException(
+                                $"Cannot materialize collection card. " +
+                                $"Printing not found for UUID '{row.Identity.Uuid}'. " +
+                                $"Present in source printings: {sourcePrinting is not null}. " +
+                                $"Source side: '{sourcePrinting?.Oracle.Side ?? "<none>"}'. " +
+                                $"Source other faces: " +
+                                $"'{string.Join(",", sourcePrinting?.Oracle.OtherFaceIds ?? [])}'.");
                         }
 
                         return CollectionCardFactory.FromPrintingAndDbRow(printing, row);

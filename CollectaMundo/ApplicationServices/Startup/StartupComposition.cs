@@ -46,9 +46,10 @@ using CollectaMundo.Infrastructure.Shared.RemoteFiles;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
-using Microsoft.AspNetCore.ResponseCompression;
 using System.Diagnostics;
+using System.Net.Http;
 #endregion
+
 namespace CollectaMundo.ApplicationServices.Startup
 {
     public static class StartupComposition
@@ -73,7 +74,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var priceService = new CardPriceService(new CardPriceRepository());
 
                 var progressSinks = CreateProgressSinks(operationOverlayController);
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), priceService, missingPngService, remoteLookups, new RemoteFileDownloader(), new GzipCompressionProvider());
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor());
                 var integrityService = new DatabaseIntegrityService(uowRunner, settings);
 
                 // Status overlay

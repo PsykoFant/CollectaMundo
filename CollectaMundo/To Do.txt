@@ -1,8 +1,9 @@
 TO DO 
 
-
-
-Db optimering
+- Fix startup
+- Få tests grønne
+- Få styr på helper klasser i infra shared
+- Tilbage til phase 1 optimering...
 
 Merge og release
 

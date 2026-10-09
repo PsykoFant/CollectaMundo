@@ -11,7 +11,6 @@ namespace CollectaMundo.Infrastructure.Shared.RemoteFiles
     {
         private const int BufferSize = 128 * 1024;
         private readonly HttpClient _httpClient = httpClient;
-
         public async Task<long> DownloadAsync(string url, string destinationPath, IProgress<FileTransferProgress>? progress = null, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(url);
@@ -30,54 +29,45 @@ namespace CollectaMundo.Infrastructure.Shared.RemoteFiles
 
             try
             {
-                using var request = CreateGetRequest(url);
-                using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-
-                response.EnsureSuccessStatusCode();
-
-                var totalBytes = response.Content.Headers.ContentLength;
-
-                // Some servers/CDNs use chunked transfer even for static files.
-                // For the actual .gz artifact, a range probe gives us the size
-                // of the same representation we are downloading.
-                totalBytes ??= await TryGetContentLengthFromRangeAsync(url, cancellationToken).ConfigureAwait(false);
-
-                Debug.WriteLine($"[RemoteFileDownloader] {url}: " + $"expected length = " + $"{totalBytes?.ToString() ?? "unknown"}");
-
-                progress?.Report(new FileTransferProgress(BytesTransferred: 0, TotalBytes: totalBytes));
-
-                await using var input = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-
-                await using var output =
-                    new FileStream(
-                        partialPath,
-                        FileMode.Create,
-                        FileAccess.Write,
-                        FileShare.None,
-                        BufferSize,
-                        FileOptions.Asynchronous |
-                        FileOptions.SequentialScan);
-
-                var buffer = new byte[BufferSize];
-
+                long? totalBytes;
                 long totalBytesRead = 0;
-                int lastReportedPercent = -1;
 
-                while (true)
+                using (var request = CreateGetRequest(url))
+                using (var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false))
                 {
-                    var bytesRead = await input.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
+                    response.EnsureSuccessStatusCode();
 
-                    if (bytesRead == 0)
+                    totalBytes = response.Content.Headers.ContentLength;
+                    totalBytes ??= await TryGetContentLengthFromRangeAsync(url, cancellationToken).ConfigureAwait(false);
+
+                    Debug.WriteLine($"[RemoteFileDownloader] {url}: expected length = {totalBytes?.ToString() ?? "unknown"}");
+
+                    progress?.Report(new FileTransferProgress(BytesTransferred: 0, TotalBytes: totalBytes));
+
+                    await using var input = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                    await using var output = new FileStream(partialPath, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan);
+
+                    var buffer = new byte[BufferSize];
+                    var lastReportedPercent = -1;
+
+                    while (true)
                     {
-                        break;
-                    }
+                        var bytesRead = await input.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 
-                    await output.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
+                        if (bytesRead == 0)
+                        {
+                            break;
+                        }
 
-                    totalBytesRead += bytesRead;
+                        await output.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
 
-                    if (progress is not null)
-                    {
+                        totalBytesRead += bytesRead;
+
+                        if (progress is null)
+                        {
+                            continue;
+                        }
+
                         var transferProgress = new FileTransferProgress(totalBytesRead, totalBytes);
 
                         if (transferProgress.Percent is int percent)
@@ -85,26 +75,33 @@ namespace CollectaMundo.Infrastructure.Shared.RemoteFiles
                             if (percent != lastReportedPercent)
                             {
                                 lastReportedPercent = percent;
+
                                 progress.Report(transferProgress);
                             }
                         }
+                        else
+                        {
+                            progress.Report(transferProgress);
+                        }
                     }
+
+                    await output.FlushAsync(cancellationToken).ConfigureAwait(false);
+
+                    // input + output are now disposed.
                 }
 
-                await output.FlushAsync(cancellationToken).ConfigureAwait(false);
-
-                // For the explicitly requested .gz artifact, the advertised
-                // byte range and the bytes we actually receive must agree.
                 if (totalBytes is > 0 && totalBytesRead != totalBytes.Value)
                 {
-                    throw new InvalidDataException($"Remote file length mismatch for '{url}'. " + $"Expected {totalBytes.Value:N0} bytes, " + $"received {totalBytesRead:N0} bytes.");
+                    throw new InvalidDataException($"Remote file length mismatch for '{url}'. Expected {totalBytes.Value:N0} bytes, received {totalBytesRead:N0} bytes.");
                 }
 
-                progress?.Report(new FileTransferProgress(totalBytesRead, totalBytes));
+                progress?.Report(new FileTransferProgress(BytesTransferred: totalBytesRead, TotalBytes: totalBytes));
 
+                // Safe now: partialPath is no longer open.
                 File.Move(partialPath, destinationPath, overwrite: true);
 
-                Debug.WriteLine($"[RemoteFileDownloader] Completed: {url}, " + $"{totalBytesRead:N0} bytes.");
+                Debug.WriteLine($"[RemoteFileDownloader] Completed: {url}, {totalBytesRead:N0} bytes.");
+
                 return totalBytesRead;
             }
             catch
@@ -117,8 +114,8 @@ namespace CollectaMundo.Infrastructure.Shared.RemoteFiles
         {
             var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-            // We explicitly want the bytes belonging to the requested artifact. Do not allow an additional HTTP content encoding // to change its representation.
             request.Headers.AcceptEncoding.Clear();
+
             request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("identity"));
 
             return request;
