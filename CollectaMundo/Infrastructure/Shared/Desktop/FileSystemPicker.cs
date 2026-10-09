@@ -3,7 +3,7 @@ using Ookii.Dialogs.Wpf;
 using System.IO;
 using System.Windows;
 
-namespace CollectaMundo.Infrastructure.Shared
+namespace CollectaMundo.Infrastructure.Shared.Desktop
 {
     public class FileSystemPicker : IFileSystemPicker
     {

@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.DomainLogic.CardLegalities;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 
@@ -7,12 +6,14 @@ namespace CollectaMundo.DomainLogic.CardLists
 {
     public static class PrintingCardAggregator
     {
-        public static PrintingCardAggregationResult AggregatePrintingCards(IReadOnlyList<PrintingCard> printings)
+        public static List<PrintingCard> AggregatePrintingCards(IReadOnlyList<PrintingCard> printings)
         {
             var byUuid = new Dictionary<string, PrintingCard>(printings.Count, StringComparer.OrdinalIgnoreCase);
-            var linkedUuids = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
             var primaryCount = 0;
 
+            // First pass:
+            // - build UUID lookup
+            // - determine exact result capacity
             for (var i = 0; i < printings.Count; i++)
             {
                 var printing = printings[i];
@@ -20,17 +21,6 @@ namespace CollectaMundo.DomainLogic.CardLists
                 if (!string.IsNullOrWhiteSpace(printing.Uuid))
                 {
                     byUuid.Add(printing.Uuid, printing);
-
-                    foreach (var otherId in printing.Oracle.OtherFaceIds)
-                    {
-                        if (string.IsNullOrWhiteSpace(otherId))
-                        {
-                            continue;
-                        }
-
-                        AddLink(printing.Uuid, otherId);
-                        AddLink(otherId, printing.Uuid);
-                    }
                 }
 
                 if (IsPrimaryPrinting(printing))
@@ -39,21 +29,7 @@ namespace CollectaMundo.DomainLogic.CardLists
                 }
             }
 
-            void AddLink(string fromUuid, string toUuid)
-            {
-                if (!linkedUuids.TryGetValue(fromUuid, out var links))
-                {
-                    links = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    linkedUuids.Add(fromUuid, links);
-                }
-
-                links.Add(toUuid);
-            }
-
             var results = new List<PrintingCard>(primaryCount);
-
-            // Maps every physical/source UUID represented by an aggregate back to that aggregate.
-            var aggregatedBySourceUuid = new Dictionary<string, PrintingCard>(printings.Count, StringComparer.OrdinalIgnoreCase);
 
             // Second pass:
             // aggregate only primary printings.
@@ -72,22 +48,13 @@ namespace CollectaMundo.DomainLogic.CardLists
                 // Most primary printings have nothing to aggregate.
                 if (oracle.OtherFaceIds.Count == 0)
                 {
-                    var singleFaceAggregate = CreateAggregatedPrinting(
-                            printing,
-                            oracle.LegalityMasks,
-                            CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Keywords),
-                            CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Colors),
-                            CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Types),
-                            NormalizeText(oracle.Text));
-
-                    results.Add(singleFaceAggregate);
-
-                    MapAggregateSourceUuids(printing.Uuid, singleFaceAggregate);
+                    results.Add(CreateAggregatedPrinting(printing, oracle.LegalityMasks, CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Keywords), CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Colors), CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Types), NormalizeText(oracle.Text)));
 
                     continue;
                 }
 
-                // Multi-face path.
+                // Multi-face path:
+                // only printings with other faces need full aggregation.
                 var allKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var allColors = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var allTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -106,52 +73,13 @@ namespace CollectaMundo.DomainLogic.CardLists
                 }
 
                 var aggregatedLegalityMasks = new CardLegalityMasks(PlayableFormatsMask: playableFormatsMask, RestrictedFormatsMask: restrictedFormatsMask);
-                var multiFaceAggregate = CreateAggregatedPrinting(printing, aggregatedLegalityMasks, string.Join(",", allKeywords), string.Join(",", allColors), string.Join(",", allTypes), string.Join(" // ", allTexts));
 
-                results.Add(multiFaceAggregate);
-
-                // The primary UUID represents this aggregate.
-                MapAggregateSourceUuids(printing.Uuid, multiFaceAggregate);
-
-                void MapAggregateSourceUuids(string? primaryUuid, PrintingCard aggregate)
-                {
-                    if (string.IsNullOrWhiteSpace(primaryUuid))
-                    {
-                        return;
-                    }
-
-                    var pending = new Stack<string>();
-                    var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                    pending.Push(primaryUuid);
-
-                    while (pending.Count > 0)
-                    {
-                        var sourceUuid = pending.Pop();
-
-                        if (!visited.Add(sourceUuid))
-                        {
-                            continue;
-                        }
-
-                        // Only map UUIDs which actually correspond
-                        // to source printings loaded by this aggregation.
-                        if (byUuid.ContainsKey(sourceUuid))
-                        {
-                            AddSourceUuid(sourceUuid, aggregate);
-                        }
-
-                        if (!linkedUuids.TryGetValue(sourceUuid, out var linked))
-                        {
-                            continue;
-                        }
-
-                        foreach (var linkedUuid in linked)
-                        {
-                            pending.Push(linkedUuid);
-                        }
-                    }
-                }
+                results.Add(CreateAggregatedPrinting(printing,
+                        aggregatedLegalityMasks,
+                        string.Join(",", allKeywords),
+                        string.Join(",", allColors),
+                        string.Join(",", allTypes),
+                        string.Join(" // ", allTexts)));
 
                 void MergeFrom(OracleCard source)
                 {
@@ -160,6 +88,7 @@ namespace CollectaMundo.DomainLogic.CardLists
                     AddCsvValues(source.Types, allTypes);
                     playableFormatsMask |= source.PlayableFormatsMask;
                     restrictedFormatsMask |= source.RestrictedFormatsMask;
+
                     if (!string.IsNullOrWhiteSpace(source.Text))
                     {
                         allTexts.Add(source.Text.Trim());
@@ -167,27 +96,7 @@ namespace CollectaMundo.DomainLogic.CardLists
                 }
             }
 
-            return new PrintingCardAggregationResult(results, aggregatedBySourceUuid);
-
-            void AddSourceUuid(string? sourceUuid, PrintingCard aggregatedPrinting)
-            {
-                if (string.IsNullOrWhiteSpace(sourceUuid))
-                {
-                    return;
-                }
-
-                if (aggregatedBySourceUuid.TryGetValue(sourceUuid, out var existing))
-                {
-                    if (!ReferenceEquals(existing, aggregatedPrinting))
-                    {
-                        throw new InvalidOperationException($"Printing UUID '{sourceUuid}' maps to more than one aggregated printing.");
-                    }
-
-                    return;
-                }
-
-                aggregatedBySourceUuid.Add(sourceUuid, aggregatedPrinting);
-            }
+            return results;
         }
         private static bool IsPrimaryPrinting(PrintingCard printing)
         {

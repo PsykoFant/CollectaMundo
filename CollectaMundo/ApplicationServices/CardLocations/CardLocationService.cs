@@ -8,8 +8,9 @@ using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
 using CollectaMundo.Infrastructure.CardLocations;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLocations.Models;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CardLocations

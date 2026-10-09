@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.Shared.Models;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
 
 namespace CollectaMundo.ApplicationServices.CardLocations.Models
 {

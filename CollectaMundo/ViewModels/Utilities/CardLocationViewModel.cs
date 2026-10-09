@@ -2,7 +2,7 @@
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Shared.Models;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

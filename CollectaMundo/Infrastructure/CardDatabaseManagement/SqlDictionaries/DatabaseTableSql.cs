@@ -4,7 +4,9 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
 {
     public static class DatabaseTableSql
     {
-        // Fixed table create statements shared by prod and test
+        private const string CardPricesTableName = "cardPrices";
+
+        // Fixed CollectaMundo-owned tables. These are created by CollectaMundo and must survive replacement of the upstream MTGJSON tables during a database update.
         public static IReadOnlyDictionary<string, string> Statements { get; } =
             new Dictionary<string, string>
             {
@@ -72,7 +74,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     ");",
 
                 ["myDecks"] =
-                    "CREATE TABLE IF NOT EXISTS myDecks ( " +
+                    "CREATE TABLE IF NOT EXISTS myDecks (" +
                     "locationId INTEGER PRIMARY KEY, " +
                     "format TEXT NULL, " +
                     "description TEXT NULL, " +
@@ -85,44 +87,40 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     "oracleId TEXT NOT NULL, " +
                     "cardName TEXT NOT NULL, " +
                     "desiredQuantity INTEGER NOT NULL CHECK (desiredQuantity >= 0), " +
-                    "section TEXT NOT NULL CHECK (section IN ('Mainboard', 'Sideboard', 'Commander', 'Companion', 'Maybeboard')), " +
+                    "section TEXT NOT NULL CHECK (" +
+                    "section IN ('Mainboard', 'Sideboard', 'Commander', 'Companion', 'Maybeboard')" +
+                    "), " +
                     "PRIMARY KEY (locationId, oracleId, section), " +
                     "FOREIGN KEY (locationId) REFERENCES cardLocations(id) ON DELETE CASCADE" +
                     ");"
             };
 
-        // Dynamic because price columns depend on retailer/finish definitions
-        public static string BuildCardPricesCreateSql()
-        {
-            var first = new[]
-            {
-                "uuid TEXT UNIQUE PRIMARY KEY"
-            };
+        // Complete set of tables owned by CollectaMundo.
+        //
+        // Any table in the downloaded MTGJSON database which is NOT in this set is considered upstream source data and may be replaced during update.
+        public static IReadOnlySet<string> CollectaMundoOwnedTableNames { get; } = new HashSet<string>(Statements.Keys.Append(CardPricesTableName), StringComparer.OrdinalIgnoreCase);
 
-            var finishes = CardPriceDefinitions.Finishes;
-
-            var retailerIds = CardPriceDefinitions.RetailersByFormat
-                .SelectMany(kvp => kvp.Value.Keys)
-                .Distinct(StringComparer.OrdinalIgnoreCase);
-
-            var retailerColumns = retailerIds
-                .SelectMany(id => finishes.Select(f => $"{id}{f} DECIMAL(10, 2)"))
-                .ToList();
-
-            var allColumns = string.Join(", ", first.Concat(retailerColumns));
-
-            return $"CREATE TABLE IF NOT EXISTS cardPrices ({allColumns});";
-        }
-
-        // Combined ordered set for callers that want everything in one pass
+        // All CollectaMundo-owned CREATE statements.
+        // cardPrices is generated dynamically because its columns depend on the configured retailer/finish definitions.
         public static IReadOnlyDictionary<string, string> GetAllStatements()
         {
-            var map = new Dictionary<string, string>(Statements)
+            var map = new Dictionary<string, string>(Statements, StringComparer.OrdinalIgnoreCase)
             {
-                ["cardPrices"] = BuildCardPricesCreateSql()
+                [CardPricesTableName] = BuildCardPricesCreateSql()
             };
 
             return map;
+        }
+
+        private static string BuildCardPricesCreateSql()
+        {
+            var fixedColumns = new[] { "uuid TEXT UNIQUE PRIMARY KEY" };
+            var finishes = CardPriceDefinitions.Finishes;
+            var retailerIds = CardPriceDefinitions.RetailersByFormat.SelectMany(kvp => kvp.Value.Keys).Distinct(StringComparer.OrdinalIgnoreCase);
+            var retailerColumns = retailerIds.SelectMany(retailerId => finishes.Select(finish => $"{retailerId}{finish} DECIMAL(10, 2)"));
+            var allColumns = string.Join(", ", fixedColumns.Concat(retailerColumns));
+
+            return $"CREATE TABLE IF NOT EXISTS {CardPricesTableName} " + $"({allColumns});";
         }
     }
 }

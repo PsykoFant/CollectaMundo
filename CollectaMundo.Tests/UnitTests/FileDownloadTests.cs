@@ -1,5 +1,5 @@
-﻿using CollectaMundo.Infrastructure.Shared.IO;
-using CollectaMundo.Infrastructure.Shared.RemoteFiles;
+﻿using CollectaMundo.Infrastructure.Shared.FileTransfers;
+using CollectaMundo.Infrastructure.Shared.IO;
 using CollectaMundo.Tests.TestUtils;
 using System.IO;
 using System.Net;

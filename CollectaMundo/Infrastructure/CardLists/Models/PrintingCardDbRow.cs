@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.Infrastructure.Shared.Models
+﻿namespace CollectaMundo.Infrastructure.CardLists.Models
 {
     public sealed class PrintingCardDbRow
     {

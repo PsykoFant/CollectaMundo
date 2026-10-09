@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.Infrastructure.Shared.IO;
 
-namespace CollectaMundo.Infrastructure.Shared.RemoteFiles
+namespace CollectaMundo.Infrastructure.Shared.FileTransfers
 {
     public interface IGzipFileDecompressor
     {

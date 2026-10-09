@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared.Files;
 using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
-using CollectaMundo.Infrastructure.Shared;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -82,52 +81,181 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
         // Update
         public async Task<int> GetNumberOfSetsAsync(SQLiteConnection conn, CancellationToken ct = default)
         {
-            var sets = await DbHelpers.GetUniqueValuesAsync(conn, "sets", "code", null, ct);
-            return sets.Count;
+            const string sql = "SELECT COUNT(*) FROM sets;";
+
+            using var command = new SQLiteCommand(sql, conn);
+
+            var result = await command.ExecuteScalarAsync(ct);
+
+            return Convert.ToInt32(result);
         }
         public async Task AttachTempDbAsync(SQLiteConnection conn, string newDbPath, IProgress<string> progress)
         {
-            var attachSql = $"ATTACH DATABASE '{newDbPath}' AS tempDb;";
-            await new SQLiteCommand(attachSql, conn).ExecuteNonQueryAsync();
-            progress.Report("Attached temp DB.");
+            const string sql = "ATTACH DATABASE @path AS tempDb;";
+            using var command = new SQLiteCommand(sql, conn);
+
+            command.Parameters.AddWithValue("@path", newDbPath);
+
+            await command.ExecuteNonQueryAsync();
+
+            progress.Report(
+                "Attached temp DB.");
         }
-        public async Task DropTablesAsync(SQLiteConnection conn, IProgress<string> progress)
+        public async Task ReplaceSourceTablesAsync(SQLiteConnection conn, SQLiteTransaction tx, IProgress<string> progress)
         {
-            var tables = TablesToCopy;
+            var existingSourceTables = await GetSourceTableNamesAsync(conn, tx, "main");
+            var incomingSourceTables = await GetSourceTableDefinitionsAsync(conn, tx);
 
-            Debug.WriteLine("Dropping old tables...");
-            foreach (var item in tables)
+            Debug.WriteLine($"[CardDatabaseManagementRepo] Replacing source tables. Existing={existingSourceTables.Count}, Incoming={incomingSourceTables.Count}");
+
+            // -------------------------------------------------
+            // 1. Remove existing upstream tables
+            // -------------------------------------------------
+
+            progress.Report($"Removing {existingSourceTables.Count} old source tables...");
+
+            foreach (var tableName in existingSourceTables)
             {
-                using var dropCommand = new SQLiteCommand(item.Value, conn);
-                await dropCommand.ExecuteNonQueryAsync();
-                progress.Report($"Dropped {item.Key}");
-            }
-        }
-        public async Task CopyTablesAsync(SQLiteConnection conn, IProgress<string> progress)
-        {
-            var tables = TablesToCopy;
+                var quotedTableName = QuoteIdentifier(tableName);
+                var sql = $"DROP TABLE IF EXISTS {quotedTableName};";
 
-            Debug.WriteLine("Copying tables...");
-            foreach (var item in tables)
+                using var command = new SQLiteCommand(sql, conn, tx);
+
+                await command.ExecuteNonQueryAsync();
+
+                progress.Report($"Dropped {tableName}");
+
+                Debug.WriteLine($"[CardDatabaseManagementRepo] Dropped {tableName}");
+            }
+
+            // -------------------------------------------------
+            // 2. Recreate incoming tables using their original
+            //    MTGJSON CREATE TABLE definitions
+            // -------------------------------------------------
+
+            progress.Report($"Creating {incomingSourceTables.Count} source tables...");
+
+            foreach (var table in incomingSourceTables)
             {
-                var copySql = $"CREATE TABLE {item.Key} AS SELECT * FROM tempDb.{item.Key};";
-                using var copyCommand = new SQLiteCommand(copySql, conn);
-                await copyCommand.ExecuteNonQueryAsync();
-                progress.Report($"Copied {item.Key}");
-                Debug.WriteLine($"Copied {item.Key}");
+                using var command = new SQLiteCommand(table.CreateSql, conn, tx);
+
+                await command.ExecuteNonQueryAsync();
+
+                progress.Report($"Created {table.Name}");
+
+                Debug.WriteLine($"[CardDatabaseManagementRepo] Created {table.Name}");
             }
 
-            progress.Report("Copy complete...");
+            // -------------------------------------------------
+            // 3. Copy data into the recreated tables
+            // -------------------------------------------------
 
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            progress.Report($"Copying data for {incomingSourceTables.Count} source tables...");
+
+            foreach (var table in incomingSourceTables)
+            {
+                var quotedTableName = QuoteIdentifier(table.Name);
+                var sql = $"INSERT INTO {quotedTableName} " + $"SELECT * FROM tempDb.{quotedTableName};";
+
+                using var command = new SQLiteCommand(sql, conn, tx);
+
+                await command.ExecuteNonQueryAsync();
+
+                progress.Report($"Copied {table.Name}");
+
+                Debug.WriteLine($"[CardDatabaseManagementRepo] Copied {table.Name}");
+            }
+
+            progress.Report(
+                "Source table replacement complete.");
         }
         public async Task DetachTempDbAsync(SQLiteConnection conn, IProgress<string> progress)
         {
-            Debug.WriteLine("Detaching new DB...");
-            var detachSql = "DETACH DATABASE tempDb;";
-            await new SQLiteCommand(detachSql, conn).ExecuteNonQueryAsync();
+            Debug.WriteLine("[CardDatabaseManagementRepo] Detaching temporary database...");
+
+            using var command = new SQLiteCommand("DETACH DATABASE tempDb;", conn);
+
+            await command.ExecuteNonQueryAsync();
+
             progress.Report("Detached temp DB.");
+        }
+        private static async Task<List<string>> GetSourceTableNamesAsync(SQLiteConnection conn, SQLiteTransaction tx, string databaseName)
+        {
+            // databaseName is supplied only internally as one of the known SQLite schema names: "main" or "tempDb".
+            var quotedDatabaseName = QuoteIdentifier(databaseName);
+
+            var sql =
+                $"""
+                 SELECT name
+                 FROM {quotedDatabaseName}.sqlite_master
+                 WHERE type = 'table'
+                   AND name NOT LIKE 'sqlite_%'
+                 ORDER BY name;
+                 """;
+
+            using var command = new SQLiteCommand(sql, conn, tx);
+            using var reader = await command.ExecuteReaderAsync();
+            var tableNames = new List<string>();
+
+            while (await reader.ReadAsync())
+            {
+                var tableName = reader.GetString(0);
+
+                if (DatabaseTableSql.CollectaMundoOwnedTableNames.Contains(tableName))
+                {
+                    continue;
+                }
+
+                tableNames.Add(tableName);
+            }
+
+            return tableNames;
+        }
+        private static async Task<List<SourceTableDefinition>> GetSourceTableDefinitionsAsync(SQLiteConnection conn, SQLiteTransaction tx)
+        {
+            const string sql = """
+                       SELECT
+                           name,
+                           sql
+                       FROM tempDb.sqlite_master
+                       WHERE type = 'table'
+                         AND name NOT LIKE 'sqlite_%'
+                       ORDER BY name;
+                       """;
+
+            using var command = new SQLiteCommand(sql, conn, tx);
+            using var reader = await command.ExecuteReaderAsync();
+            var tables = new List<SourceTableDefinition>();
+
+            while (await reader.ReadAsync())
+            {
+                var tableName = reader.GetString(0);
+
+                if (DatabaseTableSql.CollectaMundoOwnedTableNames.Contains(tableName))
+                {
+                    continue;
+                }
+
+                if (reader.IsDBNull(1))
+                {
+                    throw new InvalidDataException($"Source table '{tableName}' has no CREATE TABLE SQL.");
+                }
+
+                var createSql = reader.GetString(1);
+
+                tables.Add(new SourceTableDefinition(tableName, createSql));
+            }
+
+            return tables;
+        }
+        private sealed record SourceTableDefinition(
+            string Name,
+            string CreateSql);
+        private static string QuoteIdentifier(string identifier)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
+
+            return $"\"{identifier.Replace("\"", "\"\"")}\"";
         }
 
         // Export
@@ -167,25 +295,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
                 yield return row;
             }
-        }        // Helper
-        private static readonly Dictionary<string, string> TablesToCopy = new()
-            {
-                {"cardForeignData", "DROP TABLE IF EXISTS cardForeignData;" },
-                {"cardIdentifiers", "DROP TABLE IF EXISTS cardIdentifiers;" },
-                {"cardLegalities", "DROP TABLE IF EXISTS cardLegalities;" },
-                {"cardPurchaseUrls", "DROP TABLE IF EXISTS cardPurchaseUrls;" },
-                {"cardRulings", "DROP TABLE IF EXISTS cardRulings;" },
-                {"cards", "DROP TABLE IF EXISTS cards;" },
-                {"meta", "DROP TABLE IF EXISTS meta;" },
-                {"setBoosterContentWeights", "DROP TABLE IF EXISTS setBoosterContentWeights;" },
-                {"setBoosterContents", "DROP TABLE IF EXISTS setBoosterContents;" },
-                {"setBoosterSheetCards", "DROP TABLE IF EXISTS setBoosterSheetCards;" },
-                {"setBoosterSheets", "DROP TABLE IF EXISTS setBoosterSheets;" },
-                {"setTranslations", "DROP TABLE IF EXISTS setTranslations;" },
-                {"sets", "DROP TABLE IF EXISTS sets;" },
-                {"tokenIdentifiers", "DROP TABLE IF EXISTS tokenIdentifiers;" },
-                {"tokens", "DROP TABLE IF EXISTS tokens;" },
-            };
-
+        }
     }
 }

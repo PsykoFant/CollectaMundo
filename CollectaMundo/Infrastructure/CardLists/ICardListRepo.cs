@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Infrastructure.Shared.Models;
+﻿using CollectaMundo.Infrastructure.CardLists.Models;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardLists

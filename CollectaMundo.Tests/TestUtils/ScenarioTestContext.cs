@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
-using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Database;
 using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.Tests.TestUtils

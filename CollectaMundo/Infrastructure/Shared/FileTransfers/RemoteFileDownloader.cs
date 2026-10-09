@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 
-namespace CollectaMundo.Infrastructure.Shared.RemoteFiles
+namespace CollectaMundo.Infrastructure.Shared.FileTransfers
 {
     public sealed class RemoteFileDownloader(HttpClient httpClient) : IRemoteFileDownloader
     {

@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.DomainLogic.Shared.CardModels;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
 
 namespace CollectaMundo.DomainLogic.Shared.Factories
 {

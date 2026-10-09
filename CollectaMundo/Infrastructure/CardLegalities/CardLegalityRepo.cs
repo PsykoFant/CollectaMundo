@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.Infrastructure.CardLegalities.Models.CollectaMundo.Infrastructure.CardLegalities.Models;
-using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardLegalities
@@ -13,7 +13,7 @@ namespace CollectaMundo.Infrastructure.CardLegalities
                        FROM cardLegalities;
                        """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
             using var reader = await cmd.ExecuteReaderAsync();
 
             var uuidOrdinal = reader.GetOrdinal("uuid");

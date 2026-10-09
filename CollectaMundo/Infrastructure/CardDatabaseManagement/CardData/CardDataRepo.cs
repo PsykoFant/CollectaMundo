@@ -1,9 +1,9 @@
 ﻿using CollectaMundo.DomainLogic.CardData.Models;
+using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.IO;
-using static CollectaMundo.Infrastructure.Shared.DbDataReaderValueReader;
 
 namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
 {
@@ -72,8 +72,8 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
         }
         private static OracleFaceCandidate CreateCandidate(DbDataReader reader, OracleFaceCandidateOrdinals ordinals)
         {
-            var uuid = GetFieldValue<string>(reader, ordinals.Uuid);
-            var oracleId = GetFieldValue<string>(reader, ordinals.ScryfallOracleId);
+            var uuid = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Uuid);
+            var oracleId = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.ScryfallOracleId);
 
             if (string.IsNullOrWhiteSpace(uuid))
             {
@@ -88,18 +88,18 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
             return new OracleFaceCandidate(
                 SourceUuid: uuid,
                 ScryfallOracleId: oracleId,
-                Side: GetFieldValue<string>(reader, ordinals.Side),
+                Side: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Side),
                 Payload: new OracleFacePayload(
-                    Name: GetFieldValue<string>(reader, ordinals.Name),
-                    ManaCostRaw: GetFieldValue<string>(reader, ordinals.ManaCost),
-                    ManaValue: GetFieldValue<double?>(reader, ordinals.ManaValue),
-                    Colors: GetFieldValue<string>(reader, ordinals.Colors),
-                    Keywords: GetFieldValue<string>(reader, ordinals.Keywords),
-                    RulesText: GetFieldValue<string>(reader, ordinals.RulesText),
-                    SuperTypes: GetFieldValue<string>(reader, ordinals.SuperTypes),
-                    Types: GetFieldValue<string>(reader, ordinals.Types),
-                    SubTypes: GetFieldValue<string>(reader, ordinals.SubTypes),
-                    Type: GetFieldValue<string>(reader, ordinals.Type)));
+                    Name: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Name),
+                    ManaCostRaw: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.ManaCost),
+                    ManaValue: DbDataReaderValueReader.GetFieldValue<double?>(reader, ordinals.ManaValue),
+                    Colors: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Colors),
+                    Keywords: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Keywords),
+                    RulesText: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.RulesText),
+                    SuperTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SuperTypes),
+                    Types: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Types),
+                    SubTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SubTypes),
+                    Type: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type)));
         }
         private readonly record struct OracleFaceCandidateOrdinals(int Uuid, int ScryfallOracleId, int Side, int Name, int ManaCost, int ManaValue, int Colors, int Keywords, int RulesText, int SuperTypes, int Types, int SubTypes, int Type)
         {

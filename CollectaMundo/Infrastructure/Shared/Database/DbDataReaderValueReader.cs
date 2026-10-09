@@ -1,6 +1,6 @@
 ﻿using System.Data.Common;
 
-namespace CollectaMundo.Infrastructure.Shared
+namespace CollectaMundo.Infrastructure.Shared.Database
 {
     public static class DbDataReaderValueReader
     {

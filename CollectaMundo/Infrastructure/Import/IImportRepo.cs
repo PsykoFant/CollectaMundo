@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
 using System.Data;
 using System.Data.SQLite;
 

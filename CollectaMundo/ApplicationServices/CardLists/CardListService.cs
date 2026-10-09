@@ -106,9 +106,8 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 printings[i] = PrintingCardFactory.FromRow(row, legalityMasks);
             });
 
-            var aggregation = PrintingCardAggregator.AggregatePrintingCards(printings);
-            var aggregatedPrintings = aggregation.Printings;
-            var printingByUuid = aggregation.BySourceUuid;
+            var aggregatedPrintings = PrintingCardAggregator.AggregatePrintingCards(printings);
+            var printingByUuid = aggregatedPrintings.Where(p => !string.IsNullOrWhiteSpace(p.Uuid)).ToDictionary(p => p.Uuid, StringComparer.OrdinalIgnoreCase);
 
             phase2bSw.Stop();
 

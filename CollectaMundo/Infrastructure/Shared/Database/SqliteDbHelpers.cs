@@ -1,9 +1,9 @@
 ﻿using System.Data;
 using System.Data.SQLite;
 
-namespace CollectaMundo.Infrastructure.Shared
+namespace CollectaMundo.Infrastructure.Shared.Database
 {
-    public static class DbHelpers
+    public static class SqliteDbHelpers
     {
         public static SQLiteCommand CreateCommand(SQLiteConnection conn, SQLiteTransaction? tx, string sql)
         {

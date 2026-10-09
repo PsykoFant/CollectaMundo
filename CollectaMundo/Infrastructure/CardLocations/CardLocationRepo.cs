@@ -1,7 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Decks.Models;
 using CollectaMundo.DomainLogic.Shared.Factories;
-using CollectaMundo.Infrastructure.Shared;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
+using CollectaMundo.Infrastructure.CardLocations.Models;
+using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data.Common;
 using System.Data.SQLite;
 
@@ -27,9 +28,9 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             var created = new List<CardLocationDbRow>(locations.Count);
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
-            DbHelpers.AddString(cmd, "@name", "");
-            DbHelpers.AddString(cmd, "@type", "");
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
+            SqliteDbHelpers.AddString(cmd, "@name", "");
+            SqliteDbHelpers.AddString(cmd, "@type", "");
 
             foreach (var location in locations)
             {
@@ -61,10 +62,10 @@ namespace CollectaMundo.Infrastructure.CardLocations
                                     description = excluded.description;
                                 """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
-            DbHelpers.AddInt32(cmd, "@locationId", locationId);
-            DbHelpers.AddNullableString(cmd, "@format", format);
-            DbHelpers.AddNullableString(cmd, "@description", description);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
+            SqliteDbHelpers.AddInt32(cmd, "@locationId", locationId);
+            SqliteDbHelpers.AddNullableString(cmd, "@format", format);
+            SqliteDbHelpers.AddNullableString(cmd, "@description", description);
 
             await cmd.ExecuteNonQueryAsync();
         }
@@ -80,7 +81,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
                                 ORDER BY name COLLATE NOCASE ASC
                                 """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
 
             var results = new List<CardLocationDbRow>();
 
@@ -110,11 +111,11 @@ namespace CollectaMundo.Infrastructure.CardLocations
                         WHERE id IN ({parameters.InClause});
                         """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
+                SqliteDbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             var existingIds = new List<int>();
@@ -138,11 +139,11 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 LIMIT 1;
                 """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
-            DbHelpers.AddString(cmd, "@name", name);
-            DbHelpers.AddNullableInt32(cmd, "@excludingId", excludingId);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
+            SqliteDbHelpers.AddString(cmd, "@name", name);
+            SqliteDbHelpers.AddNullableInt32(cmd, "@excludingId", excludingId);
 
-            return await DbHelpers.ExistsAsync(cmd);
+            return await SqliteDbHelpers.ExistsAsync(cmd);
         }
 
         // decks
@@ -162,7 +163,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
 
             var decks = new List<DeckManagementRecord>();
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
             using var reader = await cmd.ExecuteReaderAsync();
 
             int formatOrdinal = reader.GetOrdinal("format");
@@ -218,18 +219,18 @@ namespace CollectaMundo.Infrastructure.CardLocations
                         WHERE locationId IN ({parameters.InClause});
                         """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
+                SqliteDbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             return await ExecuteCollectionRowQueryAsync(conn, tx, sql, cmd =>
             {
                 for (int i = 0; i < distinctIds.Count; i++)
                 {
-                    DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
+                    SqliteDbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
                 }
             }, token);
         }
@@ -239,7 +240,7 @@ namespace CollectaMundo.Infrastructure.CardLocations
         {
             var rows = new List<CollectionCardDbRow>();
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
 
             configureCommand?.Invoke(cmd);
 
@@ -263,10 +264,10 @@ namespace CollectaMundo.Infrastructure.CardLocations
                 WHERE id = @id;
                 """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
-            DbHelpers.AddInt32(cmd, "@id", id);
-            DbHelpers.AddString(cmd, "@name", name);
-            DbHelpers.AddString(cmd, "@type", type);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
+            SqliteDbHelpers.AddInt32(cmd, "@id", id);
+            SqliteDbHelpers.AddString(cmd, "@name", name);
+            SqliteDbHelpers.AddString(cmd, "@type", type);
 
             return await cmd.ExecuteNonQueryAsync();
         }
@@ -287,13 +288,13 @@ namespace CollectaMundo.Infrastructure.CardLocations
                         WHERE id IN ({parameters.InClause});
                         """;
 
-            using var updateCmd = DbHelpers.CreateCommand(conn, tx, updateSql);
+            using var updateCmd = SqliteDbHelpers.CreateCommand(conn, tx, updateSql);
 
-            DbHelpers.AddString(updateCmd, "@type", type);
+            SqliteDbHelpers.AddString(updateCmd, "@type", type);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(updateCmd, parameters.Names[i], distinctIds[i]);
+                SqliteDbHelpers.AddInt32(updateCmd, parameters.Names[i], distinctIds[i]);
             }
 
             await updateCmd.ExecuteNonQueryAsync(token);
@@ -305,11 +306,11 @@ namespace CollectaMundo.Infrastructure.CardLocations
                         ORDER BY name COLLATE NOCASE ASC;
                         """;
 
-            using var selectCmd = DbHelpers.CreateCommand(conn, tx, selectSql);
+            using var selectCmd = SqliteDbHelpers.CreateCommand(conn, tx, selectSql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(selectCmd, parameters.Names[i], distinctIds[i]);
+                SqliteDbHelpers.AddInt32(selectCmd, parameters.Names[i], distinctIds[i]);
             }
 
             var results = new List<CardLocationDbRow>();
@@ -339,13 +340,13 @@ namespace CollectaMundo.Infrastructure.CardLocations
                          WHERE locationId IN ({parameters.InClause});
                          """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
 
-            DbHelpers.AddNullableString(cmd, "@format", format);
+            SqliteDbHelpers.AddNullableString(cmd, "@format", format);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
+                SqliteDbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             return await cmd.ExecuteNonQueryAsync(token);
@@ -369,11 +370,11 @@ namespace CollectaMundo.Infrastructure.CardLocations
                             WHERE id IN ({parameters.InClause});
                             """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
+                SqliteDbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             return await cmd.ExecuteNonQueryAsync(token);
@@ -394,11 +395,11 @@ namespace CollectaMundo.Infrastructure.CardLocations
                             WHERE locationId IN ({parameters.InClause});
                             """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
+                SqliteDbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             return await cmd.ExecuteNonQueryAsync(token);
@@ -419,11 +420,11 @@ namespace CollectaMundo.Infrastructure.CardLocations
                             WHERE locationId IN ({parameters.InClause});
                             """;
 
-            using var cmd = DbHelpers.CreateCommand(conn, tx, sql);
+            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
 
             for (int i = 0; i < distinctIds.Count; i++)
             {
-                DbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
+                SqliteDbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
             }
 
             return await cmd.ExecuteNonQueryAsync(token);

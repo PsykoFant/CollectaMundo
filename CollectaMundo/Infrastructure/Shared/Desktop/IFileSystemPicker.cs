@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.Infrastructure.Shared
+﻿namespace CollectaMundo.Infrastructure.Shared.Desktop
 {
     public interface IFileSystemPicker
     {

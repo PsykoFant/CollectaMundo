@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Shared.Models;
 
-namespace CollectaMundo.Infrastructure.Shared.Models
+namespace CollectaMundo.Infrastructure.CardLists.Models
 {
     public sealed class CollectionCardDbRow
     {

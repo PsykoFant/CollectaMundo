@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared.Factories;
-using CollectaMundo.Infrastructure.Shared;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
+using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data;
 using System.Data.SQLite;
 using System.Text;
@@ -597,7 +597,7 @@ namespace CollectaMundo.Infrastructure.Import
                 token.ThrowIfCancellationRequested();
 
                 var it = items[i];
-                var normalizedComment = DbHelpers.NormalizeNullableString(it.Comment);
+                var normalizedComment = SqliteDbHelpers.NormalizeNullableString(it.Comment);
 
                 using var updateCmd = new SQLiteCommand(updateSql, conn, tx);
                 AddIdentityParameters(updateCmd);
@@ -677,8 +677,8 @@ namespace CollectaMundo.Infrastructure.Import
             cmd.Parameters["@language"].Value = item.Language;
             cmd.Parameters["@finish"].Value = item.Finish;
             cmd.Parameters["@condition"].Value = item.Condition;
-            cmd.Parameters["@locationId"].Value = DbHelpers.ToDbNullableInt(item.LocationId);
-            cmd.Parameters["@comment"].Value = DbHelpers.ToDbNullableString(normalizedComment);
+            cmd.Parameters["@locationId"].Value = SqliteDbHelpers.ToDbNullableInt(item.LocationId);
+            cmd.Parameters["@comment"].Value = SqliteDbHelpers.ToDbNullableString(normalizedComment);
         }
         private static void BindQuantityParameters(SQLiteCommand cmd, CollectionUpsertItem item)
         {

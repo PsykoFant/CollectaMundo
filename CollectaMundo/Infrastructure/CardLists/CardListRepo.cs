@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Shared.Factories;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
+using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data.Common;
 using System.Data.SQLite;
 
@@ -67,9 +68,13 @@ namespace CollectaMundo.Infrastructure.CardLists
 
             using var cmd = new SQLiteCommand(query, conn);
             using var reader = await cmd.ExecuteReaderAsync();
-
             var ordinals = PrintingCardOrdinals.FromReader(reader);
-            var list = new List<PrintingCardDbRow>(capacity: 122000);
+            var list = new List<PrintingCardDbRow>(capacity: 130000);
+
+            while (await reader.ReadAsync())
+            {
+                list.Add(CardPrintingDbRowFromReader(reader, ordinals));
+            }
 
             return list;
         }
@@ -122,54 +127,106 @@ namespace CollectaMundo.Infrastructure.CardLists
                     reader.GetOrdinal("Rarity"));
             }
         }
+        private static PrintingCardDbRow CardPrintingDbRowFromReader(DbDataReader r, PrintingCardOrdinals o)
+        {
+            return new PrintingCardDbRow
+            {
+                ScryfallOracleId = DbDataReaderValueReader.GetFieldValue<string>(r, o.ScryfallOracleId),
+                Name = DbDataReaderValueReader.GetFieldValue<string>(r, o.Name),
+                ManaCostRaw = DbDataReaderValueReader.GetFieldValue<string>(r, o.ManaCost),
+                Colors = DbDataReaderValueReader.GetFieldValue<string>(r, o.Colors),
+                Type = DbDataReaderValueReader.GetFieldValue<string>(r, o.Type),
+                Types = DbDataReaderValueReader.GetFieldValue<string>(r, o.Types),
+                SuperTypes = DbDataReaderValueReader.GetFieldValue<string>(r, o.SuperTypes),
+                SubTypes = DbDataReaderValueReader.GetFieldValue<string>(r, o.SubTypes),
+                Keywords = DbDataReaderValueReader.GetFieldValue<string>(r, o.Keywords),
+                RulesText = DbDataReaderValueReader.GetFieldValue<string>(r, o.RulesText),
+                Side = DbDataReaderValueReader.GetFieldValue<string>(r, o.Side),
+                IsPromo = DbDataReaderValueReader.GetBooleanValue(r, o.IsPromo),
+                OtherFaceIds = DbDataReaderValueReader.GetFieldValue<string>(r, o.OtherFaceIds),
+                Availability = DbDataReaderValueReader.GetFieldValue<string>(r, o.Availability),
+                GamePlayCard = DbDataReaderValueReader.GetFieldValue<int>(r, o.GameplayCard),
+                ManaValue = DbDataReaderValueReader.GetFieldValue<double?>(r, o.ManaValue),
+                Uuid = DbDataReaderValueReader.GetFieldValue<string>(r, o.Uuid),
+                Language = DbDataReaderValueReader.GetFieldValue<string>(r, o.Language),
+                SetCode = DbDataReaderValueReader.GetFieldValue<string>(r, o.SetCode),
+                Rarity = DbDataReaderValueReader.GetFieldValue<string>(r, o.Rarity),
+                Finishes = DbDataReaderValueReader.GetFieldValue<string>(r, o.Finishes)
+            };
+        }
         public async Task<List<CollectionCardDbRow>> ReadMyCollectionAsync(SQLiteConnection conn)
         {
             const string sql = """
-                               SELECT
-                                   id,
-                                   uuid,
-                                   cardsOwned,
-                                   cardsForTrade,
-                                   condition,
-                                   language,
-                                   finish,
-                                   locationId,
-                                   comment
-                               FROM myCollection;
-                               """;
+                       SELECT
+                           id,
+                           uuid,
+                           cardsOwned,
+                           cardsForTrade,
+                           condition,
+                           language,
+                           finish,
+                           locationId,
+                           comment
+                       FROM myCollection;
+                       """;
 
             using var cmd = new SQLiteCommand(sql, conn);
-
+            using var reader = await cmd.ExecuteReaderAsync();
+            var ordinals = CollectionCardOrdinals.FromReader(reader);
             var list = new List<CollectionCardDbRow>();
-            using var rdr = await cmd.ExecuteReaderAsync();
 
-            while (await rdr.ReadAsync())
+            while (await reader.ReadAsync())
             {
-                var uuid = rdr["uuid"]?.ToString() ?? throw new InvalidOperationException("uuid must not be null");
-                var condition = rdr["condition"]?.ToString() ?? throw new InvalidOperationException("condition must not be null");
-                var language = rdr["language"]?.ToString() ?? throw new InvalidOperationException("language must not be null");
-                var finish = rdr["finish"]?.ToString() ?? throw new InvalidOperationException("finish must not be null");
-                int? locationId = rdr["locationId"] == DBNull.Value ? null : rdr["locationId"] is long locationLong ? (int)locationLong : Convert.ToInt32(rdr["locationId"]);
-                string? comment = rdr["comment"] == DBNull.Value ? null : rdr["comment"]?.ToString();
-                list.Add(new CollectionCardDbRow
-                {
-                    CardId = rdr["id"] is long idLong
-                        ? (int)idLong
-                        : Convert.ToInt32(rdr["id"]),
-
-                    Identity = CollectionIdentityFactory.Create(uuid, condition, language, finish, locationId, comment),
-
-                    CardsOwned = rdr["cardsOwned"] is long ownedLong
-                        ? (int)ownedLong
-                        : Convert.ToInt32(rdr["cardsOwned"]),
-
-                    CardsForTrade = rdr["cardsForTrade"] is long tradeLong
-                        ? (int)tradeLong
-                        : Convert.ToInt32(rdr["cardsForTrade"])
-                });
+                list.Add(CollectionCardDbRowFromReader(reader, ordinals));
             }
 
             return list;
+        }
+        private readonly record struct CollectionCardOrdinals(int Id, int Uuid, int CardsOwned, int CardsForTrade, int Condition, int Language, int Finish, int LocationId, int Comment)
+        {
+            public static CollectionCardOrdinals FromReader(DbDataReader reader)
+            {
+                return new CollectionCardOrdinals(
+                    reader.GetOrdinal("id"),
+                    reader.GetOrdinal("uuid"),
+                    reader.GetOrdinal("cardsOwned"),
+                    reader.GetOrdinal("cardsForTrade"),
+                    reader.GetOrdinal("condition"),
+                    reader.GetOrdinal("language"),
+                    reader.GetOrdinal("finish"),
+                    reader.GetOrdinal("locationId"),
+                    reader.GetOrdinal("comment"));
+            }
+        }
+        private static CollectionCardDbRow CollectionCardDbRowFromReader(DbDataReader reader, CollectionCardOrdinals ordinals)
+        {
+            var uuid = GetRequiredFieldValue<string>(reader, ordinals.Uuid, "uuid");
+            var condition = GetRequiredFieldValue<string>(reader, ordinals.Condition, "condition");
+            var language = GetRequiredFieldValue<string>(reader, ordinals.Language, "language");
+            var finish = GetRequiredFieldValue<string>(reader, ordinals.Finish, "finish");
+            var locationId = DbDataReaderValueReader.GetFieldValue<int?>(reader, ordinals.LocationId);
+            var comment = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Comment);
+
+            return new CollectionCardDbRow
+            {
+                CardId = GetRequiredFieldValue<int>(reader, ordinals.Id, "id"),
+                Identity = CollectionIdentityFactory.Create(uuid, condition, language, finish, locationId, comment),
+                CardsOwned = GetRequiredFieldValue<int>(reader, ordinals.CardsOwned, "cardsOwned"),
+                CardsForTrade = GetRequiredFieldValue<int>(reader, ordinals.CardsForTrade, "cardsForTrade")
+            };
+        }
+        private static T GetRequiredFieldValue<T>(DbDataReader reader, int ordinal, string columnName)
+        {
+            if (reader.IsDBNull(ordinal))
+            {
+                throw new InvalidOperationException($"Column '{columnName}' must not be null.");
+            }
+
+            var value = DbDataReaderValueReader.GetFieldValue<T>(reader, ordinal);
+
+            return value is null
+                ? throw new InvalidOperationException($"Column '{columnName}' must not be null.")
+                : value;
         }
     }
 }

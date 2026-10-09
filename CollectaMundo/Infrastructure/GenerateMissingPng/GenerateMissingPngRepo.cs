@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Infrastructure.Shared;
+﻿using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.GenerateMissingPng
@@ -7,7 +7,7 @@ namespace CollectaMundo.Infrastructure.GenerateMissingPng
     {
         public async Task<List<string>> GetUniqueValuesAsync(SQLiteConnection conn, SQLiteTransaction tx, string tableName, string columnName)
         {
-            return await DbHelpers.GetUniqueValuesAsync(conn, tableName, columnName);
+            return await SqliteDbHelpers.GetUniqueValuesAsync(conn, tableName, columnName);
         }
         public async Task<List<string>> GetValuesWithNullAsync(SQLiteConnection conn, SQLiteTransaction tx, string tableName, string returnColumn, string targetColumn)
         {

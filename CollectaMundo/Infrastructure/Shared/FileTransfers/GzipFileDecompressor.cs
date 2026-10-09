@@ -2,7 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 
-namespace CollectaMundo.Infrastructure.Shared.RemoteFiles
+namespace CollectaMundo.Infrastructure.Shared.FileTransfers
 {
     public sealed class GzipFileDecompressor : IGzipFileDecompressor
     {

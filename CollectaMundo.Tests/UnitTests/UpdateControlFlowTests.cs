@@ -39,7 +39,7 @@ namespace CollectaMundo.Tests.UnitTests
                 Times.Once);
 
             context.DbServiceMock.Verify(
-                s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -97,7 +97,7 @@ namespace CollectaMundo.Tests.UnitTests
                 Times.Once);
 
             context.DbServiceMock.Verify(
-                s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -135,7 +135,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             // Ensure update orchestration was never invoked
             context.DbServiceMock.Verify(
-                s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -176,7 +176,7 @@ namespace CollectaMundo.Tests.UnitTests
                 Times.Once);
 
             context.DbServiceMock.Verify(
-                s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -234,7 +234,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(true, overlayVm.IsPrimaryButtonVisible);
 
             context.DbServiceMock.Verify(
-                s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -324,7 +324,7 @@ namespace CollectaMundo.Tests.UnitTests
                 Times.Never);
 
             context.DbServiceMock.Verify(
-                s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 

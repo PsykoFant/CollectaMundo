@@ -2,8 +2,8 @@
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
 using CollectaMundo.Infrastructure.CollectionMutations;
-using CollectaMundo.Infrastructure.Shared.Models;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CollectionMutations

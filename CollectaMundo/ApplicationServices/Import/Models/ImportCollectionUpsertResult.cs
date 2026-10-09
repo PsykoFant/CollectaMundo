@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Infrastructure.Shared.Models;
+﻿using CollectaMundo.Infrastructure.CardLists.Models;
 
 namespace CollectaMundo.ApplicationServices.Import.Models
 {

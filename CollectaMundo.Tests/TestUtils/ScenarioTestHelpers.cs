@@ -2,7 +2,7 @@
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared.CardModels;
-using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Database;
 using CollectaMundo.ViewModels;
 using System.Data.Common;
 using System.Data.SQLite;

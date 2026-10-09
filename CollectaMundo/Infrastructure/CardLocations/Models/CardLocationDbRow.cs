@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.Infrastructure.Shared.Models
+﻿namespace CollectaMundo.Infrastructure.CardLocations.Models
 {
     public sealed class CardLocationDbRow
     {

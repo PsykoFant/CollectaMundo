@@ -2,8 +2,9 @@
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared.Factories;
-using CollectaMundo.Infrastructure.Shared;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
+using CollectaMundo.Infrastructure.CardLocations.Models;
+using CollectaMundo.Infrastructure.Shared.Database;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Import.ImportSteps;

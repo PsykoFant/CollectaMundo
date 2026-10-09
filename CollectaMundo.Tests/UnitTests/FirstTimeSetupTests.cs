@@ -123,7 +123,7 @@ namespace CollectaMundo.Tests.UnitTests
             var svc = ctx.BuildService();
 
             var result =
-                await svc.UpdateDbPrepOrchetrator(
+                await svc.UpdateDbPrepOrchestrator(
                     0,
                     CancellationToken.None);
 
@@ -178,7 +178,7 @@ namespace CollectaMundo.Tests.UnitTests
             var svc = ctx.BuildService();
 
             var result =
-                await svc.UpdateDbPrepOrchetrator(
+                await svc.UpdateDbPrepOrchestrator(
                     0,
                     cts.Token);
 
@@ -274,7 +274,7 @@ namespace CollectaMundo.Tests.UnitTests
             var svc = ctx.BuildService();
 
             var result =
-                await svc.UpdateDbPrepOrchetrator(
+                await svc.UpdateDbPrepOrchestrator(
                     0,
                     cts.Token);
 
@@ -322,7 +322,7 @@ namespace CollectaMundo.Tests.UnitTests
 
 
             var svc = ctx.BuildService();
-            var result = await svc.UpdateDbPrepOrchetrator(0, cts.Token);
+            var result = await svc.UpdateDbPrepOrchestrator(0, cts.Token);
 
             Assert.Equal(OperationResultCode.CancelledByUser, result.Code);
             Assert.Equal(1, callCount); // Should abort before retrying

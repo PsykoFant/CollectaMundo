@@ -7,8 +7,8 @@ using CollectaMundo.DomainLogic.ModifyCollection;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
 using CollectaMundo.Infrastructure.ModifyCollection;
-using CollectaMundo.Infrastructure.Shared.Models;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.ModifyCollection

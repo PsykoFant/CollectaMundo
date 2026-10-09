@@ -7,7 +7,8 @@ using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
-using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Database;
+using CollectaMundo.Infrastructure.Shared.Desktop;
 using CollectaMundo.ViewModels.Models;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -183,12 +184,12 @@ namespace CollectaMundo.ApplicationServices.Import
         // Step 5
         public async Task<List<string>> GetAvailableFinishesAsync()
         {
-            var rawValues = await _uowRunner.ExecuteReadOnlyAsync(conn => DbHelpers.GetUniqueValuesAsync(conn, "cards", "finishes"));
+            var rawValues = await _uowRunner.ExecuteReadOnlyAsync(conn => SqliteDbHelpers.GetUniqueValuesAsync(conn, "cards", "finishes"));
             return ImportValueNormalizer.SplitAndDistinct(rawValues);
         }
         public async Task<List<string>> GetAvailableLanguagesAsync()
         {
-            var rawValues = await _uowRunner.ExecuteReadOnlyAsync(conn => DbHelpers.GetUniqueValuesAsync(conn, "cardForeignData", "language"));
+            var rawValues = await _uowRunner.ExecuteReadOnlyAsync(conn => SqliteDbHelpers.GetUniqueValuesAsync(conn, "cardForeignData", "language"));
             return ImportValueNormalizer.SplitAndDistinct(rawValues);
         }
         public async Task<List<string>> GetAvailableLocationsAsync()

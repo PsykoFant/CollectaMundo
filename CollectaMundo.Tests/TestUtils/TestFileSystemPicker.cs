@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Infrastructure.Shared;
+﻿using CollectaMundo.Infrastructure.Shared.Desktop;
 
 namespace CollectaMundo.Tests.TestUtils
 {

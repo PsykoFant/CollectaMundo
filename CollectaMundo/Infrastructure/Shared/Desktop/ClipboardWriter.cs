@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using System.Windows;
 
-namespace CollectaMundo.Infrastructure.Shared
+namespace CollectaMundo.Infrastructure.Shared.Desktop
 {
     public sealed class ClipboardWriter : IClipboardWriter
     {

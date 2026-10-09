@@ -2,7 +2,7 @@
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
-using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Desktop;
 using CollectaMundo.ViewModels.Shared;
 using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.Utilities;
@@ -108,12 +108,12 @@ namespace CollectaMundo.Tests.TestUtils
 
             if (_customUpdateOrchestrator != null)
             {
-                dbService.Setup(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                dbService.Setup(s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                     .Returns((int _, CancellationToken ct) => _customUpdateOrchestrator(ct));
             }
             else if (_updateResult != null)
             {
-                dbService.Setup(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                dbService.Setup(s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(_updateResult);
             }
 

@@ -2,7 +2,7 @@
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
-using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Desktop;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -266,7 +266,7 @@ namespace CollectaMundo.ViewModels.Utilities
             token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary); // draw new token after backup
 
             // Run the update
-            var result = await _cardDbManagementService.UpdateDbPrepOrchetrator(ct: token);
+            var result = await _cardDbManagementService.UpdateDbPrepOrchestrator(ct: token);
 
             // Clear UI
             _operationOverlayController.Reset();

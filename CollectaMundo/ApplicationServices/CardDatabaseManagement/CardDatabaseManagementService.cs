@@ -8,9 +8,9 @@ using CollectaMundo.DomainLogic.CardData;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardDatabaseManagement.CardData;
 using CollectaMundo.Infrastructure.RemoteLookups;
-using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.Infrastructure.Shared.Database;
+using CollectaMundo.Infrastructure.Shared.FileTransfers;
 using CollectaMundo.Infrastructure.Shared.IO;
-using CollectaMundo.Infrastructure.Shared.RemoteFiles;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
@@ -163,7 +163,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         #endregion
 
         #region USE CASE: FULL DATABASE UPDATE
-        public Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000, CancellationToken ct = default)
+        public Task<OperationResult> UpdateDbPrepOrchestrator(int defaultDelay = 3000, CancellationToken ct = default)
         {
             return ExecuteOnlineOperationAsync(headline: "Updating card database - please wait ...",
 
@@ -182,7 +182,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     // The destructive DB phase starts here. Cancellation is intentionally disabled from this point.
                     _progressSinks.CancelEnabled?.Report(false);
 
-                    var copyResult = await CopyUpdatedTablesAsync();
+                    var copyResult = await ReplaceDatabaseCoreAsync();
 
                     if (copyResult.Code != OperationResultCode.Success)
                     {
@@ -206,8 +206,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         }
         private static readonly IReadOnlyList<DbPrepStep> UpdateDbSteps =
         [
-            DbPrepStep.CreateIndices,
-            DbPrepStep.BuildCanonicalOracleFaces,
             DbPrepStep.GenerateManaSymbols,
             DbPrepStep.GenerateManaCostImages,
             DbPrepStep.GenerateSetIcons,
@@ -507,46 +505,59 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         #endregion
 
         #region DATABASE TABLE COPY
-        private async Task<OperationResult> CopyUpdatedTablesAsync()
+        private async Task<OperationResult> ReplaceDatabaseCoreAsync()
         {
             _progressSinks.ProgressBarVisible.Report(false);
             _progressSinks.ProgressBarIndeterminate.Report(false);
-            _progressSinks.Step.Report("Step 2. Copying new tables...");
+            _progressSinks.Step.Report("Step 2. Installing new card data...");
 
             try
             {
                 // Preserve the existing non-cancellable behavior once the destructive database update phase has started.
-                await Task.Run(
-                    async () =>
+                await Task.Run(async () =>
                     {
                         await using var conn = await _dbFactory.OpenConnectionAsync().ConfigureAwait(false);
 
-                        using (var tx = conn.BeginTransaction())
-                        {
-                            await _dbMgmtRepo.AttachTempDbAsync(conn, _tempDbPath, _progressSinks.Detail);
+                        // ATTACH is connection-scoped and intentionally outside the replacement transaction.
+                        await _dbMgmtRepo.AttachTempDbAsync(conn, _tempDbPath, _progressSinks.Detail);
 
-                            await _dbMgmtRepo.DropTablesAsync(conn, _progressSinks.Detail);
+                        using var tx = conn.BeginTransaction();
 
-                            Debug.WriteLine("[CardDatabasePrep] Dropped old tables.");
+                        // Replace all MTGJSON-owned tables.
+                        await _dbMgmtRepo.ReplaceSourceTablesAsync(conn, tx, _progressSinks.Detail);
 
-                            await _dbMgmtRepo.CopyTablesAsync(conn, _progressSinks.Detail);
+                        Debug.WriteLine("[CardDatabasePrep] Replaced source tables.");
 
-                            Debug.WriteLine("[CardDatabasePrep] Copied new tables.");
+                        // Re-establish the CollectaMundo-specific indexes against the newly installed source tables.
+                        await _dbMgmtRepo.CreateIndicesAsync(conn, tx);
 
-                            tx.Commit();
-                        }
+                        Debug.WriteLine("[CardDatabasePrep] Created application indices.");
 
-                        await _dbMgmtRepo.DetachTempDbAsync(conn, _progressSinks.Detail);
+                        // canonicalOracleFaces is derived from the source tables. Rebuild it before committing so source data and canonical data can never get out of sync.
+                        await BuildCanonicalOracleFacesAsync(conn, tx);
+
+                        Debug.WriteLine("[CardDatabasePrep] Rebuilt canonical Oracle faces.");
+
+                        tx.Commit();
+
+                        Debug.WriteLine("[CardDatabasePrep] Database core replacement committed.");
+
+                        // No explicit DETACH is needed.
+                        // Disposing the connection releases the attached temp DB.
                     },
                     CancellationToken.None);
 
-                return new OperationResult(OperationResultCode.Success, "New database tables copied successfully.");
+                return new OperationResult(
+                    OperationResultCode.Success);
             }
             catch (Exception ex)
             {
-                _progressSinks.Detail.Report($"Table copy failed: {ex.Message}");
+                _progressSinks.Detail.Report(
+                    $"Database update failed: {ex.Message}");
 
-                return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
+                return new OperationResult(
+                    OperationResultCode.Error,
+                    $"Database update failed: {ex.Message}");
             }
         }
 

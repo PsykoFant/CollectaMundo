@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Decks.Models;
-using CollectaMundo.Infrastructure.Shared.Models;
+using CollectaMundo.Infrastructure.CardLists.Models;
+using CollectaMundo.Infrastructure.CardLocations.Models;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardLocations

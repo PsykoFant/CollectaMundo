@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Infrastructure.Shared;
+﻿using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.Shared.UnitOfWork
