@@ -9,6 +9,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
 {
     public sealed class CardDataRepo : ICardDataRepo
     {
+        // Oracle cards
         public async Task<List<OracleFaceCandidate>> GetOracleFaceCandidatesAsync(SQLiteConnection connection, SQLiteTransaction? tx)
         {
             const string query = """
@@ -218,6 +219,123 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 isAmbiguous.Value = face.IsAmbiguous ? 1 : 0;
 
                 inserted += await command.ExecuteNonQueryAsync();
+            }
+
+            return inserted;
+        }
+
+
+        // Printing cards
+        public async Task<int> RebuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx)
+        {
+            const string deleteSql = "DELETE FROM printingCards;";
+
+            using (var deleteCommand = new SQLiteCommand(deleteSql, conn, tx))
+            {
+                await deleteCommand.ExecuteNonQueryAsync();
+            }
+
+            const string insertSql = """
+                             INSERT INTO printingCards
+                             (
+                                 uuid,
+                                 scryfallOracleId,
+                                 side,
+                                 setCode,
+                                 language,
+                                 finishes,
+                                 availability,
+                                 rarity,
+                                 isPromo,
+                                 gameplayCard,
+                                 otherFaceIds
+                             )
+
+                             SELECT
+                                 c.uuid,
+                                 ci.scryfallOracleId,
+                                 COALESCE(c.side, ''),
+                                 c.setCode,
+                                 c.language,
+                                 c.finishes,
+                                 c.availability,
+                                 c.rarity,
+                                 CASE
+                                     WHEN COALESCE(c.isPromo, 0) <> 0 THEN 1
+                                     ELSE 0
+                                 END,
+                                 1,
+                                 c.otherFaceIds
+                             FROM cards c
+                             LEFT JOIN cardIdentifiers ci
+                                 ON ci.uuid = c.uuid
+
+                             UNION ALL
+
+                             SELECT
+                                 t.uuid,
+                                 ti.scryfallOracleId,
+                                 COALESCE(t.side, ''),
+                                 t.setCode,
+                                 t.language,
+                                 t.finishes,
+                                 t.availability,
+                                 NULL,
+                                 CASE
+                                     WHEN COALESCE(t.isPromo, 0) <> 0 THEN 1
+                                     ELSE 0
+                                 END,
+                                 0,
+                                 t.otherFaceIds
+                             FROM tokens t
+                             LEFT JOIN tokenIdentifiers ti
+                                 ON ti.uuid = t.uuid;
+                             """;
+
+            int inserted;
+
+            using (var insertCommand = new SQLiteCommand(insertSql, conn, tx))
+            {
+                inserted = await insertCommand.ExecuteNonQueryAsync();
+            }
+
+            const string sourceCountSql = """
+                                  SELECT
+                                      (SELECT COUNT(*) FROM cards) +
+                                      (SELECT COUNT(*) FROM tokens);
+                                  """;
+
+            long expected;
+
+            using (var countCommand = new SQLiteCommand(sourceCountSql, conn, tx))
+            {
+                expected = Convert.ToInt64(await countCommand.ExecuteScalarAsync());
+            }
+
+            if (inserted != expected)
+            {
+                throw new InvalidOperationException($"Printing-card projection inserted {inserted:N0} rows, " + $"but {expected:N0} source printing rows were expected.");
+            }
+
+            const string unresolvedOracleSql = """
+                                   SELECT COUNT(*)
+                                   FROM printingCards p
+                                   LEFT JOIN canonicalOracleFaces c
+                                       ON c.scryfallOracleId = p.scryfallOracleId
+                                      AND c.side = p.side
+                                   WHERE c.id IS NULL;
+                                   """;
+
+            long unresolvedOracleFaces;
+
+            using (var validationCommand = new SQLiteCommand(unresolvedOracleSql, conn, tx))
+            {
+                unresolvedOracleFaces = Convert.ToInt64(await validationCommand.ExecuteScalarAsync());
+            }
+
+            if (unresolvedOracleFaces != 0)
+            {
+                throw new InvalidOperationException($"Printing-card projection contains {unresolvedOracleFaces:N0} rows that cannot be resolved to canonical Oracle faces.");
             }
 
             return inserted;

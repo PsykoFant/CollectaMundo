@@ -52,6 +52,21 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     "UNIQUE (scryfallOracleId, side)" +
                     ");",
 
+                ["printingCards"] =
+                    "CREATE TABLE IF NOT EXISTS printingCards (" +
+                    "uuid TEXT NOT NULL PRIMARY KEY, " +
+                    "scryfallOracleId TEXT NOT NULL, " +
+                    "side TEXT NOT NULL, " +
+                    "setCode TEXT NULL, " +
+                    "language TEXT NULL, " +
+                    "finishes TEXT NULL, " +
+                    "availability TEXT NULL, " +
+                    "rarity TEXT NULL, " +
+                    "isPromo INTEGER NOT NULL CHECK (isPromo IN (0, 1)), " +
+                    "gameplayCard INTEGER NOT NULL CHECK (gameplayCard IN (0, 1)), " +
+                    "otherFaceIds TEXT NULL" +
+                    ");",
+
                 ["myCollection"] =
                     "CREATE TABLE IF NOT EXISTS myCollection (" +
                     "id INTEGER PRIMARY KEY, " +

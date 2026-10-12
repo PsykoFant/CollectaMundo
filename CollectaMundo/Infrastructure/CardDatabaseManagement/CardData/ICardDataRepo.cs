@@ -7,5 +7,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
     {
         Task<List<OracleFaceCandidate>> GetOracleFaceCandidatesAsync(SQLiteConnection conn, SQLiteTransaction? tx = null);
         Task<int> RebuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<CanonicalOracleFace> faces);
+        Task<int> RebuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx);
     }
 }
