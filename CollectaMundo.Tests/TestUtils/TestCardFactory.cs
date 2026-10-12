@@ -48,6 +48,9 @@ namespace CollectaMundo.Tests.TestUtils
                 Language = language,
                 Finishes = finishes,
                 Rarity = rarity,
+
+                OtherFaceIds = otherFaceIds?.ToList() ?? [],
+
                 Oracle = new OracleCard
                 {
                     ScryfallOracleId = oracleId,
@@ -62,8 +65,7 @@ namespace CollectaMundo.Tests.TestUtils
                     Keywords = keywords,
                     Text = text,
                     ManaValue = manaValue,
-                    Side = side,
-                    OtherFaceIds = otherFaceIds?.ToList() ?? []
+                    Side = side
                 }
             };
         }

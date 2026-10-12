@@ -1,4 +1,6 @@
-﻿using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
+﻿using CollectaMundo.DomainLogic.CardData;
+using CollectaMundo.Infrastructure.CardDatabaseManagement.CardData;
+using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
 using CsvHelper;
 using CsvHelper.Configuration;
 using System.Data.SQLite;
@@ -32,10 +34,7 @@ namespace CollectaMundo.Tests.TestUtils
                     await _masterConnection.OpenAsync();
                 }
 
-                if (_seedingTask == null)
-                {
-                    _seedingTask = InitializeSchemaAndSeedAsync();
-                }
+                _seedingTask ??= InitializeSchemaAndSeedAsync();
             }
             catch (Exception ex)
             {
@@ -54,6 +53,73 @@ namespace CollectaMundo.Tests.TestUtils
             CreateViews(command);
             await CreateIndicesAsync();
             await SeedDataAsync();
+
+            await PrepareDerivedCardDataAsync();
+        }
+        private async Task PrepareDerivedCardDataAsync()
+        {
+            if (_masterConnection is null)
+            {
+                throw new InvalidOperationException(
+                    "_masterConnection is not initialized.");
+            }
+
+            var cardDataRepo = new CardDataRepo();
+
+            using var transaction = _masterConnection.BeginTransaction();
+
+            try
+            {
+                var candidates =
+                    await cardDataRepo.GetOracleFaceCandidatesAsync(
+                        _masterConnection,
+                        transaction);
+
+                var canonicalFaces =
+                    OracleFaceCanonicalizer.Canonicalize(candidates);
+
+                if (canonicalFaces.Count == 0)
+                {
+                    throw new InvalidOperationException(
+                        "Scenario database produced no canonical Oracle faces.");
+                }
+
+                var canonicalInserted =
+                    await cardDataRepo.RebuildCanonicalOracleFacesAsync(
+                        _masterConnection,
+                        transaction,
+                        canonicalFaces);
+
+                if (canonicalInserted != canonicalFaces.Count)
+                {
+                    throw new InvalidOperationException(
+                        $"Scenario database inserted {canonicalInserted:N0} canonical Oracle faces, " +
+                        $"but {canonicalFaces.Count:N0} were expected.");
+                }
+
+                var printingInserted =
+                    await cardDataRepo.RebuildPrintingCardsAsync(
+                        _masterConnection,
+                        transaction);
+
+                if (printingInserted == 0)
+                {
+                    throw new InvalidOperationException(
+                        "Scenario database produced no printing cards.");
+                }
+
+                transaction.Commit();
+
+                Debug.WriteLine(
+                    $"In-memory derived card data prepared: " +
+                    $"canonical={canonicalInserted:N0}, " +
+                    $"printings={printingInserted:N0}.");
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
         private static void CreateBuiltInTables(SQLiteCommand command)
         {

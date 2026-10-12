@@ -17,6 +17,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
 
                 Name = row.Name ?? string.Empty,
 
+                GamePlayCard = row.GamePlayCard,
                 ManaCostRaw = row.ManaCostRaw,
                 ManaCost = ProcessManaCost(row.ManaCostRaw),
                 ManaValue = row.ManaValue ?? 0,

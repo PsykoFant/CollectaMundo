@@ -29,6 +29,7 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
             }
         }
         public double ManaValue { get; init; }
+        public int GamePlayCard { get; init; }
         public required string Name { get; init; }
         public required string ScryfallOracleId { get; init; }
         public string? Side { get; init; }

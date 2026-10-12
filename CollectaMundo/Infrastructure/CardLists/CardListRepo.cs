@@ -13,22 +13,25 @@ namespace CollectaMundo.Infrastructure.CardLists
         public async Task<IReadOnlyList<CanonicalOracleFaceDbRow>> ReadCanonicalOracleFacesAsync(SQLiteConnection conn)
         {
             const string sql = """
-                       SELECT
-                           scryfallOracleId AS ScryfallOracleId,
-                           side             AS Side,
-                           selectedSourceUuid AS SelectedSourceUuid,
-                           name             AS Name,
-                           manaCostRaw      AS ManaCostRaw,
-                           manaValue        AS ManaValue,
-                           colors           AS Colors,
-                           keywords         AS Keywords,
-                           rulesText        AS RulesText,
-                           superTypes       AS SuperTypes,
-                           types            AS Types,
-                           subTypes         AS SubTypes,
-                           type             AS Type
-                       FROM canonicalOracleFaces;
-                       """;
+                   SELECT
+                       c.scryfallOracleId    AS ScryfallOracleId,
+                       c.side                AS Side,
+                       c.selectedSourceUuid  AS SelectedSourceUuid,
+                       c.name                AS Name,
+                       c.manaCostRaw         AS ManaCostRaw,
+                       c.manaValue           AS ManaValue,
+                       c.colors              AS Colors,
+                       c.keywords            AS Keywords,
+                       c.rulesText           AS RulesText,
+                       c.superTypes          AS SuperTypes,
+                       c.types               AS Types,
+                       c.subTypes            AS SubTypes,
+                       c.type                AS Type,
+                       p.gameplayCard        AS GamePlayCard
+                   FROM canonicalOracleFaces c
+                   JOIN printingCards p
+                       ON p.uuid = c.selectedSourceUuid;
+                   """;
 
             using var command = new SQLiteCommand(sql, conn);
             using var reader = await command.ExecuteReaderAsync();
@@ -55,7 +58,8 @@ namespace CollectaMundo.Infrastructure.CardLists
             int SuperTypes,
             int Types,
             int SubTypes,
-            int Type)
+            int Type,
+            int GamePlayCard)
         {
             public static CanonicalOracleFaceOrdinals FromReader(DbDataReader reader)
             {
@@ -72,7 +76,8 @@ namespace CollectaMundo.Infrastructure.CardLists
                     reader.GetOrdinal("SuperTypes"),
                     reader.GetOrdinal("Types"),
                     reader.GetOrdinal("SubTypes"),
-                    reader.GetOrdinal("Type"));
+                    reader.GetOrdinal("Type"),
+                    reader.GetOrdinal("GamePlayCard"));
             }
         }
         private static CanonicalOracleFaceDbRow CanonicalOracleFaceDbRowFromReader(DbDataReader reader, CanonicalOracleFaceOrdinals ordinals)
@@ -91,7 +96,8 @@ namespace CollectaMundo.Infrastructure.CardLists
                 SuperTypes = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SuperTypes),
                 Types = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Types),
                 SubTypes = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SubTypes),
-                Type = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type)
+                Type = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type),
+                GamePlayCard = DbDataReaderValueReader.GetFieldValue<int>(reader, ordinals.GamePlayCard)
             };
         }
 

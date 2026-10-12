@@ -127,6 +127,7 @@ namespace CollectaMundo.DomainLogic.CardLists
                 SubTypes = source.SubTypes,
                 Side = source.Side,
                 ManaValue = source.ManaValue,
+                GamePlayCard = source.GamePlayCard,
                 LegalityMasks = legalityMasks,
                 Keywords = keywords,
                 Colors = colors,
@@ -135,38 +136,16 @@ namespace CollectaMundo.DomainLogic.CardLists
 
             return new PrintingCard
             {
-                Oracle =
-                    aggregatedOracle,
-
-                LegalityMasks =
-                    legalityMasks,
-
-                Uuid =
-                    printing.Uuid,
-
-                SetCode =
-                    printing.SetCode,
-
-                Language =
-                    printing.Language,
-
-                Rarity =
-                    printing.Rarity,
-
-                Finishes =
-                    printing.Finishes,
-
-                Availability =
-                    printing.Availability,
-
-                IsPromo =
-                    printing.IsPromo,
-
-                GamePlayCard =
-                    printing.GamePlayCard,
-
-                OtherFaceIds =
-                    printing.OtherFaceIds
+                Oracle = aggregatedOracle,
+                LegalityMasks = legalityMasks,
+                Uuid = printing.Uuid,
+                SetCode = printing.SetCode,
+                Language = printing.Language,
+                Rarity = printing.Rarity,
+                Finishes = printing.Finishes,
+                Availability = printing.Availability,
+                IsPromo = printing.IsPromo,
+                OtherFaceIds = printing.OtherFaceIds
             };
         }
         private static string NormalizeText(string? text)

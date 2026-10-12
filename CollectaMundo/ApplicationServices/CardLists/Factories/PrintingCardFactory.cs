@@ -19,7 +19,6 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
                 Availability = row.Availability,
                 IsPromo = row.IsPromo,
 
-                GamePlayCard = row.GamePlayCard,
                 OtherFaceIds = ParseOtherFaceIds(row.OtherFaceIds),
 
                 LegalityMasks = oracle.LegalityMasks

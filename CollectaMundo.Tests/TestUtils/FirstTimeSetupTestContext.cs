@@ -212,6 +212,12 @@ namespace CollectaMundo.Tests.TestUtils
                     It.IsAny<SQLiteTransaction>(),
                     It.IsAny<IReadOnlyList<CanonicalOracleFace>>()))
                 .ReturnsAsync(1);
+
+            CardDataRepo
+                .Setup(r => r.RebuildPrintingCardsAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()))
+                .ReturnsAsync(1);
         }
         public void Dispose()
         {

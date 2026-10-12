@@ -6,6 +6,7 @@
         public string Side { get; init; } = string.Empty;
         public string SelectedSourceUuid { get; init; } = string.Empty;
 
+        public int GamePlayCard { get; init; }
         public string? Name { get; init; }
         public string? ManaCostRaw { get; init; }
         public double? ManaValue { get; init; }
