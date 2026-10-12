@@ -17,7 +17,7 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
                 ? []
                 : Finishes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         public decimal? FoilPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.FoilPrice;
-        public int GamePlayCard => Oracle.GamePlayCard;
+        public int GamePlayCard { get; init; }
         public bool IsPromo { get; init; }
 
         private ImageSource? _keyRuneImage;
@@ -44,7 +44,7 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
         public double ManaValue => Oracle.ManaValue;
         public string Name => Oracle.Name;
         public decimal? NormalPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.NormalPrice;
-        public IReadOnlyList<string> OtherFaceIds => Oracle.OtherFaceIds;
+        public IReadOnlyList<string> OtherFaceIds { get; init; } = [];
         public List<string> OtherLanguages { get; set; } = [];
         public string? Rarity { get; init; }
 

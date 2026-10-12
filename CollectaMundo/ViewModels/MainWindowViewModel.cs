@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
+using CollectaMundo.ApplicationServices.CardLists.Factories;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
@@ -20,7 +21,6 @@ using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.KeyedDataProvider;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
-using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLists.Models;
 using CollectaMundo.Infrastructure.Shared.Desktop;

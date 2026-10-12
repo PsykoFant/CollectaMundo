@@ -46,25 +46,32 @@ namespace CollectaMundo.DomainLogic.CardLists
 
                 // Fast path:
                 // Most primary printings have nothing to aggregate.
-                if (oracle.OtherFaceIds.Count == 0)
+                if (printing.OtherFaceIds.Count == 0)
                 {
-                    results.Add(CreateAggregatedPrinting(printing, oracle.LegalityMasks, CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Keywords), CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Colors), CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Types), NormalizeText(oracle.Text)));
+                    results.Add(
+                        CreateAggregatedPrinting(
+                            printing,
+                            oracle.LegalityMasks,
+                            CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Keywords), CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Colors),
+                            CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Types),
+                            NormalizeText(oracle.Text)));
 
                     continue;
                 }
 
                 // Multi-face path:
-                // only printings with other faces need full aggregation.
+                // Only printings with other physical faces need full aggregation.
                 var allKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var allColors = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var allTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var allTexts = new List<string>();
+
                 ulong playableFormatsMask = 0;
                 ulong restrictedFormatsMask = 0;
 
                 MergeFrom(oracle);
 
-                foreach (var otherId in oracle.OtherFaceIds)
+                foreach (var otherId in printing.OtherFaceIds)
                 {
                     if (byUuid.TryGetValue(otherId, out var otherPrinting))
                     {
@@ -74,8 +81,7 @@ namespace CollectaMundo.DomainLogic.CardLists
 
                 var aggregatedLegalityMasks = new CardLegalityMasks(PlayableFormatsMask: playableFormatsMask, RestrictedFormatsMask: restrictedFormatsMask);
 
-                results.Add(CreateAggregatedPrinting(printing,
-                        aggregatedLegalityMasks,
+                results.Add(CreateAggregatedPrinting(printing, aggregatedLegalityMasks,
                         string.Join(",", allKeywords),
                         string.Join(",", allColors),
                         string.Join(",", allTypes),
@@ -91,7 +97,8 @@ namespace CollectaMundo.DomainLogic.CardLists
 
                     if (!string.IsNullOrWhiteSpace(source.Text))
                     {
-                        allTexts.Add(source.Text.Trim());
+                        allTexts.Add(
+                            source.Text.Trim());
                     }
                 }
             }
@@ -107,6 +114,7 @@ namespace CollectaMundo.DomainLogic.CardLists
         private static PrintingCard CreateAggregatedPrinting(PrintingCard printing, CardLegalityMasks legalityMasks, string keywords, string colors, string types, string text)
         {
             var source = printing.Oracle;
+
             var aggregatedOracle = new OracleCard
             {
                 ScryfallOracleId = source.ScryfallOracleId,
@@ -118,9 +126,7 @@ namespace CollectaMundo.DomainLogic.CardLists
                 SuperTypes = source.SuperTypes,
                 SubTypes = source.SubTypes,
                 Side = source.Side,
-                OtherFaceIds = source.OtherFaceIds,
                 ManaValue = source.ManaValue,
-                GamePlayCard = source.GamePlayCard,
                 LegalityMasks = legalityMasks,
                 Keywords = keywords,
                 Colors = colors,
@@ -129,15 +135,38 @@ namespace CollectaMundo.DomainLogic.CardLists
 
             return new PrintingCard
             {
-                Oracle = aggregatedOracle,
-                LegalityMasks = legalityMasks,
-                Uuid = printing.Uuid,
-                SetCode = printing.SetCode,
-                Language = printing.Language,
-                Rarity = printing.Rarity,
-                Finishes = printing.Finishes,
-                Availability = printing.Availability,
-                IsPromo = printing.IsPromo
+                Oracle =
+                    aggregatedOracle,
+
+                LegalityMasks =
+                    legalityMasks,
+
+                Uuid =
+                    printing.Uuid,
+
+                SetCode =
+                    printing.SetCode,
+
+                Language =
+                    printing.Language,
+
+                Rarity =
+                    printing.Rarity,
+
+                Finishes =
+                    printing.Finishes,
+
+                Availability =
+                    printing.Availability,
+
+                IsPromo =
+                    printing.IsPromo,
+
+                GamePlayCard =
+                    printing.GamePlayCard,
+
+                OtherFaceIds =
+                    printing.OtherFaceIds
             };
         }
         private static string NormalizeText(string? text)

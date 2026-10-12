@@ -3,157 +3,178 @@ using CollectaMundo.Infrastructure.CardLists.Models;
 using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data.Common;
 using System.Data.SQLite;
+using System.IO;
 
 namespace CollectaMundo.Infrastructure.CardLists
 {
     public class CardListRepo : ICardListRepo
     {
-        public async Task<IReadOnlyList<PrintingCardDbRow>> ReadAllCardPrintingDbRowsAsync(SQLiteConnection conn)
+        // Read Oracle Faces from the database 
+        public async Task<IReadOnlyList<CanonicalOracleFaceDbRow>> ReadCanonicalOracleFacesAsync(SQLiteConnection conn)
         {
-            const string query = """
-                                 SELECT 
-                                     ci.scryfallOracleId AS ScryfallOracleId,
-                                     c.name              AS Name,
-                                     c.setCode           AS SetCode,
-                                     c.manaCost          AS ManaCost,
-                                     c.types             AS Types,
-                                     c.colors            AS Colors,
-                                     c.supertypes        AS SuperTypes,
-                                     c.subtypes          AS SubTypes,
-                                     c.type              AS Type,
-                                     c.keywords          AS Keywords,
-                                     c.text              AS RulesText,
-                                     c.manaValue         AS ManaValue,
-                                     c.language          AS Language,
-                                     c.uuid              AS Uuid,
-                                     c.otherFaceIds      AS OtherFaceIds,
-                                     c.availability      AS Availability,
-                                     1                   AS GameplayCard,
-                                     c.finishes          AS Finishes,
-                                     c.side              AS Side,
-                                     c.isPromo           AS IsPromo,
-                                     c.rarity            AS Rarity
-                                 FROM cards c
-                                 LEFT JOIN cardIdentifiers ci
-                                     ON ci.uuid = c.uuid
+            const string sql = """
+                       SELECT
+                           scryfallOracleId AS ScryfallOracleId,
+                           side             AS Side,
+                           selectedSourceUuid AS SelectedSourceUuid,
+                           name             AS Name,
+                           manaCostRaw      AS ManaCostRaw,
+                           manaValue        AS ManaValue,
+                           colors           AS Colors,
+                           keywords         AS Keywords,
+                           rulesText        AS RulesText,
+                           superTypes       AS SuperTypes,
+                           types            AS Types,
+                           subTypes         AS SubTypes,
+                           type             AS Type
+                       FROM canonicalOracleFaces;
+                       """;
 
-                                 UNION ALL
-
-                                 SELECT 
-                                     ti.scryfallOracleId AS ScryfallOracleId,
-                                     t.name              AS Name,
-                                     t.setCode           AS SetCode,
-                                     t.manaCost          AS ManaCost,
-                                     t.types             AS Types,
-                                     t.colors            AS Colors,
-                                     t.supertypes        AS SuperTypes,
-                                     t.subtypes          AS SubTypes,
-                                     t.type              AS Type,
-                                     t.keywords          AS Keywords,
-                                     t.text              AS RulesText,
-                                     NULL                AS ManaValue,
-                                     t.language          AS Language,
-                                     t.uuid              AS Uuid,
-                                     t.otherFaceIds      AS OtherFaceIds,
-                                     t.availability      AS Availability,
-                                     0                   AS GameplayCard,
-                                     t.finishes          AS Finishes,
-                                     t.side              AS Side,
-                                     t.isPromo           AS IsPromo,
-                                     NULL                AS Rarity
-                                 FROM tokens t
-                                 LEFT JOIN tokenIdentifiers ti
-                                     ON ti.uuid = t.uuid
-                                 """;
-
-            using var cmd = new SQLiteCommand(query, conn);
-            using var reader = await cmd.ExecuteReaderAsync();
-            var ordinals = PrintingCardOrdinals.FromReader(reader);
-            var list = new List<PrintingCardDbRow>(capacity: 130000);
+            using var command = new SQLiteCommand(sql, conn);
+            using var reader = await command.ExecuteReaderAsync();
+            var ordinals = CanonicalOracleFaceOrdinals.FromReader(reader);
+            var rows = new List<CanonicalOracleFaceDbRow>(capacity: 45_000);
 
             while (await reader.ReadAsync())
             {
-                list.Add(CardPrintingDbRowFromReader(reader, ordinals));
+                rows.Add(CanonicalOracleFaceDbRowFromReader(reader, ordinals));
             }
 
-            return list;
+            return rows;
         }
-        private readonly record struct PrintingCardOrdinals(
+        private readonly record struct CanonicalOracleFaceOrdinals(
             int ScryfallOracleId,
+            int Side,
+            int SelectedSourceUuid,
             int Name,
-            int SetCode,
-            int ManaCost,
-            int Types,
+            int ManaCostRaw,
+            int ManaValue,
             int Colors,
-            int SuperTypes,
-            int SubTypes,
-            int Type,
             int Keywords,
             int RulesText,
-            int ManaValue,
-            int Language,
-            int Uuid,
-            int OtherFaceIds,
-            int Availability,
-            int GameplayCard,
-            int Finishes,
-            int Side,
-            int IsPromo,
-            int Rarity)
+            int SuperTypes,
+            int Types,
+            int SubTypes,
+            int Type)
         {
-            public static PrintingCardOrdinals FromReader(DbDataReader reader)
+            public static CanonicalOracleFaceOrdinals FromReader(DbDataReader reader)
             {
-                return new PrintingCardOrdinals(
+                return new CanonicalOracleFaceOrdinals(
                     reader.GetOrdinal("ScryfallOracleId"),
+                    reader.GetOrdinal("Side"),
+                    reader.GetOrdinal("SelectedSourceUuid"),
                     reader.GetOrdinal("Name"),
-                    reader.GetOrdinal("SetCode"),
-                    reader.GetOrdinal("ManaCost"),
-                    reader.GetOrdinal("Types"),
+                    reader.GetOrdinal("ManaCostRaw"),
+                    reader.GetOrdinal("ManaValue"),
                     reader.GetOrdinal("Colors"),
-                    reader.GetOrdinal("SuperTypes"),
-                    reader.GetOrdinal("SubTypes"),
-                    reader.GetOrdinal("Type"),
                     reader.GetOrdinal("Keywords"),
                     reader.GetOrdinal("RulesText"),
-                    reader.GetOrdinal("ManaValue"),
-                    reader.GetOrdinal("Language"),
-                    reader.GetOrdinal("Uuid"),
-                    reader.GetOrdinal("OtherFaceIds"),
-                    reader.GetOrdinal("Availability"),
-                    reader.GetOrdinal("GameplayCard"),
-                    reader.GetOrdinal("Finishes"),
-                    reader.GetOrdinal("Side"),
-                    reader.GetOrdinal("IsPromo"),
-                    reader.GetOrdinal("Rarity"));
+                    reader.GetOrdinal("SuperTypes"),
+                    reader.GetOrdinal("Types"),
+                    reader.GetOrdinal("SubTypes"),
+                    reader.GetOrdinal("Type"));
             }
         }
-        private static PrintingCardDbRow CardPrintingDbRowFromReader(DbDataReader r, PrintingCardOrdinals o)
+        private static CanonicalOracleFaceDbRow CanonicalOracleFaceDbRowFromReader(DbDataReader reader, CanonicalOracleFaceOrdinals ordinals)
+        {
+            return new CanonicalOracleFaceDbRow
+            {
+                ScryfallOracleId = GetRequiredString(reader, ordinals.ScryfallOracleId, "ScryfallOracleId"),
+                Side = GetRequiredString(reader, ordinals.Side, "Side"),
+                SelectedSourceUuid = GetRequiredString(reader, ordinals.SelectedSourceUuid, "SelectedSourceUuid"),
+                Name = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Name),
+                ManaCostRaw = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.ManaCostRaw),
+                ManaValue = DbDataReaderValueReader.GetFieldValue<double?>(reader, ordinals.ManaValue),
+                Colors = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Colors),
+                Keywords = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Keywords),
+                RulesText = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.RulesText),
+                SuperTypes = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SuperTypes),
+                Types = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Types),
+                SubTypes = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SubTypes),
+                Type = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type)
+            };
+        }
+
+        // Read Printing Cards from the database
+        public async Task<IReadOnlyList<PrintingCardDbRow>> ReadPrintingCardRowsAsync(SQLiteConnection conn)
+        {
+            const string sql = """
+                       SELECT
+                           uuid             AS Uuid,
+                           scryfallOracleId AS ScryfallOracleId,
+                           side             AS Side,
+                           setCode          AS SetCode,
+                           language         AS Language,
+                           finishes         AS Finishes,
+                           availability     AS Availability,
+                           rarity           AS Rarity,
+                           isPromo          AS IsPromo,
+                           gameplayCard     AS GameplayCard,
+                           otherFaceIds     AS OtherFaceIds
+                       FROM printingCards;
+                       """;
+
+            using var command = new SQLiteCommand(sql, conn);
+            using var reader = await command.ExecuteReaderAsync();
+            var ordinals = PrintingCardOrdinals.FromReader(reader);
+            var rows = new List<PrintingCardDbRow>(capacity: 130_000);
+
+            while (await reader.ReadAsync())
+            {
+                rows.Add(PrintingCardDbRowFromReader(reader, ordinals));
+            }
+
+            return rows;
+        }
+        private readonly record struct PrintingCardOrdinals(
+            int Uuid,
+            int ScryfallOracleId,
+            int Side,
+            int SetCode,
+            int Language,
+            int Finishes,
+            int Availability,
+            int Rarity,
+            int IsPromo,
+            int GameplayCard,
+            int OtherFaceIds)
+        {
+            public static PrintingCardOrdinals FromReader(
+                DbDataReader reader)
+            {
+                return new PrintingCardOrdinals(
+                    reader.GetOrdinal("Uuid"),
+                    reader.GetOrdinal("ScryfallOracleId"),
+                    reader.GetOrdinal("Side"),
+                    reader.GetOrdinal("SetCode"),
+                    reader.GetOrdinal("Language"),
+                    reader.GetOrdinal("Finishes"),
+                    reader.GetOrdinal("Availability"),
+                    reader.GetOrdinal("Rarity"),
+                    reader.GetOrdinal("IsPromo"),
+                    reader.GetOrdinal("GameplayCard"),
+                    reader.GetOrdinal("OtherFaceIds"));
+            }
+        }
+        private static PrintingCardDbRow PrintingCardDbRowFromReader(DbDataReader reader, PrintingCardOrdinals ordinals)
         {
             return new PrintingCardDbRow
             {
-                ScryfallOracleId = DbDataReaderValueReader.GetFieldValue<string>(r, o.ScryfallOracleId),
-                Name = DbDataReaderValueReader.GetFieldValue<string>(r, o.Name),
-                ManaCostRaw = DbDataReaderValueReader.GetFieldValue<string>(r, o.ManaCost),
-                Colors = DbDataReaderValueReader.GetFieldValue<string>(r, o.Colors),
-                Type = DbDataReaderValueReader.GetFieldValue<string>(r, o.Type),
-                Types = DbDataReaderValueReader.GetFieldValue<string>(r, o.Types),
-                SuperTypes = DbDataReaderValueReader.GetFieldValue<string>(r, o.SuperTypes),
-                SubTypes = DbDataReaderValueReader.GetFieldValue<string>(r, o.SubTypes),
-                Keywords = DbDataReaderValueReader.GetFieldValue<string>(r, o.Keywords),
-                RulesText = DbDataReaderValueReader.GetFieldValue<string>(r, o.RulesText),
-                Side = DbDataReaderValueReader.GetFieldValue<string>(r, o.Side),
-                IsPromo = DbDataReaderValueReader.GetBooleanValue(r, o.IsPromo),
-                OtherFaceIds = DbDataReaderValueReader.GetFieldValue<string>(r, o.OtherFaceIds),
-                Availability = DbDataReaderValueReader.GetFieldValue<string>(r, o.Availability),
-                GamePlayCard = DbDataReaderValueReader.GetFieldValue<int>(r, o.GameplayCard),
-                ManaValue = DbDataReaderValueReader.GetFieldValue<double?>(r, o.ManaValue),
-                Uuid = DbDataReaderValueReader.GetFieldValue<string>(r, o.Uuid),
-                Language = DbDataReaderValueReader.GetFieldValue<string>(r, o.Language),
-                SetCode = DbDataReaderValueReader.GetFieldValue<string>(r, o.SetCode),
-                Rarity = DbDataReaderValueReader.GetFieldValue<string>(r, o.Rarity),
-                Finishes = DbDataReaderValueReader.GetFieldValue<string>(r, o.Finishes)
+                Uuid = GetRequiredString(reader, ordinals.Uuid, "Uuid"),
+                ScryfallOracleId = GetRequiredString(reader, ordinals.ScryfallOracleId, "ScryfallOracleId"),
+                Side = GetRequiredString(reader, ordinals.Side, "Side"),
+                SetCode = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SetCode),
+                Language = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Language),
+                Finishes = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Finishes),
+                Availability = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Availability),
+                Rarity = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Rarity),
+                IsPromo = DbDataReaderValueReader.GetBooleanValue(reader, ordinals.IsPromo),
+                GamePlayCard = DbDataReaderValueReader.GetFieldValue<int>(reader, ordinals.GameplayCard),
+                OtherFaceIds = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.OtherFaceIds)
             };
         }
+
+        // Read My Collection from the database
         public async Task<List<CollectionCardDbRow>> ReadMyCollectionAsync(SQLiteConnection conn)
         {
             const string sql = """
@@ -215,6 +236,8 @@ namespace CollectaMundo.Infrastructure.CardLists
                 CardsForTrade = GetRequiredFieldValue<int>(reader, ordinals.CardsForTrade, "cardsForTrade")
             };
         }
+
+        // Helper methods to read required values from the database reader
         private static T GetRequiredFieldValue<T>(DbDataReader reader, int ordinal, string columnName)
         {
             if (reader.IsDBNull(ordinal))
@@ -227,6 +250,10 @@ namespace CollectaMundo.Infrastructure.CardLists
             return value is null
                 ? throw new InvalidOperationException($"Column '{columnName}' must not be null.")
                 : value;
+        }
+        private static string GetRequiredString(DbDataReader reader, int ordinal, string columnName)
+        {
+            return DbDataReaderValueReader.GetFieldValue<string>(reader, ordinal) ?? throw new InvalidDataException($"Required database column '{columnName}' was null.");
         }
     }
 }

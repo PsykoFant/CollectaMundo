@@ -5,7 +5,8 @@ namespace CollectaMundo.Infrastructure.CardLists
 {
     public interface ICardListRepo
     {
-        Task<IReadOnlyList<PrintingCardDbRow>> ReadAllCardPrintingDbRowsAsync(SQLiteConnection conn);
+        Task<IReadOnlyList<CanonicalOracleFaceDbRow>> ReadCanonicalOracleFacesAsync(SQLiteConnection conn);
+        Task<IReadOnlyList<PrintingCardDbRow>> ReadPrintingCardRowsAsync(SQLiteConnection conn);
         Task<List<CollectionCardDbRow>> ReadMyCollectionAsync(SQLiteConnection conn);
     }
 

@@ -2,7 +2,7 @@
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.CardLists.Models;
 
-namespace CollectaMundo.DomainLogic.Shared.Factories
+namespace CollectaMundo.ApplicationServices.CardLists.Factories
 {
     public static class CollectionCardFactory
     {
