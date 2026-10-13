@@ -27,7 +27,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
                 Types = CommaSeparatedValues.NormalizeAndDeduplicate(row.Types),
                 SubTypes = CommaSeparatedValues.NormalizeAndDeduplicate(row.SubTypes),
                 Type = CommaSeparatedValues.NormalizeAndDeduplicate(row.Type),
-                Text = row.RulesText,
+                Text = string.IsNullOrWhiteSpace(row.RulesText) ? string.Empty : row.RulesText.Trim(),
                 LegalityMasks = legalityMasks
             };
         }

@@ -1,11 +1,8 @@
 ﻿namespace CollectaMundo.Infrastructure.CardLegalities.Models
 {
-    namespace CollectaMundo.Infrastructure.CardLegalities.Models
+    public sealed class CardLegalityDbRow
     {
-        public sealed class CardLegalityDbRow
-        {
-            public required string Uuid { get; init; }
-            public required Dictionary<string, string?> Legalities { get; init; }
-        }
+        public string Uuid { get; init; } = string.Empty;
+        public string?[] Statuses { get; init; } = [];
     }
 }

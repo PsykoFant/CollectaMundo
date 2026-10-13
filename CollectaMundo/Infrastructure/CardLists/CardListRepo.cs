@@ -38,7 +38,7 @@ namespace CollectaMundo.Infrastructure.CardLists
             var ordinals = CanonicalOracleFaceOrdinals.FromReader(reader);
             var rows = new List<CanonicalOracleFaceDbRow>(capacity: 45_000);
 
-            while (await reader.ReadAsync())
+            while (reader.Read())
             {
                 rows.Add(CanonicalOracleFaceDbRowFromReader(reader, ordinals));
             }
@@ -125,7 +125,7 @@ namespace CollectaMundo.Infrastructure.CardLists
             var ordinals = PrintingCardOrdinals.FromReader(reader);
             var rows = new List<PrintingCardDbRow>(capacity: 130_000);
 
-            while (await reader.ReadAsync())
+            while (reader.Read())
             {
                 rows.Add(PrintingCardDbRowFromReader(reader, ordinals));
             }

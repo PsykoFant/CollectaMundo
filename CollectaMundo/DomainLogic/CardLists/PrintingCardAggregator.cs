@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.DomainLogic.CardLegalities;
-using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 
 namespace CollectaMundo.DomainLogic.CardLists
@@ -45,17 +44,11 @@ namespace CollectaMundo.DomainLogic.CardLists
                 var oracle = printing.Oracle;
 
                 // Fast path:
-                // Most primary printings have nothing to aggregate.
+                // Nothing needs aggregating, so preserve the already-hydrated
+                // PrintingCard and its shared canonical OracleCard.
                 if (printing.OtherFaceIds.Count == 0)
                 {
-                    results.Add(
-                        CreateAggregatedPrinting(
-                            printing,
-                            oracle.LegalityMasks,
-                            CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Keywords), CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Colors),
-                            CommaSeparatedValues.NormalizeAndDeduplicate(oracle.Types),
-                            NormalizeText(oracle.Text)));
-
+                    results.Add(printing);
                     continue;
                 }
 
@@ -147,12 +140,6 @@ namespace CollectaMundo.DomainLogic.CardLists
                 IsPromo = printing.IsPromo,
                 OtherFaceIds = printing.OtherFaceIds
             };
-        }
-        private static string NormalizeText(string? text)
-        {
-            return string.IsNullOrWhiteSpace(text)
-                ? string.Empty
-                : text.Trim();
         }
         private static void AddCsvValues(string? csv, HashSet<string> target)
         {

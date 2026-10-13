@@ -1,5 +1,7 @@
-﻿using CollectaMundo.DomainLogic.CardLists;
+﻿using CollectaMundo.ApplicationServices.CardLists.Factories;
+using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.Shared.CardModels;
+using CollectaMundo.Infrastructure.CardLists.Models;
 using CollectaMundo.Tests.TestUtils;
 
 namespace CollectaMundo.Tests.UnitTests
@@ -60,17 +62,40 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public void Deduplication_Is_CaseInsensitive()
+        public void SingleFaceCard_WithNoOtherFaces_ReusesExistingPrinting()
         {
-            var input = new List<PrintingCard>
-                {
-                    TestCardFactory.CreatePrinting(name: "Test Card", uuid: "card1", side: "a", keywords: "Flying, flying, FLYING", colors: "W, w, W", types: "Creature, creature")
-                };
+            var printing = TestCardFactory.CreatePrinting(
+                name: "Test Card",
+                uuid: "card1",
+                side: "a",
+                keywords: "Flying",
+                colors: "W",
+                types: "Creature");
 
-            var result = PrintingCardAggregator.AggregatePrintingCards(input);
-            Assert.Single(result);
+            var result = PrintingCardAggregator.AggregatePrintingCards([printing]);
 
-            var card = result[0];
+            var aggregated = Assert.Single(result);
+
+            Assert.Same(printing, aggregated);
+            Assert.Same(printing.Oracle, aggregated.Oracle);
+        }
+
+        [Fact]
+        public void FromRow_Normalizes_CaseInsensitive_Duplicates()
+        {
+            var row = new CanonicalOracleFaceDbRow
+            {
+                ScryfallOracleId = "oracle-test",
+                Side = "",
+                SelectedSourceUuid = "uuid-test",
+                Name = "Test Card",
+                Keywords = "Flying, flying, FLYING",
+                Colors = "W, w, W",
+                Types = "Creature, creature"
+            };
+
+            var card = OracleCardFactory.FromRow(row);
+
             Assert.Equal("Flying", card.Keywords);
             Assert.Equal("W", card.Colors);
             Assert.Equal("Creature", card.Types);

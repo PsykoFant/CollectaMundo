@@ -1,16 +1,14 @@
-﻿using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
-using CollectaMundo.DomainLogic.CardLegalities;
+﻿using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.Infrastructure.CardLegalities;
-using CollectaMundo.Infrastructure.CardLegalities.Models.CollectaMundo.Infrastructure.CardLegalities.Models;
+using CollectaMundo.Infrastructure.CardLegalities.Models;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Globalization;
 
 namespace CollectaMundo.ApplicationServices.CardLegalities
 {
-    public sealed class CardLegalityProviderService(IUnitOfWorkRunner uowRunner, ICardLegalityRepo cardLegalityRepo) : ICardLegalityProviderService
+    public sealed class CardLegalityProviderService(ICardLegalityRepo cardLegalityRepo) : ICardLegalityProviderService
     {
-        private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ICardLegalityRepo _cardLegalityRepo = cardLegalityRepo;
 
         private List<CardLegalityFormat> _formats = [];
@@ -30,63 +28,73 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
         {
             var readSw = Stopwatch.StartNew();
 
-            var rows = await _cardLegalityRepo.GetAllAsync(conn, tx);
+            var data = await _cardLegalityRepo.GetAllAsync(conn, tx);
 
             readSw.Stop();
+
             Debug.WriteLine($"[Legalities] Read/materialize rows: {readSw.ElapsedMilliseconds} ms");
 
             var buildSw = Stopwatch.StartNew();
 
-            LoadFromRows(rows);
+            LoadFromData(data);
 
             buildSw.Stop();
-            Debug.WriteLine($"[Legalities] BuildFilters masks: {buildSw.ElapsedMilliseconds} ms");
-        }
-        private void LoadFromRows(IReadOnlyList<CardLegalityDbRow> rows)
-        {
-            var formatNames = rows
-                .SelectMany(row => row.Legalities.Keys)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-                .ToList();
 
-            _formats = CreateFormats(formatNames);
+            Debug.WriteLine($"[Legalities] Build masks: {buildSw.ElapsedMilliseconds} ms");
+        }
+        private void LoadFromData(CardLegalityReadResult data)
+        {
+            var sortedFormatNames = data.FormatNames.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray();
+
+            _formats = CreateFormats(sortedFormatNames);
 
             var formatByValue = _formats.ToDictionary(x => x.Value, StringComparer.OrdinalIgnoreCase);
 
-            var masksByUuid = new Dictionary<string, CardLegalityMasks>(StringComparer.OrdinalIgnoreCase);
+            // Translate source-column position to its final bitmask ONCE.
+            var masksByColumn = new ulong[data.FormatNames.Length];
 
-            foreach (var row in rows)
+            for (var i = 0; i < data.FormatNames.Length; i++)
+            {
+                var formatName = data.FormatNames[i];
+
+                if (!formatByValue.TryGetValue(formatName, out var format))
+                {
+                    throw new InvalidOperationException($"No legality format metadata found for '{formatName}'.");
+                }
+
+                masksByColumn[i] = format.Mask;
+            }
+
+            var masksByUuid = new Dictionary<string, CardLegalityMasks>(data.Rows.Count, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var row in data.Rows)
             {
                 ulong playableMask = 0;
                 ulong restrictedMask = 0;
 
-                foreach (var (format, status) in row.Legalities)
+                for (var i = 0; i < row.Statuses.Length; i++)
                 {
+                    var status = row.Statuses[i];
+
                     if (string.IsNullOrWhiteSpace(status))
                     {
                         continue;
                     }
 
-                    if (!formatByValue.TryGetValue(format, out var formatInfo))
-                    {
-                        continue;
-                    }
+                    var formatMask = masksByColumn[i];
 
                     if (IsPlayableStatus(status))
                     {
-                        playableMask |= formatInfo.Mask;
+                        playableMask |= formatMask;
                     }
 
                     if (IsRestrictedStatus(status))
                     {
-                        restrictedMask |= formatInfo.Mask;
+                        restrictedMask |= formatMask;
                     }
                 }
 
-                masksByUuid[row.Uuid] = new CardLegalityMasks(
-                    PlayableFormatsMask: playableMask,
-                    RestrictedFormatsMask: restrictedMask);
+                masksByUuid[row.Uuid] = new CardLegalityMasks(PlayableFormatsMask: playableMask, RestrictedFormatsMask: restrictedMask);
             }
 
             _masksByUuid = masksByUuid;
