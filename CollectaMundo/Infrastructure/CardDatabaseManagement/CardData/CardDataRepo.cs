@@ -18,6 +18,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                          c.uuid              AS Uuid,
                          ci.scryfallOracleId AS ScryfallOracleId,
                          c.side              AS Side,
+                         1                   AS GamePlayCard,
                          c.name              AS Name,
                          c.manaCost          AS ManaCost,
                          c.manaValue         AS ManaValue,
@@ -38,6 +39,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                          t.uuid              AS Uuid,
                          ti.scryfallOracleId AS ScryfallOracleId,
                          t.side              AS Side,
+                         0                   AS GamePlayCard,
                          t.name              AS Name,
                          t.manaCost          AS ManaCost,
                          NULL                AS ManaValue,
@@ -91,39 +93,33 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 SourceUuid: uuid,
                 ScryfallOracleId: oracleId,
                 Side: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Side),
-                Payload: new OracleFacePayload(
-                    Name: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Name),
-                    ManaCostRaw: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.ManaCost),
-                    ManaValue: DbDataReaderValueReader.GetFieldValue<double?>(reader, ordinals.ManaValue),
-                    Colors: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Colors),
-                    Keywords: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Keywords),
-                    RulesText: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.RulesText),
-                    SuperTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SuperTypes),
-                    Types: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Types),
-                    SubTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SubTypes),
-                    Type: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type)));
+                GamePlayCard: reader.GetInt32(ordinals.GamePlayCard),
+                Payload: new OracleFacePayload(Name: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Name),
+                ManaCostRaw: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.ManaCost),
+                ManaValue: DbDataReaderValueReader.GetFieldValue<double?>(reader, ordinals.ManaValue),
+                Colors: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Colors),
+                Keywords: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Keywords),
+                RulesText: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.RulesText),
+                SuperTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SuperTypes),
+                Types: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Types),
+                SubTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SubTypes),
+                Type: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type)));
         }
-        private readonly record struct OracleFaceCandidateOrdinals(int Uuid, int ScryfallOracleId, int Side, int Name, int ManaCost, int ManaValue, int Colors, int Keywords, int RulesText, int SuperTypes, int Types, int SubTypes, int Type)
-        {
-            public static OracleFaceCandidateOrdinals FromReader(
-                DbDataReader reader)
-            {
-                return new OracleFaceCandidateOrdinals(
-                    reader.GetOrdinal("Uuid"),
-                    reader.GetOrdinal("ScryfallOracleId"),
-                    reader.GetOrdinal("Side"),
-                    reader.GetOrdinal("Name"),
-                    reader.GetOrdinal("ManaCost"),
-                    reader.GetOrdinal("ManaValue"),
-                    reader.GetOrdinal("Colors"),
-                    reader.GetOrdinal("Keywords"),
-                    reader.GetOrdinal("RulesText"),
-                    reader.GetOrdinal("SuperTypes"),
-                    reader.GetOrdinal("Types"),
-                    reader.GetOrdinal("SubTypes"),
-                    reader.GetOrdinal("Type"));
-            }
-        }
+        private readonly record struct OracleFaceCandidateOrdinals(
+            int Uuid,
+            int ScryfallOracleId,
+            int Side,
+            int GamePlayCard,
+            int Name,
+            int ManaCost,
+            int ManaValue,
+            int Colors,
+            int Keywords,
+            int RulesText,
+            int SuperTypes,
+            int Types,
+            int SubTypes,
+            int Type)
         public async Task<int> RebuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<CanonicalOracleFace> faces, IReadOnlyDictionary<string, CardLegalityMasks> legalityMasksByUuid)
         {
             const string deleteSql = "DELETE FROM canonicalOracleFaces;";
@@ -148,6 +144,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     types,
                     subTypes,
                     type,
+                    gameplayCard,
                     playableFormatsMask,
                     restrictedFormatsMask,
                     selectedSourceUuid,
@@ -170,6 +167,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     @types,
                     @subTypes,
                     @type,
+                    @gameplayCard,
                     @playableFormatsMask,
                     @restrictedFormatsMask,
                     @selectedSourceUuid,
@@ -192,6 +190,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
             var rulesText = command.Parameters.Add("@rulesText", DbType.String);
             var superTypes = command.Parameters.Add("@superTypes", DbType.String);
             var types = command.Parameters.Add("@types", DbType.String);
+            var gamePlayCard = command.Parameters.Add("@gameplayCard", DbType.Int32);
             var subTypes = command.Parameters.Add("@subTypes", DbType.String);
             var type = command.Parameters.Add("@type", DbType.String);
             var playableFormatsMask = command.Parameters.Add("@playableFormatsMask", DbType.Int64);
@@ -222,6 +221,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 types.Value = (object?)face.Payload.Types ?? DBNull.Value;
                 subTypes.Value = (object?)face.Payload.SubTypes ?? DBNull.Value;
                 type.Value = (object?)face.Payload.Type ?? DBNull.Value;
+                gamePlayCard.Value = face.GamePlayCard;
                 playableFormatsMask.Value = unchecked((long)legalityMasks.PlayableFormatsMask);
                 restrictedFormatsMask.Value = unchecked((long)legalityMasks.RestrictedFormatsMask);
                 selectedSourceUuid.Value = face.SelectedSourceUuid;

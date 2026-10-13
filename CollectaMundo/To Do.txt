@@ -1,9 +1,6 @@
 TO DO 
 
-- Fix startup
-- Få tests grønne
-- Få styr på helper klasser i infra shared
-- Tilbage til phase 1 optimering...
+review legality stack
 
 Merge og release
 
