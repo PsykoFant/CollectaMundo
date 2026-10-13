@@ -7,10 +7,10 @@ using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
-    public sealed class DeckManagementStore(ICardLocationService cardLocationService, ICardLegalityProviderService cardLegalityProviderService) : IDeckManagementStore
+    public sealed class DeckManagementStore(ICardLocationService cardLocationService, ICardLegalityService cardLegalityProviderService) : IDeckManagementStore
     {
         private readonly ICardLocationService _cardLocationService = cardLocationService;
-        private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
+        private readonly ICardLegalityService _cardLegalityProviderService = cardLegalityProviderService;
         public ObservableCollection<DeckManagementRecord> Decks { get; } = [];
         public ObservableCollection<DeckFormatOption> DeckFormats { get; } = [];
         public async Task LoadAsync()

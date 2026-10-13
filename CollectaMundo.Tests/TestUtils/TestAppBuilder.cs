@@ -17,8 +17,8 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
-using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
+using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CollectionMutations;
 using CollectaMundo.DomainLogic.Decks;
@@ -79,14 +79,13 @@ public static class TestAppBuilder
 
         var priceService = new CardPriceService(new CardPriceRepository());
         var progressSinks = CreateProgressSinks(operationOverlayController);
+        var cardLegalityService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());
 
-        var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor());
+        var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor());
 
         var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
 
-        var cardLegalityProviderService = new CardLegalityProviderService(uowRunner, new CardLegalityRepo());
-
-        var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(cardLegalityProviderService), keyedDataProviderService, cardLegalityProviderService);
+        var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(cardLegalityService), keyedDataProviderService, cardLegalityService);
 
         var collectionMutationsLogic = new CollectionMutationsLogic();
         var collectionMutationsRepo = new CollectionMutationsRepo();
@@ -95,8 +94,8 @@ public static class TestAppBuilder
         var cardLocationLookupStore = new CardLocationLookupStore();
         var cardLocationRepo = new CardLocationRepo();
         var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
-        var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityProviderService);
-        var deckBuilderService = new DeckBuilderService(uowRunner, new DeckCardReader(uowRunner, new DeckBuilderRepo()), cardLegalityProviderService, new DeckBuilderLogic(), new DeckBuilderRepo());
+        var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityService);
+        var deckBuilderService = new DeckBuilderService(uowRunner, new DeckCardReader(uowRunner, new DeckBuilderRepo()), cardLegalityService, new DeckBuilderLogic(), new DeckBuilderRepo());
         var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter());
 
         var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);

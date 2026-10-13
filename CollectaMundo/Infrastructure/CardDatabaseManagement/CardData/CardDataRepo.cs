@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardData.Models;
+using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data;
 using System.Data.Common;
@@ -123,7 +124,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     reader.GetOrdinal("Type"));
             }
         }
-        public async Task<int> RebuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<CanonicalOracleFace> faces)
+        public async Task<int> RebuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<CanonicalOracleFace> faces, IReadOnlyDictionary<string, CardLegalityMasks> legalityMasksByUuid)
         {
             const string deleteSql = "DELETE FROM canonicalOracleFaces;";
 
@@ -147,6 +148,8 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     types,
                     subTypes,
                     type,
+                    playableFormatsMask,
+                    restrictedFormatsMask,
                     selectedSourceUuid,
                     sourceRowCount,
                     winningRowCount,
@@ -167,6 +170,8 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     @types,
                     @subTypes,
                     @type,
+                    @playableFormatsMask,
+                    @restrictedFormatsMask,
                     @selectedSourceUuid,
                     @sourceRowCount,
                     @winningRowCount,
@@ -189,6 +194,8 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
             var types = command.Parameters.Add("@types", DbType.String);
             var subTypes = command.Parameters.Add("@subTypes", DbType.String);
             var type = command.Parameters.Add("@type", DbType.String);
+            var playableFormatsMask = command.Parameters.Add("@playableFormatsMask", DbType.Int64);
+            var restrictedFormatsMask = command.Parameters.Add("@restrictedFormatsMask", DbType.Int64);
             var selectedSourceUuid = command.Parameters.Add("@selectedSourceUuid", DbType.String);
             var sourceRowCount = command.Parameters.Add("@sourceRowCount", DbType.Int32);
             var winningRowCount = command.Parameters.Add("@winningRowCount", DbType.Int32);
@@ -201,17 +208,22 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
 
             foreach (var face in faces)
             {
+                var legalityMasks = legalityMasksByUuid.TryGetValue(face.SelectedSourceUuid, out var masks) ? masks : new CardLegalityMasks(PlayableFormatsMask: 0, RestrictedFormatsMask: 0);
+
                 oracleId.Value = face.Key.ScryfallOracleId;
                 side.Value = face.Key.Side;
                 name.Value = (object?)face.Payload.Name ?? DBNull.Value;
                 manaCostRaw.Value = (object?)face.Payload.ManaCostRaw ?? DBNull.Value;
                 manaValue.Value = face.Payload.ManaValue is double value ? value : DBNull.Value;
                 colors.Value = (object?)face.Payload.Colors ?? DBNull.Value;
-                keywords.Value = (object?)face.Payload.Keywords ?? DBNull.Value; rulesText.Value = (object?)face.Payload.RulesText ?? DBNull.Value;
+                keywords.Value = (object?)face.Payload.Keywords ?? DBNull.Value;
+                rulesText.Value = (object?)face.Payload.RulesText ?? DBNull.Value;
                 superTypes.Value = (object?)face.Payload.SuperTypes ?? DBNull.Value;
                 types.Value = (object?)face.Payload.Types ?? DBNull.Value;
                 subTypes.Value = (object?)face.Payload.SubTypes ?? DBNull.Value;
                 type.Value = (object?)face.Payload.Type ?? DBNull.Value;
+                playableFormatsMask.Value = unchecked((long)legalityMasks.PlayableFormatsMask);
+                restrictedFormatsMask.Value = unchecked((long)legalityMasks.RestrictedFormatsMask);
                 selectedSourceUuid.Value = face.SelectedSourceUuid;
                 sourceRowCount.Value = face.SourceRowCount;
                 winningRowCount.Value = face.WinningRowCount;
@@ -223,7 +235,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
 
             return inserted;
         }
-
 
         // Printing cards
         public async Task<int> RebuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx)

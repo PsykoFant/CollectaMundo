@@ -18,11 +18,12 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
-using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
+using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.DomainLogic.CardLocations;
 using CollectaMundo.DomainLogic.CollectionMutations;
 using CollectaMundo.DomainLogic.Decks;
+using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.ModifyCollection;
@@ -75,7 +76,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var priceService = new CardPriceService(new CardPriceRepository());
 
                 var progressSinks = CreateProgressSinks(operationOverlayController);
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor());
+                var cardLegalityService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor());
                 var integrityService = new DatabaseIntegrityService(uowRunner, settings);
 
                 // Status overlay
@@ -112,7 +114,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardImageDownloader = new CardImageDownloader(settings);
                 var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
 
-                var cardLegalityProviderService = new CardLegalityProviderService(new CardLegalityRepo());
+                var cardLegalityProviderService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());
 
                 var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
                 var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(cardLegalityProviderService), keyedDataProviderService, cardLegalityProviderService);

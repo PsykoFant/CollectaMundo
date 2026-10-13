@@ -30,27 +30,32 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     ");",
 
                 ["canonicalOracleFaces"] =
-                    "CREATE TABLE IF NOT EXISTS canonicalOracleFaces (" +
-                    "id INTEGER PRIMARY KEY, " +
-                    "scryfallOracleId TEXT NOT NULL, " +
-                    "side TEXT NOT NULL, " +
-                    "name TEXT NULL, " +
-                    "manaCostRaw TEXT NULL, " +
-                    "manaValue REAL NULL, " +
-                    "colors TEXT NULL, " +
-                    "keywords TEXT NULL, " +
-                    "rulesText TEXT NULL, " +
-                    "superTypes TEXT NULL, " +
-                    "types TEXT NULL, " +
-                    "subTypes TEXT NULL, " +
-                    "type TEXT NULL, " +
-                    "selectedSourceUuid TEXT NOT NULL, " +
-                    "sourceRowCount INTEGER NOT NULL CHECK (sourceRowCount > 0), " +
-                    "winningRowCount INTEGER NOT NULL CHECK (winningRowCount > 0), " +
-                    "variantCount INTEGER NOT NULL CHECK (variantCount > 0), " +
-                    "isAmbiguous INTEGER NOT NULL CHECK (isAmbiguous IN (0, 1)), " +
-                    "UNIQUE (scryfallOracleId, side)" +
-                    ");",
+                    """
+                    CREATE TABLE IF NOT EXISTS canonicalOracleFaces (
+                        id INTEGER PRIMARY KEY,
+                        scryfallOracleId TEXT NOT NULL,
+                        side TEXT NOT NULL,
+                        name TEXT NULL,
+                        manaCostRaw TEXT NULL,
+                        manaValue REAL NULL,
+                        colors TEXT NULL,
+                        keywords TEXT NULL,
+                        rulesText TEXT NULL,
+                        superTypes TEXT NULL,
+                        types TEXT NULL,
+                        subTypes TEXT NULL,
+                        type TEXT NULL,
+                        playableFormatsMask INTEGER NOT NULL,
+                        restrictedFormatsMask INTEGER NOT NULL,
+                        selectedSourceUuid TEXT NOT NULL,
+                        sourceRowCount INTEGER NOT NULL CHECK (sourceRowCount > 0),
+                        winningRowCount INTEGER NOT NULL CHECK (winningRowCount > 0),
+                        variantCount INTEGER NOT NULL CHECK (variantCount > 0),
+                        isAmbiguous INTEGER NOT NULL CHECK (isAmbiguous IN (0, 1)),
+
+                        UNIQUE (scryfallOracleId, side)
+                    );
+                    """,
 
                 ["printingCards"] =
                     "CREATE TABLE IF NOT EXISTS printingCards (" +
@@ -66,6 +71,15 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     "gameplayCard INTEGER NOT NULL CHECK (gameplayCard IN (0, 1)), " +
                     "otherFaceIds TEXT NULL" +
                     ");",
+
+                ["cardLegalityFormats"] =
+                    """
+                    CREATE TABLE IF NOT EXISTS cardLegalityFormats (
+                        bitIndex INTEGER NOT NULL PRIMARY KEY
+                            CHECK (bitIndex >= 0 AND bitIndex < 64),
+                        value TEXT NOT NULL UNIQUE
+                    );
+                    """,
 
                 ["myCollection"] =
                     "CREATE TABLE IF NOT EXISTS myCollection (" +

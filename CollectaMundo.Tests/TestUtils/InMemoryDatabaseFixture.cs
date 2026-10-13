@@ -1,6 +1,9 @@
-﻿using CollectaMundo.DomainLogic.CardData;
+﻿using CollectaMundo.ApplicationServices.CardLegalities;
+using CollectaMundo.DomainLogic.CardData;
+using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.Infrastructure.CardDatabaseManagement.CardData;
 using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
+using CollectaMundo.Infrastructure.CardLegalities;
 using CsvHelper;
 using CsvHelper.Configuration;
 using System.Data.SQLite;
@@ -66,17 +69,28 @@ namespace CollectaMundo.Tests.TestUtils
 
             var cardDataRepo = new CardDataRepo();
 
-            using var transaction = _masterConnection.BeginTransaction();
+            var cardLegalityRepo = new CardLegalityRepo();
+            var cardLegalityLogic = new CardLegalityLogic();
+
+            var cardLegalityService =
+                new CardLegalityService(
+                    cardLegalityLogic,
+                    cardLegalityRepo);
+
+            using var transaction =
+                _masterConnection.BeginTransaction();
 
             try
             {
+                // Build canonical Oracle faces from seeded raw source data.
                 var candidates =
                     await cardDataRepo.GetOracleFaceCandidatesAsync(
                         _masterConnection,
                         transaction);
 
                 var canonicalFaces =
-                    OracleFaceCanonicalizer.Canonicalize(candidates);
+                    OracleFaceCanonicalizer.Canonicalize(
+                        candidates);
 
                 if (canonicalFaces.Count == 0)
                 {
@@ -84,11 +98,19 @@ namespace CollectaMundo.Tests.TestUtils
                         "Scenario database produced no canonical Oracle faces.");
                 }
 
+                // Build and persist derived legality data from seeded cardLegalities.
+                var legalityMasksByUuid =
+                    await cardLegalityService.PrepareDerivedDataAsync(
+                        _masterConnection,
+                        transaction);
+
+                // Persist canonical Oracle faces with their prepared legality masks.
                 var canonicalInserted =
                     await cardDataRepo.RebuildCanonicalOracleFacesAsync(
                         _masterConnection,
                         transaction,
-                        canonicalFaces);
+                        canonicalFaces,
+                        legalityMasksByUuid);
 
                 if (canonicalInserted != canonicalFaces.Count)
                 {
@@ -97,6 +119,7 @@ namespace CollectaMundo.Tests.TestUtils
                         $"but {canonicalFaces.Count:N0} were expected.");
                 }
 
+                // Build the physical-printing projection.
                 var printingInserted =
                     await cardDataRepo.RebuildPrintingCardsAsync(
                         _masterConnection,

@@ -1,10 +1,12 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardLegalities;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.DomainLogic.CardData.Models;
+using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardDatabaseManagement.CardData;
 using CollectaMundo.Infrastructure.RemoteLookups;
@@ -23,7 +25,7 @@ namespace CollectaMundo.Tests.TestUtils
         public Mock<IGenerateMissingPngService> PngService { get; }
         public Mock<IRemoteLookups> RemoteLookups { get; }
         public Mock<IAppSettings> Settings { get; }
-
+        public Mock<ICardLegalityService> CardLegalityService { get; } = new(MockBehavior.Strict);
 
         public List<int> PercentSamples { get; }
         public List<bool> VisibleToggles { get; }
@@ -119,6 +121,7 @@ namespace CollectaMundo.Tests.TestUtils
                 sinks,
                 SchemaRepo.Object,
                 CardDataRepo.Object,
+                CardLegalityService.Object,
                 PriceService.Object,
                 PngService.Object,
                 RemoteLookups.Object,
@@ -188,17 +191,21 @@ namespace CollectaMundo.Tests.TestUtils
                 It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var candidate = new OracleFaceCandidate(SourceUuid: "test-uuid", ScryfallOracleId: "test-oracle-id", Side: null, Payload: new OracleFacePayload(
-                Name: "Test Card",
-                ManaCostRaw: null,
-                ManaValue: null,
-                Colors: null,
-                Keywords: null,
-                RulesText: null,
-                SuperTypes: null,
-                Types: "Creature",
-                SubTypes: null,
-                Type: "Creature"));
+            var candidate = new OracleFaceCandidate(
+                SourceUuid: "test-uuid",
+                ScryfallOracleId: "test-oracle-id",
+                Side: null,
+                Payload: new OracleFacePayload(
+                    Name: "Test Card",
+                    ManaCostRaw: null,
+                    ManaValue: null,
+                    Colors: null,
+                    Keywords: null,
+                    RulesText: null,
+                    SuperTypes: null,
+                    Types: "Creature",
+                    SubTypes: null,
+                    Type: "Creature"));
 
             CardDataRepo
                 .Setup(r => r.GetOracleFaceCandidatesAsync(
@@ -206,11 +213,27 @@ namespace CollectaMundo.Tests.TestUtils
                     It.IsAny<SQLiteTransaction>()))
                 .ReturnsAsync([candidate]);
 
+            var legalityMasksByUuid =
+                new Dictionary<string, CardLegalityMasks>(
+                    StringComparer.OrdinalIgnoreCase)
+                {
+                    ["test-uuid"] = new CardLegalityMasks(
+                        PlayableFormatsMask: 0,
+                        RestrictedFormatsMask: 0)
+                };
+
+            CardLegalityService
+                .Setup(s => s.PrepareDerivedDataAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()))
+                .ReturnsAsync(legalityMasksByUuid);
+
             CardDataRepo
                 .Setup(r => r.RebuildCanonicalOracleFacesAsync(
                     It.IsAny<SQLiteConnection>(),
                     It.IsAny<SQLiteTransaction>(),
-                    It.IsAny<IReadOnlyList<CanonicalOracleFace>>()))
+                    It.IsAny<IReadOnlyList<CanonicalOracleFace>>(),
+                    It.IsAny<IReadOnlyDictionary<string, CardLegalityMasks>>()))
                 .ReturnsAsync(1);
 
             CardDataRepo

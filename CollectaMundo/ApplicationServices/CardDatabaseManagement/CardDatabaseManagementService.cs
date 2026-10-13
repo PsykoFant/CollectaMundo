@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.CardPrices;
+﻿using CollectaMundo.ApplicationServices.CardLegalities;
+using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
@@ -24,6 +25,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         ProgressSinks progressSinks,
         ICardDatabaseManagementRepo dbMgmtRepo,
         ICardDataRepo cardDataRepo,
+        ICardLegalityService cardLegalityService,
         ICardPriceService priceService,
         IGenerateMissingPngService missingPngService,
         IRemoteLookups remoteLookups,
@@ -36,6 +38,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         private readonly ProgressSinks _progressSinks = progressSinks ?? ProgressSinks.NoOp;
         private readonly ICardDatabaseManagementRepo _dbMgmtRepo = dbMgmtRepo;
         private readonly ICardDataRepo _cardDataRepo = cardDataRepo;
+        private readonly ICardLegalityService _cardLegalityService = cardLegalityService;
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
         private readonly IRemoteLookups _remoteLookups = remoteLookups;
@@ -559,12 +562,9 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
             catch (Exception ex)
             {
-                _progressSinks.Detail.Report(
-                    $"Database update failed: {ex.Message}");
+                _progressSinks.Detail.Report($"Database update failed: {ex.Message}");
 
-                return new OperationResult(
-                    OperationResultCode.Error,
-                    $"Database update failed: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, $"Database update failed: {ex.Message}");
             }
         }
 
@@ -658,18 +658,33 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         // CANONICAL ORACLE FACE BUILD
         private async Task BuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
+            // ---------------------------------------------------------
+            // 1. Build canonical Oracle faces from raw card/token data
+            // ---------------------------------------------------------
+
             var candidates = await _cardDataRepo.GetOracleFaceCandidatesAsync(conn, tx);
             var canonicalFaces = OracleFaceCanonicalizer.Canonicalize(candidates);
+
             if (canonicalFaces.Count == 0)
             {
                 throw new InvalidOperationException("Canonical Oracle face generation produced no rows.");
             }
 
-            var inserted = await _cardDataRepo.RebuildCanonicalOracleFacesAsync(conn, tx, canonicalFaces);
+            // ---------------------------------------------------------
+            // 2. Prepare and persist derived legality data
+            // ---------------------------------------------------------
+
+            var legalityMasksByUuid = await _cardLegalityService.PrepareDerivedDataAsync(conn, tx);
+
+            // ---------------------------------------------------------
+            // 3. Persist canonical Oracle faces with legality masks
+            // ---------------------------------------------------------
+
+            var inserted = await _cardDataRepo.RebuildCanonicalOracleFacesAsync(conn, tx, canonicalFaces, legalityMasksByUuid);
 
             if (inserted != canonicalFaces.Count)
             {
-                throw new InvalidOperationException($"Canonical Oracle face rebuild inserted {inserted:N0} " + $"rows, but {canonicalFaces.Count:N0} were expected.");
+                throw new InvalidOperationException($"Canonical Oracle face rebuild inserted {inserted:N0} rows, but {canonicalFaces.Count:N0} were expected.");
             }
 
             var conflicts = canonicalFaces.Count(face => face.HasConflict);

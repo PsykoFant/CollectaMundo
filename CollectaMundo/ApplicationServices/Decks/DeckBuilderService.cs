@@ -14,11 +14,11 @@ using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
-    public sealed class DeckBuilderService(IUnitOfWorkRunner uowRunner, IDeckCardReader deckCardReader, ICardLegalityProviderService cardLegalityProviderService, IDeckBuilderLogic deckBuilderLogic, IDeckBuilderRepo deckBuilderRepo) : IDeckBuilderService
+    public sealed class DeckBuilderService(IUnitOfWorkRunner uowRunner, IDeckCardReader deckCardReader, ICardLegalityService cardLegalityProviderService, IDeckBuilderLogic deckBuilderLogic, IDeckBuilderRepo deckBuilderRepo) : IDeckBuilderService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly IDeckCardReader _deckCardReader = deckCardReader;
-        private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
+        private readonly ICardLegalityService _cardLegalityProviderService = cardLegalityProviderService;
         private readonly IDeckBuilderLogic _deckBuilderLogic = deckBuilderLogic;
         private readonly IDeckBuilderRepo _deckBuilderRepo = deckBuilderRepo;
         public Task<IReadOnlyList<DeckCardEntry>> LoadDeckAsync(int locationId)

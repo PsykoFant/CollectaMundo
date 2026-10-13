@@ -1,18 +1,17 @@
 ﻿using CollectaMundo.ApplicationServices.CardLegalities;
 using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using System.Collections.Concurrent;
 
-namespace CollectaMundo.Data.Filtering
+namespace CollectaMundo.DomainLogic.Filtering
 {
-    public partial class FilterDefaultsLogic(ICardLegalityProviderService cardLegalityProviderService) : IFilterDefaultsLogic
+    public partial class FilterDefaultsLogic(ICardLegalityService cardLegalityProviderService) : IFilterDefaultsLogic
     {
-        private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
+        private readonly ICardLegalityService _cardLegalityProviderService = cardLegalityProviderService;
         public List<FilterDefaults> BuildFilters(IReadOnlyList<PrintingCard> allCards, IReadOnlyList<CollectionCard> myCollection)
         {
             var filterDefaultsDict = new ConcurrentDictionary<string, FilterDefaults>();

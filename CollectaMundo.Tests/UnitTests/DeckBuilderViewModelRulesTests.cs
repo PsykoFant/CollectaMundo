@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.Shared;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
+using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.DomainLogic.Decks;
 using CollectaMundo.DomainLogic.Decks.Models;
 using CollectaMundo.DomainLogic.Shared.CardModels;
@@ -357,7 +358,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var deckBuilderLogic = new DeckBuilderLogic();
 
-            var cardLegalityProviderService = new CardLegalityProviderService(unitOfWorkRunnerMock.Object, new CardLegalityRepo());
+            var cardLegalityProviderService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());
             var deckCardReader = new DeckCardReader(unitOfWorkRunnerMock.Object, repositoryMock.Object);
             var deckBuilderService = new DeckBuilderService(unitOfWorkRunnerMock.Object, deckCardReader, cardLegalityProviderService, deckBuilderLogic, repositoryMock.Object);
             var viewModel = new DeckBuilderViewModel(deckBuilderService, null!, null!, null!)

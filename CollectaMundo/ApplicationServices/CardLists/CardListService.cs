@@ -18,13 +18,13 @@ using System.Diagnostics;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IUnitOfWorkRunner uowRunner, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService, ICardLegalityProviderService cardLegalityProviderService) : ICardListService
+    public sealed class CardListService(IUnitOfWorkRunner uowRunner, ICardListRepo cardListRepo, IFilterDefaultsLogic filterDefaultsLogic, IKeyedDataProviderService keyedDataProviderService, ICardLegalityService cardLegalityService) : ICardListService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterDefaultsLogic = filterDefaultsLogic;
         private readonly IKeyedDataProviderService _keyedDataProviderService = keyedDataProviderService;
-        private readonly ICardLegalityProviderService _cardLegalityProviderService = cardLegalityProviderService;
+        private readonly ICardLegalityService _cardLegalityService = cardLegalityService;
         public async Task InitializeCardListsAsync(CardListViewModel<PrintingCard> allCardsVM, CardListViewModel<CollectionCard> myCollectionVM, CardListViewModel<OracleCard> oracleCardsVM, Dictionary<string, FilterItemViewModel> filters, FilterPanelViewModel filterVM)
         {
             var phase1Sw = Stopwatch.StartNew();
@@ -39,24 +39,26 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             Debug.WriteLine($"[Phase 1] Keyed data: {keyedSw.ElapsedMilliseconds} ms");
 
+            var legalityFormatsSw = Stopwatch.StartNew();
+
+            await _uowRunner.ExecuteReadOnlyAsync(conn => _cardLegalityService.LoadFormatsAsync(conn));
+
+            legalityFormatsSw.Stop();
+
+            Debug.WriteLine(
+                $"[Phase 1] Legality formats: " +
+                $"{legalityFormatsSw.ElapsedMilliseconds} ms");
+
+
             // Heavy workloads:
-            // run concurrently on separate SQLite connections / worker threads.
-            var legalityTask = Task.Run(async () =>
-            {
-                var sw = Stopwatch.StartNew();
-
-                await _uowRunner.ExecuteReadOnlyAsync(conn => _cardLegalityProviderService.LoadLegalitiesAsync(conn));
-
-                sw.Stop();
-
-                Debug.WriteLine($"[Phase 1] Legalities: {sw.ElapsedMilliseconds} ms");
-            });
+            // run concurrently on separate SQLite connections / worker threads.            
 
             var cardRowsTask = Task.Run(async () =>
             {
                 return await _uowRunner.ExecuteReadOnlyAsync(async conn =>
                 {
                     var canonicalSw = Stopwatch.StartNew();
+
                     var canonicalRows = await _cardListRepo.ReadCanonicalOracleFacesAsync(conn);
 
                     canonicalSw.Stop();
@@ -75,9 +77,8 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 });
             });
 
-            await Task.WhenAll(legalityTask, cardRowsTask);
-
             var (canonicalRows, printingRows) = await cardRowsTask;
+
 
             // Small workload: keep sequential.
             var collectionSw = Stopwatch.StartNew();
@@ -221,22 +222,15 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             #endregion
         }
-        private Dictionary<OracleFaceKey, OracleCard> BuildOracleCardsByFace(IReadOnlyList<CanonicalOracleFaceDbRow> rows)
+        private static Dictionary<OracleFaceKey, OracleCard> BuildOracleCardsByFace(IReadOnlyList<CanonicalOracleFaceDbRow> rows)
         {
             var result = new Dictionary<OracleFaceKey, OracleCard>(rows.Count);
 
             for (var i = 0; i < rows.Count; i++)
             {
                 var row = rows[i];
-
                 var key = new OracleFaceKey(row.ScryfallOracleId, row.Side);
-
-                if (!_cardLegalityProviderService.MasksByUuid.TryGetValue(row.SelectedSourceUuid, out var legalityMasks))
-                {
-                    legalityMasks = default;
-                }
-
-                var oracle = OracleCardFactory.FromRow(row, legalityMasks);
+                var oracle = OracleCardFactory.FromRow(row);
 
                 result.Add(key, oracle);
             }
