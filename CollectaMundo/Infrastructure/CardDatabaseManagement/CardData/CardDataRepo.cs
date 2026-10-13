@@ -120,6 +120,26 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
             int Types,
             int SubTypes,
             int Type)
+        {
+            public static OracleFaceCandidateOrdinals FromReader(DbDataReader reader)
+            {
+                return new OracleFaceCandidateOrdinals(
+                    reader.GetOrdinal("Uuid"),
+                    reader.GetOrdinal("ScryfallOracleId"),
+                    reader.GetOrdinal("Side"),
+                    reader.GetOrdinal("GamePlayCard"),
+                    reader.GetOrdinal("Name"),
+                    reader.GetOrdinal("ManaCost"),
+                    reader.GetOrdinal("ManaValue"),
+                    reader.GetOrdinal("Colors"),
+                    reader.GetOrdinal("Keywords"),
+                    reader.GetOrdinal("RulesText"),
+                    reader.GetOrdinal("SuperTypes"),
+                    reader.GetOrdinal("Types"),
+                    reader.GetOrdinal("SubTypes"),
+                    reader.GetOrdinal("Type"));
+            }
+        }
         public async Task<int> RebuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<CanonicalOracleFace> faces, IReadOnlyDictionary<string, CardLegalityMasks> legalityMasksByUuid)
         {
             const string deleteSql = "DELETE FROM canonicalOracleFaces;";
