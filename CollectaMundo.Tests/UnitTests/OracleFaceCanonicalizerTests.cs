@@ -152,7 +152,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
         private static OracleFaceCandidate CreateCandidate(string uuid, string oracleId, string? side, OracleFacePayload payload)
         {
-            return new OracleFaceCandidate(SourceUuid: uuid, ScryfallOracleId: oracleId, Side: side, Payload: payload);
+            return new OracleFaceCandidate(SourceUuid: uuid, ScryfallOracleId: oracleId, Side: side, GamePlayCard: 1, Payload: payload);
         }
         private static OracleFacePayload CreatePayload(
             string? name = "Test Card",

@@ -195,6 +195,7 @@ namespace CollectaMundo.Tests.TestUtils
                 SourceUuid: "test-uuid",
                 ScryfallOracleId: "test-oracle-id",
                 Side: null,
+                GamePlayCard: 1,
                 Payload: new OracleFacePayload(
                     Name: "Test Card",
                     ManaCostRaw: null,

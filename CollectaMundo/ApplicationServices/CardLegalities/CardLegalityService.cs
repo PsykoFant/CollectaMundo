@@ -23,17 +23,36 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
         public async Task LoadFormatsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
         {
             var rows = await _cardLegalityRepo.GetFormatCatalogAsync(conn, tx);
+
+            if (rows.Count == 0)
+            {
+                throw new InvalidOperationException("Card legality format catalog is empty.");
+            }
+
             var formats = rows.Select(row => _cardLegalityLogic.CreateFormat(row.BitIndex, row.Value)).ToList();
 
-            _formats = formats;
+            var formatByValue = formats.ToDictionary(format => format.Value, StringComparer.OrdinalIgnoreCase);
 
-            _formatByValue = formats.ToDictionary(format => format.Value, StringComparer.OrdinalIgnoreCase);
+            _formats = formats;
+            _formatByValue = formatByValue;
         }
 
         // Called during first time startup
         public async Task<IReadOnlyDictionary<string, CardLegalityMasks>> PrepareDerivedDataAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             var legalityData = await _cardLegalityRepo.GetAllAsync(conn, tx);
+
+            if (legalityData.FormatNames.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    "Card legality source contains no format columns.");
+            }
+
+            if (legalityData.Rows.Count == 0)
+            {
+                throw new InvalidOperationException("Card legality source contains no rows.");
+            }
+
             var formats = _cardLegalityLogic.CreateFormats(legalityData.FormatNames);
             var masksByColumn = _cardLegalityLogic.CreateMasksBySourceColumn(legalityData.FormatNames, formats);
             var masksByUuid = new Dictionary<string, CardLegalityMasks>(legalityData.Rows.Count, StringComparer.OrdinalIgnoreCase);

@@ -45,6 +45,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                         types TEXT NULL,
                         subTypes TEXT NULL,
                         type TEXT NULL,
+                        gameplayCard INTEGER NOT NULL CHECK (gameplayCard IN (0, 1)),
                         playableFormatsMask INTEGER NOT NULL,
                         restrictedFormatsMask INTEGER NOT NULL,
                         selectedSourceUuid TEXT NOT NULL,
