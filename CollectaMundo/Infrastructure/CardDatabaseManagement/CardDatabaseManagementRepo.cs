@@ -169,15 +169,52 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
             progress.Report(
                 "Source table replacement complete.");
         }
-        public async Task DetachTempDbAsync(SQLiteConnection conn, IProgress<string> progress)
+        public async Task RecreateDerivedCardDataTablesAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
-            Debug.WriteLine("[CardDatabaseManagementRepo] Detaching temporary database...");
+            var allTableStatements = DatabaseTableSql.GetAllStatements();
 
-            using var command = new SQLiteCommand("DETACH DATABASE tempDb;", conn);
+            // Resolve and validate every CREATE statement before making any destructive schema changes.
+            var derivedTables = new List<(string Name, string CreateSql)>(DerivedCardDataTableNames.Length);
 
-            await command.ExecuteNonQueryAsync();
+            foreach (var tableName in DerivedCardDataTableNames)
+            {
+                if (!allTableStatements.TryGetValue(tableName, out var createSql))
+                {
+                    throw new InvalidOperationException($"No CREATE TABLE definition exists for derived card-data table '{tableName}'.");
+                }
 
-            progress.Report("Detached temp DB.");
+                derivedTables.Add((Name: tableName, CreateSql: createSql));
+            }
+
+            // ---------------------------------------------------------
+            // 1. Drop all existing derived projections
+            // ---------------------------------------------------------
+
+            foreach (var (Name, CreateSql) in derivedTables)
+            {
+                var quotedTableName = QuoteIdentifier(Name);
+                var dropSql = $"DROP TABLE IF EXISTS {quotedTableName};";
+                using var command = new SQLiteCommand(dropSql, conn, tx);
+
+                await command.ExecuteNonQueryAsync();
+
+                Debug.WriteLine($"[CardDatabaseManagementRepo] Dropped derived table '{Name}'.");
+            }
+
+            // ---------------------------------------------------------
+            // 2. Recreate them from the schema owned by this app version
+            // ---------------------------------------------------------
+
+            foreach (var (Name, CreateSql) in derivedTables)
+            {
+                using var command = new SQLiteCommand(CreateSql, conn, tx);
+
+                await command.ExecuteNonQueryAsync();
+
+                Debug.WriteLine($"[CardDatabaseManagementRepo] Created derived table '{Name}'.");
+            }
+
+            Debug.WriteLine("[CardDatabaseManagementRepo] Recreated derived card-data tables.");
         }
         private static async Task<List<string>> GetSourceTableNamesAsync(SQLiteConnection conn, SQLiteTransaction tx, string databaseName)
         {
@@ -296,5 +333,9 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 yield return row;
             }
         }
+
+
+        // Derived card data tables that are not part of the source tables and need to be recreated after replacing the source tables.
+        private static readonly string[] DerivedCardDataTableNames = ["canonicalOracleFaces", "printingCards", "cardLegalityFormats"];
     }
 }

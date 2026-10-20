@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared.Operation;
+using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.Shared.IO;
 using CollectaMundo.Tests.TestUtils;
 using Moq;
@@ -28,7 +29,17 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(OperationResultCode.Success, result.Code);
 
             // repo/service calls
-            ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Once);
+            ctx.SchemaRepo.Verify(
+                r => r.CreateTablesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()),
+                Times.Once);
+
+            ctx.SchemaRepo.Verify(
+                r => r.RecreateDerivedCardDataTablesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()),
+                Times.Never);
 
             ctx.RemoteFileDownloaderMock.Verify(d => d.DownloadAsync(
                 It.IsAny<string>(),
@@ -459,6 +470,71 @@ namespace CollectaMundo.Tests.UnitTests
                     It.IsAny<SQLiteConnection>(),
                     It.IsAny<SQLiteTransaction>()),
                 Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdateDbPrepOrchetrator_AllStepsSucceed_RecreatesDerivedCardDataTables()
+        {
+            using var ctx = new FirstTimeSetupTestContext();
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            ctx.StubAllStepsAsSuccess();
+
+            var svc = ctx.BuildService();
+
+            var result =
+                await svc.UpdateDbPrepOrchestrator(
+                    0,
+                    CancellationToken.None);
+
+            Assert.Equal(
+                OperationResultCode.Success,
+                result.Code);
+
+            ctx.SchemaRepo.Verify(
+                r => r.ReplaceSourceTablesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>(),
+                    It.IsAny<IProgress<string>>()),
+                Times.Once);
+
+            ctx.SchemaRepo.Verify(
+                r => r.RecreateDerivedCardDataTablesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()),
+                Times.Once);
+
+            ctx.SchemaRepo.Verify(
+                r => r.CreateIndicesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()),
+                Times.Once);
+
+            ctx.SchemaRepo.Verify(
+                r => r.CreateTablesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()),
+                Times.Never);
+
+            var relevantCalls = ctx.SchemaRepo.Invocations
+                .Select(invocation => invocation.Method.Name)
+                    .Where(name =>
+                        name == nameof(ICardDatabaseManagementRepo.ReplaceSourceTablesAsync) ||
+                        name == nameof(ICardDatabaseManagementRepo.RecreateDerivedCardDataTablesAsync) ||
+                        name == nameof(ICardDatabaseManagementRepo.CreateIndicesAsync))
+                    .ToList();
+
+            Assert.Equal(
+                [
+                    nameof(ICardDatabaseManagementRepo.ReplaceSourceTablesAsync),
+                    nameof(ICardDatabaseManagementRepo.RecreateDerivedCardDataTablesAsync),
+                    nameof(ICardDatabaseManagementRepo.CreateIndicesAsync)
+                ],
+                relevantCalls);
         }
 
     }

@@ -520,45 +520,74 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             {
                 // Preserve the existing non-cancellable behavior once the destructive database update phase has started.
                 await Task.Run(async () =>
-                    {
-                        await using var conn = await _dbFactory.OpenConnectionAsync().ConfigureAwait(false);
+                {
+                    await using var conn = await _dbFactory.OpenConnectionAsync().ConfigureAwait(false);
 
-                        // ATTACH is connection-scoped and intentionally outside the replacement transaction.
-                        await _dbMgmtRepo.AttachTempDbAsync(conn, _tempDbPath, _progressSinks.Detail);
+                    // ATTACH is connection-scoped and intentionally outside
+                    // the replacement transaction.
+                    await _dbMgmtRepo.AttachTempDbAsync(conn, _tempDbPath, _progressSinks.Detail);
 
-                        using var tx = conn.BeginTransaction();
+                    using var tx = conn.BeginTransaction();
 
-                        // Replace all MTGJSON-owned tables.
-                        await _dbMgmtRepo.ReplaceSourceTablesAsync(conn, tx, _progressSinks.Detail);
+                    // ---------------------------------------------------------
+                    // 1. Replace all MTGJSON-owned source tables
+                    // ---------------------------------------------------------
 
-                        Debug.WriteLine("[CardDatabasePrep] Replaced source tables.");
+                    await _dbMgmtRepo.ReplaceSourceTablesAsync(conn, tx, _progressSinks.Detail);
 
-                        // Re-establish the CollectaMundo-specific indexes against the newly installed source tables.
-                        await _dbMgmtRepo.CreateIndicesAsync(conn, tx);
+                    Debug.WriteLine("[CardDatabasePrep] Replaced source tables.");
 
-                        Debug.WriteLine("[CardDatabasePrep] Created application indices.");
+                    // ---------------------------------------------------------
+                    // 2. Recreate source-derived CollectaMundo tables
+                    //
+                    // These tables are disposable projections of the MTGJSON source data. Recreating them ensures that every full source update also installs the schema expected by the current application version.
+                    // ---------------------------------------------------------
 
-                        // canonicalOracleFaces is derived from the source tables. Rebuild it before committing so source data and canonical data can never get out of sync.
-                        await BuildCanonicalOracleFacesAsync(conn, tx);
+                    await _dbMgmtRepo.RecreateDerivedCardDataTablesAsync(conn, tx);
 
-                        Debug.WriteLine("[CardDatabasePrep] Rebuilt canonical Oracle faces.");
+                    Debug.WriteLine("[CardDatabasePrep] Recreated derived card-data tables.");
 
-                        // PrintingCards is derived from the source tables. Rebuild it before committing so source data and printing-card data can never get out of sync.                        
-                        await BuildPrintingCardsAsync(conn, tx);
+                    // ---------------------------------------------------------
+                    // 3. Re-establish CollectaMundo-specific indexes
+                    //
+                    // This must happen after derived tables are recreated, because DROP TABLE also removes indexes belonging to those tables.
+                    // ---------------------------------------------------------
 
-                        Debug.WriteLine("[CardDatabasePrep] Rebuilt printing-card projection.");
+                    await _dbMgmtRepo.CreateIndicesAsync(conn, tx);
 
-                        tx.Commit();
+                    Debug.WriteLine("[CardDatabasePrep] Created application indices.");
 
-                        Debug.WriteLine("[CardDatabasePrep] Database core replacement committed.");
+                    // ---------------------------------------------------------
+                    // 4. Rebuild canonical Oracle faces and legality metadata
+                    //
+                    // BuildCanonicalOracleFacesAsync also rebuilds the cardLegalityFormats catalog and persists legality masks on the canonical Oracle-face projection.
+                    // ---------------------------------------------------------
 
-                        // No explicit DETACH is needed.
-                        // Disposing the connection releases the attached temp DB.
-                    },
-                    CancellationToken.None);
+                    await BuildCanonicalOracleFacesAsync(conn, tx);
 
-                return new OperationResult(
-                    OperationResultCode.Success);
+                    Debug.WriteLine("[CardDatabasePrep] Rebuilt canonical Oracle faces.");
+
+                    // ---------------------------------------------------------
+                    // 5. Rebuild printing-card projection
+                    // ---------------------------------------------------------
+
+                    await BuildPrintingCardsAsync(conn, tx);
+
+                    Debug.WriteLine("[CardDatabasePrep] Rebuilt printing-card projection.");
+
+                    // ---------------------------------------------------------
+                    // 6. Commit source + schema + derived projections together
+                    // ---------------------------------------------------------
+
+                    tx.Commit();
+
+                    Debug.WriteLine("[CardDatabasePrep] Database core replacement committed.");
+
+                    // No explicit DETACH is needed. Disposing the connection releases the attached temp DB.
+                },
+                CancellationToken.None);
+
+                return new OperationResult(OperationResultCode.Success);
             }
             catch (Exception ex)
             {

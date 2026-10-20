@@ -150,6 +150,12 @@ namespace CollectaMundo.Tests.TestUtils
                 .Returns(Task.CompletedTask);
 
             SchemaRepo
+                .Setup(r => r.RecreateDerivedCardDataTablesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()))
+                .Returns(Task.CompletedTask);
+
+            SchemaRepo
                 .Setup(r => r.OptimizeAsync(It.IsAny<SQLiteConnection>()))
                 .Returns(Task.CompletedTask);
 
