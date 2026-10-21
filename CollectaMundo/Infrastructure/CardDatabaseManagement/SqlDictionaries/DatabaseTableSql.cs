@@ -69,7 +69,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     "availability TEXT NULL, " +
                     "rarity TEXT NULL, " +
                     "isPromo INTEGER NOT NULL CHECK (isPromo IN (0, 1)), " +
-                    "gameplayCard INTEGER NOT NULL CHECK (gameplayCard IN (0, 1)), " +
                     "otherFaceIds TEXT NULL" +
                     ");",
 

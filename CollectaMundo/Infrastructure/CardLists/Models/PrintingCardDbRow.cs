@@ -12,7 +12,6 @@
         public string? Availability { get; init; }
         public string? Rarity { get; init; }
         public bool IsPromo { get; init; }
-        public int GamePlayCard { get; init; }
         public string? OtherFaceIds { get; init; }
     }
 }

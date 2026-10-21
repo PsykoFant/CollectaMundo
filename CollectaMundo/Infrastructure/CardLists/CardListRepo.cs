@@ -29,10 +29,8 @@ namespace CollectaMundo.Infrastructure.CardLists
                        c.type                AS Type,
                        c.playableFormatsMask    AS PlayableFormatsMask,
                        c.restrictedFormatsMask  AS RestrictedFormatsMask,
-                       p.gameplayCard        AS GamePlayCard
+                       c.gameplayCard        AS GamePlayCard
                    FROM canonicalOracleFaces c
-                   JOIN printingCards p
-                       ON p.uuid = c.selectedSourceUuid;
                    """;
 
             using var command = new SQLiteCommand(sql, conn);
@@ -123,7 +121,6 @@ namespace CollectaMundo.Infrastructure.CardLists
                            availability     AS Availability,
                            rarity           AS Rarity,
                            isPromo          AS IsPromo,
-                           gameplayCard     AS GameplayCard,
                            otherFaceIds     AS OtherFaceIds
                        FROM printingCards;
                        """;
@@ -150,11 +147,9 @@ namespace CollectaMundo.Infrastructure.CardLists
             int Availability,
             int Rarity,
             int IsPromo,
-            int GameplayCard,
             int OtherFaceIds)
         {
-            public static PrintingCardOrdinals FromReader(
-                DbDataReader reader)
+            public static PrintingCardOrdinals FromReader(DbDataReader reader)
             {
                 return new PrintingCardOrdinals(
                     reader.GetOrdinal("Uuid"),
@@ -166,7 +161,6 @@ namespace CollectaMundo.Infrastructure.CardLists
                     reader.GetOrdinal("Availability"),
                     reader.GetOrdinal("Rarity"),
                     reader.GetOrdinal("IsPromo"),
-                    reader.GetOrdinal("GameplayCard"),
                     reader.GetOrdinal("OtherFaceIds"));
             }
         }
@@ -183,7 +177,6 @@ namespace CollectaMundo.Infrastructure.CardLists
                 Availability = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Availability),
                 Rarity = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Rarity),
                 IsPromo = DbDataReaderValueReader.GetBooleanValue(reader, ordinals.IsPromo),
-                GamePlayCard = DbDataReaderValueReader.GetFieldValue<int>(reader, ordinals.GameplayCard),
                 OtherFaceIds = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.OtherFaceIds)
             };
         }

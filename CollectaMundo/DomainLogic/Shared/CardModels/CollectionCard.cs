@@ -9,37 +9,53 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 {
     public sealed partial class CollectionCard : ObservableObject, ICardListSortable, ICardImageSourceCard
     {
+        // ---------------------------------------------------------
+        // Printing
+        // ---------------------------------------------------------
+
         public required PrintingCard Printing { get; init; }
-        public OracleCard Oracle => Printing.Oracle;
-
-
-        public int CardId { get; init; }
         public string Uuid => Printing.Uuid;
-
-        public string Name => Printing.Name;
-        public string? ScryfallOracleId => Printing.ScryfallOracleId;
-        public string? ManaCost => Printing.ManaCost;
-        public string? ManaCostRaw => Printing.ManaCostRaw;
-        public string? Colors => Printing.Colors;
-        public int GamePlayCard => Printing.GamePlayCard;
-        public string? Type => Printing.Type;
-        public string? Types => Printing.Types;
-        public string? SuperTypes => Printing.SuperTypes;
-        public string? SubTypes => Printing.SubTypes;
-        public string? Keywords => Printing.Keywords;
-        public string? Text => Printing.Text;
-        public string? Side => Printing.Side;
-        public double ManaValue => Printing.ManaValue;
         public string? SetCode => Printing.SetCode;
         public string? Rarity => Printing.Rarity;
         public string? Availability => Printing.Availability;
-        public ImageSource? ManaCostImage => Printing.ManaCostImage;
         public ImageSource? KeyRuneImage => Printing.KeyRuneImage;
         public string? SetName => Printing.SetName;
         public DateTime? ReleaseDate => Printing.ReleaseDate;
         public decimal? NormalPrice => Printing.NormalPrice;
         public decimal? FoilPrice => Printing.FoilPrice;
         public decimal? EtchedPrice => Printing.EtchedPrice;
+
+
+        // ---------------------------------------------------------
+        // Oracle
+        // ---------------------------------------------------------
+        public OracleCard Oracle => Printing.Oracle;
+        public string Name => Oracle.Name;
+        public string? ScryfallOracleId => Oracle.ScryfallOracleId;
+        public string? ManaCost => Oracle.ManaCost;
+        public string? ManaCostRaw => Oracle.ManaCostRaw;
+        public ImageSource? ManaCostImage => Oracle.ManaCostImage;
+        public double ManaValue => Oracle.ManaValue;
+        public string? Colors => Oracle.Colors;
+        public int GamePlayCard => Oracle.GamePlayCard;
+        public string? Type => Oracle.Type;
+        public string? Types => Oracle.Types;
+        public string? SuperTypes => Oracle.SuperTypes;
+        public string? SubTypes => Oracle.SubTypes;
+        public string? Keywords => Oracle.Keywords;
+        public string? Text => Oracle.Text;
+        public string? Side => Oracle.Side;
+
+
+        // ---------------------------------------------------------
+        // Collection identity
+        // ---------------------------------------------------------
+
+        public int CardId { get; init; }
+
+        // ---------------------------------------------------------
+        // Collection state
+        // ---------------------------------------------------------
 
         [ObservableProperty]
         private string? selectedCondition;
@@ -58,27 +74,37 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 
         [ObservableProperty]
         private int? selectedLocationId;
-        public IKeyedDataProvider<int, CardLocation>? CardLocationProvider { get; set; }
-        public string? SelectedLocationName =>
-            SelectedLocationId is int id
-                ? CardLocationProvider?.Get(id)?.Name
-                : null;
-        public string? SelectedLocationDisplayName =>
-            SelectedLocationId is int id
-                ? CardLocationProvider?.Get(id)?.DisplayName
-                : null;
-        public CardLocationType? SelectedLocationType =>
-            SelectedLocationId is int id
-                ? CardLocationProvider?.Get(id)?.Type
-                : null;
 
         [ObservableProperty]
         private string? comment;
-        public decimal? CardInCollectionPrice =>
-            (SelectedFinish ?? "").Equals("foil", StringComparison.OrdinalIgnoreCase) ? FoilPrice :
-            (SelectedFinish ?? "").Equals("etched", StringComparison.OrdinalIgnoreCase) ? EtchedPrice :
-            NormalPrice;
+
+
+        // ---------------------------------------------------------
+        // Location
+        // ---------------------------------------------------------
+
+        public IKeyedDataProvider<int, CardLocation>? CardLocationProvider
+        {
+            get;
+            set;
+        }
+        public string? SelectedLocationName => SelectedLocationId is int id ? CardLocationProvider?.Get(id)?.Name : null;
+        public string? SelectedLocationDisplayName => SelectedLocationId is int id ? CardLocationProvider?.Get(id)?.DisplayName : null;
+        public CardLocationType? SelectedLocationType => SelectedLocationId is int id ? CardLocationProvider?.Get(id)?.Type : null;
+
+        // ---------------------------------------------------------
+        // Derived collection values
+        // ---------------------------------------------------------
+
+        public decimal? CardInCollectionPrice => (SelectedFinish ?? "").Equals("foil", StringComparison.OrdinalIgnoreCase)
+                ? FoilPrice
+                : (SelectedFinish ?? "").Equals("etched", StringComparison.OrdinalIgnoreCase) ? EtchedPrice : NormalPrice;
+
         public int Count { get; set; }
+
+        // ---------------------------------------------------------
+        // Change handling
+        // ---------------------------------------------------------
         partial void OnSelectedLocationIdChanged(int? value)
         {
             OnPropertyChanged(nameof(SelectedLocationName));
@@ -89,6 +115,12 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         {
             RecomputeCollectionPrice();
         }
+
+
+        // ---------------------------------------------------------
+        // Refresh
+        // ---------------------------------------------------------
+
         public void RecomputeCollectionPrice()
         {
             OnPropertyChanged(nameof(CardInCollectionPrice));

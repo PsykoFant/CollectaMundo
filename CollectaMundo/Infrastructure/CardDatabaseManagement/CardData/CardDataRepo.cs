@@ -278,7 +278,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                                  availability,
                                  rarity,
                                  isPromo,
-                                 gameplayCard,
                                  otherFaceIds
                              )
 
@@ -295,7 +294,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                                      WHEN COALESCE(c.isPromo, 0) <> 0 THEN 1
                                      ELSE 0
                                  END,
-                                 1,
                                  c.otherFaceIds
                              FROM cards c
                              LEFT JOIN cardIdentifiers ci
@@ -316,7 +314,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                                      WHEN COALESCE(t.isPromo, 0) <> 0 THEN 1
                                      ELSE 0
                                  END,
-                                 0,
                                  t.otherFaceIds
                              FROM tokens t
                              LEFT JOIN tokenIdentifiers ti
