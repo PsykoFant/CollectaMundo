@@ -705,6 +705,42 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             var legalityMasksByUuid = await _cardLegalityService.PrepareDerivedDataAsync(conn, tx);
 
+
+
+            // debug
+            var legalityConflicts = candidates
+    .Where(candidate => candidate.GamePlayCard == 1)
+    .Where(candidate =>
+        legalityMasksByUuid.ContainsKey(
+            candidate.SourceUuid))
+    .GroupBy(candidate => new
+    {
+        candidate.ScryfallOracleId,
+        Side = candidate.Side ?? string.Empty
+    })
+    .Select(group => new
+    {
+        group.Key.ScryfallOracleId,
+        group.Key.Side,
+
+        Masks = group
+            .Select(candidate =>
+                legalityMasksByUuid[
+                    candidate.SourceUuid])
+            .Distinct()
+            .ToArray()
+    })
+    .Where(group => group.Masks.Length > 1)
+    .ToList();
+
+            Debug.WriteLine(
+                $"[CardDatabasePrep] Oracle legality conflicts: " +
+                $"{legalityConflicts.Count:N0}");
+
+            // end debug
+
+
+
             // ---------------------------------------------------------
             // 3. Persist canonical Oracle faces with legality masks
             // ---------------------------------------------------------
