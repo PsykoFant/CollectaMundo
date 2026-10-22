@@ -46,8 +46,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                         subTypes TEXT NULL,
                         type TEXT NULL,
                         gameplayCard INTEGER NOT NULL CHECK (gameplayCard IN (0, 1)),
-                        playableFormatsMask INTEGER NOT NULL,
-                        restrictedFormatsMask INTEGER NOT NULL,
                         selectedSourceUuid TEXT NOT NULL,
                         sourceRowCount INTEGER NOT NULL CHECK (sourceRowCount > 0),
                         winningRowCount INTEGER NOT NULL CHECK (winningRowCount > 0),
@@ -59,18 +57,22 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     """,
 
                 ["printingCards"] =
-                    "CREATE TABLE IF NOT EXISTS printingCards (" +
-                    "uuid TEXT NOT NULL PRIMARY KEY, " +
-                    "scryfallOracleId TEXT NOT NULL, " +
-                    "side TEXT NOT NULL, " +
-                    "setCode TEXT NULL, " +
-                    "language TEXT NULL, " +
-                    "finishes TEXT NULL, " +
-                    "availability TEXT NULL, " +
-                    "rarity TEXT NULL, " +
-                    "isPromo INTEGER NOT NULL CHECK (isPromo IN (0, 1)), " +
-                    "otherFaceIds TEXT NULL" +
-                    ");",
+                    """
+                    CREATE TABLE IF NOT EXISTS printingCards (
+                        uuid TEXT NOT NULL PRIMARY KEY,
+                        scryfallOracleId TEXT NOT NULL,
+                        side TEXT NOT NULL,
+                        setCode TEXT NULL,
+                        language TEXT NULL,
+                        finishes TEXT NULL,
+                        availability TEXT NULL,
+                        rarity TEXT NULL,
+                        isPromo INTEGER NOT NULL CHECK (isPromo IN (0, 1)),
+                        playableFormatsMask INTEGER NOT NULL,
+                        restrictedFormatsMask INTEGER NOT NULL,
+                        otherFaceIds TEXT NULL
+                    );
+                    """,
 
                 ["cardLegalityFormats"] =
                     """

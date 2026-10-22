@@ -1,5 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLegalities;
-using CollectaMundo.DomainLogic.Shared.CardModels;
+﻿using CollectaMundo.DomainLogic.Shared.CardModels;
 
 namespace CollectaMundo.DomainLogic.CardLists
 {
@@ -59,9 +58,6 @@ namespace CollectaMundo.DomainLogic.CardLists
                 var allTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var allTexts = new List<string>();
 
-                ulong playableFormatsMask = 0;
-                ulong restrictedFormatsMask = 0;
-
                 MergeFrom(oracle);
 
                 foreach (var otherId in printing.OtherFaceIds)
@@ -72,26 +68,17 @@ namespace CollectaMundo.DomainLogic.CardLists
                     }
                 }
 
-                var aggregatedLegalityMasks = new CardLegalityMasks(PlayableFormatsMask: playableFormatsMask, RestrictedFormatsMask: restrictedFormatsMask);
-
-                results.Add(CreateAggregatedPrinting(printing, aggregatedLegalityMasks,
-                        string.Join(",", allKeywords),
-                        string.Join(",", allColors),
-                        string.Join(",", allTypes),
-                        string.Join(" // ", allTexts)));
+                results.Add(CreateAggregatedPrinting(printing, string.Join(",", allKeywords), string.Join(",", allColors), string.Join(",", allTypes), string.Join(" // ", allTexts)));
 
                 void MergeFrom(OracleCard source)
                 {
                     AddCsvValues(source.Keywords, allKeywords);
                     AddCsvValues(source.Colors, allColors);
                     AddCsvValues(source.Types, allTypes);
-                    playableFormatsMask |= source.PlayableFormatsMask;
-                    restrictedFormatsMask |= source.RestrictedFormatsMask;
 
                     if (!string.IsNullOrWhiteSpace(source.Text))
                     {
-                        allTexts.Add(
-                            source.Text.Trim());
+                        allTexts.Add(source.Text.Trim());
                     }
                 }
             }
@@ -104,7 +91,7 @@ namespace CollectaMundo.DomainLogic.CardLists
 
             return string.IsNullOrWhiteSpace(side) || side.Equals("a", StringComparison.OrdinalIgnoreCase);
         }
-        private static PrintingCard CreateAggregatedPrinting(PrintingCard printing, CardLegalityMasks legalityMasks, string keywords, string colors, string types, string text)
+        private static PrintingCard CreateAggregatedPrinting(PrintingCard printing, string keywords, string colors, string types, string text)
         {
             var source = printing.Oracle;
 
@@ -121,7 +108,6 @@ namespace CollectaMundo.DomainLogic.CardLists
                 Side = source.Side,
                 ManaValue = source.ManaValue,
                 GamePlayCard = source.GamePlayCard,
-                LegalityMasks = legalityMasks,
                 Keywords = keywords,
                 Colors = colors,
                 Text = text
@@ -130,7 +116,10 @@ namespace CollectaMundo.DomainLogic.CardLists
             return new PrintingCard
             {
                 Oracle = aggregatedOracle,
-                LegalityMasks = legalityMasks,
+
+                // Preserve legality of this exact printing.
+                LegalityMasks = printing.LegalityMasks,
+
                 Uuid = printing.Uuid,
                 SetCode = printing.SetCode,
                 Language = printing.Language,

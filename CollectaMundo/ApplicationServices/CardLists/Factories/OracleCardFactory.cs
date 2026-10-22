@@ -1,5 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLegalities;
-using CollectaMundo.DomainLogic.Shared;
+﻿using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.CardLists.Models;
 
@@ -8,7 +7,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
     public static class OracleCardFactory
     {
         private static readonly char[] ManaCostSeparators = ['{', '}'];
-        public static OracleCard FromRow(CanonicalOracleFaceDbRow row, CardLegalityMasks legalityMasks = default)
+        public static OracleCard FromRow(CanonicalOracleFaceDbRow row)
         {
             return new OracleCard
             {
@@ -27,8 +26,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
                 Types = CommaSeparatedValues.NormalizeAndDeduplicate(row.Types),
                 SubTypes = CommaSeparatedValues.NormalizeAndDeduplicate(row.SubTypes),
                 Type = CommaSeparatedValues.NormalizeAndDeduplicate(row.Type),
-                Text = string.IsNullOrWhiteSpace(row.RulesText) ? string.Empty : row.RulesText.Trim(),
-                LegalityMasks = new CardLegalityMasks(PlayableFormatsMask: row.PlayableFormatsMask, RestrictedFormatsMask: row.RestrictedFormatsMask)
+                Text = string.IsNullOrWhiteSpace(row.RulesText) ? string.Empty : row.RulesText.Trim()
             };
         }
         private static string ProcessManaCost(string? raw)

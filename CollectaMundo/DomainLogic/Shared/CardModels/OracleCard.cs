@@ -1,5 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLegalities;
-using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Windows.Media;
 
 namespace CollectaMundo.DomainLogic.Shared.CardModels
@@ -9,10 +8,6 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
         public string? Colors { get; init; }
         public string? Keywords { get; init; }
 
-        // Legalities
-        public CardLegalityMasks LegalityMasks { get; init; }
-        public ulong PlayableFormatsMask => LegalityMasks.PlayableFormatsMask;
-        public ulong RestrictedFormatsMask => LegalityMasks.RestrictedFormatsMask;
 
         // Manacost 
         public string? ManaCost { get; init; }

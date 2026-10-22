@@ -13,5 +13,7 @@
         public string? Rarity { get; init; }
         public bool IsPromo { get; init; }
         public string? OtherFaceIds { get; init; }
+        public ulong PlayableFormatsMask { get; init; }
+        public ulong RestrictedFormatsMask { get; init; }
     }
 }

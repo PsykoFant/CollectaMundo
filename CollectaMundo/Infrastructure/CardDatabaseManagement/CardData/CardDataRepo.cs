@@ -140,7 +140,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     reader.GetOrdinal("Type"));
             }
         }
-        public async Task<int> RebuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<CanonicalOracleFace> faces, IReadOnlyDictionary<string, CardLegalityMasks> legalityMasksByUuid)
+        public async Task<int> RebuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<CanonicalOracleFace> faces)
         {
             const string deleteSql = "DELETE FROM canonicalOracleFaces;";
 
@@ -165,8 +165,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     subTypes,
                     type,
                     gameplayCard,
-                    playableFormatsMask,
-                    restrictedFormatsMask,
                     selectedSourceUuid,
                     sourceRowCount,
                     winningRowCount,
@@ -188,8 +186,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     @subTypes,
                     @type,
                     @gameplayCard,
-                    @playableFormatsMask,
-                    @restrictedFormatsMask,
                     @selectedSourceUuid,
                     @sourceRowCount,
                     @winningRowCount,
@@ -213,8 +209,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
             var gamePlayCard = command.Parameters.Add("@gameplayCard", DbType.Int32);
             var subTypes = command.Parameters.Add("@subTypes", DbType.String);
             var type = command.Parameters.Add("@type", DbType.String);
-            var playableFormatsMask = command.Parameters.Add("@playableFormatsMask", DbType.Int64);
-            var restrictedFormatsMask = command.Parameters.Add("@restrictedFormatsMask", DbType.Int64);
             var selectedSourceUuid = command.Parameters.Add("@selectedSourceUuid", DbType.String);
             var sourceRowCount = command.Parameters.Add("@sourceRowCount", DbType.Int32);
             var winningRowCount = command.Parameters.Add("@winningRowCount", DbType.Int32);
@@ -227,8 +221,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
 
             foreach (var face in faces)
             {
-                var legalityMasks = legalityMasksByUuid.TryGetValue(face.SelectedSourceUuid, out var masks) ? masks : new CardLegalityMasks(PlayableFormatsMask: 0, RestrictedFormatsMask: 0);
-
                 oracleId.Value = face.Key.ScryfallOracleId;
                 side.Value = face.Key.Side;
                 name.Value = (object?)face.Payload.Name ?? DBNull.Value;
@@ -242,8 +234,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 subTypes.Value = (object?)face.Payload.SubTypes ?? DBNull.Value;
                 type.Value = (object?)face.Payload.Type ?? DBNull.Value;
                 gamePlayCard.Value = face.GamePlayCard;
-                playableFormatsMask.Value = unchecked((long)legalityMasks.PlayableFormatsMask);
-                restrictedFormatsMask.Value = unchecked((long)legalityMasks.RestrictedFormatsMask);
                 selectedSourceUuid.Value = face.SelectedSourceUuid;
                 sourceRowCount.Value = face.SourceRowCount;
                 winningRowCount.Value = face.WinningRowCount;
@@ -257,8 +247,9 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
         }
 
         // Printing cards
-        public async Task<int> RebuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx)
+        public async Task<int> RebuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyDictionary<string, CardLegalityMasks> legalityMasksByUuid)
         {
+            // 1. DELETE existing projection
             const string deleteSql = "DELETE FROM printingCards;";
 
             using (var deleteCommand = new SQLiteCommand(deleteSql, conn, tx))
@@ -266,59 +257,67 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 await deleteCommand.ExecuteNonQueryAsync();
             }
 
+            // 2. Bulk INSERT all card + token printing rows
+            //    Masks start at 0/0.
             const string insertSql = """
-                             INSERT INTO printingCards
-                             (
-                                 uuid,
-                                 scryfallOracleId,
-                                 side,
-                                 setCode,
-                                 language,
-                                 finishes,
-                                 availability,
-                                 rarity,
-                                 isPromo,
-                                 otherFaceIds
-                             )
+                INSERT INTO printingCards
+                (
+                    uuid,
+                    scryfallOracleId,
+                    side,
+                    setCode,
+                    language,
+                    finishes,
+                    availability,
+                    rarity,
+                    isPromo,
+                    playableFormatsMask,
+                    restrictedFormatsMask,
+                    otherFaceIds
+                )
 
-                             SELECT
-                                 c.uuid,
-                                 ci.scryfallOracleId,
-                                 COALESCE(c.side, ''),
-                                 c.setCode,
-                                 c.language,
-                                 c.finishes,
-                                 c.availability,
-                                 c.rarity,
-                                 CASE
-                                     WHEN COALESCE(c.isPromo, 0) <> 0 THEN 1
-                                     ELSE 0
-                                 END,
-                                 c.otherFaceIds
-                             FROM cards c
-                             LEFT JOIN cardIdentifiers ci
-                                 ON ci.uuid = c.uuid
+                SELECT
+                    c.uuid,
+                    ci.scryfallOracleId,
+                    COALESCE(c.side, ''),
+                    c.setCode,
+                    c.language,
+                    c.finishes,
+                    c.availability,
+                    c.rarity,
+                    CASE
+                        WHEN COALESCE(c.isPromo, 0) <> 0 THEN 1
+                        ELSE 0
+                    END,
+                    0,
+                    0,
+                    c.otherFaceIds
+                FROM cards c
+                LEFT JOIN cardIdentifiers ci
+                    ON ci.uuid = c.uuid
 
-                             UNION ALL
+                UNION ALL
 
-                             SELECT
-                                 t.uuid,
-                                 ti.scryfallOracleId,
-                                 COALESCE(t.side, ''),
-                                 t.setCode,
-                                 t.language,
-                                 t.finishes,
-                                 t.availability,
-                                 NULL,
-                                 CASE
-                                     WHEN COALESCE(t.isPromo, 0) <> 0 THEN 1
-                                     ELSE 0
-                                 END,
-                                 t.otherFaceIds
-                             FROM tokens t
-                             LEFT JOIN tokenIdentifiers ti
-                                 ON ti.uuid = t.uuid;
-                             """;
+                SELECT
+                    t.uuid,
+                    ti.scryfallOracleId,
+                    COALESCE(t.side, ''),
+                    t.setCode,
+                    t.language,
+                    t.finishes,
+                    t.availability,
+                    NULL,
+                    CASE
+                        WHEN COALESCE(t.isPromo, 0) <> 0 THEN 1
+                        ELSE 0
+                    END,
+                    0,
+                    0,
+                    t.otherFaceIds
+                FROM tokens t
+                LEFT JOIN tokenIdentifiers ti
+                    ON ti.uuid = t.uuid;
+                """;
 
             int inserted;
 
@@ -327,6 +326,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 inserted = await insertCommand.ExecuteNonQueryAsync();
             }
 
+            // 3. Validate inserted count
             const string sourceCountSql = """
                                   SELECT
                                       (SELECT COUNT(*) FROM cards) +
@@ -364,6 +364,40 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
             if (unresolvedOracleFaces != 0)
             {
                 throw new InvalidOperationException($"Printing-card projection contains {unresolvedOracleFaces:N0} rows that cannot be resolved to canonical Oracle faces.");
+            }
+
+            // 4. Apply exact per-UUID legality masks to gameplay printings
+            const string updateLegalitySql = """
+                UPDATE printingCards
+                SET
+                    playableFormatsMask = @playableFormatsMask,
+                    restrictedFormatsMask = @restrictedFormatsMask
+                WHERE uuid = @uuid;
+                """;
+
+            using (var legalityCommand = new SQLiteCommand(updateLegalitySql, conn, tx))
+            {
+                var uuid = legalityCommand.Parameters.Add("@uuid", DbType.String);
+                var playableFormatsMask = legalityCommand.Parameters.Add("@playableFormatsMask", DbType.Int64);
+                var restrictedFormatsMask = legalityCommand.Parameters.Add("@restrictedFormatsMask", DbType.Int64);
+
+                legalityCommand.Prepare();
+
+                foreach (var pair in legalityMasksByUuid)
+                {
+                    uuid.Value = pair.Key;
+
+                    playableFormatsMask.Value = unchecked((long)pair.Value.PlayableFormatsMask);
+
+                    restrictedFormatsMask.Value = unchecked((long)pair.Value.RestrictedFormatsMask);
+
+                    var updated = await legalityCommand.ExecuteNonQueryAsync();
+
+                    if (updated != 1)
+                    {
+                        throw new InvalidOperationException($"Could not persist legality masks for printing '{pair.Key}'. Expected exactly one printing row, but updated {updated:N0}.");
+                    }
+                }
             }
 
             return inserted;

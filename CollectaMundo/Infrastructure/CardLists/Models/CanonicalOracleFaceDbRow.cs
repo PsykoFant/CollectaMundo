@@ -17,7 +17,5 @@
         public string? Types { get; init; }
         public string? SubTypes { get; init; }
         public string? Type { get; init; }
-        public ulong PlayableFormatsMask { get; init; }
-        public ulong RestrictedFormatsMask { get; init; }
     }
 }

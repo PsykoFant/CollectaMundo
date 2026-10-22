@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Shared.CardModels;
+﻿using CollectaMundo.DomainLogic.CardLegalities;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.CardLists.Models;
 
 namespace CollectaMundo.ApplicationServices.CardLists.Factories
@@ -21,7 +22,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
 
                 OtherFaceIds = ParseOtherFaceIds(row.OtherFaceIds),
 
-                LegalityMasks = oracle.LegalityMasks
+                LegalityMasks = new CardLegalityMasks(PlayableFormatsMask: row.PlayableFormatsMask, RestrictedFormatsMask: row.RestrictedFormatsMask)
             };
         }
         private static IReadOnlyList<string> ParseOtherFaceIds(string? raw)

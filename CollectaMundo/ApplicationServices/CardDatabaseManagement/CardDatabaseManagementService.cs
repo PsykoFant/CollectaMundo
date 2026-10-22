@@ -700,52 +700,10 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
 
             // ---------------------------------------------------------
-            // 2. Prepare and persist derived legality data
+            // 2. Persist canonical Oracle faces with legality masks
             // ---------------------------------------------------------
 
-            var legalityMasksByUuid = await _cardLegalityService.PrepareDerivedDataAsync(conn, tx);
-
-
-
-            // debug
-            var legalityConflicts = candidates
-    .Where(candidate => candidate.GamePlayCard == 1)
-    .Where(candidate =>
-        legalityMasksByUuid.ContainsKey(
-            candidate.SourceUuid))
-    .GroupBy(candidate => new
-    {
-        candidate.ScryfallOracleId,
-        Side = candidate.Side ?? string.Empty
-    })
-    .Select(group => new
-    {
-        group.Key.ScryfallOracleId,
-        group.Key.Side,
-
-        Masks = group
-            .Select(candidate =>
-                legalityMasksByUuid[
-                    candidate.SourceUuid])
-            .Distinct()
-            .ToArray()
-    })
-    .Where(group => group.Masks.Length > 1)
-    .ToList();
-
-            Debug.WriteLine(
-                $"[CardDatabasePrep] Oracle legality conflicts: " +
-                $"{legalityConflicts.Count:N0}");
-
-            // end debug
-
-
-
-            // ---------------------------------------------------------
-            // 3. Persist canonical Oracle faces with legality masks
-            // ---------------------------------------------------------
-
-            var inserted = await _cardDataRepo.RebuildCanonicalOracleFacesAsync(conn, tx, canonicalFaces, legalityMasksByUuid);
+            var inserted = await _cardDataRepo.RebuildCanonicalOracleFacesAsync(conn, tx, canonicalFaces);
 
             if (inserted != canonicalFaces.Count)
             {
@@ -759,7 +717,17 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         }
         private async Task BuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
-            var inserted = await _cardDataRepo.RebuildPrintingCardsAsync(conn, tx);
+            // ---------------------------------------------------------
+            // 1. Prepare and persist derived legality data
+            // ---------------------------------------------------------
+
+            var legalityMasksByUuid = await _cardLegalityService.PrepareDerivedDataAsync(conn, tx);
+
+
+            // ---------------------------------------------------------
+            // 2. Persist printing cards with legality masks
+            // ---------------------------------------------------------
+            var inserted = await _cardDataRepo.RebuildPrintingCardsAsync(conn, tx, legalityMasksByUuid);
 
             if (inserted == 0)
             {

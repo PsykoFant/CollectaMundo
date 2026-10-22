@@ -27,8 +27,6 @@ namespace CollectaMundo.Infrastructure.CardLists
                        c.types               AS Types,
                        c.subTypes            AS SubTypes,
                        c.type                AS Type,
-                       c.playableFormatsMask    AS PlayableFormatsMask,
-                       c.restrictedFormatsMask  AS RestrictedFormatsMask,
                        c.gameplayCard        AS GamePlayCard
                    FROM canonicalOracleFaces c
                    """;
@@ -59,8 +57,6 @@ namespace CollectaMundo.Infrastructure.CardLists
             int Types,
             int SubTypes,
             int Type,
-            int PlayableFormatsMask,
-            int RestrictedFormatsMask,
             int GamePlayCard)
         {
             public static CanonicalOracleFaceOrdinals FromReader(DbDataReader reader)
@@ -79,8 +75,6 @@ namespace CollectaMundo.Infrastructure.CardLists
                     reader.GetOrdinal("Types"),
                     reader.GetOrdinal("SubTypes"),
                     reader.GetOrdinal("Type"),
-                    reader.GetOrdinal("PlayableFormatsMask"),
-                    reader.GetOrdinal("RestrictedFormatsMask"),
                     reader.GetOrdinal("GamePlayCard"));
             }
         }
@@ -101,8 +95,6 @@ namespace CollectaMundo.Infrastructure.CardLists
                 Types = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Types),
                 SubTypes = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SubTypes),
                 Type = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type),
-                PlayableFormatsMask = unchecked((ulong)reader.GetInt64(ordinals.PlayableFormatsMask)),
-                RestrictedFormatsMask = unchecked((ulong)reader.GetInt64(ordinals.RestrictedFormatsMask)),
                 GamePlayCard = DbDataReaderValueReader.GetFieldValue<int>(reader, ordinals.GamePlayCard)
             };
         }
@@ -121,7 +113,9 @@ namespace CollectaMundo.Infrastructure.CardLists
                            availability     AS Availability,
                            rarity           AS Rarity,
                            isPromo          AS IsPromo,
-                           otherFaceIds     AS OtherFaceIds
+                           otherFaceIds     AS OtherFaceIds,
+                           playableFormatsMask   AS PlayableFormatsMask,
+                           restrictedFormatsMask AS RestrictedFormatsMask
                        FROM printingCards;
                        """;
 
@@ -147,7 +141,9 @@ namespace CollectaMundo.Infrastructure.CardLists
             int Availability,
             int Rarity,
             int IsPromo,
-            int OtherFaceIds)
+            int OtherFaceIds,
+            int PlayableFormatsMask,
+            int RestrictedFormatsMask)
         {
             public static PrintingCardOrdinals FromReader(DbDataReader reader)
             {
@@ -161,7 +157,10 @@ namespace CollectaMundo.Infrastructure.CardLists
                     reader.GetOrdinal("Availability"),
                     reader.GetOrdinal("Rarity"),
                     reader.GetOrdinal("IsPromo"),
-                    reader.GetOrdinal("OtherFaceIds"));
+                    reader.GetOrdinal("OtherFaceIds"),
+                    reader.GetOrdinal("PlayableFormatsMask"),
+                    reader.GetOrdinal("RestrictedFormatsMask")
+                    );
             }
         }
         private static PrintingCardDbRow PrintingCardDbRowFromReader(DbDataReader reader, PrintingCardOrdinals ordinals)
@@ -177,7 +176,9 @@ namespace CollectaMundo.Infrastructure.CardLists
                 Availability = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Availability),
                 Rarity = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Rarity),
                 IsPromo = DbDataReaderValueReader.GetBooleanValue(reader, ordinals.IsPromo),
-                OtherFaceIds = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.OtherFaceIds)
+                OtherFaceIds = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.OtherFaceIds),
+                PlayableFormatsMask = unchecked((ulong)reader.GetInt64(ordinals.PlayableFormatsMask)),
+                RestrictedFormatsMask = unchecked((ulong)reader.GetInt64(ordinals.RestrictedFormatsMask))
             };
         }
 
