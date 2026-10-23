@@ -7,6 +7,9 @@ namespace CollectaMundo.Tests.ScenarioTests
     {
         private readonly InMemoryDatabaseFixture _fx = fx;
         private ScenarioTestContext _ctx = null!;
+        private static readonly string[] expected = ["Resurrection", "Thallid Devourer"];
+        private static readonly string[] expectedArray = ["Resurrection", "Thallid Devourer"];
+        private static readonly string[] expectedArray0 = ["Resurrection", "Thallid Devourer"];
 
         public async ValueTask InitializeAsync()
         {
@@ -281,14 +284,98 @@ namespace CollectaMundo.Tests.ScenarioTests
                 OperatorType.LESS_THAN_OR_EQUALS
             };
 
-            var actualManaValueOptions = manaValueFilter.FilterOptions
-                .Select(opt => opt.OptionName)
-                .OrderBy(x => x)
-                .ToList();
-
+            var actualManaValueOptions = manaValueFilter.FilterOptions.Select(opt => opt.OptionName).OrderBy(x => x).ToList();
             var sortedExpectedManavalueOptions = expectedManaValueOptions.OrderBy(x => x).ToList();
             Assert.Equal(sortedExpectedManavalueOptions, actualManaValueOptions);
             Assert.Equal(expectedManaValueOperators, [.. manaValueFilter.AvailableOperators!]);
+
+            // LegalFormats:
+            var legalFormatsFilter = _ctx.MainVM.FilterPanelVM.Filters["LegalFormats"];
+
+            Assert.Equal(FilterType.Multi, legalFormatsFilter.FilterCategory);
+            Assert.Equal(22, legalFormatsFilter.FilterOptions.Count); // The test legality fixture contains 22 format columns.
+            Assert.Contains(legalFormatsFilter.FilterOptions, option => option.DisplayName == "Old School");
+            Assert.Contains(legalFormatsFilter.FilterOptions, option => option.DisplayName == "Pauper Commander");
+            Assert.Contains(legalFormatsFilter.FilterOptions, option => option.DisplayName == "Standard Brawl");
+            Assert.Contains(legalFormatsFilter.FilterOptions, option => option.DisplayName == "PreDH");
+            Assert.Contains(legalFormatsFilter.FilterOptions, option => option.DisplayName == "Tiny Leaders: Reborn");
+            Assert.All(legalFormatsFilter.FilterOptions, option => { Assert.True(ulong.TryParse(option.Value, out var mask)); Assert.NotEqual(0UL, mask); });
+
+            var expectedLegalFormatOperators = new[] { OperatorType.OR, OperatorType.AND, OperatorType.NOT };
+            Assert.Equal(expectedLegalFormatOperators, [.. legalFormatsFilter.AvailableOperators!]);
+
+        }
+
+        [Fact]
+        public void LegalFormats_OldSchool_FiltersSeededCardLists()
+        {
+            // Arrange
+            var legalFormatsFilter = _ctx.MainVM.FilterPanelVM.Filters["LegalFormats"];
+            var oldSchoolOption = legalFormatsFilter.FilterOptions.Single(option => option.DisplayName == "Old School");
+
+            // Act
+            oldSchoolOption.IsSelected = true;
+
+            // Assert - AllCards uses printing legality
+            var allCardNames = _ctx.MainVM.AllCardsVM.FilteredCards.Select(card => card.Name).OrderBy(name => name).ToList();
+
+            Assert.Equal(expected, allCardNames);
+
+            // Assert - MyCollection uses the owned printing's legality
+            var collectionNames = _ctx.MainVM.MyCollectionVM.FilteredCards.Select(card => card.Name).OrderBy(name => name).ToList();
+
+            Assert.Equal(expectedArray, collectionNames);
+
+            // Assert - OracleCards uses Oracle-level playable-format aggregation
+            var oracleNames = _ctx.MainVM.OracleCardsVM.FilteredCards.Select(card => card.Name).OrderBy(name => name).ToList();
+
+            Assert.Equal(expectedArray0, oracleNames);
+        }
+
+        [Fact]
+        public void CardWithNoPlayableFormats_IsExcludedByLegalityFilter_ButRemainsSearchableByName()
+        {
+            // Arrange: verify the seeded Staying Power printing has no playable formats.
+            var stayingPowerPrinting = Assert.Single(_ctx.MainVM.AllCardsVM.Cards.Where(card => card.Name == "Staying Power"));
+
+            Assert.Equal(0UL, stayingPowerPrinting.PlayableFormatsMask);
+
+            // Act: apply Old School legality filter.
+            var legalFormatsFilter = _ctx.MainVM.FilterPanelVM.Filters["LegalFormats"];
+
+            var oldSchoolOption = legalFormatsFilter.FilterOptions.Single(option => option.DisplayName == "Old School");
+
+            oldSchoolOption.IsSelected = true;
+
+            // Assert: a printing with no playable formats is excluded.
+            Assert.DoesNotContain(_ctx.MainVM.AllCardsVM.FilteredCards, card => card.Name == "Staying Power");
+
+            // Assert: its Oracle card is also excluded because no seeded
+            // printing of Staying Power is playable in Old School.
+            Assert.DoesNotContain(_ctx.MainVM.OracleCardsVM.FilteredCards, card => card.Name == "Staying Power");
+
+            // Act: clear the legality filter.
+            _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null);
+
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
+
+            // Act: search normally by card name.
+            var nameFilter = _ctx.MainVM.FilterPanelVM.Filters["Name"];
+
+            nameFilter.SelectedSingleOption = "Staying Power";
+
+            // Assert: legality does not remove the printing from the general catalogue.
+            var filteredPrinting = Assert.Single(_ctx.MainVM.AllCardsVM.FilteredCards);
+
+            Assert.Equal("Staying Power", filteredPrinting.Name);
+
+            // Assert: the Oracle card also remains normally searchable.
+            var filteredOracle = Assert.Single(_ctx.MainVM.OracleCardsVM.FilteredCards);
+
+            Assert.Equal("Staying Power", filteredOracle.Name);
+
+            // Staying Power is not part of the seeded physical collection.
+            Assert.Empty(_ctx.MainVM.MyCollectionVM.FilteredCards);
         }
     }
 }

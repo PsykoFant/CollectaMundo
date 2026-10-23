@@ -451,5 +451,88 @@ namespace CollectaMundo.Tests.UnitTests
                 Assert.Single(result);
             }
         }
+
+        public class FilterByLegalFormatsTests
+        {
+            private const ulong StandardMask = 1UL << 18;
+            private const ulong OldSchoolMask = 1UL << 11;
+
+            [Fact]
+            public void LegalFormats_OR_Matches_WhenSelectedFormatIsPlayable()
+            {
+                var card = cards[0];
+
+                var filterLogic = new FilteringLogic<PrintingCard>(
+                    criteriaKey: "LegalFormats",
+                    filterCategory: FilterType.Multi,
+                    selectedOptions: [OldSchoolMask.ToString()],
+                    selectedSingleOption: null,
+                    selectedNumericValue: null,
+                    operatorSelection: OperatorType.OR,
+                    defaultText: string.Empty,
+                    playableFormatsMaskSelector: _ => OldSchoolMask);
+
+                Assert.True(filterLogic.Matches(card));
+            }
+
+            [Fact]
+            public void LegalFormats_OR_DoesNotMatch_WhenSelectedFormatIsNotPlayable()
+            {
+                var card = cards[0];
+
+                var filterLogic = new FilteringLogic<PrintingCard>(
+                    criteriaKey: "LegalFormats",
+                    filterCategory: FilterType.Multi,
+                    selectedOptions: [OldSchoolMask.ToString()],
+                    selectedSingleOption: null,
+                    selectedNumericValue: null,
+                    operatorSelection: OperatorType.OR,
+                    defaultText: string.Empty,
+                    playableFormatsMaskSelector: _ => StandardMask);
+
+                Assert.False(filterLogic.Matches(card));
+            }
+
+            [Fact]
+            public void LegalFormats_AND_RequiresAllSelectedFormats()
+            {
+                var card = cards[0];
+
+                var filterLogic = new FilteringLogic<PrintingCard>(
+                    criteriaKey: "LegalFormats",
+                    filterCategory: FilterType.Multi,
+                    selectedOptions:
+                    [
+                        OldSchoolMask.ToString(),
+                StandardMask.ToString()
+                    ],
+                    selectedSingleOption: null,
+                    selectedNumericValue: null,
+                    operatorSelection: OperatorType.AND,
+                    defaultText: string.Empty,
+                    playableFormatsMaskSelector:
+                        _ => OldSchoolMask | StandardMask);
+
+                Assert.True(filterLogic.Matches(card));
+            }
+
+            [Fact]
+            public void LegalFormats_NOT_DoesNotMatch_WhenAnySelectedFormatIsPlayable()
+            {
+                var card = cards[0];
+
+                var filterLogic = new FilteringLogic<PrintingCard>(
+                    criteriaKey: "LegalFormats",
+                    filterCategory: FilterType.Multi,
+                    selectedOptions: [OldSchoolMask.ToString()],
+                    selectedSingleOption: null,
+                    selectedNumericValue: null,
+                    operatorSelection: OperatorType.NOT,
+                    defaultText: string.Empty,
+                    playableFormatsMaskSelector: _ => OldSchoolMask);
+
+                Assert.False(filterLogic.Matches(card));
+            }
+        }
     }
 }

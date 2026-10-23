@@ -489,17 +489,14 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal("Deck updated successfully.", _ctx.MainVM.DeckManagementVM.StatusMessage);
 
             // Assert persisted metadata was created
-            var aggroFishRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string Format, string Description)>(
-                _ctx.DbFactory,
+            var aggroFishRows = await ScenarioTestHelpers.ExecuteQueryAsync<(string Format, string Description)>(_ctx.DbFactory,
                 """
                 SELECT d.format, d.description
                 FROM myDecks d
                 WHERE d.locationId = @locationId;
                 """,
-                reader => (
-                    Format: reader.GetString(reader.GetOrdinal("format")),
-                    Description: reader.GetString(reader.GetOrdinal("description"))
-                ),
+
+                reader => (Format: reader.GetString(reader.GetOrdinal("format")), Description: reader.GetString(reader.GetOrdinal("description"))),
                 cmd => cmd.Parameters.AddWithValue("@locationId", aggroFish.LocationId));
 
             var (AggroFishFormat, AggroFishDescription) = Assert.Single(aggroFishRows);
@@ -514,6 +511,58 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             Assert.Equal("Aggro Fish", aggroFishLocation.Name);
             Assert.Equal(CardLocationType.Deck, aggroFishLocation.Type);
+
+            // Arrange: open the now-Modern Aggro Fish deck.
+            _ctx.MainVM.DeckManagementVM.SelectedItem = updatedAggroFish;
+
+            Assert.True(_ctx.MainVM.DeckManagementVM.IsEnterDeckBuilderButtonEnabled);
+
+            _ctx.MainVM.DeckManagementVM.EnterDeckBuilderCommand.Execute(null);
+
+            await StatusTestDriver.WaitUntilAsync(() => _ctx.MainVM.DeckBuilderVM.DeckLocationId == updatedAggroFish.LocationId && _ctx.MainVM.DeckBuilderVM.DeckFormat == "modern", "Deck Builder did not finish loading Aggro Fish as a Modern deck.");
+
+            deckBuilder = _ctx.MainVM.DeckBuilderVM;
+
+            // Assert: deck identity / format flowed from Deck Management into Deck Builder.
+            Assert.Equal(updatedAggroFish.LocationId, deckBuilder.DeckLocationId);
+            Assert.Equal("modern", deckBuilder.DeckFormat);
+            Assert.Equal("Modern", deckBuilder.DeckFormatDisplayName);
+
+            // Arrange: use two existing Oracle cards with different Modern legality.
+            var onceUponATime = _ctx.MainVM.OracleCardsVM.Cards.Single(c => c.Name == "Once Upon a Time");
+
+            // Assert: neither legality-test card is already in Aggro Fish.
+            Assert.DoesNotContain(deckBuilder.MainboardZone.Cards, c => c.CardName == "Prismatic Ending");
+            Assert.DoesNotContain(deckBuilder.MainboardZone.Cards, c => c.CardName == "Once Upon a Time");
+
+            // Act: add Prismatic Ending, which is legal in Modern.
+            await deckBuilder.AddCardToDeckCommand.ExecuteAsync(new object[] { prismaticEnding });
+
+            var modernPrismaticEndingRow = deckBuilder.MainboardZone.Cards.Single(c => c.CardName == "Prismatic Ending");
+
+            // Assert: Oracle-level legality recognizes that Prismatic Ending is playable in Modern.
+            Assert.True(modernPrismaticEndingRow.IsLegal);
+
+            // Act: add Once Upon a Time, which is banned in Modern.
+            await deckBuilder.AddCardToDeckCommand.ExecuteAsync(new object[] { onceUponATime });
+
+            var onceUponATimeRow = deckBuilder.MainboardZone.Cards.Single(c => c.CardName == "Once Upon a Time");
+
+            // Assert: Oracle-level legality recognizes that Once Upon a Time is not playable in Modern.
+            Assert.False(onceUponATimeRow.IsLegal);
+
+            // Cleanup: remove the temporary legality-test cards so later scenario sections
+            // are unaffected by this test.
+            await deckBuilder.DeleteDeckCardsCommand.ExecuteAsync(new object[] { modernPrismaticEndingRow, onceUponATimeRow });
+
+            // Assert: temporary desired deck rows were removed.
+            Assert.DoesNotContain(deckBuilder.MainboardZone.Cards, c => c.CardName == "Prismatic Ending");
+            Assert.DoesNotContain(deckBuilder.MainboardZone.Cards, c => c.CardName == "Once Upon a Time");
+
+            // Return through the normal Deck Builder navigation.
+            deckBuilder.BackToDeckManagementCommand.Execute(null);
+
+            Assert.Same(_ctx.MainVM.DeckManagementVM, _ctx.MainVM.PagesDecksHostVM.CurrentDecksContentViewModel);
 
             #endregion
 
