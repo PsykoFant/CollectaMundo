@@ -45,9 +45,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             legalityFormatsSw.Stop();
 
-            Debug.WriteLine(
-                $"[Phase 1] Legality formats: " +
-                $"{legalityFormatsSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"[Phase 1] Legality formats: {legalityFormatsSw.ElapsedMilliseconds} ms");
 
 
             // Heavy workloads:
@@ -203,7 +201,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             phase3abSw.Stop();
 
-            Debug.WriteLine($"[InitializeCardListsAsync] Phase 3a/3b " + $"(build card lists): {phase3abSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"[InitializeCardListsAsync] Phase 3a/3b (build card lists): {phase3abSw.ElapsedMilliseconds} ms");
 
 
             var phase3cSw = Stopwatch.StartNew();
