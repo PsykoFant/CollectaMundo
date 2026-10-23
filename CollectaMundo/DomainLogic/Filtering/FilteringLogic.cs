@@ -5,8 +5,9 @@ using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.Filtering
 {
-    public class FilteringLogic<TCard>(string criteriaKey, FilterType filterCategory, IEnumerable<string> selectedOptions, string? selectedSingleOption, int? selectedNumericValue, OperatorType operatorSelection, string defaultText) : IFilteringLogic<TCard>
+    public class FilteringLogic<TCard>(string criteriaKey, FilterType filterCategory, IEnumerable<string> selectedOptions, string? selectedSingleOption, int? selectedNumericValue, OperatorType operatorSelection, string defaultText, Func<TCard, ulong> playableFormatsMaskSelector) : IFilteringLogic<TCard>
     {
+        private readonly Func<TCard, ulong> _playableFormatsMaskSelector = playableFormatsMaskSelector;
         public string CriteriaKey { get; } = criteriaKey;
         public FilterType FilterCategory { get; } = filterCategory;
         public IEnumerable<string> SelectedOptions { get; } = selectedOptions;
@@ -139,13 +140,7 @@ namespace CollectaMundo.DomainLogic.Filtering
                 return true;
             }
 
-            var playableMaskObject = typeof(TCard).GetProperty("PlayableFormatsMask")?.GetValue(card);
-
-            if (playableMaskObject is not ulong playableMask)
-            {
-                return true;
-            }
-
+            var playableMask = _playableFormatsMaskSelector(card);
             var selectedMask = SelectedOptions.Where(x => ulong.TryParse(x, out _)).Select(ulong.Parse).Aggregate(0UL, (acc, mask) => acc | mask);
 
             if (selectedMask == 0)

@@ -1,5 +1,8 @@
-﻿using CollectaMundo.DomainLogic.Filtering;
+﻿using CollectaMundo.ApplicationServices.CardLegalities;
+using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.ViewModels.Filtering;
 using System.Diagnostics;
 using System.Text;
@@ -8,8 +11,9 @@ using System.Windows.Media;
 
 namespace CollectaMundo.ApplicationServices.Filtering
 {
-    public class FilteringService : IFilteringService
+    public sealed class FilteringService(ICardLegalityService cardLegalityService) : IFilteringService
     {
+        private readonly ICardLegalityService _cardLegalityService = cardLegalityService;
         public static bool HasActiveFilters(IEnumerable<FilterItemViewModel> filters)
         {
             return filters.Any(f =>
@@ -28,16 +32,34 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     _ => false
                 });
         }
-        public List<TCard> ApplyFilters<TCard>(IEnumerable<TCard> cards, IEnumerable<FilterItemViewModel> vmFilters)
+
+        // Apply filters to a collection of cards based on the provided filter view models.
+        public List<PrintingCard> ApplyFilters(IEnumerable<PrintingCard> cards, IEnumerable<FilterItemViewModel> vmFilters)
         {
-            if (vmFilters == null || !vmFilters.Any())
+            return ApplyFiltersCore(cards, vmFilters, card => card.PlayableFormatsMask);
+        }
+        public List<CollectionCard> ApplyFilters(IEnumerable<CollectionCard> cards, IEnumerable<FilterItemViewModel> vmFilters)
+        {
+            return ApplyFiltersCore(cards, vmFilters, card => card.Printing.PlayableFormatsMask);
+        }
+        public List<OracleCard> ApplyFilters(IEnumerable<OracleCard> cards, IEnumerable<FilterItemViewModel> vmFilters)
+        {
+            return ApplyFiltersCore(cards, vmFilters, card => _cardLegalityService.GetOraclePlayableFormatsMask(card.ScryfallOracleId));
+        }
+        private static List<TCard> ApplyFiltersCore<TCard>(IEnumerable<TCard> cards, IEnumerable<FilterItemViewModel> vmFilters, Func<TCard, ulong> playableFormatsMaskSelector)
+        {
+            ArgumentNullException.ThrowIfNull(cards);
+            ArgumentNullException.ThrowIfNull(vmFilters);
+            ArgumentNullException.ThrowIfNull(playableFormatsMaskSelector);
+
+            var filters = vmFilters.ToList();
+
+            if (filters.Count == 0)
             {
                 return [.. cards];
             }
 
-            var filtered = cards;
-
-            var criteria = vmFilters
+            var criteria = filters
                 .Select(vm => new FilteringLogic<TCard>(
                     vm.CriteriaKey,
                     vm.FilterCategory,
@@ -45,25 +67,23 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     vm.SelectedSingleOption,
                     vm.SelectedNumericValue,
                     vm.OperatorSelection,
-                    vm.DefaultText))
+                    vm.DefaultText,
+                    playableFormatsMaskSelector))
                 .ToList();
-
-            if (criteria.Count == 0)
-            {
-                return [.. filtered];
-            }
 
             try
             {
-                return [.. filtered.Where(card => criteria.All(c => c.Matches(card)))];
+                return [.. cards.Where(card => criteria.All(criterion => criterion.Matches(card)))];
             }
             catch (Exception ex)
             {
-
                 Debug.WriteLine($"[Filter] ERROR during filtering: {ex}");
-                return [.. cards]; // fallback
+
+                return [.. cards];
             }
         }
+
+        // Reset all filters to their default state.
         public void ResetAllFilters(IEnumerable<FilterItemViewModel> allFilters)
         {
             var filters = allFilters.ToList();
@@ -145,6 +165,8 @@ namespace CollectaMundo.ApplicationServices.Filtering
                     break;
             }
         }
+
+        // Build a summary string that describes the active filters.
         public string BuildSummary(IEnumerable<FilterItemViewModel> filters)
         {
             try

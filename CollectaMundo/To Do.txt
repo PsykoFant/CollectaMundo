@@ -1,6 +1,9 @@
 TO DO 
 
-review legality stack
+
+defaultslogic har injected service
+test af legality
+opstart - hydration af oracle cards, er det nødvendigt nu eller lævn fra gamle dage?
 
 Merge og release
 
