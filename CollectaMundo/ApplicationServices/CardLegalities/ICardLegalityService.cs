@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLegalities;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CardLegalities
@@ -9,5 +10,7 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
         CardLegalityFormat? GetFormat(string? value);
         Task LoadFormatsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null);
         Task<IReadOnlyDictionary<string, CardLegalityMasks>> PrepareDerivedDataAsync(SQLiteConnection conn, SQLiteTransaction tx);
+        void BuildOraclePlayableFormatsLookup(IReadOnlyList<PrintingCard> printings);
+        ulong GetOraclePlayableFormatsMask(string? scryfallOracleId);
     }
 }

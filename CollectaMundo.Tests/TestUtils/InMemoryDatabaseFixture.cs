@@ -109,8 +109,7 @@ namespace CollectaMundo.Tests.TestUtils
                     await cardDataRepo.RebuildCanonicalOracleFacesAsync(
                         _masterConnection,
                         transaction,
-                        canonicalFaces,
-                        legalityMasksByUuid);
+                        canonicalFaces);
 
                 if (canonicalInserted != canonicalFaces.Count)
                 {
@@ -123,7 +122,8 @@ namespace CollectaMundo.Tests.TestUtils
                 var printingInserted =
                     await cardDataRepo.RebuildPrintingCardsAsync(
                         _masterConnection,
-                        transaction);
+                        transaction,
+                        legalityMasksByUuid);
 
                 if (printingInserted == 0)
                 {

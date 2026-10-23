@@ -20,20 +20,18 @@ namespace CollectaMundo.DomainLogic.Decks
                 CanSetAsCompanion = GetCompanionPlacement(context, selectedCard).IsAllowed
             };
         }
-        public DeckCardValidationResult ValidateCard(DeckBuildingRuleContext context, DeckCardEntry entry, OracleCard oracleCard, ulong? formatMask)
+        public DeckCardValidationResult ValidateOracleCardLegallity(DeckBuildingRuleContext context, DeckCardEntry entry, OracleCard oracleCard, ulong? formatMask, ulong oraclePlayableFormatsMask)
         {
             ArgumentNullException.ThrowIfNull(context);
             ArgumentNullException.ThrowIfNull(entry);
             ArgumentNullException.ThrowIfNull(oracleCard);
 
-            var isLegal = oracleCard.GamePlayCard != 1 || (formatMask.HasValue && (oracleCard.PlayableFormatsMask & formatMask.Value) != 0);
+            var isLegal = oracleCard.GamePlayCard != 1 || (formatMask.HasValue && (oraclePlayableFormatsMask & formatMask.Value) != 0);
 
             return new DeckCardValidationResult
             {
                 IsLegal = isLegal,
-                Message = isLegal
-                    ? string.Empty
-                    : $"{oracleCard.Name} is not legal in {context.Format}."
+                Message = isLegal ? string.Empty : $"{oracleCard.Name} is not legal in {context.Format}."
             };
         }
         public DeckMutationResult MoveCard(IReadOnlyCollection<DeckCardState> cards, OracleCard card, DeckSection sourceSection, DeckSection destinationSection, int quantity)

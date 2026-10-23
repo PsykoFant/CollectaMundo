@@ -108,7 +108,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
             var phase2bSw = Stopwatch.StartNew();
 
             var oracleHydrationSw = Stopwatch.StartNew();
-
             var oracleByFace = BuildOracleCardsByFace(canonicalRows);
 
             oracleHydrationSw.Stop();
@@ -116,12 +115,21 @@ namespace CollectaMundo.ApplicationServices.CardLists
             Debug.WriteLine($"[Phase 2b] Hydrate canonical Oracle cards: {oracleByFace.Count:N0} cards, {oracleHydrationSw.ElapsedMilliseconds} ms");
 
             var printingHydrationSw = Stopwatch.StartNew();
-
             var printings = HydratePrintingCards(printingRows, oracleByFace);
 
             printingHydrationSw.Stop();
 
             Debug.WriteLine($"[Phase 2b] Hydrate printings: {printings.Length:N0} cards, {printingHydrationSw.ElapsedMilliseconds} ms");
+
+            // Build Oracle-level lookup:
+            // ScryfallOracleId -> union of playable formats across all exact printings of that Oracle card.
+            var legalityLookupSw = Stopwatch.StartNew();
+
+            _cardLegalityService.BuildOraclePlayableFormatsLookup(printings);
+
+            legalityLookupSw.Stop();
+
+            Debug.WriteLine($"[Phase 2b] Build Oracle printing-legality lookup: {legalityLookupSw.ElapsedMilliseconds} ms");
 
             var aggregationSw = Stopwatch.StartNew();
 

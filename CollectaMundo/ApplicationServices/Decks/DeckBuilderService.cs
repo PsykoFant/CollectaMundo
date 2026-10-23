@@ -14,11 +14,11 @@ using CollectaMundo.ViewModels.Decks.Models.DragMoveViewRequests;
 
 namespace CollectaMundo.ApplicationServices.Decks
 {
-    public sealed class DeckBuilderService(IUnitOfWorkRunner uowRunner, IDeckCardReader deckCardReader, ICardLegalityService cardLegalityProviderService, IDeckBuilderLogic deckBuilderLogic, IDeckBuilderRepo deckBuilderRepo) : IDeckBuilderService
+    public sealed class DeckBuilderService(IUnitOfWorkRunner uowRunner, IDeckCardReader deckCardReader, ICardLegalityService cardLegalityService, IDeckBuilderLogic deckBuilderLogic, IDeckBuilderRepo deckBuilderRepo) : IDeckBuilderService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly IDeckCardReader _deckCardReader = deckCardReader;
-        private readonly ICardLegalityService _cardLegalityProviderService = cardLegalityProviderService;
+        private readonly ICardLegalityService _cardLegalityService = cardLegalityService;
         private readonly IDeckBuilderLogic _deckBuilderLogic = deckBuilderLogic;
         private readonly IDeckBuilderRepo _deckBuilderRepo = deckBuilderRepo;
         public Task<IReadOnlyList<DeckCardEntry>> LoadDeckAsync(int locationId)
@@ -298,10 +298,10 @@ namespace CollectaMundo.ApplicationServices.Decks
             ArgumentNullException.ThrowIfNull(oracleCard);
 
             var context = CreateRuleContext(format, deckCards);
+            var formatInfo = _cardLegalityService.GetFormat(format);
+            var oraclePlayableFormatsMask = _cardLegalityService.GetOraclePlayableFormatsMask(oracleCard.ScryfallOracleId);
 
-            var formatInfo = _cardLegalityProviderService.GetFormat(format);
-
-            return _deckBuilderLogic.ValidateCard(context, entry, oracleCard, formatInfo?.Mask);
+            return _deckBuilderLogic.ValidateOracleCardLegallity(context, entry, oracleCard, formatInfo?.Mask, oraclePlayableFormatsMask);
         }
         private static DeckBuildingRuleContext CreateRuleContext(string? format, IEnumerable<DeckCardState> cards)
         {

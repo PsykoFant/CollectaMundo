@@ -239,14 +239,16 @@ namespace CollectaMundo.Tests.TestUtils
                 .Setup(r => r.RebuildCanonicalOracleFacesAsync(
                     It.IsAny<SQLiteConnection>(),
                     It.IsAny<SQLiteTransaction>(),
-                    It.IsAny<IReadOnlyList<CanonicalOracleFace>>(),
-                    It.IsAny<IReadOnlyDictionary<string, CardLegalityMasks>>()))
+                    It.IsAny<IReadOnlyList<CanonicalOracleFace>>()
+                    ))
                 .ReturnsAsync(1);
 
             CardDataRepo
                 .Setup(r => r.RebuildPrintingCardsAsync(
                     It.IsAny<SQLiteConnection>(),
-                    It.IsAny<SQLiteTransaction>()))
+                    It.IsAny<SQLiteTransaction>(),
+                    It.IsAny<IReadOnlyDictionary<string, CardLegalityMasks>>()
+                    ))
                 .ReturnsAsync(1);
         }
         public void Dispose()

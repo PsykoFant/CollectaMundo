@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLegalities;
+using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.CardLegalities;
 using System.Data.SQLite;
 
@@ -8,6 +9,7 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
     {
         private readonly ICardLegalityLogic _cardLegalityLogic = cardLegalityLogic;
         private readonly ICardLegalityRepo _cardLegalityRepo = cardLegalityRepo;
+        private Dictionary<string, ulong> _playableFormatsByOracleId = new(StringComparer.OrdinalIgnoreCase);
         private List<CardLegalityFormat> _formats = [];
         private Dictionary<string, CardLegalityFormat> _formatByValue = new(StringComparer.OrdinalIgnoreCase);
         public IReadOnlyList<CardLegalityFormat> Formats => _formats;
@@ -19,6 +21,36 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
             }
 
             return _formatByValue.TryGetValue(value, out var format) ? format : null;
+        }
+        public ulong GetOraclePlayableFormatsMask(string? scryfallOracleId)
+        {
+            if (string.IsNullOrWhiteSpace(scryfallOracleId))
+            {
+                return 0;
+            }
+
+            return _playableFormatsByOracleId.TryGetValue(scryfallOracleId, out var mask) ? mask : 0;
+        }
+        public void BuildOraclePlayableFormatsLookup(IReadOnlyList<PrintingCard> printings)
+        {
+            ArgumentNullException.ThrowIfNull(printings);
+
+            var playableFormatsByOracleId = new Dictionary<string, ulong>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var printing in printings)
+            {
+                var oracleId = printing.ScryfallOracleId;
+
+                if (string.IsNullOrWhiteSpace(oracleId))
+                {
+                    continue;
+                }
+
+                playableFormatsByOracleId.TryGetValue(oracleId, out var currentMask);
+                playableFormatsByOracleId[oracleId] = currentMask | printing.PlayableFormatsMask;
+            }
+
+            _playableFormatsByOracleId = playableFormatsByOracleId;
         }
         public async Task LoadFormatsAsync(SQLiteConnection conn, SQLiteTransaction? tx = null)
         {
@@ -66,5 +98,6 @@ namespace CollectaMundo.ApplicationServices.CardLegalities
 
             return masksByUuid;
         }
+
     }
 }

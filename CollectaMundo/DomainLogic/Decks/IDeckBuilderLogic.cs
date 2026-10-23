@@ -9,7 +9,7 @@ namespace CollectaMundo.DomainLogic.Decks
     public interface IDeckBuilderLogic
     {
         DeckActionAvailability GetActionAvailability(DeckBuildingRuleContext context, OracleCard selectedCard);
-        DeckCardValidationResult ValidateCard(DeckBuildingRuleContext context, DeckCardEntry entry, OracleCard oracleCard, ulong? formatMask);
+        DeckCardValidationResult ValidateOracleCardLegallity(DeckBuildingRuleContext context, DeckCardEntry entry, OracleCard oracleCard, ulong? formatMask, ulong playablePrintingFormatsMask);
         DeckMutationResult MoveCard(IReadOnlyCollection<DeckCardState> cards, OracleCard card, DeckSection sourceSection, DeckSection destinationSection, int quantity);
         DeckSlotPlacementResult GetCommanderPlacement(DeckBuildingRuleContext context, OracleCard selectedCard);
         DeckSlotPlacementResult GetCompanionPlacement(DeckBuildingRuleContext context, OracleCard candidate);
