@@ -208,7 +208,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             var phase3cSw = Stopwatch.StartNew();
 
-            var filterDefaults = _filterDefaultsLogic.BuildFilters(allCardsTask.Result, myCollectionTask.Result);
+            var filterDefaults = _filterDefaultsLogic.BuildFilters(allCardsTask.Result, myCollectionTask.Result, _cardLegalityService.Formats);
 
             filters.Clear();
 

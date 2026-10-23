@@ -55,7 +55,16 @@ namespace CollectaMundo.Tests.TestUtils;
 
 public static class TestAppBuilder
 {
-    public static async Task<(MainWindowViewModel VM, OperationOverlayViewModel OperationOverlayVM)> BuildAsync(InMemoryDatabaseFixture fixture, IDbConnectionFactory dbFactory, List<CollectionChangeSet<CollectionCardDbRow>>? eventSink = null, IUserPromptService? promptOverride = null, IFileSystemPicker? filePickerOverride = null)
+    public static async Task<(
+    MainWindowViewModel VM,
+    OperationOverlayViewModel OperationOverlayVM,
+    FilteringService FilteringService)>
+    BuildAsync(
+        InMemoryDatabaseFixture fixture,
+        IDbConnectionFactory dbFactory,
+        List<CollectionChangeSet<CollectionCardDbRow>>? eventSink = null,
+        IUserPromptService? promptOverride = null,
+        IFileSystemPicker? filePickerOverride = null)
     {
         await fixture.InitializeAsync();
 
@@ -85,7 +94,7 @@ public static class TestAppBuilder
 
         var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
 
-        var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(cardLegalityService), keyedDataProviderService, cardLegalityService);
+        var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, cardLegalityService);
 
         var collectionMutationsLogic = new CollectionMutationsLogic();
         var collectionMutationsRepo = new CollectionMutationsRepo();
@@ -104,12 +113,9 @@ public static class TestAppBuilder
 
         var picker = filePickerOverride ?? new FileSystemPicker();
 
-        var importService = new ImportService(
-            uowRunner,
-            new ImportRepo(),
-            picker,
-            new ImportLogic(),
-            cardLocationService);
+        var importService = new ImportService(uowRunner, new ImportRepo(), picker, new ImportLogic(), cardLocationService);
+
+        var filteringService = new FilteringService(cardLegalityService);
 
         var scheduler = new ImmediateScheduler();
 
@@ -119,6 +125,7 @@ public static class TestAppBuilder
             cardDbManagementService,
             importService,
             operationOverlayController,
+            filteringService,
             userPromptService,
             picker,
             cardListService,
@@ -167,7 +174,7 @@ public static class TestAppBuilder
             mainVM.MyCollectionVM.Cards.Count >= 22,
             millisecondsTimeout: 500);
 
-        return (mainVM, operationOverlayViewModel);
+        return (mainVM, operationOverlayViewModel, filteringService);
     }
     private static ProgressSinks CreateProgressSinks(IOperationOverlayController operationOverlayController) => new()
     {

@@ -8,7 +8,7 @@ namespace CollectaMundo.Tests.TestUtils
     {
         public MainWindowViewModel MainVM { get; private set; } = null!;
         public IDbConnectionFactory DbFactory { get; private set; } = null!;
-        public FilteringService FilteringService { get; } = new();
+        public FilteringService FilteringService { get; private set; } = null!;
 
         public static async Task<ScenarioTestContext> CreateAsync(InMemoryDatabaseFixture fx)
         {
@@ -16,7 +16,11 @@ namespace CollectaMundo.Tests.TestUtils
             {
                 DbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(fx.DbName)
             };
-            (context.MainVM, _) = await TestAppBuilder.BuildAsync(fx, context.DbFactory);
+
+            var (mainVM, _, filteringService) = await TestAppBuilder.BuildAsync(fx, context.DbFactory);
+
+            context.MainVM = mainVM;
+            context.FilteringService = filteringService;
 
             return context;
         }

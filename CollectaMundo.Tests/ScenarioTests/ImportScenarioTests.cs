@@ -27,7 +27,7 @@ namespace CollectaMundo.Tests.ScenarioTests
         public async ValueTask InitializeAsync()
         {
             _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
+            (_mainVM, _, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
         }
 
         [Fact]
@@ -551,7 +551,7 @@ namespace CollectaMundo.Tests.ScenarioTests
         public async ValueTask InitializeAsync()
         {
             _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
+            (_mainVM, _, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
         }
 
         [Fact]
@@ -962,7 +962,7 @@ namespace CollectaMundo.Tests.ScenarioTests
         public async ValueTask InitializeAsync()
         {
             _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
+            (_mainVM, _, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
         }
 
         [Fact]
@@ -1287,7 +1287,7 @@ namespace CollectaMundo.Tests.ScenarioTests
         public async ValueTask InitializeAsync()
         {
             _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
+            (_mainVM, _, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory, eventSink: null, promptOverride: _prompt, filePickerOverride: _picker);
         }
 
         [Fact]

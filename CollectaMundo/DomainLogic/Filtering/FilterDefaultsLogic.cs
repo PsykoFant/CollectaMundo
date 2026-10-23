@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardLegalities;
-using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
+﻿using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
@@ -9,12 +8,12 @@ using System.Collections.Concurrent;
 
 namespace CollectaMundo.DomainLogic.Filtering
 {
-    public partial class FilterDefaultsLogic(ICardLegalityService cardLegalityProviderService) : IFilterDefaultsLogic
+    public partial class FilterDefaultsLogic() : IFilterDefaultsLogic
     {
-        private readonly ICardLegalityService _cardLegalityProviderService = cardLegalityProviderService;
-        public List<FilterDefaults> BuildFilters(IReadOnlyList<PrintingCard> allCards, IReadOnlyList<CollectionCard> myCollection)
+        public List<FilterDefaults> BuildFilters(IReadOnlyList<PrintingCard> allCards, IReadOnlyList<CollectionCard> myCollection, IReadOnlyList<CardLegalityFormat> legalityFormats)
         {
             var filterDefaultsDict = new ConcurrentDictionary<string, FilterDefaults>();
+            var setReleaseDates = BuildSetReleaseDates(allCards);
 
             Parallel.ForEach(FilterCriteriaMappings.CriteriaMappings, entry =>
                 {
@@ -22,18 +21,24 @@ namespace CollectaMundo.DomainLogic.Filtering
                     var mapping = entry.Value;
                     var filterDefaults = mapping.DataSource == FilterDataSource.Collection
                             ? BuildCollectionDefault(criteriaKey, mapping, myCollection)
-                            : BuildPrintingDefault(criteriaKey, mapping, allCards);
+                            : BuildPrintingDefault(criteriaKey, mapping, allCards, legalityFormats, setReleaseDates);
 
                     filterDefaultsDict[criteriaKey] = filterDefaults;
                 });
 
             return [.. FilterCriteriaMappings.CriteriaMappings.Keys.Select(k => filterDefaultsDict[k])];
         }
-        private FilterDefaults BuildPrintingDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<PrintingCard> cards)
+        private static Dictionary<string, DateTime> BuildSetReleaseDates(IReadOnlyList<PrintingCard> cards)
+        {
+            return cards.Where(card => !string.IsNullOrWhiteSpace(card.SetName) && card.ReleaseDate.HasValue)
+                .GroupBy(card => card.SetName!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Max(card => card.ReleaseDate!.Value), StringComparer.OrdinalIgnoreCase);
+        }
+        private static FilterDefaults BuildPrintingDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<PrintingCard> cards, IReadOnlyList<CardLegalityFormat> legalityFormats, IReadOnlyDictionary<string, DateTime> setReleaseDates)
         {
             if (criteriaKey.Equals("LegalFormats", StringComparison.OrdinalIgnoreCase))
             {
-                var explicitOptions = _cardLegalityProviderService.Formats.Select(format => new FilterOption(format.Mask.ToString(), format.DisplayName)).ToList();
+                var explicitOptions = legalityFormats.Select(format => new FilterOption(format.Mask.ToString(), format.DisplayName)).ToList();
 
                 return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues: [], explicitOptions);
             }
@@ -57,9 +62,7 @@ namespace CollectaMundo.DomainLogic.Filtering
                 _ => throw new Exception($"Unhandled printing criteria key: {criteriaKey}")
             };
 
-            var result = BuildDefaultFromRawValues(criteriaKey, mapping, rawValues, explicitOptions: null);
-
-            return result;
+            return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues, explicitOptions: null, setReleaseDates);
         }
         private static FilterDefaults BuildCollectionDefault(string criteriaKey, CriteriaSpec mapping, IReadOnlyList<CollectionCard> cards)
         {
@@ -94,7 +97,7 @@ namespace CollectaMundo.DomainLogic.Filtering
 
             return BuildDefaultFromRawValues(criteriaKey, mapping, rawValues, explicitOptions: null);
         }
-        private static FilterDefaults BuildDefaultFromRawValues(string criteriaKey, CriteriaSpec mapping, List<string> rawValues, List<FilterOption>? explicitOptions)
+        private static FilterDefaults BuildDefaultFromRawValues(string criteriaKey, CriteriaSpec mapping, List<string> rawValues, List<FilterOption>? explicitOptions, IReadOnlyDictionary<string, DateTime>? setReleaseDates = null)
         {
             var cleanedValues = rawValues;
 
@@ -103,9 +106,9 @@ namespace CollectaMundo.DomainLogic.Filtering
                 var removeItems = GetUnwantedItems(criteriaKey);
                 cleanedValues = CleanAndFilter(criteriaKey, rawValues, removeItems, mapping.ShouldNotSplit);
 
-                if (criteriaKey.Equals("SetName", StringComparison.OrdinalIgnoreCase))
+                if (criteriaKey.Equals("SetName", StringComparison.OrdinalIgnoreCase) && setReleaseDates is not null)
                 {
-                    cleanedValues = SortSetNamesByReleaseDate(cleanedValues);
+                    cleanedValues = SortSetNamesByReleaseDate(cleanedValues, setReleaseDates);
                 }
 
                 if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
@@ -162,23 +165,11 @@ namespace CollectaMundo.DomainLogic.Filtering
 
             return values;
         }
-        private static List<string> SortSetNamesByReleaseDate(List<string> setNames)
+        private static List<string> SortSetNamesByReleaseDate(List<string> setNames, IReadOnlyDictionary<string, DateTime> releaseDates)
         {
-            if (CardDataProviders.SetMetaProvider is not ValueProvider<string, SetDto> provider)
-            {
-                return setNames;
-            }
-
-            var releaseDateMap = provider.Values
-                .Where(s => !string.IsNullOrWhiteSpace(s.Name) && s.ReleaseDate.HasValue)
-                .ToDictionary(
-                    s => s.Name!,
-                    s => s.ReleaseDate!.Value,
-                    StringComparer.OrdinalIgnoreCase);
-
             return
             [
-                .. setNames.OrderByDescending(name => releaseDateMap.TryGetValue(name, out var date)
+                .. setNames.OrderByDescending(name => releaseDates.TryGetValue(name, out var date)
                 ? date
                 : DateTime.MinValue)
             ];

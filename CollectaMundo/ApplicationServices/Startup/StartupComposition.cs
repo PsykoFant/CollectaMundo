@@ -116,7 +116,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
 
                 var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
-                var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(cardLegalityService), keyedDataProviderService, cardLegalityService);
+                var cardListService = new CardListService(uowRunner, new CardListRepo(), new FilterDefaultsLogic(), keyedDataProviderService, cardLegalityService);
 
                 var cardLocationLookupStore = new CardLocationLookupStore();
                 var cardLocationRepo = new CardLocationRepo();
