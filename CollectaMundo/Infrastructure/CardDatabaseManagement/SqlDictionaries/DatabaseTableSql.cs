@@ -29,13 +29,12 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                     "defaultSvgUsed BOOLEAN" +
                     ");",
 
-                ["canonicalOracleFaces"] =
+                ["oracleCards"] =
                     """
-                    CREATE TABLE IF NOT EXISTS canonicalOracleFaces (
-                        id INTEGER PRIMARY KEY,
-                        scryfallOracleId TEXT NOT NULL,
-                        side TEXT NOT NULL,
-                        name TEXT NULL,
+                    CREATE TABLE IF NOT EXISTS oracleCards (
+                        scryfallOracleId TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        gameplayCard INTEGER NOT NULL CHECK (gameplayCard IN (0, 1)),
                         manaCostRaw TEXT NULL,
                         manaValue REAL NULL,
                         colors TEXT NULL,
@@ -44,15 +43,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
                         superTypes TEXT NULL,
                         types TEXT NULL,
                         subTypes TEXT NULL,
-                        type TEXT NULL,
-                        gameplayCard INTEGER NOT NULL CHECK (gameplayCard IN (0, 1)),
-                        selectedSourceUuid TEXT NOT NULL,
-                        sourceRowCount INTEGER NOT NULL CHECK (sourceRowCount > 0),
-                        winningRowCount INTEGER NOT NULL CHECK (winningRowCount > 0),
-                        variantCount INTEGER NOT NULL CHECK (variantCount > 0),
-                        isAmbiguous INTEGER NOT NULL CHECK (isAmbiguous IN (0, 1)),
-
-                        UNIQUE (scryfallOracleId, side)
+                        type TEXT NULL
                     );
                     """,
 

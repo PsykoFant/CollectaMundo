@@ -236,10 +236,10 @@ namespace CollectaMundo.Tests.TestUtils
                 .ReturnsAsync(legalityMasksByUuid);
 
             CardDataRepo
-                .Setup(r => r.RebuildCanonicalOracleFacesAsync(
+                .Setup(r => r.RebuildOracleCardsAsync(
                     It.IsAny<SQLiteConnection>(),
                     It.IsAny<SQLiteTransaction>(),
-                    It.IsAny<IReadOnlyList<CanonicalOracleFace>>()
+                    It.IsAny<IReadOnlyList<AggregatedOracleCard>>()
                     ))
                 .ReturnsAsync(1);
 

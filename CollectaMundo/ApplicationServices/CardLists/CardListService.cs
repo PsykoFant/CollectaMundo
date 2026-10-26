@@ -2,8 +2,6 @@
 using CollectaMundo.ApplicationServices.CardLists.Factories;
 using CollectaMundo.ApplicationServices.KeyedDataProvider;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
-using CollectaMundo.DomainLogic.CardData.Models;
-using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Shared;
@@ -47,21 +45,20 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             Debug.WriteLine($"[Phase 1] Legality formats: {legalityFormatsSw.ElapsedMilliseconds} ms");
 
-
             // Heavy workloads:
-            // run concurrently on separate SQLite connections / worker threads.            
+            // Load Oracle cards and printing cards sequentially on one read-only connection, off the UI thread.
 
             var cardRowsTask = Task.Run(async () =>
             {
                 return await _uowRunner.ExecuteReadOnlyAsync(async conn =>
                 {
-                    var canonicalSw = Stopwatch.StartNew();
+                    var oracleSw = Stopwatch.StartNew();
 
-                    var canonicalRows = await _cardListRepo.ReadCanonicalOracleFacesAsync(conn);
+                    var oracleRows = await _cardListRepo.ReadOracleCardsAsync(conn);
 
-                    canonicalSw.Stop();
+                    oracleSw.Stop();
 
-                    Debug.WriteLine($"[Phase 1] Canonical Oracle rows: {canonicalRows.Count:N0} rows, {canonicalSw.ElapsedMilliseconds} ms");
+                    Debug.WriteLine($"[Phase 1] Oracle rows: {oracleRows.Count:N0} rows, {oracleSw.ElapsedMilliseconds} ms");
 
                     var printingSw = Stopwatch.StartNew();
 
@@ -71,12 +68,11 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
                     Debug.WriteLine($"[Phase 1] Printing rows: {printingRows.Count:N0} rows, {printingSw.ElapsedMilliseconds} ms");
 
-                    return (CanonicalRows: canonicalRows, PrintingRows: printingRows);
+                    return (OracleRows: oracleRows, PrintingRows: printingRows);
                 });
             });
 
-            var (canonicalRows, printingRows) = await cardRowsTask;
-
+            var (oracleRows, printingRows) = await cardRowsTask;
 
             // Small workload: keep sequential.
             var collectionSw = Stopwatch.StartNew();
@@ -94,7 +90,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             #endregion
 
-            #region Phase 2: Hydrate and aggregate printing cards
+            #region Phase 2: Hydrate Oracle cards and physical printings
 
             // Phase 2a: Static provider setup
             CardDataProviders.ManaCostImages = lookupPackage.ManaCostImages;
@@ -102,25 +98,36 @@ namespace CollectaMundo.ApplicationServices.CardLists
             CardDataProviders.SetMetaProvider = lookupPackage.SetMetaProvider;
             CardDataProviders.PriceMetaProvider = lookupPackage.PriceMetaProvider;
 
-            // Phase 2b: Hydrate and aggregate
+            // Phase 2b: Hydrate Oracle cards and exact physical printings
             var phase2bSw = Stopwatch.StartNew();
 
+            // ---------------------------------------------------------
+            // 1. Hydrate complete Oracle cards
+            // ---------------------------------------------------------
+
             var oracleHydrationSw = Stopwatch.StartNew();
-            var oracleByFace = BuildOracleCardsByFace(canonicalRows);
+
+            var oracleById = BuildOracleCards(oracleRows);
 
             oracleHydrationSw.Stop();
 
-            Debug.WriteLine($"[Phase 2b] Hydrate canonical Oracle cards: {oracleByFace.Count:N0} cards, {oracleHydrationSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"[Phase 2b] Hydrate Oracle cards: {oracleById.Count:N0} cards, {oracleHydrationSw.ElapsedMilliseconds} ms");
+
+            // ---------------------------------------------------------
+            // 2. Hydrate exact physical printings
+            // ---------------------------------------------------------
 
             var printingHydrationSw = Stopwatch.StartNew();
-            var printings = HydratePrintingCards(printingRows, oracleByFace);
+            var printings = HydratePrintingCards(printingRows, oracleById);
 
             printingHydrationSw.Stop();
 
             Debug.WriteLine($"[Phase 2b] Hydrate printings: {printings.Length:N0} cards, {printingHydrationSw.ElapsedMilliseconds} ms");
 
-            // Build Oracle-level lookup:
-            // ScryfallOracleId -> union of playable formats across all exact printings of that Oracle card.
+            // ---------------------------------------------------------
+            // 3. Build Oracle-level legality lookup
+            // ---------------------------------------------------------
+
             var legalityLookupSw = Stopwatch.StartNew();
 
             _cardLegalityService.BuildOraclePlayableFormatsLookup(printings);
@@ -129,75 +136,67 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             Debug.WriteLine($"[Phase 2b] Build Oracle printing-legality lookup: {legalityLookupSw.ElapsedMilliseconds} ms");
 
-            var aggregationSw = Stopwatch.StartNew();
+            // ---------------------------------------------------------
+            // 4. Build exact printing lookup by UUID
+            // ---------------------------------------------------------
 
-            var aggregatedPrintings = PrintingCardAggregator.AggregatePrintingCards(printings);
+            // Retain every physical printing, including secondary faces.
+            var printingByUuid = printings.ToDictionary(printing => printing.Uuid, StringComparer.OrdinalIgnoreCase);
 
-            aggregationSw.Stop();
+            // ---------------------------------------------------------
+            // 5. Select standalone printings for application-facing lists
+            // ---------------------------------------------------------
 
-            Debug.WriteLine($"[Phase 2b] Aggregate printings: {aggregationSw.ElapsedMilliseconds} ms");
+            // Only side "" and side "a" represent standalone cards.
+            var displayPrintings = printingRows.Where(row => IsPrimarySide(row.Side)).Select(row => printingByUuid[row.Uuid]).ToArray();
 
-            var printingByUuid = aggregatedPrintings.Where(p => !string.IsNullOrWhiteSpace(p.Uuid)).ToDictionary(p => p.Uuid, StringComparer.OrdinalIgnoreCase);
+            // Identify Oracle cards that have at least one primary printing. Secondary-only Oracle identities, such as Brisela, are excluded.
+            var standaloneOracleIds = displayPrintings.Select(printing => printing.ScryfallOracleId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            Debug.WriteLine($"[Phase 2b] Physical printings: {printings.Length:N0}, standalone printings: {displayPrintings.Length:N0}, standalone Oracle cards: {standaloneOracleIds.Count:N0}");
 
             phase2bSw.Stop();
 
-            Debug.WriteLine($"[InitializeCardListsAsync] Phase 2b (hydrate and aggregate): {phase2bSw.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"[InitializeCardListsAsync] Phase 2b (hydrate cards): {phase2bSw.ElapsedMilliseconds} ms");
 
             #endregion
 
             #region Phase 3: Build application-facing card lists and filters
 
             // Phase 3a + 3b:
-            // BuildFilters independent application-facing collections concurrently.
+            // Build independent application-facing card lists concurrently.
             var phase3abSw = Stopwatch.StartNew();
 
-            var allCardsTask = Task.Run(() =>
-            {
-                var allCards = SortCards(aggregatedPrintings);
-
-                allCardsVM.Cards = allCards;
-                allCardsVM.FilteredCards = allCardsVM.Cards;
-
-                return allCards;
-            });
-
+            var allCardsTask = Task.Run(() => SortCards(displayPrintings));
             var myCollectionTask = Task.Run(() =>
             {
                 var myCollection = collectionRows.Select(row =>
+                {
+                    if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
                     {
-                        if (!printingByUuid.TryGetValue(row.Identity.Uuid, out var printing))
-                        {
-                            var sourcePrinting = printings.FirstOrDefault(p => string.Equals(p.Uuid, row.Identity.Uuid, StringComparison.OrdinalIgnoreCase));
+                        throw new InvalidOperationException(
+                            $"Cannot materialize collection card. " +
+                            $"Printing not found for UUID '{row.Identity.Uuid}'.");
+                    }
 
-                            throw new InvalidOperationException(
-                                $"Cannot materialize collection card. " +
-                                $"Printing not found for UUID '{row.Identity.Uuid}'. " +
-                                $"Present in source printings: {sourcePrinting is not null}. " +
-                                $"Source side: '{sourcePrinting?.Oracle.Side ?? "<none>"}'. " +
-                                $"Source other faces: " +
-                                $"'{string.Join(",", sourcePrinting?.OtherFaceIds ?? [])}'.");
-                        }
+                    return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
+                }).ToList();
 
-                        return CollectionCardFactory.FromPrintingAndDbRow(printing, row);
-                    }).ToList();
-
-                myCollectionVM.Cards = SortCards(myCollection);
-                myCollectionVM.FilteredCards = myCollectionVM.Cards;
-
-                return myCollection;
+                return SortCards(myCollection);
             });
-
-            var oracleCardsTask = Task.Run(() =>
-            {
-                var oracleCards = BuildAndSortOracleCards(aggregatedPrintings);
-
-                oracleCardsVM.Cards = oracleCards;
-                oracleCardsVM.FilteredCards = oracleCardsVM.Cards;
-
-                return oracleCards;
-            });
+            var oracleCardsTask = Task.Run(() => SortOracleCards(oracleById.Values.Where(oracle => standaloneOracleIds.Contains(oracle.ScryfallOracleId))));
 
             await Task.WhenAll(allCardsTask, myCollectionTask, oracleCardsTask);
+
+            // Assign on the captured WPF UI synchronization context.
+            allCardsVM.Cards = allCardsTask.Result;
+            allCardsVM.FilteredCards = allCardsVM.Cards;
+
+            myCollectionVM.Cards = myCollectionTask.Result;
+            myCollectionVM.FilteredCards = myCollectionVM.Cards;
+
+            oracleCardsVM.Cards = oracleCardsTask.Result;
+            oracleCardsVM.FilteredCards = oracleCardsVM.Cards;
 
             phase3abSw.Stop();
 
@@ -228,33 +227,44 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             #endregion
         }
-        private static Dictionary<OracleFaceKey, OracleCard> BuildOracleCardsByFace(IReadOnlyList<CanonicalOracleFaceDbRow> rows)
+        private static Dictionary<string, OracleCard> BuildOracleCards(IReadOnlyList<OracleCardDbRow> rows)
         {
-            var result = new Dictionary<OracleFaceKey, OracleCard>(rows.Count);
+            var result = new Dictionary<string, OracleCard>(rows.Count, StringComparer.OrdinalIgnoreCase);
 
-            for (var i = 0; i < rows.Count; i++)
+            foreach (var row in rows)
             {
-                var row = rows[i];
-                var key = new OracleFaceKey(row.ScryfallOracleId, row.Side);
                 var oracle = OracleCardFactory.FromRow(row);
 
-                result.Add(key, oracle);
+                result.Add(row.ScryfallOracleId, oracle);
             }
 
             return result;
         }
-        private static PrintingCard[] HydratePrintingCards(IReadOnlyList<PrintingCardDbRow> rows, IReadOnlyDictionary<OracleFaceKey, OracleCard> oracleByFace)
+        private static List<OracleCard> SortOracleCards(IEnumerable<OracleCard> oracleCards)
+        {
+            return
+            [
+                .. oracleCards
+                .OrderByDescending(c => c.GamePlayCard)
+                .ThenBy(c => CardSort.GetTypeRank(c.Types, c.GamePlayCard))
+                .ThenBy(c => CardSort.GetColorRank(c.Colors))
+                .ThenBy(c => c.ManaValue)
+                .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(c => c.ScryfallOracleId, StringComparer.Ordinal)
+                ];
+        }
+        private static PrintingCard[] HydratePrintingCards(IReadOnlyList<PrintingCardDbRow> rows, IReadOnlyDictionary<string, OracleCard> oracleById)
         {
             var printings = new PrintingCard[rows.Count];
 
             Parallel.For(0, rows.Count, i =>
             {
                 var row = rows[i];
-                var key = new OracleFaceKey(row.ScryfallOracleId, row.Side);
 
-                if (!oracleByFace.TryGetValue(key, out var oracle))
+                if (!oracleById.TryGetValue(row.ScryfallOracleId, out var oracle))
                 {
-                    throw new InvalidOperationException($"Cannot materialize printing '{row.Uuid}'. Canonical Oracle face not found for OracleId='{row.ScryfallOracleId}', Side='{row.Side}'.");
+                    throw new InvalidOperationException($"Cannot materialize printing '{row.Uuid}'. Oracle card not found for OracleId='{row.ScryfallOracleId}'.");
                 }
 
                 printings[i] = PrintingCardFactory.FromRow(row, oracle);
@@ -277,21 +287,9 @@ namespace CollectaMundo.ApplicationServices.CardLists
             .ThenBy(c => CardSort.GetTypeRank(c.Types, c.GamePlayCard))
             ];
         }
-        private static List<OracleCard> BuildAndSortOracleCards(IEnumerable<PrintingCard> printings)
+        private static bool IsPrimarySide(string? side)
         {
-            return
-            [
-                .. printings.Where(p => !string.IsNullOrWhiteSpace(p.ScryfallOracleId))
-                .GroupBy(p => p.ScryfallOracleId!, StringComparer.OrdinalIgnoreCase)
-                .Select(group => group.First())
-                .OrderByDescending(p => p.GamePlayCard)
-                .ThenBy(p => CardSort.GetTypeRank(p.Types, p.GamePlayCard))
-                .ThenBy(p => CardSort.GetColorRank(p.Colors))
-                .ThenBy(p => p.ManaValue)
-                .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(p => p.Types, StringComparer.OrdinalIgnoreCase)
-                .Select(p => p.Oracle)
-            ];
+            return string.IsNullOrWhiteSpace(side) || string.Equals(side, "a", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

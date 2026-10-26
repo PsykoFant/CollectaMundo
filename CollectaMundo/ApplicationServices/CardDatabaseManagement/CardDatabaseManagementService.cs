@@ -91,7 +91,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         [
             DbPrepStep.CreateTables,
             DbPrepStep.CreateIndices,
-            DbPrepStep.BuildCanonicalOracleFaces,
+            DbPrepStep.BuildOracleCards,
             DbPrepStep.BuildPrintingCards,
             DbPrepStep.GenerateManaSymbols,
             DbPrepStep.GenerateManaCostImages,
@@ -558,14 +558,12 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     Debug.WriteLine("[CardDatabasePrep] Created application indices.");
 
                     // ---------------------------------------------------------
-                    // 4. Rebuild canonical Oracle faces and legality metadata
-                    //
-                    // BuildCanonicalOracleFacesAsync also rebuilds the cardLegalityFormats catalog and persists legality masks on the canonical Oracle-face projection.
+                    // 4. Rebuild aggregated Oracle-card projection
                     // ---------------------------------------------------------
 
-                    await BuildCanonicalOracleFacesAsync(conn, tx);
+                    await BuildOracleCardsAsync(conn, tx);
 
-                    Debug.WriteLine("[CardDatabasePrep] Rebuilt canonical Oracle faces.");
+                    Debug.WriteLine("[CardDatabasePrep] Rebuilt Oracle cards.");
 
                     // ---------------------------------------------------------
                     // 5. Rebuild printing-card projection
@@ -641,7 +639,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             [
                 (DbPrepStep.CreateTables, "Creating custom tables...", () => _uowRunner.ExecuteWriteAsync(async (conn, tx) =>  {await _dbMgmtRepo.CreateTablesAsync(conn,  tx); return (Result: true, Commit: true);}), false),
                 (DbPrepStep.CreateIndices, "Creating indices...", () => _uowRunner.ExecuteWriteAsync(async (conn, tx) => {await _dbMgmtRepo.CreateIndicesAsync(conn, tx); return (Result: true, Commit: true);}), false),
-                (DbPrepStep.BuildCanonicalOracleFaces, "Preparing canonical card data...", () => _uowRunner.ExecuteWriteAsync(async (conn, tx) => {await BuildCanonicalOracleFacesAsync( conn, tx); return (Result: true, Commit: true);}), false),
+                (DbPrepStep.BuildOracleCards, "Preparing Oracle card data...", () => _uowRunner.ExecuteWriteAsync(async (conn, tx) => {await BuildOracleCardsAsync(conn, tx); return (Result: true, Commit: true);}), false),
                 (DbPrepStep.BuildPrintingCards, "Preparing printing card data...", () => _uowRunner.ExecuteWriteAsync(async (conn, tx) => {await BuildPrintingCardsAsync(conn, tx); return (Result: true, Commit: true);}), false),
                 (DbPrepStep.GenerateManaSymbols, "Generating mana symbols...", () => _missingPngService.GenerateMissingManaSymbolImagesAsync(_progressSinks.Percent), true),
                 (DbPrepStep.GenerateManaCostImages, "Generating mana cost images...", () => _missingPngService.GenerateMissingManaCostImagesAsync(_progressSinks.Percent), true),
@@ -674,7 +672,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         {
             CreateTables,
             CreateIndices,
-            BuildCanonicalOracleFaces,
+            BuildOracleCards,
             BuildPrintingCards,
             GenerateManaSymbols,
             GenerateManaCostImages,
@@ -684,8 +682,8 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             OptimizeDatabase
         }
 
-        // CANONICAL ORACLE FACE BUILD
-        private async Task BuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx)
+        // ORACLE CARD BUILD
+        private async Task BuildOracleCardsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             // ---------------------------------------------------------
             // 1. Build canonical Oracle faces from raw card/token data
@@ -699,21 +697,34 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 throw new InvalidOperationException("Canonical Oracle face generation produced no rows.");
             }
 
-            // ---------------------------------------------------------
-            // 2. Persist canonical Oracle faces with legality masks
-            // ---------------------------------------------------------
-
-            var inserted = await _cardDataRepo.RebuildCanonicalOracleFacesAsync(conn, tx, canonicalFaces);
-
-            if (inserted != canonicalFaces.Count)
-            {
-                throw new InvalidOperationException($"Canonical Oracle face rebuild inserted {inserted:N0} rows, but {canonicalFaces.Count:N0} were expected.");
-            }
-
             var conflicts = canonicalFaces.Count(face => face.HasConflict);
             var ambiguous = canonicalFaces.Count(face => face.IsAmbiguous);
 
             Debug.WriteLine($"[CardDatabasePrep] Canonical Oracle faces: {canonicalFaces.Count:N0}, conflicts={conflicts:N0}, ambiguous={ambiguous:N0}");
+
+            // ---------------------------------------------------------
+            // 2. Aggregate canonical faces into complete Oracle cards
+            // ---------------------------------------------------------
+
+            var oracleCards = OracleCardAggregator.Aggregate(canonicalFaces);
+
+            if (oracleCards.Count == 0)
+            {
+                throw new InvalidOperationException("Oracle-card aggregation produced no rows.");
+            }
+
+            // ---------------------------------------------------------
+            // 3. Persist aggregated Oracle cards
+            // ---------------------------------------------------------
+
+            var inserted = await _cardDataRepo.RebuildOracleCardsAsync(conn, tx, oracleCards);
+
+            if (inserted != oracleCards.Count)
+            {
+                throw new InvalidOperationException($"Oracle-card rebuild inserted {inserted:N0} rows, but {oracleCards.Count:N0} were expected.");
+            }
+
+            Debug.WriteLine($"[CardDatabasePrep] Oracle cards: {inserted:N0}");
         }
         private async Task BuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {

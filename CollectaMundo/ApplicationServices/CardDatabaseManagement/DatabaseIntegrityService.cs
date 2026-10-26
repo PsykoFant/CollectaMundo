@@ -27,7 +27,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             {
                 bool isValid = await _uowRunner.ExecuteReadOnlyAsync(async conn =>
                 await _healthRepo.HasExpectedTablesAndViewsAsync(conn) &&
-                await _healthRepo.HasCanonicalOracleFacesAsync(conn) &&
+                await _healthRepo.HasOracleCardsAsync(conn) &&
                 await _healthRepo.QuickCheckAsync(conn)
                 );
 

@@ -83,16 +83,19 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public void FromRow_Normalizes_CaseInsensitive_Duplicates()
         {
-            var row = new CanonicalOracleFaceDbRow
-            {
-                ScryfallOracleId = "oracle-test",
-                Side = "",
-                SelectedSourceUuid = "uuid-test",
-                Name = "Test Card",
-                Keywords = "Flying, flying, FLYING",
-                Colors = "W, w, W",
-                Types = "Creature, creature"
-            };
+            var row = new OracleCardDbRow(
+                ScryfallOracleId: "oracle-test",
+                Name: "Test Card",
+                GamePlayCard: 1,
+                ManaCostRaw: null,
+                ManaValue: null,
+                Colors: "W, w, W",
+                Keywords: "Flying, flying, FLYING",
+                RulesText: null,
+                SuperTypes: null,
+                Types: "Creature, creature",
+                SubTypes: null,
+                Type: null);
 
             var card = OracleCardFactory.FromRow(row);
 

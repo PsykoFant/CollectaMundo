@@ -140,21 +140,22 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     reader.GetOrdinal("Type"));
             }
         }
-        public async Task<int> RebuildCanonicalOracleFacesAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<CanonicalOracleFace> faces)
+        public async Task<int> RebuildOracleCardsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyList<AggregatedOracleCard> cards)
         {
-            const string deleteSql = "DELETE FROM canonicalOracleFaces;";
+            const string deleteSql = "DELETE FROM oracleCards;";
 
             using (var deleteCommand = new SQLiteCommand(deleteSql, conn, tx))
             {
                 await deleteCommand.ExecuteNonQueryAsync();
             }
 
-            const string insertSql = """
-                INSERT INTO canonicalOracleFaces
+            const string insertSql =
+                """
+                INSERT INTO oracleCards
                 (
                     scryfallOracleId,
-                    side,
                     name,
+                    gameplayCard,
                     manaCostRaw,
                     manaValue,
                     colors,
@@ -163,19 +164,13 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     superTypes,
                     types,
                     subTypes,
-                    type,
-                    gameplayCard,
-                    selectedSourceUuid,
-                    sourceRowCount,
-                    winningRowCount,
-                    variantCount,
-                    isAmbiguous
+                    type
                 )
                 VALUES
                 (
                     @scryfallOracleId,
-                    @side,
                     @name,
+                    @gameplayCard,
                     @manaCostRaw,
                     @manaValue,
                     @colors,
@@ -184,21 +179,15 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     @superTypes,
                     @types,
                     @subTypes,
-                    @type,
-                    @gameplayCard,
-                    @selectedSourceUuid,
-                    @sourceRowCount,
-                    @winningRowCount,
-                    @variantCount,
-                    @isAmbiguous
+                    @type
                 );
                 """;
 
             using var command = new SQLiteCommand(insertSql, conn, tx);
 
             var oracleId = command.Parameters.Add("@scryfallOracleId", DbType.String);
-            var side = command.Parameters.Add("@side", DbType.String);
             var name = command.Parameters.Add("@name", DbType.String);
+            var gamePlayCard = command.Parameters.Add("@gameplayCard", DbType.Int32);
             var manaCostRaw = command.Parameters.Add("@manaCostRaw", DbType.String);
             var manaValue = command.Parameters.Add("@manaValue", DbType.Double);
             var colors = command.Parameters.Add("@colors", DbType.String);
@@ -206,39 +195,29 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
             var rulesText = command.Parameters.Add("@rulesText", DbType.String);
             var superTypes = command.Parameters.Add("@superTypes", DbType.String);
             var types = command.Parameters.Add("@types", DbType.String);
-            var gamePlayCard = command.Parameters.Add("@gameplayCard", DbType.Int32);
             var subTypes = command.Parameters.Add("@subTypes", DbType.String);
             var type = command.Parameters.Add("@type", DbType.String);
-            var selectedSourceUuid = command.Parameters.Add("@selectedSourceUuid", DbType.String);
-            var sourceRowCount = command.Parameters.Add("@sourceRowCount", DbType.Int32);
-            var winningRowCount = command.Parameters.Add("@winningRowCount", DbType.Int32);
-            var variantCount = command.Parameters.Add("@variantCount", DbType.Int32);
-            var isAmbiguous = command.Parameters.Add("@isAmbiguous", DbType.Int32);
 
             command.Prepare();
 
             var inserted = 0;
 
-            foreach (var face in faces)
+            foreach (var card in cards)
             {
-                oracleId.Value = face.Key.ScryfallOracleId;
-                side.Value = face.Key.Side;
-                name.Value = (object?)face.Payload.Name ?? DBNull.Value;
-                manaCostRaw.Value = (object?)face.Payload.ManaCostRaw ?? DBNull.Value;
-                manaValue.Value = face.Payload.ManaValue is double value ? value : DBNull.Value;
-                colors.Value = (object?)face.Payload.Colors ?? DBNull.Value;
-                keywords.Value = (object?)face.Payload.Keywords ?? DBNull.Value;
-                rulesText.Value = (object?)face.Payload.RulesText ?? DBNull.Value;
-                superTypes.Value = (object?)face.Payload.SuperTypes ?? DBNull.Value;
-                types.Value = (object?)face.Payload.Types ?? DBNull.Value;
-                subTypes.Value = (object?)face.Payload.SubTypes ?? DBNull.Value;
-                type.Value = (object?)face.Payload.Type ?? DBNull.Value;
-                gamePlayCard.Value = face.GamePlayCard;
-                selectedSourceUuid.Value = face.SelectedSourceUuid;
-                sourceRowCount.Value = face.SourceRowCount;
-                winningRowCount.Value = face.WinningRowCount;
-                variantCount.Value = face.VariantCount;
-                isAmbiguous.Value = face.IsAmbiguous ? 1 : 0;
+                oracleId.Value = card.ScryfallOracleId;
+                name.Value = card.Name;
+                gamePlayCard.Value = card.GamePlayCard;
+                manaCostRaw.Value = (object?)card.ManaCostRaw ?? DBNull.Value;
+                manaValue.Value = card.ManaValue is double value
+                    ? value
+                    : DBNull.Value;
+                colors.Value = (object?)card.Colors ?? DBNull.Value;
+                keywords.Value = (object?)card.Keywords ?? DBNull.Value;
+                rulesText.Value = (object?)card.RulesText ?? DBNull.Value;
+                superTypes.Value = (object?)card.SuperTypes ?? DBNull.Value;
+                types.Value = (object?)card.Types ?? DBNull.Value;
+                subTypes.Value = (object?)card.SubTypes ?? DBNull.Value;
+                type.Value = (object?)card.Type ?? DBNull.Value;
 
                 inserted += await command.ExecuteNonQueryAsync();
             }
@@ -326,54 +305,36 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 inserted = await insertCommand.ExecuteNonQueryAsync();
             }
 
-            // 3. Validate inserted count
-            const string sourceCountSql = """
-                                  SELECT
-                                      (SELECT COUNT(*) FROM cards) +
-                                      (SELECT COUNT(*) FROM tokens);
-                                  """;
-
-            long expected;
-
-            using (var countCommand = new SQLiteCommand(sourceCountSql, conn, tx))
-            {
-                expected = Convert.ToInt64(await countCommand.ExecuteScalarAsync());
-            }
-
-            if (inserted != expected)
-            {
-                throw new InvalidOperationException($"Printing-card projection inserted {inserted:N0} rows, " + $"but {expected:N0} source printing rows were expected.");
-            }
-
+            // 3. Validate that every physical printing resolves to an Oracle card.
             const string unresolvedOracleSql = """
-                                   SELECT COUNT(*)
-                                   FROM printingCards p
-                                   LEFT JOIN canonicalOracleFaces c
-                                       ON c.scryfallOracleId = p.scryfallOracleId
-                                      AND c.side = p.side
-                                   WHERE c.id IS NULL;
-                                   """;
+                                                SELECT COUNT(*)
+                                                FROM printingCards p
+                                                LEFT JOIN oracleCards o
+                                                    ON o.scryfallOracleId = p.scryfallOracleId
+                                                WHERE o.scryfallOracleId IS NULL;
+                                                """;
 
-            long unresolvedOracleFaces;
+            long unresolvedOracleCards;
 
             using (var validationCommand = new SQLiteCommand(unresolvedOracleSql, conn, tx))
             {
-                unresolvedOracleFaces = Convert.ToInt64(await validationCommand.ExecuteScalarAsync());
+                unresolvedOracleCards = Convert.ToInt64(
+                    await validationCommand.ExecuteScalarAsync());
             }
 
-            if (unresolvedOracleFaces != 0)
+            if (unresolvedOracleCards != 0)
             {
-                throw new InvalidOperationException($"Printing-card projection contains {unresolvedOracleFaces:N0} rows that cannot be resolved to canonical Oracle faces.");
+                throw new InvalidOperationException($"Printing-card projection contains {unresolvedOracleCards:N0} rows that cannot be resolved to aggregated Oracle cards.");
             }
 
             // 4. Apply exact per-UUID legality masks to gameplay printings
             const string updateLegalitySql = """
-                UPDATE printingCards
-                SET
-                    playableFormatsMask = @playableFormatsMask,
-                    restrictedFormatsMask = @restrictedFormatsMask
-                WHERE uuid = @uuid;
-                """;
+                                            UPDATE printingCards
+                                            SET
+                                                playableFormatsMask = @playableFormatsMask,
+                                                restrictedFormatsMask = @restrictedFormatsMask
+                                            WHERE uuid = @uuid;
+                                            """;
 
             using (var legalityCommand = new SQLiteCommand(updateLegalitySql, conn, tx))
             {
@@ -388,7 +349,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     uuid.Value = pair.Key;
 
                     playableFormatsMask.Value = unchecked((long)pair.Value.PlayableFormatsMask);
-
                     restrictedFormatsMask.Value = unchecked((long)pair.Value.RestrictedFormatsMask);
 
                     var updated = await legalityCommand.ExecuteNonQueryAsync();

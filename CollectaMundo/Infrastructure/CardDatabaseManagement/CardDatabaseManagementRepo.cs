@@ -336,6 +336,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
 
         // Derived card data tables that are not part of the source tables and need to be recreated after replacing the source tables.
-        private static readonly string[] DerivedCardDataTableNames = ["canonicalOracleFaces", "printingCards", "cardLegalityFormats"];
+        private static readonly string[] DerivedCardDataTableNames = ["oracleCards", "printingCards", "cardLegalityFormats"];
     }
 }

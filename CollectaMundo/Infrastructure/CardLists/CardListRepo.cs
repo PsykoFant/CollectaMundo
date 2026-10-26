@@ -9,63 +9,47 @@ namespace CollectaMundo.Infrastructure.CardLists
 {
     public class CardListRepo : ICardListRepo
     {
-        // Read Oracle Faces from the database 
-        public async Task<IReadOnlyList<CanonicalOracleFaceDbRow>> ReadCanonicalOracleFacesAsync(SQLiteConnection conn)
+        // Read aggregated Oracle cards from the database
+        public async Task<IReadOnlyList<OracleCardDbRow>> ReadOracleCardsAsync(SQLiteConnection conn)
         {
             const string sql = """
-                   SELECT
-                       c.scryfallOracleId    AS ScryfallOracleId,
-                       c.side                AS Side,
-                       c.selectedSourceUuid  AS SelectedSourceUuid,
-                       c.name                AS Name,
-                       c.manaCostRaw         AS ManaCostRaw,
-                       c.manaValue           AS ManaValue,
-                       c.colors              AS Colors,
-                       c.keywords            AS Keywords,
-                       c.rulesText           AS RulesText,
-                       c.superTypes          AS SuperTypes,
-                       c.types               AS Types,
-                       c.subTypes            AS SubTypes,
-                       c.type                AS Type,
-                       c.gameplayCard        AS GamePlayCard
-                   FROM canonicalOracleFaces c
-                   """;
+                                SELECT
+                                    scryfallOracleId AS ScryfallOracleId,
+                                    name             AS Name,
+                                    gameplayCard     AS GamePlayCard,
+                                    manaCostRaw      AS ManaCostRaw,
+                                    manaValue        AS ManaValue,
+                                    colors           AS Colors,
+                                    keywords         AS Keywords,
+                                    rulesText        AS RulesText,
+                                    superTypes       AS SuperTypes,
+                                    types            AS Types,
+                                    subTypes         AS SubTypes,
+                                    type             AS Type
+                                FROM oracleCards;
+                                """;
 
             using var command = new SQLiteCommand(sql, conn);
             using var reader = await command.ExecuteReaderAsync();
-            var ordinals = CanonicalOracleFaceOrdinals.FromReader(reader);
-            var rows = new List<CanonicalOracleFaceDbRow>(capacity: 45_000);
 
-            while (reader.Read())
+            var ordinals = OracleCardOrdinals.FromReader(reader);
+            var rows = new List<OracleCardDbRow>(capacity: 45_000);
+
+            while (await reader.ReadAsync())
             {
-                rows.Add(CanonicalOracleFaceDbRowFromReader(reader, ordinals));
+                rows.Add(OracleCardDbRowFromReader(reader, ordinals));
             }
 
             return rows;
         }
-        private readonly record struct CanonicalOracleFaceOrdinals(
-            int ScryfallOracleId,
-            int Side,
-            int SelectedSourceUuid,
-            int Name,
-            int ManaCostRaw,
-            int ManaValue,
-            int Colors,
-            int Keywords,
-            int RulesText,
-            int SuperTypes,
-            int Types,
-            int SubTypes,
-            int Type,
-            int GamePlayCard)
+        private readonly record struct OracleCardOrdinals(int ScryfallOracleId, int Name, int GamePlayCard, int ManaCostRaw, int ManaValue, int Colors, int Keywords, int RulesText, int SuperTypes, int Types, int SubTypes, int Type)
         {
-            public static CanonicalOracleFaceOrdinals FromReader(DbDataReader reader)
+            public static OracleCardOrdinals FromReader(DbDataReader reader)
             {
-                return new CanonicalOracleFaceOrdinals(
+                return new OracleCardOrdinals(
                     reader.GetOrdinal("ScryfallOracleId"),
-                    reader.GetOrdinal("Side"),
-                    reader.GetOrdinal("SelectedSourceUuid"),
                     reader.GetOrdinal("Name"),
+                    reader.GetOrdinal("GamePlayCard"),
                     reader.GetOrdinal("ManaCostRaw"),
                     reader.GetOrdinal("ManaValue"),
                     reader.GetOrdinal("Colors"),
@@ -74,29 +58,24 @@ namespace CollectaMundo.Infrastructure.CardLists
                     reader.GetOrdinal("SuperTypes"),
                     reader.GetOrdinal("Types"),
                     reader.GetOrdinal("SubTypes"),
-                    reader.GetOrdinal("Type"),
-                    reader.GetOrdinal("GamePlayCard"));
+                    reader.GetOrdinal("Type"));
             }
         }
-        private static CanonicalOracleFaceDbRow CanonicalOracleFaceDbRowFromReader(DbDataReader reader, CanonicalOracleFaceOrdinals ordinals)
+        private static OracleCardDbRow OracleCardDbRowFromReader(DbDataReader reader, OracleCardOrdinals o)
         {
-            return new CanonicalOracleFaceDbRow
-            {
-                ScryfallOracleId = GetRequiredString(reader, ordinals.ScryfallOracleId, "ScryfallOracleId"),
-                Side = GetRequiredString(reader, ordinals.Side, "Side"),
-                SelectedSourceUuid = GetRequiredString(reader, ordinals.SelectedSourceUuid, "SelectedSourceUuid"),
-                Name = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Name),
-                ManaCostRaw = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.ManaCostRaw),
-                ManaValue = DbDataReaderValueReader.GetFieldValue<double?>(reader, ordinals.ManaValue),
-                Colors = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Colors),
-                Keywords = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Keywords),
-                RulesText = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.RulesText),
-                SuperTypes = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SuperTypes),
-                Types = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Types),
-                SubTypes = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SubTypes),
-                Type = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type),
-                GamePlayCard = DbDataReaderValueReader.GetFieldValue<int>(reader, ordinals.GamePlayCard)
-            };
+            return new OracleCardDbRow(
+                ScryfallOracleId: reader.GetString(o.ScryfallOracleId),
+                Name: reader.GetString(o.Name),
+                GamePlayCard: reader.GetInt32(o.GamePlayCard),
+                ManaCostRaw: DbDataReaderValueReader.GetFieldValue<string>(reader, o.ManaCostRaw),
+                ManaValue: DbDataReaderValueReader.GetFieldValue<double?>(reader, o.ManaValue),
+                Colors: DbDataReaderValueReader.GetFieldValue<string>(reader, o.Colors),
+                Keywords: DbDataReaderValueReader.GetFieldValue<string>(reader, o.Keywords),
+                RulesText: DbDataReaderValueReader.GetFieldValue<string>(reader, o.RulesText),
+                SuperTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, o.SuperTypes),
+                Types: DbDataReaderValueReader.GetFieldValue<string>(reader, o.Types),
+                SubTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, o.SubTypes),
+                Type: DbDataReaderValueReader.GetFieldValue<string>(reader, o.Type));
         }
 
         // Read Printing Cards from the database

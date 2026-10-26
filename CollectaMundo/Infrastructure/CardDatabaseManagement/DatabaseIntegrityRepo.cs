@@ -5,10 +5,16 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
     public class DatabaseIntegrityRepo : IDatabaseIntegrityRepo
     {
         private static readonly List<string> RequiredObjects =
-        [
-            "cards", "myCollection", "canonicalOracleFaces", "uniqueManaCostImages", "uniqueManaSymbols",
-            "keyruneImages", "view_cardToken"
-        ];
+            [
+                "cards",
+                "myCollection",
+                "oracleCards",
+                "printingCards",
+                "uniqueManaCostImages",
+                "uniqueManaSymbols",
+                "keyruneImages",
+                "view_cardToken"
+            ];
         public async Task<bool> HasExpectedTablesAndViewsAsync(SQLiteConnection conn)
         {
             var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -23,12 +29,13 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
             return RequiredObjects.All(existing.Contains);
         }
-        public async Task<bool> HasCanonicalOracleFacesAsync(SQLiteConnection conn)
+        public async Task<bool> HasOracleCardsAsync(SQLiteConnection conn)
         {
-            const string sql =
-                "SELECT EXISTS (" +
-                "SELECT 1 FROM canonicalOracleFaces LIMIT 1" +
-                ");";
+            const string sql = """
+                                SELECT EXISTS (
+                                    SELECT 1 FROM oracleCards LIMIT 1
+                                );
+                                """;
 
             await using var cmd = new SQLiteCommand(sql, conn);
 

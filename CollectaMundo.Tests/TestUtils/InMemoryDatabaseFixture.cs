@@ -82,15 +82,15 @@ namespace CollectaMundo.Tests.TestUtils
 
             try
             {
-                // Build canonical Oracle faces from seeded raw source data.
-                var candidates =
-                    await cardDataRepo.GetOracleFaceCandidatesAsync(
-                        _masterConnection,
-                        transaction);
+                // ---------------------------------------------------------
+                // 1. Build canonical Oracle faces from seeded source data
+                // ---------------------------------------------------------
 
-                var canonicalFaces =
-                    OracleFaceCanonicalizer.Canonicalize(
-                        candidates);
+                var candidates = await cardDataRepo.GetOracleFaceCandidatesAsync(
+                    _masterConnection,
+                    transaction);
+
+                var canonicalFaces = OracleFaceCanonicalizer.Canonicalize(candidates);
 
                 if (canonicalFaces.Count == 0)
                 {
@@ -98,32 +98,51 @@ namespace CollectaMundo.Tests.TestUtils
                         "Scenario database produced no canonical Oracle faces.");
                 }
 
-                // Build and persist derived legality data from seeded cardLegalities.
+                // ---------------------------------------------------------
+                // 2. Aggregate canonical faces into complete Oracle cards
+                // ---------------------------------------------------------
+
+                var oracleCards = OracleCardAggregator.Aggregate(canonicalFaces);
+
+                if (oracleCards.Count == 0)
+                {
+                    throw new InvalidOperationException(
+                        "Scenario database produced no aggregated Oracle cards.");
+                }
+
+                // ---------------------------------------------------------
+                // 3. Persist aggregated Oracle cards
+                // ---------------------------------------------------------
+
+                var oracleInserted = await cardDataRepo.RebuildOracleCardsAsync(
+                    _masterConnection,
+                    transaction,
+                    oracleCards);
+
+                if (oracleInserted != oracleCards.Count)
+                {
+                    throw new InvalidOperationException(
+                        $"Scenario database inserted {oracleInserted:N0} Oracle cards, " +
+                        $"but {oracleCards.Count:N0} were expected.");
+                }
+
+                // ---------------------------------------------------------
+                // 4. Prepare exact per-printing legality data
+                // ---------------------------------------------------------
+
                 var legalityMasksByUuid =
                     await cardLegalityService.PrepareDerivedDataAsync(
                         _masterConnection,
                         transaction);
 
-                // Persist canonical Oracle faces with their prepared legality masks.
-                var canonicalInserted =
-                    await cardDataRepo.RebuildCanonicalOracleFacesAsync(
-                        _masterConnection,
-                        transaction,
-                        canonicalFaces);
+                // ---------------------------------------------------------
+                // 5. Build and persist the physical-printing projection
+                // ---------------------------------------------------------
 
-                if (canonicalInserted != canonicalFaces.Count)
-                {
-                    throw new InvalidOperationException(
-                        $"Scenario database inserted {canonicalInserted:N0} canonical Oracle faces, " +
-                        $"but {canonicalFaces.Count:N0} were expected.");
-                }
-
-                // Build the physical-printing projection.
-                var printingInserted =
-                    await cardDataRepo.RebuildPrintingCardsAsync(
-                        _masterConnection,
-                        transaction,
-                        legalityMasksByUuid);
+                var printingInserted = await cardDataRepo.RebuildPrintingCardsAsync(
+                    _masterConnection,
+                    transaction,
+                    legalityMasksByUuid);
 
                 if (printingInserted == 0)
                 {
@@ -131,11 +150,16 @@ namespace CollectaMundo.Tests.TestUtils
                         "Scenario database produced no printing cards.");
                 }
 
+                // ---------------------------------------------------------
+                // 6. Commit all derived data together
+                // ---------------------------------------------------------
+
                 transaction.Commit();
 
                 Debug.WriteLine(
                     $"In-memory derived card data prepared: " +
-                    $"canonical={canonicalInserted:N0}, " +
+                    $"canonical faces={canonicalFaces.Count:N0}, " +
+                    $"Oracle cards={oracleInserted:N0}, " +
                     $"printings={printingInserted:N0}.");
             }
             catch
