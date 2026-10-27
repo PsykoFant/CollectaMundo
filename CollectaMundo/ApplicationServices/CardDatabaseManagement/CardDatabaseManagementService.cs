@@ -706,7 +706,13 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // 2. Aggregate canonical faces into complete Oracle cards
             // ---------------------------------------------------------
 
-            var oracleCards = OracleCardAggregator.Aggregate(canonicalFaces);
+            // Resolve standalone Oracle identities and supporting face relationships.
+            var relationships = OracleFaceRelationshipResolver.Resolve(candidates);
+
+            Debug.WriteLine($"[CardDatabasePrep] Oracle relationships: standalone={relationships.StandaloneOracleIds.Count:N0}, supporting={relationships.SupportingFaces.Count:N0}, missing references={relationships.MissingReferences.Count:N0}");
+
+            // Aggregate and persist only standalone Oracle cards.
+            var oracleCards = OracleCardAggregator.Aggregate(canonicalFaces, relationships);
 
             if (oracleCards.Count == 0)
             {

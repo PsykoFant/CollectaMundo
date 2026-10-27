@@ -24,6 +24,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                          c.manaValue         AS ManaValue,
                          c.colors            AS Colors,
                          c.keywords          AS Keywords,
+                         c.otherFaceIds      AS OtherFaceIds,
                          c.text              AS RulesText,
                          c.supertypes        AS SuperTypes,
                          c.types             AS Types,
@@ -45,6 +46,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                          NULL                AS ManaValue,
                          t.colors            AS Colors,
                          t.keywords          AS Keywords,
+                         t.otherFaceIds      AS OtherFaceIds,
                          t.text              AS RulesText,
                          t.supertypes        AS SuperTypes,
                          t.types             AS Types,
@@ -94,16 +96,20 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 ScryfallOracleId: oracleId,
                 Side: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Side),
                 GamePlayCard: reader.GetInt32(ordinals.GamePlayCard),
-                Payload: new OracleFacePayload(Name: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Name),
-                ManaCostRaw: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.ManaCost),
-                ManaValue: DbDataReaderValueReader.GetFieldValue<double?>(reader, ordinals.ManaValue),
-                Colors: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Colors),
-                Keywords: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Keywords),
-                RulesText: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.RulesText),
-                SuperTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SuperTypes),
-                Types: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Types),
-                SubTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SubTypes),
-                Type: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type)));
+
+                Payload: new OracleFacePayload(
+                    Name: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Name),
+                    ManaCostRaw: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.ManaCost),
+                    ManaValue: DbDataReaderValueReader.GetFieldValue<double?>(reader, ordinals.ManaValue),
+                    Colors: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Colors),
+                    Keywords: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Keywords),
+                    RulesText: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.RulesText),
+                    SuperTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SuperTypes),
+                    Types: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Types),
+                    SubTypes: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SubTypes),
+                    Type: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Type)),
+
+                OtherFaceIds: DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.OtherFaceIds));
         }
         private readonly record struct OracleFaceCandidateOrdinals(
             int Uuid,
@@ -115,6 +121,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
             int ManaValue,
             int Colors,
             int Keywords,
+            int OtherFaceIds,
             int RulesText,
             int SuperTypes,
             int Types,
@@ -133,6 +140,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     reader.GetOrdinal("ManaValue"),
                     reader.GetOrdinal("Colors"),
                     reader.GetOrdinal("Keywords"),
+                    reader.GetOrdinal("OtherFaceIds"),
                     reader.GetOrdinal("RulesText"),
                     reader.GetOrdinal("SuperTypes"),
                     reader.GetOrdinal("Types"),
@@ -228,7 +236,12 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
         // Printing cards
         public async Task<int> RebuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyDictionary<string, CardLegalityMasks> legalityMasksByUuid)
         {
-            // 1. DELETE existing projection
+            ArgumentNullException.ThrowIfNull(legalityMasksByUuid);
+
+            // ---------------------------------------------------------
+            // 1. Delete existing printing projection
+            // ---------------------------------------------------------
+
             const string deleteSql = "DELETE FROM printingCards;";
 
             using (var deleteCommand = new SQLiteCommand(deleteSql, conn, tx))
@@ -236,67 +249,79 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 await deleteCommand.ExecuteNonQueryAsync();
             }
 
-            // 2. Bulk INSERT all card + token printing rows
-            //    Masks start at 0/0.
+            // ---------------------------------------------------------
+            // 2. Insert standalone printings from cards and tokens
+            //
+            // Only primary faces are independently selectable: side NULL, empty/whitespace, or "a".
+            //
+            // Secondary faces remain in the original source tables. Legality masks initially default to zero.
+            // ---------------------------------------------------------
+
             const string insertSql = """
-                INSERT INTO printingCards
-                (
-                    uuid,
-                    scryfallOracleId,
-                    side,
-                    setCode,
-                    language,
-                    finishes,
-                    availability,
-                    rarity,
-                    isPromo,
-                    playableFormatsMask,
-                    restrictedFormatsMask,
-                    otherFaceIds
-                )
+                                    INSERT INTO printingCards
+                                    (
+                                        uuid,
+                                        scryfallOracleId,
+                                        side,
+                                        setCode,
+                                        language,
+                                        finishes,
+                                        availability,
+                                        rarity,
+                                        isPromo,
+                                        playableFormatsMask,
+                                        restrictedFormatsMask,
+                                        otherFaceIds
+                                    )
 
-                SELECT
-                    c.uuid,
-                    ci.scryfallOracleId,
-                    COALESCE(c.side, ''),
-                    c.setCode,
-                    c.language,
-                    c.finishes,
-                    c.availability,
-                    c.rarity,
-                    CASE
-                        WHEN COALESCE(c.isPromo, 0) <> 0 THEN 1
-                        ELSE 0
-                    END,
-                    0,
-                    0,
-                    c.otherFaceIds
-                FROM cards c
-                LEFT JOIN cardIdentifiers ci
-                    ON ci.uuid = c.uuid
+                                    SELECT
+                                        c.uuid,
+                                        ci.scryfallOracleId,
+                                        COALESCE(c.side, ''),
+                                        c.setCode,
+                                        c.language,
+                                        c.finishes,
+                                        c.availability,
+                                        c.rarity,
+                                        CASE
+                                            WHEN COALESCE(c.isPromo, 0) <> 0 THEN 1
+                                            ELSE 0
+                                        END,
+                                        0,
+                                        0,
+                                        c.otherFaceIds
+                                    FROM cards c
+                                    LEFT JOIN cardIdentifiers ci
+                                        ON ci.uuid = c.uuid
+                                    WHERE
+                                        COALESCE(TRIM(c.side), '') = ''
+                                        OR c.side = 'a' COLLATE NOCASE
 
-                UNION ALL
+                                    UNION ALL
 
-                SELECT
-                    t.uuid,
-                    ti.scryfallOracleId,
-                    COALESCE(t.side, ''),
-                    t.setCode,
-                    t.language,
-                    t.finishes,
-                    t.availability,
-                    NULL,
-                    CASE
-                        WHEN COALESCE(t.isPromo, 0) <> 0 THEN 1
-                        ELSE 0
-                    END,
-                    0,
-                    0,
-                    t.otherFaceIds
-                FROM tokens t
-                LEFT JOIN tokenIdentifiers ti
-                    ON ti.uuid = t.uuid;
-                """;
+                                    SELECT
+                                        t.uuid,
+                                        ti.scryfallOracleId,
+                                        COALESCE(t.side, ''),
+                                        t.setCode,
+                                        t.language,
+                                        t.finishes,
+                                        t.availability,
+                                        NULL,
+                                        CASE
+                                            WHEN COALESCE(t.isPromo, 0) <> 0 THEN 1
+                                            ELSE 0
+                                        END,
+                                        0,
+                                        0,
+                                        t.otherFaceIds
+                                    FROM tokens t
+                                    LEFT JOIN tokenIdentifiers ti
+                                        ON ti.uuid = t.uuid
+                                    WHERE
+                                        COALESCE(TRIM(t.side), '') = ''
+                                        OR t.side = 'a' COLLATE NOCASE;
+                                    """;
 
             int inserted;
 
@@ -305,7 +330,52 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 inserted = await insertCommand.ExecuteNonQueryAsync();
             }
 
-            // 3. Validate that every physical printing resolves to an Oracle card.
+            // ---------------------------------------------------------
+            // 3. Validate standalone-printing row count
+            // ---------------------------------------------------------
+
+            const string sourceCountSql = """
+                                            SELECT
+                                                (
+                                                    SELECT COUNT(*)
+                                                    FROM cards
+                                                    WHERE
+                                                        COALESCE(TRIM(side), '') = ''
+                                                        OR side = 'a' COLLATE NOCASE
+                                                )
+                                                +
+                                                (
+                                                    SELECT COUNT(*)
+                                                    FROM tokens
+                                                    WHERE
+                                                        COALESCE(TRIM(side), '') = ''
+                                                        OR side = 'a' COLLATE NOCASE
+                                                );
+                                            """;
+
+            long expected;
+
+            using (var countCommand = new SQLiteCommand(sourceCountSql, conn, tx))
+            {
+                expected = Convert.ToInt64(await countCommand.ExecuteScalarAsync());
+            }
+
+            if (inserted != expected)
+            {
+                throw new InvalidOperationException($"Printing-card projection inserted {inserted:N0} rows, but {expected:N0} standalone source printings were expected.");
+            }
+
+            if (inserted == 0)
+            {
+                throw new InvalidOperationException("Printing-card projection produced no standalone printings.");
+            }
+
+            // ---------------------------------------------------------
+            // 4. Validate Oracle references
+            //
+            // Every standalone printing must resolve to exactly one persisted Oracle card through ScryfallOracleId.
+            // ---------------------------------------------------------
+
             const string unresolvedOracleSql = """
                                                 SELECT COUNT(*)
                                                 FROM printingCards p
@@ -318,16 +388,51 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
 
             using (var validationCommand = new SQLiteCommand(unresolvedOracleSql, conn, tx))
             {
-                unresolvedOracleCards = Convert.ToInt64(
-                    await validationCommand.ExecuteScalarAsync());
+                unresolvedOracleCards = Convert.ToInt64(await validationCommand.ExecuteScalarAsync());
             }
 
             if (unresolvedOracleCards != 0)
             {
-                throw new InvalidOperationException($"Printing-card projection contains {unresolvedOracleCards:N0} rows that cannot be resolved to aggregated Oracle cards.");
+                throw new InvalidOperationException($"Printing-card projection contains {unresolvedOracleCards:N0} standalone printings that cannot be resolved to Oracle cards.");
             }
 
-            // 4. Apply exact per-UUID legality masks to gameplay printings
+            // ---------------------------------------------------------
+            // 5. Validate existing collection references
+            //
+            // Collection UUIDs must remain exact and resolvable. Never silently delete or remap collection records.
+            // ---------------------------------------------------------
+
+            const string unresolvedCollectionSql = """
+                                                    SELECT
+                                                        mc.id,
+                                                        mc.uuid
+                                                    FROM myCollection mc
+                                                    LEFT JOIN printingCards p
+                                                        ON p.uuid = mc.uuid
+                                                    WHERE p.uuid IS NULL
+                                                    LIMIT 1;
+                                                    """;
+
+            using (var collectionCommand = new SQLiteCommand(unresolvedCollectionSql, conn, tx))
+            using (var reader = await collectionCommand.ExecuteReaderAsync())
+            {
+                if (await reader.ReadAsync())
+                {
+                    var collectionId = reader.GetInt64(0);
+                    var printingUuid = reader.GetString(1);
+
+                    throw new InvalidOperationException($"Collection entry '{collectionId}' references printing UUID '{printingUuid}', which is not a standalone printing in the rebuilt projection. Collection data was not modified.");
+                }
+            }
+
+            // ---------------------------------------------------------
+            // 6. Apply exact per-UUID legality masks
+            //
+            // The legality source can include secondary physical faces, which are deliberately absent from printingCards.
+            //
+            // Missing primary printings or completely unknown UUIDs must still cause an error.
+            // ---------------------------------------------------------
+
             const string updateLegalitySql = """
                                             UPDATE printingCards
                                             SET
@@ -336,31 +441,73 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                                             WHERE uuid = @uuid;
                                             """;
 
+            const string secondarySourceSql = """
+                                            SELECT EXISTS (
+                                                SELECT 1
+                                                FROM cards c
+                                                WHERE c.uuid = @uuid
+                                                  AND NOT (
+                                                      COALESCE(TRIM(c.side), '') = ''
+                                                      OR c.side = 'a' COLLATE NOCASE
+                                                  )
+
+                                                UNION ALL
+
+                                                SELECT 1
+                                                FROM tokens t
+                                                WHERE t.uuid = @uuid
+                                                  AND NOT (
+                                                      COALESCE(TRIM(t.side), '') = ''
+                                                      OR t.side = 'a' COLLATE NOCASE
+                                                  )
+                                            );
+                                            """;
+
             using (var legalityCommand = new SQLiteCommand(updateLegalitySql, conn, tx))
+            using (var secondaryCommand = new SQLiteCommand(secondarySourceSql, conn, tx))
             {
                 var uuid = legalityCommand.Parameters.Add("@uuid", DbType.String);
                 var playableFormatsMask = legalityCommand.Parameters.Add("@playableFormatsMask", DbType.Int64);
                 var restrictedFormatsMask = legalityCommand.Parameters.Add("@restrictedFormatsMask", DbType.Int64);
+                var secondaryUuid = secondaryCommand.Parameters.Add("@uuid", DbType.String);
 
                 legalityCommand.Prepare();
+                secondaryCommand.Prepare();
 
                 foreach (var pair in legalityMasksByUuid)
                 {
                     uuid.Value = pair.Key;
 
                     playableFormatsMask.Value = unchecked((long)pair.Value.PlayableFormatsMask);
+
                     restrictedFormatsMask.Value = unchecked((long)pair.Value.RestrictedFormatsMask);
 
                     var updated = await legalityCommand.ExecuteNonQueryAsync();
 
-                    if (updated != 1)
+                    if (updated == 1)
                     {
-                        throw new InvalidOperationException($"Could not persist legality masks for printing '{pair.Key}'. Expected exactly one printing row, but updated {updated:N0}.");
+                        continue;
+                    }
+
+                    if (updated != 0)
+                    {
+                        throw new InvalidOperationException($"Legality update for UUID '{pair.Key}' affected {updated:N0} rows; expected at most one.");
+                    }
+
+                    // A missing printing is acceptable only when it is a known secondary source face.
+                    secondaryUuid.Value = pair.Key;
+
+                    var isSecondary = Convert.ToInt32(await secondaryCommand.ExecuteScalarAsync()) == 1;
+
+                    if (!isSecondary)
+                    {
+                        throw new InvalidOperationException($"Could not persist legality masks for printing '{pair.Key}'. The UUID is neither a standalone printing nor a recognized secondary source face.");
                     }
                 }
             }
 
             return inserted;
         }
+
     }
 }

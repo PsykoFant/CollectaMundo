@@ -1,4 +1,10 @@
 ﻿namespace CollectaMundo.DomainLogic.CardData.Models
 {
-    public sealed record OracleFaceCandidate(string SourceUuid, string ScryfallOracleId, string? Side, int GamePlayCard, OracleFacePayload Payload);
+    public sealed record OracleFaceCandidate(
+        string SourceUuid,
+        string ScryfallOracleId,
+        string? Side,
+        int GamePlayCard,
+        OracleFacePayload Payload,
+        string? OtherFaceIds = null);
 }

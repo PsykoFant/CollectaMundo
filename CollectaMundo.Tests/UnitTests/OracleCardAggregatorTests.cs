@@ -17,7 +17,10 @@ namespace CollectaMundo.Tests.UnitTests
                 types: "Instant",
                 keywords: "");
 
-            var result = OracleCardAggregator.Aggregate([face]);
+            var relationships = CreateRelationships("oracle-1");
+
+            var result = OracleCardAggregator.Aggregate(
+                [face], relationships);
 
             var card = Assert.Single(result);
 
@@ -48,9 +51,12 @@ namespace CollectaMundo.Tests.UnitTests
                 types: "Sorcery",
                 type: "Sorcery");
 
+            var relationships = CreateRelationships("oracle-1");
+
             // Reverse input order intentionally.
             var card = Assert.Single(
-                OracleCardAggregator.Aggregate([back, front]));
+                OracleCardAggregator.Aggregate(
+                    [back, front], relationships));
 
             Assert.Equal("{2}{G}", card.ManaCostRaw);
             Assert.Equal(3, card.ManaValue);
@@ -75,8 +81,11 @@ namespace CollectaMundo.Tests.UnitTests
                 colors: "U",
                 types: "Enchantment");
 
+            var relationships = CreateRelationships("oracle-1");
+
             var card = Assert.Single(
-                OracleCardAggregator.Aggregate([front, back]));
+                OracleCardAggregator.Aggregate(
+                    [front, back], relationships));
 
             Assert.Equal(
                 "Flying,Haste,Vigilance", card.Keywords);
@@ -96,8 +105,13 @@ namespace CollectaMundo.Tests.UnitTests
                 "oracle-1", "b", "Test // Test",
                 keywords: "Haste");
 
-            var first = OracleCardAggregator.Aggregate([a, b]);
-            var second = OracleCardAggregator.Aggregate([b, a]);
+            var relationships = CreateRelationships("oracle-1");
+
+            var first = OracleCardAggregator.Aggregate(
+                [a, b], relationships);
+
+            var second = OracleCardAggregator.Aggregate(
+                [b, a], relationships);
 
             Assert.Equal(first, second);
         }
@@ -111,8 +125,218 @@ namespace CollectaMundo.Tests.UnitTests
             var b = CreateFace(
                 "oracle-1", "b", "Card B");
 
+            var relationships = CreateRelationships("oracle-1");
+
             Assert.Throws<InvalidOperationException>(() =>
-                OracleCardAggregator.Aggregate([a, b]));
+                OracleCardAggregator.Aggregate(
+                    [a, b], relationships));
+        }
+
+        // =========================================================
+        // Cross-Oracle supporting-face regression tests
+        // =========================================================
+
+        [Fact]
+        public void MeldFace_ContributesKeywordsToBothPrimaryOracleCards()
+        {
+            var bruna = CreateFace(
+                oracleId: "oracle-bruna",
+                side: "a",
+                name: "Bruna, the Fading Light // Brisela, Voice of Nightmares",
+                manaCost: "{5}{W}{W}",
+                manaValue: 7,
+                keywords: "Flying,Vigilance",
+                types: "Creature",
+                superTypes: "Legendary",
+                subTypes: "Angel",
+                type: "Legendary Creature — Angel");
+
+            var gisela = CreateFace(
+                oracleId: "oracle-gisela",
+                side: "a",
+                name: "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
+                manaCost: "{2}{W}{W}",
+                manaValue: 4,
+                keywords: "Flying,Lifelink,First strike,Meld",
+                types: "Creature",
+                superTypes: "Legendary",
+                subTypes: "Angel",
+                type: "Legendary Creature — Angel");
+
+            var brisela = CreateFace(
+                oracleId: "oracle-brisela",
+                side: "b",
+                name: "Brisela, Voice of Nightmares",
+                keywords: "Flying,Lifelink,Vigilance,First strike",
+                types: "Creature",
+                superTypes: "Legendary",
+                subTypes: "Eldrazi,Angel",
+                type: "Legendary Creature — Eldrazi Angel");
+
+            var relationships = new OracleFaceRelationshipResolution(
+                StandaloneOracleIds:
+                [
+                    "oracle-bruna",
+                    "oracle-gisela"
+                ],
+                SupportingFaces:
+                [
+                    new OracleCardFaceLink(
+                        "oracle-bruna",
+                        new OracleFaceKey("oracle-brisela", "b")),
+
+                    new OracleCardFaceLink(
+                        "oracle-gisela",
+                        new OracleFaceKey("oracle-brisela", "b"))
+                ],
+                MissingReferences: []);
+
+            var result = OracleCardAggregator.Aggregate(
+                [bruna, gisela, brisela],
+                relationships);
+
+            // Brisela must not be a standalone Oracle card.
+            Assert.Equal(2, result.Count);
+
+            Assert.DoesNotContain(result,
+                card => card.ScryfallOracleId == "oracle-brisela");
+
+            var aggregatedBruna = Assert.Single(result,
+                card => card.ScryfallOracleId == "oracle-bruna");
+
+            var aggregatedGisela = Assert.Single(result,
+                card => card.ScryfallOracleId == "oracle-gisela");
+
+            // Both primary cards inherit Brisela's keywords.
+            Assert.Contains("Vigilance",
+                aggregatedBruna.Keywords!.Split(','));
+
+            Assert.Contains("Vigilance",
+                aggregatedGisela.Keywords!.Split(','));
+
+            // Gisela must retain its own Meld keyword.
+            Assert.Contains("Meld",
+                aggregatedGisela.Keywords!.Split(','));
+
+            // Supporting faces contribute searchable types.
+            Assert.Equal("Creature", aggregatedBruna.Types);
+            Assert.Equal("Creature", aggregatedGisela.Types);
+        }
+
+        [Fact]
+        public void MeldFace_PreservesPrimaryScalarProperties()
+        {
+            var primary = CreateFace(
+                oracleId: "oracle-gisela",
+                side: "a",
+                name: "Gisela // Brisela",
+                manaCost: "{2}{W}{W}",
+                manaValue: 4,
+                superTypes: "Legendary",
+                subTypes: "Angel",
+                type: "Legendary Creature — Angel");
+
+            var supporting = CreateFace(
+                oracleId: "oracle-brisela",
+                side: "b",
+                name: "Brisela",
+                manaCost: null,
+                manaValue: 0,
+                keywords: "Vigilance",
+                superTypes: "Legendary",
+                subTypes: "Eldrazi,Angel",
+                type: "Legendary Creature — Eldrazi Angel");
+
+            var relationships = new OracleFaceRelationshipResolution(
+                StandaloneOracleIds: ["oracle-gisela"],
+                SupportingFaces:
+                [
+                    new OracleCardFaceLink(
+                        "oracle-gisela",
+                        new OracleFaceKey("oracle-brisela", "b"))
+                ],
+                MissingReferences: []);
+
+            var card = Assert.Single(
+                OracleCardAggregator.Aggregate(
+                    [primary, supporting],
+                    relationships));
+
+            Assert.Equal("Gisela // Brisela", card.Name);
+            Assert.Equal("{2}{W}{W}", card.ManaCostRaw);
+            Assert.Equal(4, card.ManaValue);
+            Assert.Equal("Legendary Creature — Angel", card.Type);
+
+            // Cross-Oracle faces must not change these properties.
+            Assert.Equal("Legendary", card.SuperTypes);
+            Assert.Equal("Angel", card.SubTypes);
+
+            // But they must contribute searchable properties.
+            Assert.Equal("Vigilance", card.Keywords);
+        }
+
+        [Fact]
+        public void DuplicateSupportingFaceLinks_DoNotDuplicateProperties()
+        {
+            var primary = CreateFace(
+                "oracle-primary", "a", "Primary",
+                keywords: "Flying");
+
+            var supporting = CreateFace(
+                "oracle-support", "b", "Supporting",
+                keywords: "Vigilance",
+                types: "Creature");
+
+            var link = new OracleCardFaceLink(
+                "oracle-primary",
+                new OracleFaceKey("oracle-support", "b"));
+
+            var relationships = new OracleFaceRelationshipResolution(
+                StandaloneOracleIds: ["oracle-primary"],
+                SupportingFaces: [link, link],
+                MissingReferences: []);
+
+            var card = Assert.Single(
+                OracleCardAggregator.Aggregate(
+                    [primary, supporting],
+                    relationships));
+
+            Assert.Equal("Flying,Vigilance", card.Keywords);
+            Assert.Equal("Creature", card.Types);
+        }
+
+        [Fact]
+        public void MissingCanonicalSupportingFace_Throws()
+        {
+            var primary = CreateFace(
+                "oracle-primary", "a", "Primary");
+
+            var relationships = new OracleFaceRelationshipResolution(
+                StandaloneOracleIds: ["oracle-primary"],
+                SupportingFaces:
+                [
+                    new OracleCardFaceLink(
+                        "oracle-primary",
+                        new OracleFaceKey("oracle-missing", "b"))
+                ],
+                MissingReferences: []);
+
+            Assert.Throws<InvalidOperationException>(() =>
+                OracleCardAggregator.Aggregate(
+                    [primary], relationships));
+        }
+
+        // =========================================================
+        // Test helpers
+        // =========================================================
+
+        private static OracleFaceRelationshipResolution CreateRelationships(
+            params string[] standaloneOracleIds)
+        {
+            return new OracleFaceRelationshipResolution(
+                StandaloneOracleIds: standaloneOracleIds,
+                SupportingFaces: [],
+                MissingReferences: []);
         }
 
         private static CanonicalOracleFace CreateFace(
@@ -150,4 +374,6 @@ namespace CollectaMundo.Tests.UnitTests
         }
     }
 }
+
+
 

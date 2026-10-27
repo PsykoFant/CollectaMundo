@@ -86,28 +86,24 @@ namespace CollectaMundo.Tests.TestUtils
                 // 1. Build canonical Oracle faces from seeded source data
                 // ---------------------------------------------------------
 
-                var candidates = await cardDataRepo.GetOracleFaceCandidatesAsync(
-                    _masterConnection,
-                    transaction);
-
+                var candidates = await cardDataRepo.GetOracleFaceCandidatesAsync(_masterConnection, transaction);
                 var canonicalFaces = OracleFaceCanonicalizer.Canonicalize(candidates);
 
                 if (canonicalFaces.Count == 0)
                 {
-                    throw new InvalidOperationException(
-                        "Scenario database produced no canonical Oracle faces.");
+                    throw new InvalidOperationException("Scenario database produced no canonical Oracle faces.");
                 }
 
                 // ---------------------------------------------------------
                 // 2. Aggregate canonical faces into complete Oracle cards
                 // ---------------------------------------------------------
 
-                var oracleCards = OracleCardAggregator.Aggregate(canonicalFaces);
+                var relationships = OracleFaceRelationshipResolver.Resolve(candidates);
+                var oracleCards = OracleCardAggregator.Aggregate(canonicalFaces, relationships);
 
                 if (oracleCards.Count == 0)
                 {
-                    throw new InvalidOperationException(
-                        "Scenario database produced no aggregated Oracle cards.");
+                    throw new InvalidOperationException("Scenario database produced no aggregated Oracle cards.");
                 }
 
                 // ---------------------------------------------------------
