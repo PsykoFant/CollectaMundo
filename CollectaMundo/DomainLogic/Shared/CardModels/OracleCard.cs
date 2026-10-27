@@ -27,7 +27,6 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
         public int GamePlayCard { get; init; }
         public required string Name { get; init; }
         public required string ScryfallOracleId { get; init; }
-        public string? Side { get; init; }
         public string? SubTypes { get; init; }
         public string? SuperTypes { get; init; }
         public string? Text { get; init; }

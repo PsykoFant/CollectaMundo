@@ -44,7 +44,6 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
         public double ManaValue => Oracle.ManaValue;
         public string Name => Oracle.Name;
         public decimal? NormalPrice => CardDataProviders.PriceMetaProvider?.Get(Uuid)?.NormalPrice;
-        public IReadOnlyList<string> OtherFaceIds { get; init; } = [];
         public List<string> OtherLanguages { get; set; } = [];
         public string? Rarity { get; init; }
 
@@ -92,7 +91,7 @@ namespace CollectaMundo.DomainLogic.Shared.CardModels
                 return _setName;
             }
         }
-        public string? Side => Oracle.Side;
+        public string? Side { get; init; }
         public string? SubTypes => Oracle.SubTypes;
         public string? SuperTypes => Oracle.SuperTypes;
         public string? Text => Oracle.Text;

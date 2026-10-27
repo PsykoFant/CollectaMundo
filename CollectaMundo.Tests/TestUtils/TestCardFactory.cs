@@ -38,18 +38,16 @@ namespace CollectaMundo.Tests.TestUtils
             string language = "English",
             string finishes = "nonfoil",
             string rarity = "common",
-            string? side = null,
-            IEnumerable<string>? otherFaceIds = null)
+            string? side = null)
         {
             return new PrintingCard
             {
                 Uuid = uuid,
+                Side = side,
                 SetCode = setCode,
                 Language = language,
                 Finishes = finishes,
                 Rarity = rarity,
-
-                OtherFaceIds = otherFaceIds?.ToList() ?? [],
 
                 Oracle = new OracleCard
                 {
@@ -64,8 +62,7 @@ namespace CollectaMundo.Tests.TestUtils
                     Type = type,
                     Keywords = keywords,
                     Text = text,
-                    ManaValue = manaValue,
-                    Side = side
+                    ManaValue = manaValue
                 }
             };
         }

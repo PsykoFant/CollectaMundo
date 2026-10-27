@@ -162,26 +162,24 @@ namespace CollectaMundo.DomainLogic.CardData
         // ---------------------------------------------------------
         // Validate canonical faces sharing one Oracle identity
         // ---------------------------------------------------------
-
         private static void ValidateGroup(string oracleId, IReadOnlyList<CanonicalOracleFace> faces)
         {
-            if (faces.Any(face => string.IsNullOrWhiteSpace(face.Payload.Name)))
+            if (faces.Count == 0)
             {
-                throw new InvalidOperationException($"Oracle card '{oracleId}' has a missing name.");
+                throw new InvalidOperationException($"Oracle card '{oracleId}' has no canonical faces.");
             }
 
-            var names = faces.Select(face => face.Payload.Name!).Distinct(StringComparer.Ordinal).ToList();
-
-            if (names.Count != 1)
+            // Different faces may legitimately have different names. Every face must have a name, but names need not be identical.
+            if (faces.Any(face => string.IsNullOrWhiteSpace(face.Payload.Name)))
             {
-                throw new InvalidOperationException($"Oracle card '{oracleId}' has conflicting names: " + string.Join(" | ", names));
+                throw new InvalidOperationException($"Oracle card '{oracleId}' has a missing face name.");
             }
 
             var classifications = faces.Select(face => face.GamePlayCard).Distinct().ToList();
 
             if (classifications.Count != 1)
             {
-                throw new InvalidOperationException($"Oracle card '{oracleId}' has conflicting  GamePlayCard classifications.");
+                throw new InvalidOperationException($"Oracle card '{oracleId}' has conflicting GamePlayCard classifications.");
             }
 
             var duplicateSides = faces

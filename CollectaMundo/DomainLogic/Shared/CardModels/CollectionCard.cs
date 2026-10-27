@@ -44,7 +44,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public string? SubTypes => Oracle.SubTypes;
         public string? Keywords => Oracle.Keywords;
         public string? Text => Oracle.Text;
-        public string? Side => Oracle.Side;
+        public string? Side => Printing.Side;
 
 
         // ---------------------------------------------------------

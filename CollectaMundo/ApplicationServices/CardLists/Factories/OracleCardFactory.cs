@@ -24,7 +24,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
                 SuperTypes = CommaSeparatedValues.NormalizeAndDeduplicate(row.SuperTypes),
                 Types = CommaSeparatedValues.NormalizeAndDeduplicate(row.Types),
                 SubTypes = CommaSeparatedValues.NormalizeAndDeduplicate(row.SubTypes),
-                Type = CommaSeparatedValues.NormalizeAndDeduplicate(row.Type),
+                Type = row.Type?.Trim(),
 
                 Text = string.IsNullOrWhiteSpace(row.RulesText)
                     ? string.Empty

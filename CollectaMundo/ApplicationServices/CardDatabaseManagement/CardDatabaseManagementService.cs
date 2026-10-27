@@ -86,7 +86,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
                 cancellationToken: CancellationToken.None);
         }
-
         private static readonly IReadOnlyList<DbPrepStep> FirstTimePrepSteps =
         [
             DbPrepStep.CreateTables,

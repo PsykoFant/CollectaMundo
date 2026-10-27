@@ -117,19 +117,56 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         [Fact]
-        public void ConflictingNames_Throws()
+        public void DifferentFaceNames_UsesPrimaryFaceName()
         {
-            var a = CreateFace(
-                "oracle-1", "a", "Card A");
+            const string oracleId =
+                "078def07-ae5d-4591-8db6-d156834aab97";
 
-            var b = CreateFace(
-                "oracle-1", "b", "Card B");
+            var front = CreateFace(
+                oracleId,
+                "a",
+                "Etali, Primal Storm // Etali, Primal Storm",
+                types: "Creature");
+
+            var back = CreateFace(
+                oracleId,
+                "b",
+                "Etali, Primal Storm",
+                types: "Creature");
+
+            var relationships = CreateRelationships(oracleId);
+
+            // Reverse input order to verify deterministic primary selection.
+            var result = OracleCardAggregator.Aggregate(
+                [back, front],
+                relationships);
+
+            var card = Assert.Single(result);
+
+            Assert.Equal(oracleId, card.ScryfallOracleId);
+
+            Assert.Equal(
+                "Etali, Primal Storm // Etali, Primal Storm",
+                card.Name);
+
+            Assert.Equal("Creature", card.Types);
+        }
+
+        [Fact]
+        public void MissingFaceName_Throws()
+        {
+            var front = CreateFace(
+                "oracle-1", "a", "Valid Name");
+
+            var back = CreateFace(
+                "oracle-1", "b", "");
 
             var relationships = CreateRelationships("oracle-1");
 
             Assert.Throws<InvalidOperationException>(() =>
                 OracleCardAggregator.Aggregate(
-                    [a, b], relationships));
+                    [front, back],
+                    relationships));
         }
 
         // =========================================================

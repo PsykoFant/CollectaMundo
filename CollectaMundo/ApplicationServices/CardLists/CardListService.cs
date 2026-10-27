@@ -90,7 +90,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
             #endregion
 
-            #region Phase 2: Hydrate Oracle cards and physical printings
+            #region Phase 2: Hydrate Oracle cards and standalone printings
 
             // Phase 2a: Static provider setup
             CardDataProviders.ManaCostImages = lookupPackage.ManaCostImages;
@@ -114,7 +114,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
             Debug.WriteLine($"[Phase 2b] Hydrate Oracle cards: {oracleById.Count:N0} cards, {oracleHydrationSw.ElapsedMilliseconds} ms");
 
             // ---------------------------------------------------------
-            // 2. Hydrate exact physical printings
+            // 2. Hydrate standalone printings
             // ---------------------------------------------------------
 
             var printingHydrationSw = Stopwatch.StartNew();
@@ -137,23 +137,12 @@ namespace CollectaMundo.ApplicationServices.CardLists
             Debug.WriteLine($"[Phase 2b] Build Oracle printing-legality lookup: {legalityLookupSw.ElapsedMilliseconds} ms");
 
             // ---------------------------------------------------------
-            // 4. Build exact printing lookup by UUID
+            // 4. Build standalone printing lookup by UUID
             // ---------------------------------------------------------
 
-            // Retain every physical printing, including secondary faces.
             var printingByUuid = printings.ToDictionary(printing => printing.Uuid, StringComparer.OrdinalIgnoreCase);
 
-            // ---------------------------------------------------------
-            // 5. Select standalone printings for application-facing lists
-            // ---------------------------------------------------------
-
-            // Only side "" and side "a" represent standalone cards.
-            var displayPrintings = printingRows.Where(row => IsPrimarySide(row.Side)).Select(row => printingByUuid[row.Uuid]).ToArray();
-
-            // Identify Oracle cards that have at least one primary printing. Secondary-only Oracle identities, such as Brisela, are excluded.
-            var standaloneOracleIds = displayPrintings.Select(printing => printing.ScryfallOracleId).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            Debug.WriteLine($"[Phase 2b] Physical printings: {printings.Length:N0}, standalone printings: {displayPrintings.Length:N0}, standalone Oracle cards: {standaloneOracleIds.Count:N0}");
+            Debug.WriteLine($"[Phase 2b] Standalone printings: {printings.Length:N0}, Oracle cards: {oracleById.Count:N0}");
 
             phase2bSw.Stop();
 
@@ -167,7 +156,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
             // Build independent application-facing card lists concurrently.
             var phase3abSw = Stopwatch.StartNew();
 
-            var allCardsTask = Task.Run(() => SortCards(displayPrintings));
+            var allCardsTask = Task.Run(() => SortCards(printings));
             var myCollectionTask = Task.Run(() =>
             {
                 var myCollection = collectionRows.Select(row =>
@@ -184,7 +173,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
                 return SortCards(myCollection);
             });
-            var oracleCardsTask = Task.Run(() => SortOracleCards(oracleById.Values.Where(oracle => standaloneOracleIds.Contains(oracle.ScryfallOracleId))));
+            var oracleCardsTask = Task.Run(() => SortOracleCards(oracleById.Values));
 
             await Task.WhenAll(allCardsTask, myCollectionTask, oracleCardsTask);
 
@@ -286,10 +275,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
             .ThenBy(c => CardSort.GetColorRank(c.Colors))
             .ThenBy(c => CardSort.GetTypeRank(c.Types, c.GamePlayCard))
             ];
-        }
-        private static bool IsPrimarySide(string? side)
-        {
-            return string.IsNullOrWhiteSpace(side) || string.Equals(side, "a", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

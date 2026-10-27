@@ -13,6 +13,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
                 Uuid = row.Uuid,
                 Oracle = oracle,
 
+                Side = row.Side,
                 SetCode = row.SetCode,
                 Language = row.Language,
                 Rarity = row.Rarity,
@@ -20,21 +21,8 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
                 Availability = row.Availability,
                 IsPromo = row.IsPromo,
 
-                OtherFaceIds = ParseOtherFaceIds(row.OtherFaceIds),
-
                 LegalityMasks = new CardLegalityMasks(PlayableFormatsMask: row.PlayableFormatsMask, RestrictedFormatsMask: row.RestrictedFormatsMask)
             };
-        }
-        private static IReadOnlyList<string> ParseOtherFaceIds(string? raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw))
-            {
-                return [];
-            }
-
-            var values = raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-            return values.Length == 0 ? [] : values;
         }
     }
 }
