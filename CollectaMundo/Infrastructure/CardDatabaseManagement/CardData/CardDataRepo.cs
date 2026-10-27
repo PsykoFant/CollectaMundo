@@ -4,6 +4,7 @@ using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
 
 namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
@@ -236,6 +237,13 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
         // Printing cards
         public async Task<int> RebuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlyDictionary<string, CardLegalityMasks> legalityMasksByUuid)
         {
+            var totalSw = Stopwatch.StartNew();
+
+            Debug.WriteLine("[PrintingRebuild] Starting");
+
+
+
+
             ArgumentNullException.ThrowIfNull(legalityMasksByUuid);
 
             // ---------------------------------------------------------
@@ -325,10 +333,18 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
 
             int inserted;
 
+            Debug.WriteLine("[PrintingRebuild] Starting bulk INSERT");
+
+            var insertSw = Stopwatch.StartNew();
+
             using (var insertCommand = new SQLiteCommand(insertSql, conn, tx))
             {
                 inserted = await insertCommand.ExecuteNonQueryAsync();
             }
+
+            Debug.WriteLine(
+                $"[PrintingRebuild] Bulk INSERT completed: " +
+                $"{inserted:N0} rows in {insertSw.ElapsedMilliseconds:N0} ms");
 
             // ---------------------------------------------------------
             // 3. Validate standalone-printing row count
@@ -474,34 +490,60 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 legalityCommand.Prepare();
                 secondaryCommand.Prepare();
 
+                Debug.WriteLine(
+    $"[PrintingRebuild] Starting legality updates: " +
+    $"{legalityMasksByUuid.Count:N0} UUIDs");
+
+                var legalitySw = Stopwatch.StartNew();
+                var processed = 0;
+                var updatedCount = 0;
+                var secondaryCount = 0;
+
                 foreach (var pair in legalityMasksByUuid)
                 {
+                    processed++;
+
                     uuid.Value = pair.Key;
-
-                    playableFormatsMask.Value = unchecked((long)pair.Value.PlayableFormatsMask);
-
-                    restrictedFormatsMask.Value = unchecked((long)pair.Value.RestrictedFormatsMask);
+                    playableFormatsMask.Value =
+                        unchecked((long)pair.Value.PlayableFormatsMask);
+                    restrictedFormatsMask.Value =
+                        unchecked((long)pair.Value.RestrictedFormatsMask);
 
                     var updated = await legalityCommand.ExecuteNonQueryAsync();
 
                     if (updated == 1)
                     {
-                        continue;
+                        updatedCount++;
+                    }
+                    else if (updated == 0)
+                    {
+                        secondaryUuid.Value = pair.Key;
+
+                        var isSecondary = Convert.ToInt32(
+                            await secondaryCommand.ExecuteScalarAsync()) == 1;
+
+                        if (!isSecondary)
+                        {
+                            throw new InvalidOperationException(
+                                $"Legality UUID '{pair.Key}' is neither a standalone " +
+                                "printing nor a recognized secondary source face.");
+                        }
+
+                        secondaryCount++;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException(
+                            $"Legality update for '{pair.Key}' affected {updated} rows.");
                     }
 
-                    if (updated != 0)
+                    if (processed % 1000 == 0)
                     {
-                        throw new InvalidOperationException($"Legality update for UUID '{pair.Key}' affected {updated:N0} rows; expected at most one.");
-                    }
-
-                    // A missing printing is acceptable only when it is a known secondary source face.
-                    secondaryUuid.Value = pair.Key;
-
-                    var isSecondary = Convert.ToInt32(await secondaryCommand.ExecuteScalarAsync()) == 1;
-
-                    if (!isSecondary)
-                    {
-                        throw new InvalidOperationException($"Could not persist legality masks for printing '{pair.Key}'. The UUID is neither a standalone printing nor a recognized secondary source face.");
+                        Debug.WriteLine(
+                            $"[PrintingRebuild] Processed={processed:N0}, " +
+                            $"updated={updatedCount:N0}, " +
+                            $"secondary={secondaryCount:N0}, " +
+                            $"elapsed={legalitySw.ElapsedMilliseconds:N0} ms");
                     }
                 }
             }

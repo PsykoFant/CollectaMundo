@@ -731,27 +731,68 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             Debug.WriteLine($"[CardDatabasePrep] Oracle cards: {inserted:N0}");
         }
-        private async Task BuildPrintingCardsAsync(SQLiteConnection conn, SQLiteTransaction tx)
+
+        private async Task BuildPrintingCardsAsync(
+            SQLiteConnection conn,
+            SQLiteTransaction tx)
         {
+            var totalSw = Stopwatch.StartNew();
+
+            Debug.WriteLine(
+                "[CardDatabasePrep] Starting printing-card preparation.");
+
             // ---------------------------------------------------------
             // 1. Prepare and persist derived legality data
             // ---------------------------------------------------------
 
-            var legalityMasksByUuid = await _cardLegalityService.PrepareDerivedDataAsync(conn, tx);
+            Debug.WriteLine(
+                "[CardDatabasePrep] Starting legality preparation...");
 
+            var legalitySw = Stopwatch.StartNew();
+
+            var legalityMasksByUuid =
+                await _cardLegalityService.PrepareDerivedDataAsync(conn, tx);
+
+            legalitySw.Stop();
+
+            Debug.WriteLine(
+                $"[CardDatabasePrep] Legality preparation completed: " +
+                $"{legalityMasksByUuid.Count:N0} UUID masks, " +
+                $"{legalitySw.ElapsedMilliseconds:N0} ms");
 
             // ---------------------------------------------------------
-            // 2. Persist printing cards with legality masks
+            // 2. Rebuild printing-card projection
             // ---------------------------------------------------------
-            var inserted = await _cardDataRepo.RebuildPrintingCardsAsync(conn, tx, legalityMasksByUuid);
+
+            Debug.WriteLine(
+                "[CardDatabasePrep] Starting printing-card projection rebuild...");
+
+            var printingSw = Stopwatch.StartNew();
+
+            var inserted =
+                await _cardDataRepo.RebuildPrintingCardsAsync(
+                    conn, tx, legalityMasksByUuid);
+
+            printingSw.Stop();
+
+            Debug.WriteLine(
+                $"[CardDatabasePrep] Printing-card projection completed: " +
+                $"{inserted:N0} rows, " +
+                $"{printingSw.ElapsedMilliseconds:N0} ms");
 
             if (inserted == 0)
             {
-                throw new InvalidOperationException("Printing-card projection produced no rows.");
+                throw new InvalidOperationException(
+                    "Printing-card projection produced no rows.");
             }
 
-            Debug.WriteLine($"[CardDatabasePrep] Printing cards: {inserted:N0}");
+            totalSw.Stop();
+
+            Debug.WriteLine(
+                $"[CardDatabasePrep] Printing cards: {inserted:N0}, " +
+                $"total preparation={totalSw.ElapsedMilliseconds:N0} ms");
         }
+
 
         #endregion
 
