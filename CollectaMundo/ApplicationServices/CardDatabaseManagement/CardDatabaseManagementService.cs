@@ -30,7 +30,8 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         IGenerateMissingPngService missingPngService,
         IRemoteLookups remoteLookups,
         IRemoteFileDownloader remoteFileDownloader,
-        IGzipFileDecompressor gzipFileDecompressor) : ICardDatabaseManagementService
+        IGzipFileDecompressor gzipFileDecompressor,
+        IDatabaseIntegrityService integrityService) : ICardDatabaseManagementService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
@@ -44,6 +45,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         private readonly IRemoteLookups _remoteLookups = remoteLookups;
         private readonly IRemoteFileDownloader _remoteFileDownloader = remoteFileDownloader;
         private readonly IGzipFileDecompressor _gzipFileDecompressor = gzipFileDecompressor;
+        private readonly IDatabaseIntegrityService _integrityService = integrityService;
 
         // Materialized application files. Remote CardDatabaseUrl / CardPricesUrl point to .gz artifacts.
         private readonly string _dbPath = Path.Combine(settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
@@ -509,6 +511,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         #endregion
 
         #region DATABASE TABLE COPY
+
         private async Task<OperationResult> ReplaceDatabaseCoreAsync()
         {
             _progressSinks.ProgressBarVisible.Report(false);
@@ -517,77 +520,84 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             try
             {
-                // Preserve the existing non-cancellable behavior once the destructive database update phase has started.
+                // Preserve the existing non-cancellable behavioronce database replacement has started.
                 await Task.Run(async () =>
                 {
                     await using var conn = await _dbFactory.OpenConnectionAsync().ConfigureAwait(false);
 
-                    // ATTACH is connection-scoped and intentionally outside
-                    // the replacement transaction.
+                    // ATTACH is connection-scoped and must happen outside the replacement transaction.
                     await _dbMgmtRepo.AttachTempDbAsync(conn, _tempDbPath, _progressSinks.Detail);
 
                     using var tx = conn.BeginTransaction();
 
-                    // ---------------------------------------------------------
-                    // 1. Replace all MTGJSON-owned source tables
-                    // ---------------------------------------------------------
+                    try
+                    {
+                        // 1. Replace all MTGJSON-owned source tables.
+                        await _dbMgmtRepo.ReplaceSourceTablesAsync(conn, tx, _progressSinks.Detail);
 
-                    await _dbMgmtRepo.ReplaceSourceTablesAsync(conn, tx, _progressSinks.Detail);
+                        Debug.WriteLine("[CardDatabasePrep] Replaced source tables.");
 
-                    Debug.WriteLine("[CardDatabasePrep] Replaced source tables.");
+                        // 2. Recreate source-derived CollectaMundo tables.
+                        await _dbMgmtRepo.RecreateDerivedCardDataTablesAsync(conn, tx);
 
-                    // ---------------------------------------------------------
-                    // 2. Recreate source-derived CollectaMundo tables
-                    //
-                    // These tables are disposable projections of the MTGJSON source data. Recreating them ensures that every full source update also installs the schema expected by the current application version.
-                    // ---------------------------------------------------------
+                        Debug.WriteLine("[CardDatabasePrep] Recreated derived card-data tables.");
 
-                    await _dbMgmtRepo.RecreateDerivedCardDataTablesAsync(conn, tx);
+                        // 3. Re-establish application indexes.
+                        await _dbMgmtRepo.CreateIndicesAsync(conn, tx);
 
-                    Debug.WriteLine("[CardDatabasePrep] Recreated derived card-data tables.");
+                        Debug.WriteLine("[CardDatabasePrep] Created application indices.");
 
-                    // ---------------------------------------------------------
-                    // 3. Re-establish CollectaMundo-specific indexes
-                    //
-                    // This must happen after derived tables are recreated, because DROP TABLE also removes indexes belonging to those tables.
-                    // ---------------------------------------------------------
+                        // 4. Rebuild the Oracle-card projection.
+                        await BuildOracleCardsAsync(conn, tx);
 
-                    await _dbMgmtRepo.CreateIndicesAsync(conn, tx);
+                        Debug.WriteLine("[CardDatabasePrep] Rebuilt Oracle cards.");
 
-                    Debug.WriteLine("[CardDatabasePrep] Created application indices.");
+                        // 5. Rebuild the printing-card projection.
+                        await BuildPrintingCardsAsync(conn, tx);
 
-                    // ---------------------------------------------------------
-                    // 4. Rebuild aggregated Oracle-card projection
-                    // ---------------------------------------------------------
+                        Debug.WriteLine("[CardDatabasePrep] Rebuilt printing-card projection.");
 
-                    await BuildOracleCardsAsync(conn, tx);
+                        // 6. Verify the rebuilt main database BEFORE commit.
+                        _progressSinks.Detail.Report("Verifying database integrity...");
 
-                    Debug.WriteLine("[CardDatabasePrep] Rebuilt Oracle cards.");
+                        await _integrityService.VerifyMainDatabaseIntegrityAsync(conn, tx);
 
-                    // ---------------------------------------------------------
-                    // 5. Rebuild printing-card projection
-                    // ---------------------------------------------------------
+                        Debug.WriteLine("[CardDatabasePrep] Database integrity verified.");
 
-                    await BuildPrintingCardsAsync(conn, tx);
+                        // 7. Commit source tables, schema and projections together, but only after successful verification.
+                        tx.Commit();
 
-                    Debug.WriteLine("[CardDatabasePrep] Rebuilt printing-card projection.");
+                        Debug.WriteLine("[CardDatabasePrep] Database core replacement committed.");
+                    }
+                    catch
+                    {
+                        // Explicit rollback of all changes made since
+                        // BeginTransaction.
+                        try
+                        {
+                            tx.Rollback();
 
-                    // ---------------------------------------------------------
-                    // 6. Commit source + schema + derived projections together
-                    // ---------------------------------------------------------
+                            Debug.WriteLine("[CardDatabasePrep] Replacement transaction rolled back.");
+                        }
+                        catch (Exception rollbackEx)
+                        {
+                            // Preserve the original exception.
+                            // Rollback can itself fail if SQLite has already invalidated or rolled back the transaction.
+                            Debug.WriteLine($"[CardDatabasePrep] Rollback failed: {rollbackEx}");
+                        }
 
-                    tx.Commit();
+                        throw;
+                    }
 
-                    Debug.WriteLine("[CardDatabasePrep] Database core replacement committed.");
-
-                    // No explicit DETACH is needed. Disposing the connection releases the attached temp DB.
-                },
-                CancellationToken.None);
+                    // Disposing the connection also releases tempDb.
+                }, CancellationToken.None);
 
                 return new OperationResult(OperationResultCode.Success);
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"[CardDatabasePrep] Database replacement failed: {ex}");
+
                 _progressSinks.Detail.Report($"Database update failed: {ex.Message}");
 
                 return new OperationResult(OperationResultCode.Error, $"Database update failed: {ex.Message}");

@@ -1,4 +1,5 @@
 ﻿using System.Data.SQLite;
+using System.IO;
 
 namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 {
@@ -43,13 +44,29 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
             return Convert.ToInt32(result) == 1;
         }
-
         public async Task<bool> QuickCheckAsync(SQLiteConnection conn)
         {
             await using var cmd = new SQLiteCommand("PRAGMA quick_check;", conn);
             var result = await cmd.ExecuteScalarAsync();
             return result?.ToString() == "ok";
         }
+        public async Task VerifyMainDatabaseIntegrityAsync(SQLiteConnection conn, SQLiteTransaction? tx)
+        {
+            ArgumentNullException.ThrowIfNull(conn);
+
+            const string sql = "PRAGMA main.integrity_check;";
+
+            using var cmd = new SQLiteCommand(sql, conn, tx);
+
+            var result = await cmd.ExecuteScalarAsync();
+            var message = result?.ToString();
+
+            if (!string.Equals(message, "ok", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException($"SQLite integrity verification failed: {message ?? "No result returned."}");
+            }
+        }
+
     }
 
 }

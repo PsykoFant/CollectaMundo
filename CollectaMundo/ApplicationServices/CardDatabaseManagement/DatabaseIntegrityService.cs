@@ -2,44 +2,50 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
+using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
-    public class DatabaseIntegrityService(IUnitOfWorkRunner uowRunner, IAppSettings settings) : IDatabaseIntegrityService
+    public class DatabaseIntegrityService(IUnitOfWorkRunner uowRunner, IAppSettings settings, IDatabaseIntegrityRepo integrityRepo) : IDatabaseIntegrityService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly IAppSettings _settings = settings;
-        private readonly DatabaseIntegrityRepo _healthRepo = new();
-
+        private readonly IDatabaseIntegrityRepo _integrityRepo = integrityRepo;
         public async Task<DatabaseStatus> GetDatabaseStatusAsync()
         {
             string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
 
             if (!File.Exists(dbPath))
             {
-                Debug.WriteLine("DB doesn't exist");
+                Debug.WriteLine("[DatabaseStatus] Database missing.");
                 return DatabaseStatus.Missing;
             }
 
             try
             {
-                bool isValid = await _uowRunner.ExecuteReadOnlyAsync(async conn =>
-                await _healthRepo.HasExpectedTablesAndViewsAsync(conn) &&
-                await _healthRepo.HasOracleCardsAsync(conn) &&
-                await _healthRepo.QuickCheckAsync(conn)
-                );
+                bool isReady = await _uowRunner.ExecuteReadOnlyAsync(async conn => await _integrityRepo.HasExpectedTablesAndViewsAsync(conn) && await _integrityRepo.HasOracleCardsAsync(conn));
 
-                Debug.WriteLine($"Is the database ok: {isValid}");
+                if (!isReady)
+                {
+                    throw new InvalidDataException("The existing database does not contain the required application schema or Oracle card data.");
+                }
 
-                return isValid ? DatabaseStatus.Healthy : DatabaseStatus.Corrupt;
+                Debug.WriteLine("[DatabaseStatus] Database ready.");
+
+                return DatabaseStatus.Healthy;
             }
-            catch
+            catch (Exception ex)
             {
-                Debug.WriteLine("DB is corrupted (this is from inside catch)");
-                return DatabaseStatus.Corrupt;
+                Debug.WriteLine($"[DatabaseStatus] Readiness check failed: {ex}");
+
+                throw;
             }
+        }
+        public Task VerifyMainDatabaseIntegrityAsync(SQLiteConnection conn, SQLiteTransaction? tx)
+        {
+            return _integrityRepo.VerifyMainDatabaseIntegrityAsync(conn, tx);
         }
     }
 

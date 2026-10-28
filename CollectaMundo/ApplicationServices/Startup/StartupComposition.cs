@@ -78,8 +78,9 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var progressSinks = CreateProgressSinks(operationOverlayController);
                 var cardLegalityService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor());
-                var integrityService = new DatabaseIntegrityService(uowRunner, settings);
+                var integrityService = new DatabaseIntegrityService(uowRunner, settings, new DatabaseIntegrityRepo());
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor(), integrityService);
+
 
                 // Status overlay
                 operationOverlayController.Show(string.Empty);
@@ -89,7 +90,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 // First-time setup / repair if needed
                 var dbStatus = await integrityService.GetDatabaseStatusAsync();
 
-                if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
+                if (dbStatus is DatabaseStatus.Missing)
                 {
                     var prepResult = await cardDbManagementService.FirstTimeDbPrepOrchestrator();
                     if (prepResult.Code != OperationResultCode.Success)
