@@ -30,8 +30,8 @@
                 //{ "idx_cardforeigndata_uuid",
                 //    "CREATE INDEX IF NOT EXISTS idx_cardforeigndata_uuid ON cardForeignData(uuid);" },
 
-                { "idx_cards_uuid",
-                    "CREATE INDEX IF NOT EXISTS idx_cards_uuid ON cards(uuid);" },
+                //{ "idx_cards_uuid",
+                //    "CREATE INDEX IF NOT EXISTS idx_cards_uuid ON cards(uuid);" },
 
                 //{ "idx_cards_setcode_name",
                 //    "CREATE INDEX IF NOT EXISTS idx_cards_setcode_name ON cards(setCode, name);" },
@@ -48,8 +48,8 @@
                 //{ "idx_tokenidentifiers_uuid",
                 //    "CREATE INDEX IF NOT EXISTS idx_tokenidentifiers_uuid ON tokenIdentifiers(uuid);" },
 
-                { "idx_tokens_uuid",
-                    "CREATE INDEX IF NOT EXISTS idx_tokens_uuid ON tokens(uuid);" },
+                //{ "idx_tokens_uuid",
+                //    "CREATE INDEX IF NOT EXISTS idx_tokens_uuid ON tokens(uuid);" },
 
                 //{ "idx_tokens_name",
                 //    "CREATE INDEX IF NOT EXISTS idx_tokens_name ON tokens(name);" },

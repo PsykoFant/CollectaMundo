@@ -105,6 +105,10 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
         {
             var existingSourceTables = await GetSourceTableNamesAsync(conn, tx, "main");
             var incomingSourceTables = await GetSourceTableDefinitionsAsync(conn, tx);
+            var incomingSourceTableNames = incomingSourceTables.Select(table => table.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var incomingSourceIndexes = await GetSourceIndexDefinitionsAsync(conn, tx, incomingSourceTableNames);
+
+            Debug.WriteLine($"[CardDatabaseManagementRepo] Replacing source tables. Existing={existingSourceTables.Count}, Incoming={incomingSourceTables.Count}, Source indexes={incomingSourceIndexes.Count}");
 
             Debug.WriteLine($"[CardDatabaseManagementRepo] Replacing source tables. Existing={existingSourceTables.Count}, Incoming={incomingSourceTables.Count}");
 
@@ -166,8 +170,32 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 Debug.WriteLine($"[CardDatabaseManagementRepo] Copied {table.Name}");
             }
 
-            progress.Report(
-                "Source table replacement complete.");
+
+            // -------------------------------------------------
+            // 4. Restore original MTGJSON source indexes
+            // -------------------------------------------------
+
+            progress.Report($"Restoring {incomingSourceIndexes.Count} source indexes...");
+
+            foreach (var index in incomingSourceIndexes)
+            {
+                try
+                {
+                    using var command = new SQLiteCommand(index.CreateSql, conn, tx);
+
+                    await command.ExecuteNonQueryAsync();
+
+                    Debug.WriteLine($"[CardDatabaseManagementRepo] Restored source index '{index.Name}' on '{index.TableName}'.");
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"Failed to restore MTGJSON source index '{index.Name}' on table '{index.TableName}'.", ex);
+                }
+            }
+
+            Debug.WriteLine($"[CardDatabaseManagementRepo] Restored {incomingSourceIndexes.Count} MTGJSON source indexes.");
+
+            progress.Report("Source table replacement complete.");
         }
         public async Task RecreateDerivedCardDataTablesAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
@@ -248,6 +276,42 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
             return tableNames;
         }
+        private static async Task<List<SourceIndexDefinition>> GetSourceIndexDefinitionsAsync(SQLiteConnection conn, SQLiteTransaction tx, IReadOnlySet<string> sourceTableNames)
+        {
+            const string sql = """
+                                SELECT
+                                    name,
+                                    tbl_name,
+                                    sql
+                                FROM tempDb.sqlite_master
+                                WHERE type = 'index'
+                                  AND sql IS NOT NULL
+                                ORDER BY tbl_name, name;
+                                """;
+
+            using var command = new SQLiteCommand(sql, conn, tx);
+            using var reader = await command.ExecuteReaderAsync();
+
+            var indexes = new List<SourceIndexDefinition>();
+
+            while (await reader.ReadAsync())
+            {
+                var indexName = reader.GetString(0);
+                var tableName = reader.GetString(1);
+                var createSql = reader.GetString(2);
+
+                // Only restore indexes belonging to source tables that are actually being replaced.
+                if (!sourceTableNames.Contains(tableName))
+                {
+                    continue;
+                }
+
+                indexes.Add(new SourceIndexDefinition(indexName, tableName, createSql));
+            }
+
+            return indexes;
+        }
+        private sealed record SourceIndexDefinition(string Name, string TableName, string CreateSql);
         private static async Task<List<SourceTableDefinition>> GetSourceTableDefinitionsAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
             const string sql = """
@@ -285,9 +349,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
             return tables;
         }
-        private sealed record SourceTableDefinition(
-            string Name,
-            string CreateSql);
+        private sealed record SourceTableDefinition(string Name, string CreateSql);
         private static string QuoteIdentifier(string identifier)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(identifier);

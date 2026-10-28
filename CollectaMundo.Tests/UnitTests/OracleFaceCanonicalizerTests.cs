@@ -149,6 +149,55 @@ namespace CollectaMundo.Tests.UnitTests
                 Assert.Equal(2, canonical.SourceRowCount);
                 Assert.Equal(1, canonical.VariantCount);
             }
+
+            [Fact]
+            public void Canonicalize_KeywordsInDifferentOrder_TreatedAsSamePayload()
+            {
+                // Arrange
+                const string oracleId = "f77ea393-4142-4c06-8bb3-589ca74a7338";
+
+                var candidates = new[]
+                {
+        CreateCandidate(
+            uuid: "1fc83213-c79c-58c4-bb51-cb433d6e03a8",
+            oracleId: oracleId,
+            side: null,
+            payload: CreatePayload(
+                keywords: "Vigilance, Face a dilemma, Ward")),
+
+        CreateCandidate(
+            uuid: "f4f5eb65-e08d-50c2-aeeb-3364502d6dad",
+            oracleId: oracleId,
+            side: "",
+            payload: CreatePayload(
+                keywords: "Face a dilemma, Vigilance, Ward"))
+    };
+
+                // Act
+                var result = Assert.Single(
+                    OracleFaceCanonicalizer.Canonicalize(candidates));
+
+                // Assert
+                Assert.Equal(oracleId, result.Key.ScryfallOracleId);
+                Assert.Equal(string.Empty, result.Key.Side);
+
+                Assert.Equal(2, result.SourceRowCount);
+                Assert.Equal(2, result.WinningRowCount);
+                Assert.Equal(1, result.VariantCount);
+
+                Assert.False(result.HasConflict);
+                Assert.False(result.IsAmbiguous);
+
+                Assert.Equal(
+                    "Face a dilemma, Vigilance, Ward",
+                    result.Payload.Keywords);
+
+                // Both source rows agree after keyword normalization.
+                // The selected UUID remains deterministic.
+                Assert.Equal(
+                    "1fc83213-c79c-58c4-bb51-cb433d6e03a8",
+                    result.SelectedSourceUuid);
+            }
         }
         private static OracleFaceCandidate CreateCandidate(string uuid, string oracleId, string? side, OracleFacePayload payload)
         {

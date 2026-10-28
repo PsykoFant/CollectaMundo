@@ -2,8 +2,6 @@ TO DO
 
 
 
-opstart - hydration af oracle cards, er det nødvendigt nu eller lævn fra gamle dage?
-
 Merge og release
 
 

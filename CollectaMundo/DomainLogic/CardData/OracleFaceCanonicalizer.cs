@@ -8,22 +8,19 @@ namespace CollectaMundo.DomainLogic.CardData
         {
             return
             [
-                .. candidates.GroupBy(candidate =>  new OracleFaceKey(candidate.ScryfallOracleId, NormalizeSide(candidate.Side)))
+                .. candidates
+                    .GroupBy(candidate => new OracleFaceKey(candidate.ScryfallOracleId, NormalizeSide(candidate.Side)))
                     .Select(CanonicalizeGroup)
                     .OrderBy(result => result.Key.ScryfallOracleId, StringComparer.Ordinal)
                     .ThenBy(result => result.Key.Side, StringComparer.Ordinal)
             ];
         }
-
         private static CanonicalOracleFace CanonicalizeGroup(IGrouping<OracleFaceKey, OracleFaceCandidate> group)
         {
             // GamePlayCard is canonical-face classification metadata, not part of the Oracle payload voting.
             //
             // All physical source rows representing the same Oracle face must agree on this classification.
-            var gamePlayCardValues = group
-                .Select(candidate => candidate.GamePlayCard)
-                .Distinct()
-                .ToArray();
+            var gamePlayCardValues = group.Select(candidate => candidate.GamePlayCard).Distinct().ToArray();
 
             if (gamePlayCardValues.Length != 1)
             {
@@ -32,21 +29,19 @@ namespace CollectaMundo.DomainLogic.CardData
 
             var gamePlayCard = gamePlayCardValues[0];
 
+            // Normalize representation before comparing Oracle payloads. Keyword ordering is not semantically significant.
             var variants = group
-                .GroupBy(candidate => candidate.Payload)
+                .GroupBy(candidate => NormalizePayload(candidate.Payload))
                 .Select(payloadGroup =>
                     new PayloadVariant(
-                        Payload:
-                        payloadGroup.Key,
+                        Payload: payloadGroup.Key,
                         Count: payloadGroup.Count(),
-                        SelectedSourceUuid: payloadGroup
-                            .Select(candidate => candidate.SourceUuid)
-                            .OrderBy(uuid => uuid, StringComparer.Ordinal).First()))
+                        SelectedSourceUuid: payloadGroup.Select(candidate => candidate.SourceUuid).OrderBy(uuid => uuid, StringComparer.Ordinal).First()))
                 .OrderByDescending(variant => variant.Count)
-                .ThenBy(variant => variant.SelectedSourceUuid, StringComparer.Ordinal).ToList();
+                .ThenBy(variant => variant.SelectedSourceUuid, StringComparer.Ordinal)
+                .ToList();
 
             var winner = variants[0];
-
             var isAmbiguous = variants.Count > 1 && variants[1].Count == winner.Count;
 
             return new CanonicalOracleFace(
@@ -59,12 +54,29 @@ namespace CollectaMundo.DomainLogic.CardData
                 VariantCount: variants.Count,
                 IsAmbiguous: isAmbiguous);
         }
+        private static OracleFacePayload NormalizePayload(OracleFacePayload payload)
+        {
+            return payload with
+            {
+                Keywords = NormalizeKeywords(payload.Keywords)
+            };
+        }
+        private static string NormalizeKeywords(string? keywords)
+        {
+            if (string.IsNullOrWhiteSpace(keywords))
+            {
+                return string.Empty;
+            }
 
+            return string.Join(", ", keywords.Split(',',
+                StringSplitOptions.RemoveEmptyEntries |
+                StringSplitOptions.TrimEntries).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(keyword => keyword, StringComparer.OrdinalIgnoreCase));
+        }
         private static string NormalizeSide(string? side)
         {
             return side ?? string.Empty;
         }
-
         private sealed record PayloadVariant(OracleFacePayload Payload, int Count, string SelectedSourceUuid);
     }
 }
+

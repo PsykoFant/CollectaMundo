@@ -444,9 +444,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
             // ---------------------------------------------------------
             // 6. Apply exact per-UUID legality masks
             //
-            // The legality source can include secondary physical faces, which are deliberately absent from printingCards.
-            //
-            // Missing primary printings or completely unknown UUIDs must still cause an error.
+            // The legality source can include secondary physical faces, which are deliberately absent from printingCards. Missing primary printings or completely unknown UUIDs must still cause an error.
             // ---------------------------------------------------------
 
             const string updateLegalitySql = """
@@ -490,24 +488,16 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                 legalityCommand.Prepare();
                 secondaryCommand.Prepare();
 
-                Debug.WriteLine(
-    $"[PrintingRebuild] Starting legality updates: " +
-    $"{legalityMasksByUuid.Count:N0} UUIDs");
+                Debug.WriteLine($"[PrintingRebuild] Starting legality updates: {legalityMasksByUuid.Count:N0} UUIDs");
 
-                var legalitySw = Stopwatch.StartNew();
-                var processed = 0;
                 var updatedCount = 0;
                 var secondaryCount = 0;
 
                 foreach (var pair in legalityMasksByUuid)
                 {
-                    processed++;
-
                     uuid.Value = pair.Key;
-                    playableFormatsMask.Value =
-                        unchecked((long)pair.Value.PlayableFormatsMask);
-                    restrictedFormatsMask.Value =
-                        unchecked((long)pair.Value.RestrictedFormatsMask);
+                    playableFormatsMask.Value = unchecked((long)pair.Value.PlayableFormatsMask);
+                    restrictedFormatsMask.Value = unchecked((long)pair.Value.RestrictedFormatsMask);
 
                     var updated = await legalityCommand.ExecuteNonQueryAsync();
 
@@ -519,31 +509,18 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.CardData
                     {
                         secondaryUuid.Value = pair.Key;
 
-                        var isSecondary = Convert.ToInt32(
-                            await secondaryCommand.ExecuteScalarAsync()) == 1;
+                        var isSecondary = Convert.ToInt32(await secondaryCommand.ExecuteScalarAsync()) == 1;
 
                         if (!isSecondary)
                         {
-                            throw new InvalidOperationException(
-                                $"Legality UUID '{pair.Key}' is neither a standalone " +
-                                "printing nor a recognized secondary source face.");
+                            throw new InvalidOperationException($"Legality UUID '{pair.Key}' is neither a standalone printing nor a recognized secondary source face.");
                         }
 
                         secondaryCount++;
                     }
                     else
                     {
-                        throw new InvalidOperationException(
-                            $"Legality update for '{pair.Key}' affected {updated} rows.");
-                    }
-
-                    if (processed % 1000 == 0)
-                    {
-                        Debug.WriteLine(
-                            $"[PrintingRebuild] Processed={processed:N0}, " +
-                            $"updated={updatedCount:N0}, " +
-                            $"secondary={secondaryCount:N0}, " +
-                            $"elapsed={legalitySw.ElapsedMilliseconds:N0} ms");
+                        throw new InvalidOperationException($"Legality update for '{pair.Key}' affected {updated} rows.");
                     }
                 }
             }
