@@ -7,5 +7,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
     {
         Task<DatabaseStatus> GetDatabaseStatusAsync();
         Task VerifyMainDatabaseIntegrityAsync(SQLiteConnection conn, SQLiteTransaction? tx);
+        Task MarkFirstTimePreparationStartedAsync();
+        Task MarkFirstTimePreparationCompletedAsync();
     }
 }

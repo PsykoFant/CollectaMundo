@@ -55,6 +55,23 @@ namespace CollectaMundo.Tests.UnitTests
                 It.IsAny<CancellationToken>()),
                 Times.Exactly(2));
 
+            ctx.IntegrityService.Verify(s => s.VerifyMainDatabaseIntegrityAsync(
+                It.IsAny<SQLiteConnection>(),
+                null),
+                Times.Once);
+
+            ctx.IntegrityService.Verify(s => s.MarkFirstTimePreparationStartedAsync(), Times.Once);
+
+            ctx.IntegrityService.Verify(
+                s => s.VerifyMainDatabaseIntegrityAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    null),
+                Times.Once);
+
+            ctx.IntegrityService.Verify(
+                s => s.MarkFirstTimePreparationCompletedAsync(),
+                Times.Once);
+
             // progress assertions
             Assert.Contains(ctx.VisibleToggles, v => v);          // bar was shown
             Assert.Contains(ctx.VisibleToggles, v => v == false); // bar was hidden
@@ -502,23 +519,10 @@ namespace CollectaMundo.Tests.UnitTests
                     It.IsAny<IProgress<string>>()),
                 Times.Once);
 
-            ctx.SchemaRepo.Verify(
-                r => r.RecreateDerivedCardDataTablesAsync(
-                    It.IsAny<SQLiteConnection>(),
-                    It.IsAny<SQLiteTransaction>()),
-                Times.Once);
-
-            ctx.SchemaRepo.Verify(
-                r => r.CreateIndicesAsync(
-                    It.IsAny<SQLiteConnection>(),
-                    It.IsAny<SQLiteTransaction>()),
-                Times.Once);
-
-            ctx.SchemaRepo.Verify(
-                r => r.CreateTablesAsync(
-                    It.IsAny<SQLiteConnection>(),
-                    It.IsAny<SQLiteTransaction>()),
-                Times.Never);
+            ctx.SchemaRepo.Verify(r => r.RecreateDerivedCardDataTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Once);
+            ctx.SchemaRepo.Verify(r => r.CreateIndicesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Once);
+            ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Never);
+            ctx.IntegrityService.Verify(s => s.VerifyMainDatabaseIntegrityAsync(It.IsAny<SQLiteConnection>(), It.IsAny<SQLiteTransaction>()), Times.Once);
 
             var relevantCalls = ctx.SchemaRepo.Invocations
                 .Select(invocation => invocation.Method.Name)
@@ -535,7 +539,178 @@ namespace CollectaMundo.Tests.UnitTests
                     nameof(ICardDatabaseManagementRepo.CreateIndicesAsync)
                 ],
                 relevantCalls);
+
+
         }
 
+
+        [Fact]
+        public async Task UpdateDbPrepOrchestrator_IntegrityVerificationFails_ReturnsError_AndStopsPipeline()
+        {
+            using var ctx = new FirstTimeSetupTestContext();
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            ctx.StubAllStepsAsSuccess();
+
+            // Override the successful integrity verification.
+            ctx.IntegrityService
+                .Setup(s => s.VerifyMainDatabaseIntegrityAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()))
+                .ThrowsAsync(
+                    new InvalidDataException(
+                        "Forced integrity verification failure"));
+
+            var svc = ctx.BuildService();
+
+            var result = await svc.UpdateDbPrepOrchestrator(
+                0,
+                CancellationToken.None);
+
+            // The operation must fail.
+            Assert.Equal(OperationResultCode.Error, result.Code);
+
+            Assert.Contains(
+                "Forced integrity verification failure",
+                result.Message);
+
+            // The update must reach integrity verification exactly once.
+            ctx.IntegrityService.Verify(
+                s => s.VerifyMainDatabaseIntegrityAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()),
+                Times.Once);
+
+            // Core replacement was attempted.
+            ctx.SchemaRepo.Verify(
+                r => r.ReplaceSourceTablesAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>(),
+                    It.IsAny<IProgress<string>>()),
+                Times.Once);
+
+            // Post-commit preparation must not execute.
+            ctx.PngService.Verify(
+                p => p.GenerateMissingManaSymbolImagesAsync(
+                    It.IsAny<IProgress<int>>()),
+                Times.Never);
+
+            ctx.PngService.Verify(
+                p => p.GenerateMissingManaCostImagesAsync(
+                    It.IsAny<IProgress<int>>()),
+                Times.Never);
+
+            ctx.PriceService.Verify(
+                p => p.ImportPricesFromJsonAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>(),
+                    It.IsAny<IProgress<string>?>(),
+                    It.IsAny<IProgress<int>?>()),
+                Times.Never);
+
+            ctx.SchemaRepo.Verify(
+                r => r.OptimizeAsync(
+                    It.IsAny<SQLiteConnection>()),
+                Times.Never);
+        }
+
+
+        [Fact]
+        public async Task FirstTimeDbPrepOrchestrator_IntegrityVerificationFails_ReturnsError()
+        {
+            using var ctx = new FirstTimeSetupTestContext();
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            ctx.StubAllStepsAsSuccess();
+
+            // Override the successful integrity verification.
+            ctx.IntegrityService
+                .Setup(s => s.VerifyMainDatabaseIntegrityAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    null))
+                .ThrowsAsync(
+                    new InvalidDataException(
+                        "Forced first-time integrity verification failure"));
+
+            var svc = ctx.BuildService();
+
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
+
+            Assert.Equal(OperationResultCode.Error, result.Code);
+
+            Assert.Contains(
+                "Forced first-time integrity verification failure",
+                result.Message);
+
+            // Final verification must have been attempted once.
+            ctx.IntegrityService.Verify(
+                s => s.VerifyMainDatabaseIntegrityAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    null),
+                Times.Once);
+
+            // Preparation reached its final database optimization.
+            ctx.SchemaRepo.Verify(
+                r => r.OptimizeAsync(
+                    It.IsAny<SQLiteConnection>()),
+                Times.Once);
+
+            ctx.IntegrityService.Verify(s => s.MarkFirstTimePreparationStartedAsync(), Times.Once);
+
+            ctx.IntegrityService.Verify(s => s.MarkFirstTimePreparationCompletedAsync(), Times.Never);
+        }
+
+
+        [Fact]
+        public async Task FirstTimeDbPrepOrchestrator_MarkingCompleteFails_ReturnsError()
+        {
+            using var ctx = new FirstTimeSetupTestContext();
+
+            ctx.RemoteLookups
+                .Setup(r => r.IsInternetAvailableAsync(
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            ctx.StubAllStepsAsSuccess();
+
+            ctx.IntegrityService
+                .Setup(s => s.MarkFirstTimePreparationCompletedAsync())
+                .ThrowsAsync(
+                    new InvalidDataException(
+                        "Could not persist completion marker"));
+
+            var svc = ctx.BuildService();
+
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
+
+            Assert.Equal(OperationResultCode.Error, result.Code);
+
+            Assert.Contains(
+                "Could not persist completion marker",
+                result.Message);
+
+            ctx.IntegrityService.Verify(
+                s => s.MarkFirstTimePreparationStartedAsync(),
+                Times.Once);
+
+            ctx.IntegrityService.Verify(
+                s => s.VerifyMainDatabaseIntegrityAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    null),
+                Times.Once);
+
+            ctx.IntegrityService.Verify(
+                s => s.MarkFirstTimePreparationCompletedAsync(),
+                Times.Once);
+        }
     }
 }

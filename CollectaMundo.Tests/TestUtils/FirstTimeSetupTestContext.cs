@@ -42,6 +42,7 @@ namespace CollectaMundo.Tests.TestUtils
         private readonly IGzipFileDecompressor? _realGzipFileDecompressor;
         public IRemoteFileDownloader RemoteFileDownloader => _realRemoteFileDownloader ?? RemoteFileDownloaderMock.Object;
         public IGzipFileDecompressor GzipFileDecompressor => _realGzipFileDecompressor ?? GzipFileDecompressorMock.Object;
+        public Mock<IDatabaseIntegrityService> IntegrityService { get; } = new(MockBehavior.Strict);
         public FirstTimeSetupTestContext(IRemoteFileDownloader? remoteFileDownloaderOverride = null, IGzipFileDecompressor? gzipFileDecompressorOverride = null)
         {
             RemoteFileDownloaderMock = new Mock<IRemoteFileDownloader>();
@@ -126,7 +127,8 @@ namespace CollectaMundo.Tests.TestUtils
                 PngService.Object,
                 RemoteLookups.Object,
                 RemoteFileDownloader,
-                GzipFileDecompressor
+                GzipFileDecompressor,
+                IntegrityService.Object
             );
         }
         public void StubAllStepsAsSuccess()
@@ -196,6 +198,16 @@ namespace CollectaMundo.Tests.TestUtils
                 It.IsAny<IProgress<FileTransferProgress>?>(),
                 It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+
+            IntegrityService
+                .Setup(s => s.VerifyMainDatabaseIntegrityAsync(
+                    It.IsAny<SQLiteConnection>(),
+                    It.IsAny<SQLiteTransaction>()))
+                .Returns(Task.CompletedTask);
+
+            IntegrityService.Setup(s => s.MarkFirstTimePreparationStartedAsync()).Returns(Task.CompletedTask);
+
+            IntegrityService.Setup(s => s.MarkFirstTimePreparationCompletedAsync()).Returns(Task.CompletedTask);
 
             var candidate = new OracleFaceCandidate(
                 SourceUuid: "test-uuid",

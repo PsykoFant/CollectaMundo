@@ -73,12 +73,30 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                         return acquireResult;
                     }
 
+                    // Persist the incomplete state before any preparation.
+                    await _integrityService.MarkFirstTimePreparationStartedAsync();
+
                     var prepResult = await PrepareDatabaseAsync(defaultDelay, displayStepStart: 2, stepsToRun: FirstTimePrepSteps);
 
                     if (prepResult.Code != OperationResultCode.Success)
                     {
                         return prepResult;
                     }
+
+                    // Verify the completed database before reporting success.
+                    _progressSinks.Step.Report("Verifying completed card database...");
+                    _progressSinks.ProgressBarVisible.Report(false);
+                    _progressSinks.ProgressBarIndeterminate.Report(true);
+
+                    await using (var conn = await _dbFactory.OpenConnectionAsync())
+                    {
+                        await _integrityService.VerifyMainDatabaseIntegrityAsync(conn, tx: null);
+                    }
+
+                    Debug.WriteLine("[CardDatabasePrep] First-time database integrity verified.");
+
+                    // Only now can the database be marked complete.
+                    await _integrityService.MarkFirstTimePreparationCompletedAsync();
 
                     // Price JSON is only an intermediate import artifact.
                     TryDeleteTransientFile(_pricesPath);

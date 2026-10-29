@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
+using System.Data.SQLite;
 using System.IO;
 
 namespace CollectaMundo.Infrastructure.CardDatabaseManagement
@@ -44,12 +45,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
             return Convert.ToInt32(result) == 1;
         }
-        public async Task<bool> QuickCheckAsync(SQLiteConnection conn)
-        {
-            await using var cmd = new SQLiteCommand("PRAGMA quick_check;", conn);
-            var result = await cmd.ExecuteScalarAsync();
-            return result?.ToString() == "ok";
-        }
         public async Task VerifyMainDatabaseIntegrityAsync(SQLiteConnection conn, SQLiteTransaction? tx)
         {
             ArgumentNullException.ThrowIfNull(conn);
@@ -66,7 +61,80 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 throw new InvalidDataException($"SQLite integrity verification failed: {message ?? "No result returned."}");
             }
         }
+        public async Task<bool> HasIncompletePreparationAsync(SQLiteConnection conn)
+        {
+            // Legacy databases do not have this table.
+            const string tableExistsSql = """
+                                        SELECT EXISTS (
+                                            SELECT 1
+                                            FROM main.sqlite_master
+                                            WHERE type = 'table'
+                                              AND name = 'databasePreparation'
+                                        );
+                                        """;
 
+            using (var command = new SQLiteCommand(tableExistsSql, conn))
+            {
+                var exists = Convert.ToInt32(await command.ExecuteScalarAsync()) == 1;
+
+                if (!exists)
+                {
+                    // Existing legacy database: not explicitly incomplete.
+                    return false;
+                }
+            }
+
+            const string statusSql = """
+                                    SELECT status
+                                    FROM main.databasePreparation
+                                    WHERE id = 1;
+                                    """;
+
+            using var statusCommand = new SQLiteCommand(statusSql, conn);
+
+            var status = (await statusCommand.ExecuteScalarAsync())?.ToString();
+
+            // Only an explicitly completed preparation is accepted. Missing rows or unexpected values are also rejected.
+            return !string.Equals(status, "Complete", StringComparison.Ordinal);
+        }
+        public async Task MarkPreparationStartedAsync(SQLiteConnection conn, SQLiteTransaction tx)
+        {
+            // Create the table before the normal preparation pipeline begins. Reuse the application's authoritative schema definition.
+            var createSql = DatabaseTableSql.GetAllStatements()["databasePreparation"];
+
+            using (var createCommand = new SQLiteCommand(createSql, conn, tx))
+            {
+                await createCommand.ExecuteNonQueryAsync();
+            }
+
+            const string markSql = """
+                                    INSERT INTO databasePreparation (id, status)
+                                    VALUES (1, 'Preparing')
+                                    ON CONFLICT(id)
+                                    DO UPDATE SET status = 'Preparing';
+                                    """;
+
+            using var markCommand = new SQLiteCommand(markSql, conn, tx);
+
+            await markCommand.ExecuteNonQueryAsync();
+        }
+        public async Task MarkPreparationCompletedAsync(SQLiteConnection conn, SQLiteTransaction tx)
+        {
+            const string sql = """
+                                UPDATE databasePreparation
+                                SET status = 'Complete'
+                                WHERE id = 1
+                                  AND status = 'Preparing';
+                                """;
+
+            using var command = new SQLiteCommand(sql, conn, tx);
+
+            var affected = await command.ExecuteNonQueryAsync();
+
+            if (affected != 1)
+            {
+                throw new InvalidDataException("Cannot mark database preparation complete: " + "no active preparation marker was found.");
+            }
+        }
     }
-
 }

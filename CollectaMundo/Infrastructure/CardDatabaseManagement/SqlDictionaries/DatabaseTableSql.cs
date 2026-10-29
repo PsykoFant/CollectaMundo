@@ -10,6 +10,15 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries
         public static IReadOnlyDictionary<string, string> Statements { get; } =
             new Dictionary<string, string>
             {
+                ["databasePreparation"] = """
+                    CREATE TABLE IF NOT EXISTS databasePreparation
+                    (
+                        id INTEGER PRIMARY KEY CHECK (id = 1),
+                        status TEXT NOT NULL
+                            CHECK (status IN ('Preparing', 'Complete'))
+                    );
+                    """,
+
                 ["uniqueManaSymbols"] =
                     "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (" +
                     "uniqueManaSymbol TEXT PRIMARY KEY, " +

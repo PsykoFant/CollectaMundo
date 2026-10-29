@@ -89,8 +89,9 @@ public static class TestAppBuilder
         var priceService = new CardPriceService(new CardPriceRepository());
         var progressSinks = CreateProgressSinks(operationOverlayController);
         var cardLegalityService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());
+        var integrityService = new DatabaseIntegrityService(uowRunner, settings, new DatabaseIntegrityRepo());
 
-        var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor());
+        var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor(), integrityService);
 
         var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
 

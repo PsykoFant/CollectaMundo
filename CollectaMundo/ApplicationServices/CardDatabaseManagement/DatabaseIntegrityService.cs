@@ -25,7 +25,16 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             try
             {
-                bool isReady = await _uowRunner.ExecuteReadOnlyAsync(async conn => await _integrityRepo.HasExpectedTablesAndViewsAsync(conn) && await _integrityRepo.HasOracleCardsAsync(conn));
+                bool isReady = await _uowRunner.ExecuteReadOnlyAsync(async conn =>
+                    {
+                        if (await _integrityRepo.HasIncompletePreparationAsync(conn))
+                        {
+                            throw new InvalidDataException("The card database exists, but its first-time preparation did not complete successfully.");
+                        }
+
+                        return await _integrityRepo.HasExpectedTablesAndViewsAsync(conn) && await _integrityRepo.HasOracleCardsAsync(conn);
+                    });
+
 
                 if (!isReady)
                 {
@@ -47,6 +56,25 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         {
             return _integrityRepo.VerifyMainDatabaseIntegrityAsync(conn, tx);
         }
+        public async Task MarkFirstTimePreparationStartedAsync()
+        {
+            await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+            {
+                await _integrityRepo.MarkPreparationStartedAsync(conn, tx);
+
+                return (Result: true, Commit: true);
+            });
+        }
+        public async Task MarkFirstTimePreparationCompletedAsync()
+        {
+            await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
+            {
+                await _integrityRepo.MarkPreparationCompletedAsync(conn, tx);
+
+                return (Result: true, Commit: true);
+            });
+        }
+
     }
 
 }

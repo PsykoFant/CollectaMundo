@@ -6,8 +6,10 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
     {
         Task<bool> HasExpectedTablesAndViewsAsync(SQLiteConnection conn);
         Task<bool> HasOracleCardsAsync(SQLiteConnection conn);
-        Task<bool> QuickCheckAsync(SQLiteConnection conn);
         Task VerifyMainDatabaseIntegrityAsync(SQLiteConnection conn, SQLiteTransaction? tx);
+        Task<bool> HasIncompletePreparationAsync(SQLiteConnection conn);
+        Task MarkPreparationStartedAsync(SQLiteConnection conn, SQLiteTransaction tx);
+        Task MarkPreparationCompletedAsync(SQLiteConnection conn, SQLiteTransaction tx);
     }
 
 }
