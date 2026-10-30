@@ -31,7 +31,7 @@ namespace CollectaMundo.Infrastructure.Import
         }
         public async Task<Dictionary<string, List<string>>> GetCardUuidsByIdFieldAsync(SQLiteConnection conn, string identifierFieldName, IEnumerable<string> valuesEnumerable)
         {
-            var values = valuesEnumerable.ToList();
+            var values = valuesEnumerable.Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.Ordinal).ToList();
 
             // Return empty map early if no lookup values
             if (values.Count == 0)
@@ -46,10 +46,9 @@ namespace CollectaMundo.Infrastructure.Import
             }
 
             // Prepare result dictionary with empty lists for each lookup value
-            var result = values.Distinct().ToDictionary(v => v, v => new List<string>());
+            var result = values.ToDictionary(v => v, v => new List<string>());
 
-            // CreateCollectionChangeSetFromEdits the parameterized SQL query that unions cardIdentifiers & tokenIdentifiers.
-            // We'll create parameters @v0, @v1, ...
+            // Query card and token identifiers, restricting matches to primary faces.
             var sb = new StringBuilder();
             sb.Append("SELECT ci.uuid AS uuid, ci.").Append(identifierFieldName).Append(" AS idval ")
               .Append("FROM cardIdentifiers ci ")
@@ -105,18 +104,14 @@ namespace CollectaMundo.Infrastructure.Import
                 {
                     list.Add(uuid);
                 }
-                else
-                {
-                    // Unexpected idval in results - create a bucket to be safe
-                    result[idval] = [uuid];
-                }
             }
 
             return result;
         }
 
+        //----------------------------
         // step 3
-
+        //----------------------------
         //  Name + SetCode Lookup
 
         public async Task<Dictionary<string, List<string>>> QueryByNameAndSetCodeAsync(SQLiteConnection conn, IReadOnlyList<(string Name, string SetCode)> pairs, CancellationToken token)
@@ -385,28 +380,85 @@ namespace CollectaMundo.Infrastructure.Import
         }
 
 
-        // Step 9
+        //----------------------------
+        // step 9
+        //----------------------------
         public async Task<IReadOnlyDictionary<string, BaseAvailability>> FetchBaseAvailabilityAsync(IReadOnlyCollection<string> uuids, IDbConnection connection, IDbTransaction? tx, CancellationToken token)
         {
-            // 1) Create + populate TEMP table temp_import_uuids
             await PrepareTempUuidsAsync(connection, tx, uuids, token);
 
-            // 2) Query cards join temp
-            var cards = await QueryBaseFromCardsAsync(connection, tx, token);
+            var conn = (SQLiteConnection)connection;
+            var sqliteTx = (SQLiteTransaction?)tx;
 
-            // 3) Query tokens join temp
-            var tokens = await QueryBaseFromTokensAsync(connection, tx, token);
+            const string sql = """
+                                SELECT p.uuid, p.language, p.finishes
+                                FROM temp_import_uuids t
+                                CROSS JOIN printingCards p
+                                WHERE p.uuid = t.uuid;
+                                """;
 
-            // 4) Merge (uuid unique across cards/tokens per your assumption F)
-            return MergeBase(cards, tokens);
+            var result = new Dictionary<string, BaseAvailability>(StringComparer.OrdinalIgnoreCase);
+
+            using var cmd = new SQLiteCommand(sql, conn, sqliteTx);
+            using var reader = await cmd.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                token.ThrowIfCancellationRequested();
+
+                var uuid = reader["uuid"]?.ToString();
+                if (string.IsNullOrWhiteSpace(uuid))
+                    continue;
+
+                var language = reader["language"]?.ToString();
+                var finishes = reader["finishes"]?.ToString();
+
+                result[uuid] = new BaseAvailability(uuid, language, finishes);
+            }
+
+            return result;
         }
         public async Task<IReadOnlyDictionary<string, HashSet<string>>> FetchForeignLanguagesAsync(IReadOnlyCollection<string> uuids, IDbConnection connection, IDbTransaction? tx, CancellationToken token)
         {
-            // Create/populate temp_import_uuids with ONLY these uuids (or reuse and overwrite)
             await PrepareTempUuidsAsync(connection, tx, uuids, token);
 
-            // Query foreign languages
-            return await QueryForeignLanguagesAsync(connection, tx, token);
+            var conn = (SQLiteConnection)connection;
+            var sqliteTx = (SQLiteTransaction?)tx;
+
+            const string sql = """
+                                SELECT f.uuid, f.language
+                                FROM temp_import_uuids t
+                                CROSS JOIN cardForeignData f
+                                WHERE f.uuid = t.uuid;
+                                """;
+
+            var result = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+            using var cmd = new SQLiteCommand(sql, conn, sqliteTx);
+            using var reader = await cmd.ExecuteReaderAsync(token);
+
+            while (await reader.ReadAsync(token))
+            {
+                token.ThrowIfCancellationRequested();
+
+                var uuid = reader["uuid"]?.ToString();
+                if (string.IsNullOrWhiteSpace(uuid))
+                    continue;
+
+                var language = reader["language"]?.ToString()?.Trim();
+                if (string.IsNullOrWhiteSpace(language))
+                    continue;
+
+                if (!result.TryGetValue(uuid, out var languages))
+                {
+                    languages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    result[uuid] = languages;
+                }
+
+                languages.Add(language);
+            }
+
+            return result;
         }
 
         // --- TEMP TABLE SETUP ---
@@ -452,164 +504,64 @@ namespace CollectaMundo.Infrastructure.Import
             }
         }
 
-        // --- BASE LOOKUPS (cards/tokens) ---
-        private static async Task<List<BaseAvailability>> QueryBaseFromCardsAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
-        {
-            var conn = (SQLiteConnection)c;
-            var sqliteTx = (SQLiteTransaction?)tx;
-
-            const string sql = """
-                SELECT c.uuid, c.language, c.finishes
-                FROM cards c
-                JOIN temp_import_uuids t ON t.uuid = c.uuid;
-                """;
-
-            var results = new List<BaseAvailability>();
-
-            using var cmd = new SQLiteCommand(sql, conn, sqliteTx);
-            using var reader = await cmd.ExecuteReaderAsync(token);
-
-            while (await reader.ReadAsync(token))
-            {
-                var uuid = reader["uuid"]?.ToString();
-                if (string.IsNullOrWhiteSpace(uuid))
-                    continue;
-
-                var lang = reader["language"]?.ToString();
-                var finishes = reader["finishes"]?.ToString();
-
-                results.Add(new BaseAvailability(uuid, lang, finishes));
-            }
-
-            return results;
-        }
-        private static async Task<List<BaseAvailability>> QueryBaseFromTokensAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
-        {
-            var conn = (SQLiteConnection)c;
-            var sqliteTx = (SQLiteTransaction?)tx;
-
-            const string sql = """
-                SELECT t.uuid, t.language, t.finishes
-                FROM tokens t
-                JOIN temp_import_uuids u ON u.uuid = t.uuid;
-                """;
-
-            var results = new List<BaseAvailability>();
-
-            using var cmd = new SQLiteCommand(sql, conn, sqliteTx);
-            using var reader = await cmd.ExecuteReaderAsync(token);
-
-            while (await reader.ReadAsync(token))
-            {
-                var uuid = reader["uuid"]?.ToString();
-                if (string.IsNullOrWhiteSpace(uuid))
-                    continue;
-
-                var lang = reader["language"]?.ToString();
-                var finishes = reader["finishes"]?.ToString();
-
-                results.Add(new BaseAvailability(uuid, lang, finishes));
-            }
-
-            return results;
-        }
-        private static IReadOnlyDictionary<string, BaseAvailability> MergeBase(List<BaseAvailability> cards, List<BaseAvailability> tokens)
-        {
-            // Defensive merge: prefer cards if collision.
-            var dict = new Dictionary<string, BaseAvailability>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var row in tokens)
-            {
-                if (!string.IsNullOrWhiteSpace(row.Uuid))
-                    dict[row.Uuid] = row;
-            }
-
-            foreach (var row in cards)
-            {
-                if (!string.IsNullOrWhiteSpace(row.Uuid))
-                    dict[row.Uuid] = row;
-            }
-
-            return dict;
-        }
-
-        // --- FOREIGN LANGUAGES LOOKUP (cardForeignData) ---
-        private static async Task<IReadOnlyDictionary<string, HashSet<string>>> QueryForeignLanguagesAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
-        {
-            var conn = (SQLiteConnection)c;
-            var sqliteTx = (SQLiteTransaction?)tx;
-
-            const string sql = """
-                SELECT f.uuid, f.language
-                FROM cardForeignData f
-                JOIN temp_import_uuids t ON t.uuid = f.uuid;
-                """;
-
-            var dict = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
-
-            using var cmd = new SQLiteCommand(sql, conn, sqliteTx);
-            using var reader = await cmd.ExecuteReaderAsync(token);
-
-            while (await reader.ReadAsync(token))
-            {
-                token.ThrowIfCancellationRequested();
-
-                var uuid = reader["uuid"]?.ToString();
-                if (string.IsNullOrWhiteSpace(uuid))
-                    continue;
-
-                var lang = reader["language"]?.ToString()?.Trim();
-                if (string.IsNullOrWhiteSpace(lang))
-                    continue;
-
-                if (!dict.TryGetValue(uuid, out var set))
-                {
-                    set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    dict[uuid] = set;
-                }
-
-                set.Add(lang);
-            }
-
-            return dict;
-        }
-
-
+        //----------------------------
         // Final upsert step that inserts/updates myCollection based on the imported data, returning the resulting rows with their assigned CardIds. This is where we apply the "additive" logic for owned/trade counts.
+        //----------------------------
+
         public async Task<IReadOnlyList<CollectionCardDbRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token)
         {
             const string insertSql = """
-                            INSERT INTO myCollection
-                                (uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade)
-                            VALUES
-                                (@uuid, @language, @finish, @condition, @locationId, @comment, @owned, @trade);
-                            """;
+                                    INSERT INTO myCollection
+                                        (uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade)
+                                    VALUES
+                                        (@uuid, @language, @finish, @condition, @locationId, @comment, @owned, @trade);
+                                    """;
 
             const string updateSql = """
-                            UPDATE myCollection
-                               SET cardsOwned    = cardsOwned + @owned,
-                                   cardsForTrade = cardsForTrade + @trade
-                             WHERE uuid = @uuid
-                               AND language = @language
-                               AND finish = @finish
-                               AND condition = @condition
-                               AND COALESCE(locationId, -1) = COALESCE(@locationId, -1)
-                               AND COALESCE(comment, '') = COALESCE(@comment, '');
-                            """;
+                                    UPDATE myCollection
+                                       SET cardsOwned = cardsOwned + @owned,
+                                           cardsForTrade = cardsForTrade + @trade
+                                     WHERE uuid = @uuid
+                                       AND language = @language
+                                       AND finish = @finish
+                                       AND condition = @condition
+                                       AND COALESCE(locationId, -1) = COALESCE(@locationId, -1)
+                                       AND COALESCE(comment, '') = COALESCE(@comment, '');
+                                    """;
 
             const string selectIdSql = """
-                                SELECT id
-                                FROM myCollection
-                                WHERE uuid = @uuid
-                                  AND language = @language
-                                  AND finish = @finish
-                                  AND condition = @condition
-                                  AND COALESCE(locationId, -1) = COALESCE(@locationId, -1)
-                                  AND COALESCE(comment, '') = COALESCE(@comment, '')
-                                LIMIT 1;
-                                """;
+                                        SELECT id
+                                        FROM myCollection
+                                        WHERE uuid = @uuid
+                                          AND language = @language
+                                          AND finish = @finish
+                                          AND condition = @condition
+                                          AND COALESCE(locationId, -1) = COALESCE(@locationId, -1)
+                                          AND COALESCE(comment, '') = COALESCE(@comment, '')
+                                        LIMIT 1;
+                                        """;
 
             var result = new List<CollectionCardDbRow>(items.Count);
+
+            if (items.Count == 0)
+            {
+                return result;
+            }
+
+            // Create and prepare commands once for the entire batch.
+            using var updateCmd = new SQLiteCommand(updateSql, conn, tx);
+            AddIdentityParameters(updateCmd);
+            AddQuantityParameters(updateCmd);
+            updateCmd.Prepare();
+
+            using var insertCmd = new SQLiteCommand(insertSql, conn, tx);
+            AddIdentityParameters(insertCmd);
+            AddQuantityParameters(insertCmd);
+            insertCmd.Prepare();
+
+            using var selectIdCmd = new SQLiteCommand(selectIdSql, conn, tx);
+            AddIdentityParameters(selectIdCmd);
+            selectIdCmd.Prepare();
 
             for (int i = 0; i < items.Count; i++)
             {
@@ -618,45 +570,39 @@ namespace CollectaMundo.Infrastructure.Import
                 var it = items[i];
                 var normalizedComment = SqliteDbHelpers.NormalizeNullableString(it.Comment);
 
-                using var updateCmd = new SQLiteCommand(updateSql, conn, tx);
-                AddIdentityParameters(updateCmd);
-                AddQuantityParameters(updateCmd);
-
+                // 1. Attempt additive update of existing collection row.
                 BindIdentityParameters(updateCmd, it, normalizedComment);
                 BindQuantityParameters(updateCmd, it);
 
                 var affectedRows = await updateCmd.ExecuteNonQueryAsync(token);
 
+                // 2. Insert only when the identity does not already exist.
                 if (affectedRows == 0)
                 {
-                    using var insertCmd = new SQLiteCommand(insertSql, conn, tx);
-                    AddIdentityParameters(insertCmd);
-                    AddQuantityParameters(insertCmd);
-
                     BindIdentityParameters(insertCmd, it, normalizedComment);
                     BindQuantityParameters(insertCmd, it);
 
                     await insertCmd.ExecuteNonQueryAsync(token);
                 }
 
-                object? idObj;
-                using (var selectIdCmd = new SQLiteCommand(selectIdSql, conn, tx))
-                {
-                    AddIdentityParameters(selectIdCmd);
-                    BindIdentityParameters(selectIdCmd, it, normalizedComment);
+                // 3. Resolve the database ID of the inserted/updated row.
+                BindIdentityParameters(selectIdCmd, it, normalizedComment);
 
-                    idObj = await selectIdCmd.ExecuteScalarAsync(token);
-                }
+                var idObj = await selectIdCmd.ExecuteScalarAsync(token);
 
                 if (idObj is null || idObj == DBNull.Value)
                 {
-                    throw new InvalidOperationException($"Failed to resolve myCollection row id for identity: " +
-                        $"Uuid={it.Uuid}, Language={it.Language}, Finish={it.Finish}, Condition={it.Condition}, " +
-                        $"LocationId={(it.LocationId?.ToString() ?? "null")}, Comment={(normalizedComment ?? "null")}.");
+                    throw new InvalidOperationException(
+                        $"Failed to resolve myCollection row id for identity: " +
+                        $"Uuid={it.Uuid}, Language={it.Language}, " +
+                        $"Finish={it.Finish}, Condition={it.Condition}, " +
+                        $"LocationId={(it.LocationId?.ToString() ?? "null")}, " +
+                        $"Comment={(normalizedComment ?? "null")}.");
                 }
 
                 var id = Convert.ToInt32(idObj);
 
+                // 4. Return the mutation using the existing result semantics.
                 result.Add(new CollectionCardDbRow
                 {
                     CardId = id,
