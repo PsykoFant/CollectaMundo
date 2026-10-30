@@ -648,7 +648,16 @@ namespace CollectaMundo.ViewModels
         }
         private void OnCardImagePanelVisibilityRequested(object? sender, bool isVisible)
         {
-            CardImageVM.ClearImages();
+            if (isVisible)
+            {
+                CurrentSideMenuRightViewModel = CardImageVM;
+            }
+            else
+            {
+                CardImageVM.ClearImages();
+                CurrentSideMenuRightViewModel = null;
+            }
+
             OnSideMenuRightVisibilityRequested(isVisible);
         }
 

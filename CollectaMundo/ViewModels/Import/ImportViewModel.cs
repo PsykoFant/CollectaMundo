@@ -366,6 +366,7 @@ namespace CollectaMundo.ViewModels.Import
             {
                 if (result.ItemsWithMultipleUuids > 0)
                 {
+                    CardImagePanelVisibilityRequested?.Invoke(this, true);
                     GoToStep(ImportStep.MultipleUuidsSelection);
                 }
                 else

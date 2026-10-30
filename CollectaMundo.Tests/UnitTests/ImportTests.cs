@@ -578,5 +578,102 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.False(string.IsNullOrWhiteSpace(jj.CsvFields["collectaMundoUuidImportField"]));
         }
 
+        [Fact]
+        public async Task Step3_Repo_SetCodeLookup_ReturnsOnlyRequestedPairsWithUniqueUuids()
+        {
+            var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fixture.DbName);
+            var runner = new UnitOfWorkRunner(dbFactory);
+            var repo = new ImportRepo();
+
+            var pairs = new List<(string Name, string SetCode)>
+            {
+                ("Viashino Runner", "USG"),
+                ("Prismatic Ending", "MH2"),
+                ("viashino runner", "usg"),
+                ("", "MH2"),
+                ("Prismatic Ending", "")
+            };
+
+            var result = await runner.ExecuteReadOnlyAsync(
+                conn => repo.QueryByNameAndSetCodeAsync(
+                    conn, pairs, CancellationToken.None));
+
+            Assert.Equal(2, result.Count);
+
+            Assert.True(result.ContainsKey("viashino runner_usg"));
+            Assert.True(result.ContainsKey("prismatic ending_mh2"));
+
+            Assert.Single(result["viashino runner_usg"]);
+            Assert.True(result["prismatic ending_mh2"].Count > 1);
+
+            foreach (var uuids in result.Values)
+            {
+                Assert.Equal(uuids.Count, uuids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            }
+        }
+
+        [Fact]
+        public async Task Step3_Repo_SetNameLookup_ReturnsOnlyRequestedPairsWithUniqueUuids()
+        {
+            var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fixture.DbName);
+            var runner = new UnitOfWorkRunner(dbFactory);
+            var repo = new ImportRepo();
+
+            var pairs = new List<(string Name, string SetName)>
+                {
+                    ("Font of Ire", "Journey into Nyx"),
+                    ("Prismatic Ending", "Modern Horizons 2"),
+                    ("font of ire", "journey into nyx"),
+                    ("", "Modern Horizons 2")
+                };
+
+            var result = await runner.ExecuteReadOnlyAsync(conn => repo.QueryByNameAndSetNameAsync(conn, pairs, CancellationToken.None));
+
+            Assert.Equal(2, result.Count);
+
+            Assert.True(result.ContainsKey("font of ire_journey into nyx"));
+            Assert.True(result.ContainsKey("prismatic ending_modern horizons 2"));
+
+            Assert.Single(result["font of ire_journey into nyx"]);
+            Assert.True(result["prismatic ending_modern horizons 2"].Count > 1);
+
+            foreach (var uuids in result.Values)
+            {
+                Assert.Equal(uuids.Count, uuids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            }
+        }
+
+
+        [Fact]
+        public async Task Step3_Repo_NameOnlyLookup_ReturnsUniqueUuidsPerName()
+        {
+            var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fixture.DbName);
+            var runner = new UnitOfWorkRunner(dbFactory);
+            var repo = new ImportRepo();
+
+            var names = new List<string>
+            {
+                "Prismatic Ending",
+                "prismatic ending",
+                "Jan Jansen, Chaos Crafter",
+                "",
+                " "
+            };
+
+            var result = await runner.ExecuteReadOnlyAsync(conn => repo.QueryByNameOnlyAsync(conn, names, CancellationToken.None));
+
+            Assert.Equal(2, result.Count);
+
+            Assert.True(result.ContainsKey("prismatic ending"));
+            Assert.True(result.ContainsKey("jan jansen, chaos crafter"));
+
+            Assert.True(result["prismatic ending"].Count > 1);
+            Assert.Single(result["jan jansen, chaos crafter"]);
+
+            foreach (var uuids in result.Values)
+            {
+                Assert.Equal(uuids.Count, uuids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            }
+        }
     }
 }

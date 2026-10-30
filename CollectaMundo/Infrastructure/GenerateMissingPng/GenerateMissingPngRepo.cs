@@ -5,9 +5,9 @@ namespace CollectaMundo.Infrastructure.GenerateMissingPng
 {
     public class GenerateMissingPngRepo : IGenerateMissingPngRepo
     {
-        public async Task<List<string>> GetUniqueValuesAsync(SQLiteConnection conn, SQLiteTransaction tx, string tableName, string columnName)
+        public Task<List<string>> GetDistinctManaCostsAsync(SQLiteConnection conn, SQLiteTransaction tx, string tableName, string columnName)
         {
-            return await SqliteDbHelpers.GetUniqueValuesAsync(conn, tableName, columnName);
+            return SqliteDbHelpers.GetUniqueValuesAsync(conn, tableName, columnName, tx);
         }
         public async Task<List<string>> GetValuesWithNullAsync(SQLiteConnection conn, SQLiteTransaction tx, string tableName, string returnColumn, string targetColumn)
         {

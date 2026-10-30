@@ -20,7 +20,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
         {
             var symbolsWithNullImage = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {
-                var uniqueManaCosts = await _repo.GetUniqueValuesAsync(conn, tx, "cards", "manaCost");
+                var uniqueManaCosts = await _repo.GetDistinctManaCostsAsync(conn, tx, "cards", "manaCost");
 
                 var extractedSymbols = _missingPngLogic.ExtractSymbolsFromManaCosts(uniqueManaCosts).ToList();
 
@@ -33,10 +33,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 return (Result: missingSymbols, Commit: true);
             });
 
-            using var coordinator = new ParallelWorkCoordinator<(string Symbol, byte[] PngData)>(
-                    percentProgress ?? new Progress<int>(_ => { }),
-                    symbolsWithNullImage.Count,
-                    Environment.ProcessorCount);
+            using var coordinator = new ParallelWorkCoordinator<(string Symbol, byte[] PngData)>(percentProgress ?? new Progress<int>(_ => { }), symbolsWithNullImage.Count, Environment.ProcessorCount);
 
             await Task.WhenAll(symbolsWithNullImage.Select(symbol => coordinator.DoAsync(async () =>
                 {
@@ -96,7 +93,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 
             var missingCosts = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {
-                var uniqueManaCosts = await _repo.GetUniqueValuesAsync(conn, tx, "cards", "manaCost");
+                var uniqueManaCosts = await _repo.GetDistinctManaCostsAsync(conn, tx, "cards", "manaCost");
 
                 foreach (var cost in uniqueManaCosts)
                 {

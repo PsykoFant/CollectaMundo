@@ -86,7 +86,7 @@ public static class TestAppBuilder
             remoteLookups,
             new GenerateMissingPngLogic());
 
-        var priceService = new CardPriceService(new CardPriceRepository());
+        var priceService = new CardPriceService(new CardPriceRepo());
         var progressSinks = CreateProgressSinks(operationOverlayController);
         var cardLegalityService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());
         var integrityService = new DatabaseIntegrityService(uowRunner, settings, new DatabaseIntegrityRepo());

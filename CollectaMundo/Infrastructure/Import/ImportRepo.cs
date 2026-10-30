@@ -118,73 +118,72 @@ namespace CollectaMundo.Infrastructure.Import
         // step 3
 
         //  Name + SetCode Lookup
+
         public async Task<Dictionary<string, List<string>>> QueryByNameAndSetCodeAsync(SQLiteConnection conn, IReadOnlyList<(string Name, string SetCode)> pairs, CancellationToken token)
         {
             var result = new Dictionary<string, List<string>>();
 
-            if (pairs.Count == 0)
+            // Remove invalid pairs.
+            var validPairs = pairs.Where(p => !string.IsNullOrWhiteSpace(p.Name) && !string.IsNullOrWhiteSpace(p.SetCode)).ToList();
+
+            if (validPairs.Count == 0)
             {
                 return result;
             }
 
-            // CreateCollectionChangeSetFromEdits parameterized IN clauses
-            var nameParams = new List<SQLiteParameter>();
-            var codeParams = new List<SQLiteParameter>();
+            // Preserve only the actual name/set-code combinations requested.
+            var requestedKeys = validPairs.Select(p => $"{p.Name}_{p.SetCode}".ToLowerInvariant()).ToHashSet();
+
+            // Deduplicate independently to reduce SQL parameters.
+            var names = validPairs.Select(p => p.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var codes = validPairs.Select(p => p.SetCode).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+            using var cmd = conn.CreateCommand();
 
             var namePlaceholders = new List<string>();
             var codePlaceholders = new List<string>();
 
-            for (int i = 0; i < pairs.Count; i++)
+            for (int i = 0; i < names.Count; i++)
             {
-                var n = new SQLiteParameter($"@name{i}", pairs[i].Name);
-                var s = new SQLiteParameter($"@setcode{i}", pairs[i].SetCode);
+                string parameterName = $"@name{i}";
+                namePlaceholders.Add(parameterName);
+                cmd.Parameters.AddWithValue(parameterName, names[i]);
+            }
 
-                nameParams.Add(n);
-                codeParams.Add(s);
-
-                namePlaceholders.Add(n.ParameterName);
-                codePlaceholders.Add(s.ParameterName);
+            for (int i = 0; i < codes.Count; i++)
+            {
+                string parameterName = $"@setcode{i}";
+                codePlaceholders.Add(parameterName);
+                cmd.Parameters.AddWithValue(parameterName, codes[i]);
             }
 
             string nameInClause = string.Join(",", namePlaceholders);
             string codeInClause = string.Join(",", codePlaceholders);
 
-            string sql = $@"
-                SELECT uuid, name, setCode
-                FROM view_cardToken
-                WHERE name COLLATE NOCASE IN ({nameInClause})
-                  AND setCode COLLATE NOCASE IN ({codeInClause})
+            cmd.CommandText = $"""
+                                SELECT uuid, name, setCode
+                                FROM view_cardToken
+                                WHERE name COLLATE NOCASE IN ({nameInClause})
+                                  AND setCode COLLATE NOCASE IN ({codeInClause})
 
-                UNION ALL
+                                UNION ALL
 
-                SELECT uuid, name, tokenSetCode AS setCode
-                FROM view_cardToken
-                WHERE tokenSetCode <> setCode
-                  AND name COLLATE NOCASE IN ({nameInClause})
-                  AND tokenSetCode COLLATE NOCASE IN ({codeInClause})
+                                SELECT uuid, name, tokenSetCode AS setCode
+                                FROM view_cardToken
+                                WHERE tokenSetCode <> setCode
+                                  AND name COLLATE NOCASE IN ({nameInClause})
+                                  AND tokenSetCode COLLATE NOCASE IN ({codeInClause})
 
-                UNION ALL
+                                UNION ALL
 
-                SELECT uuid, faceName AS name, tokenSetCode AS setCode
-                FROM view_cardToken
-                WHERE faceName COLLATE NOCASE IN ({nameInClause})
-                  AND tokenSetCode COLLATE NOCASE IN ({codeInClause});
-            ";
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = sql;
-
-            foreach (var p in nameParams)
-            {
-                cmd.Parameters.Add(p);
-            }
-
-            foreach (var p in codeParams)
-            {
-                cmd.Parameters.Add(p);
-            }
+                                SELECT uuid, faceName AS name, tokenSetCode AS setCode
+                                FROM view_cardToken
+                                WHERE faceName COLLATE NOCASE IN ({nameInClause})
+                                  AND tokenSetCode COLLATE NOCASE IN ({codeInClause});
+                                """;
 
             using var reader = await cmd.ExecuteReaderAsync(token);
+
             while (await reader.ReadAsync(token))
             {
                 string uuid = reader["uuid"]?.ToString() ?? "";
@@ -196,16 +195,25 @@ namespace CollectaMundo.Infrastructure.Import
                     continue;
                 }
 
-                // Normalize key to lower-case
                 string key = $"{name}_{code}".ToLowerInvariant();
+
+                // Ignore combinations not present in the input pairs.
+                if (!requestedKeys.Contains(key))
+                {
+                    continue;
+                }
 
                 if (!result.TryGetValue(key, out var list))
                 {
-                    list = new List<string>();
+                    list = [];
                     result[key] = list;
                 }
 
-                list.Add(uuid);
+                // Prevent duplicate UUIDs from overlapping matching rules.
+                if (!list.Contains(uuid, StringComparer.OrdinalIgnoreCase))
+                {
+                    list.Add(uuid);
+                }
             }
 
             return result;
@@ -215,85 +223,93 @@ namespace CollectaMundo.Infrastructure.Import
         public async Task<Dictionary<string, List<string>>> QueryByNameAndSetNameAsync(SQLiteConnection conn, IReadOnlyList<(string Name, string SetName)> pairs, CancellationToken token)
         {
             var result = new Dictionary<string, List<string>>();
+            var validPairs = pairs.Where(p => !string.IsNullOrWhiteSpace(p.Name) && !string.IsNullOrWhiteSpace(p.SetName)).ToList();
 
-            if (pairs.Count == 0)
+            if (validPairs.Count == 0)
             {
                 return result;
             }
 
-            var nameParams = new List<SQLiteParameter>();
-            var setParams = new List<SQLiteParameter>();
+            // Preserve only the actual name/set-name combinations requested.
+            var requestedKeys = validPairs.Select(p => $"{p.Name}_{p.SetName}".ToLowerInvariant()).ToHashSet();
+
+            // Deduplicate independently to reduce SQL parameters.
+            var names = validPairs.Select(p => p.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var setNames = validPairs.Select(p => p.SetName).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+            using var cmd = conn.CreateCommand();
 
             var namePlaceholders = new List<string>();
             var setPlaceholders = new List<string>();
 
-            for (int i = 0; i < pairs.Count; i++)
+            for (int i = 0; i < names.Count; i++)
             {
-                var n = new SQLiteParameter($"@name{i}", pairs[i].Name);
-                var s = new SQLiteParameter($"@setname{i}", pairs[i].SetName);
+                string parameterName = $"@name{i}";
+                namePlaceholders.Add(parameterName);
+                cmd.Parameters.AddWithValue(parameterName, names[i]);
+            }
 
-                nameParams.Add(n);
-                setParams.Add(s);
-
-                namePlaceholders.Add(n.ParameterName);
-                setPlaceholders.Add(s.ParameterName);
+            for (int i = 0; i < setNames.Count; i++)
+            {
+                string parameterName = $"@setname{i}";
+                setPlaceholders.Add(parameterName);
+                cmd.Parameters.AddWithValue(parameterName, setNames[i]);
             }
 
             string nameInClause = string.Join(",", namePlaceholders);
             string setInClause = string.Join(",", setPlaceholders);
 
-            string sql = $@"
-                SELECT uuid, name, setName
-                FROM view_cardToken
-                WHERE name COLLATE NOCASE IN ({nameInClause})
-                  AND setName COLLATE NOCASE IN ({setInClause})
+            cmd.CommandText = $"""
+                                SELECT uuid, name, setName
+                                FROM view_cardToken
+                                WHERE name COLLATE NOCASE IN ({nameInClause})
+                                  AND setName COLLATE NOCASE IN ({setInClause})
 
-                UNION ALL
+                                UNION ALL
 
-                SELECT uuid, faceName AS name, setName
-                FROM view_cardToken
-                WHERE faceName COLLATE NOCASE IN ({nameInClause})
-                  AND setName COLLATE NOCASE IN ({setInClause});
-            ";
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = sql;
-
-            foreach (var p in nameParams)
-            {
-                cmd.Parameters.Add(p);
-            }
-
-            foreach (var p in setParams)
-            {
-                cmd.Parameters.Add(p);
-            }
+                                SELECT uuid, faceName AS name, setName
+                                FROM view_cardToken
+                                WHERE faceName COLLATE NOCASE IN ({nameInClause})
+                                  AND setName COLLATE NOCASE IN ({setInClause});
+                                """;
 
             using var reader = await cmd.ExecuteReaderAsync(token);
+
             while (await reader.ReadAsync(token))
             {
                 string uuid = reader["uuid"]?.ToString() ?? "";
                 string name = reader["name"]?.ToString() ?? "";
-                string setNm = reader["setName"]?.ToString() ?? "";
+                string setName = reader["setName"]?.ToString() ?? "";
 
-                if (string.IsNullOrWhiteSpace(uuid) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(setNm))
+                if (string.IsNullOrWhiteSpace(uuid) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(setName))
                 {
                     continue;
                 }
 
-                string key = $"{name}_{setNm}".ToLowerInvariant();
+                string key = $"{name}_{setName}".ToLowerInvariant();
+
+                // Ignore combinations not present in the input pairs.
+                if (!requestedKeys.Contains(key))
+                {
+                    continue;
+                }
 
                 if (!result.TryGetValue(key, out var list))
                 {
-                    list = new List<string>();
+                    list = [];
                     result[key] = list;
                 }
 
-                list.Add(uuid);
+                // Prevent duplicate UUIDs from overlapping matching rules.
+                if (!list.Contains(uuid, StringComparer.OrdinalIgnoreCase))
+                {
+                    list.Add(uuid);
+                }
             }
 
             return result;
         }
+
 
         // Name-only lookup for Step 3 fallback matching.
         public async Task<Dictionary<string, List<string>>> QueryByNameOnlyAsync(SQLiteConnection conn, IReadOnlyList<string> names, CancellationToken token)
@@ -305,49 +321,47 @@ namespace CollectaMundo.Infrastructure.Import
                 return result;
             }
 
-            // CreateCollectionChangeSetFromEdits IN-clause parameters
-            var nameParams = new List<SQLiteParameter>();
+            // Remove invalid and duplicate names to reduce SQL parameters.
+            var distinctNames = names.Where(n => !string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+            if (distinctNames.Count == 0)
+            {
+                return result;
+            }
+
+            using var cmd = conn.CreateCommand();
+
             var placeholders = new List<string>();
 
-            for (int i = 0; i < names.Count; i++)
+            for (int i = 0; i < distinctNames.Count; i++)
             {
-                var p = new SQLiteParameter($"@name{i}", names[i]);
-                nameParams.Add(p);
-                placeholders.Add(p.ParameterName);
+                string parameterName = $"@name{i}";
+                placeholders.Add(parameterName);
+                cmd.Parameters.AddWithValue(parameterName, distinctNames[i]);
             }
 
             string nameInClause = string.Join(",", placeholders);
 
-            // SQL covers:
-            // - name match in view_cardToken
-            // - faceName match (e.g., double-faced cards)
-            string sql = $@"
-                SELECT uuid, name
-                FROM view_cardToken
-                WHERE name COLLATE NOCASE IN ({nameInClause})
+            cmd.CommandText = $"""
+                                SELECT uuid, name
+                                FROM view_cardToken
+                                WHERE name COLLATE NOCASE IN ({nameInClause})
 
-                UNION ALL
+                                UNION ALL
 
-                SELECT uuid, faceName AS name
-                FROM view_cardToken
-                WHERE faceName COLLATE NOCASE IN ({nameInClause});
-            ";
-
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = sql;
-
-            foreach (var p in nameParams)
-            {
-                cmd.Parameters.Add(p);
-            }
+                                SELECT uuid, faceName AS name
+                                FROM view_cardToken
+                                WHERE faceName COLLATE NOCASE IN ({nameInClause});
+                                """;
 
             using var reader = await cmd.ExecuteReaderAsync(token);
+
             while (await reader.ReadAsync(token))
             {
                 string uuid = reader["uuid"]?.ToString() ?? "";
                 string name = reader["name"]?.ToString() ?? "";
 
-                if (uuid == "" || name == "")
+                if (string.IsNullOrWhiteSpace(uuid) || string.IsNullOrWhiteSpace(name))
                 {
                     continue;
                 }
@@ -360,11 +374,16 @@ namespace CollectaMundo.Infrastructure.Import
                     result[key] = list;
                 }
 
-                list.Add(uuid);
+                // Prevent duplicate UUIDs from overlapping matching rules.
+                if (!list.Contains(uuid, StringComparer.OrdinalIgnoreCase))
+                {
+                    list.Add(uuid);
+                }
             }
 
             return result;
         }
+
 
         // Step 9
         public async Task<IReadOnlyDictionary<string, BaseAvailability>> FetchBaseAvailabilityAsync(IReadOnlyCollection<string> uuids, IDbConnection connection, IDbTransaction? tx, CancellationToken token)
@@ -391,7 +410,7 @@ namespace CollectaMundo.Infrastructure.Import
         }
 
         // --- TEMP TABLE SETUP ---
-        private static async Task PrepareTempUuidsAsync(IDbConnection c,IDbTransaction? tx,IReadOnlyCollection<string> uuids,CancellationToken token)
+        private static async Task PrepareTempUuidsAsync(IDbConnection c, IDbTransaction? tx, IReadOnlyCollection<string> uuids, CancellationToken token)
         {
             var conn = (SQLiteConnection)c;
             var sqliteTx = (SQLiteTransaction?)tx;
@@ -434,7 +453,7 @@ namespace CollectaMundo.Infrastructure.Import
         }
 
         // --- BASE LOOKUPS (cards/tokens) ---
-        private static async Task<List<BaseAvailability>> QueryBaseFromCardsAsync(IDbConnection c,IDbTransaction? tx,CancellationToken token)
+        private static async Task<List<BaseAvailability>> QueryBaseFromCardsAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
         {
             var conn = (SQLiteConnection)c;
             var sqliteTx = (SQLiteTransaction?)tx;
@@ -464,7 +483,7 @@ namespace CollectaMundo.Infrastructure.Import
 
             return results;
         }
-        private static async Task<List<BaseAvailability>> QueryBaseFromTokensAsync(IDbConnection c,IDbTransaction? tx,CancellationToken token)
+        private static async Task<List<BaseAvailability>> QueryBaseFromTokensAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
         {
             var conn = (SQLiteConnection)c;
             var sqliteTx = (SQLiteTransaction?)tx;
@@ -494,7 +513,7 @@ namespace CollectaMundo.Infrastructure.Import
 
             return results;
         }
-        private static IReadOnlyDictionary<string, BaseAvailability> MergeBase(List<BaseAvailability> cards,List<BaseAvailability> tokens)
+        private static IReadOnlyDictionary<string, BaseAvailability> MergeBase(List<BaseAvailability> cards, List<BaseAvailability> tokens)
         {
             // Defensive merge: prefer cards if collision.
             var dict = new Dictionary<string, BaseAvailability>(StringComparer.OrdinalIgnoreCase);
@@ -515,7 +534,7 @@ namespace CollectaMundo.Infrastructure.Import
         }
 
         // --- FOREIGN LANGUAGES LOOKUP (cardForeignData) ---
-        private static async Task<IReadOnlyDictionary<string, HashSet<string>>> QueryForeignLanguagesAsync(IDbConnection c,IDbTransaction? tx,CancellationToken token)
+        private static async Task<IReadOnlyDictionary<string, HashSet<string>>> QueryForeignLanguagesAsync(IDbConnection c, IDbTransaction? tx, CancellationToken token)
         {
             var conn = (SQLiteConnection)c;
             var sqliteTx = (SQLiteTransaction?)tx;
@@ -685,6 +704,6 @@ namespace CollectaMundo.Infrastructure.Import
             cmd.Parameters["@owned"].Value = item.CardsOwned;
             cmd.Parameters["@trade"].Value = item.CardsForTrade;
         }
-    }    
+    }
 }
 

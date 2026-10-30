@@ -3,7 +3,7 @@ using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardPrices
 {
-    public class CardPriceRepository : ICardPriceRepository
+    public class CardPriceRepo : ICardPriceRepo
     {
         public async Task InsertPricesInBatchesAsync(SQLiteConnection conn, SQLiteTransaction tx, string columnName, List<CardPrice> prices, int batchSize = 5000)
         {

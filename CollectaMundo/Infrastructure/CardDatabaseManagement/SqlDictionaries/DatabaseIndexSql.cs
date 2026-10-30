@@ -7,10 +7,11 @@
             {
                     { "ux_cardIdentifiers_uuid", "CREATE UNIQUE INDEX IF NOT EXISTS ux_cardIdentifiers_uuid ON cardIdentifiers(uuid);" },
                     { "ux_tokenIdentifiers_uuid", "CREATE UNIQUE INDEX IF NOT EXISTS ux_tokenIdentifiers_uuid ON tokenIdentifiers(uuid);" },
-                    
-
-
-
+                    { "idx_myCollection_locationId", "CREATE INDEX IF NOT EXISTS idx_myCollection_locationId ON myCollection(locationId);"},
+                    { "idx_cardIdentifiers_mcmId", "CREATE INDEX IF NOT EXISTS idx_cardIdentifiers_mcmId ON cardIdentifiers(mcmId);" },
+                    { "idx_tokenIdentifiers_mcmId", "CREATE INDEX IF NOT EXISTS idx_tokenIdentifiers_mcmId ON tokenIdentifiers(mcmId);" },
+                    { "idx_cardIdentifiers_scryfallId", "CREATE INDEX IF NOT EXISTS idx_cardIdentifiers_scryfallId ON cardIdentifiers(scryfallId);" },
+                    { "idx_tokenIdentifiers_scryfallId", " " },
 
                 //{ "idx_uniquemanasymbols_uniquemanasymbol",
                 //    "CREATE INDEX IF NOT EXISTS idx_uniquemanasymbols_uniquemanasymbol ON uniqueManaSymbols(uniqueManaSymbol);" },

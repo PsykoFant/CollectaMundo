@@ -10,9 +10,9 @@ using System.Text.Json;
 
 namespace CollectaMundo.ApplicationServices.CardPrices
 {
-    public class CardPriceService(ICardPriceRepository cardPriceRepository) : ICardPriceService
+    public class CardPriceService(ICardPriceRepo cardPriceRepository) : ICardPriceService
     {
-        private readonly ICardPriceRepository _cardPriceRepository = cardPriceRepository;
+        private readonly ICardPriceRepo _cardPriceRepository = cardPriceRepository;
         public async Task<PriceImportResult?> ImportPricesFromJsonAsync(string jsonPath, SQLiteConnection conn, SQLiteTransaction tx, IProgress<string>? statusProgress = null, IProgress<int>? percentProgress = null)
         {
             if (!File.Exists(jsonPath))

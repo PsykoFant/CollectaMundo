@@ -74,7 +74,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 // Card DB prep (repos + services)
                 var missingPngService = new GenerateMissingPngService(uowRunner, new GenerateMissingPngRepo(), remoteLookups, new GenerateMissingPngLogic());
-                var priceService = new CardPriceService(new CardPriceRepository());
+                var priceService = new CardPriceService(new CardPriceRepo());
 
                 var progressSinks = CreateProgressSinks(operationOverlayController);
                 var cardLegalityService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());

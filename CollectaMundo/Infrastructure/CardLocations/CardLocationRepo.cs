@@ -219,13 +219,6 @@ namespace CollectaMundo.Infrastructure.CardLocations
                         WHERE locationId IN ({parameters.InClause});
                         """;
 
-            using var cmd = SqliteDbHelpers.CreateCommand(conn, tx, sql);
-
-            for (int i = 0; i < distinctIds.Count; i++)
-            {
-                SqliteDbHelpers.AddInt32(cmd, parameters.Names[i], distinctIds[i]);
-            }
-
             return await ExecuteCollectionRowQueryAsync(conn, tx, sql, cmd =>
             {
                 for (int i = 0; i < distinctIds.Count; i++)
