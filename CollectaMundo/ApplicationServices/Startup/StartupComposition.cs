@@ -87,8 +87,24 @@ namespace CollectaMundo.ApplicationServices.Startup
                 operationOverlayController.SetDetail("Checking database integrity…");
                 await UIHelper.ForceRenderAsync();
 
-                // First-time setup / repair if needed
-                var dbStatus = await integrityService.GetDatabaseStatusAsync();
+                // Check database readiness.
+                DatabaseStatus dbStatus;
+
+                try
+                {
+                    dbStatus = await integrityService.GetDatabaseStatusAsync();
+                }
+                catch (Exception ex)
+                {
+                    // Report the failure in the existing startup window.
+                    ShowStartupFailure(operationOverlayController, new OperationResult(OperationResultCode.Error, ex.Message), headlineOverride: "Card database cannot be loaded!");
+
+                    // Ensure the failure UI has an opportunity to render.
+                    await UIHelper.ForceRenderAsync();
+
+                    // Propagate to App.OnStartup, which waits before shutting down.
+                    throw;
+                }
 
                 if (dbStatus is DatabaseStatus.Missing)
                 {
@@ -144,7 +160,6 @@ namespace CollectaMundo.ApplicationServices.Startup
             }
 
             // --- local helpers ---
-
             static ProgressSinks CreateProgressSinks(IOperationOverlayController operationOverlayController) => new()
             {
                 Headline = new Progress<string>(s => operationOverlayController.SetHeadline(s)),
@@ -168,14 +183,14 @@ namespace CollectaMundo.ApplicationServices.Startup
                 })
             };
 
-            static void ShowStartupFailure(IOperationOverlayController operationOverlayController, OperationResult result)
+            static void ShowStartupFailure(IOperationOverlayController operationOverlayController, OperationResult result, string? headlineOverride = null)
             {
-                // Title/above/below mapping
-                string headline = result.Code switch
+                string headline = headlineOverride ?? result.Code switch
                 {
                     OperationResultCode.NoInternet => "No internet connection! Internet connection is required to continue.",
                     OperationResultCode.DownloadFailed => "First time setup failed! Could not download necessary resource files.",
                     OperationResultCode.Error => "First time setup failed! CollectaMundo cannot continue",
+
                     _ => "An unknown error occurred during database preparation."
                 };
 
@@ -192,11 +207,13 @@ namespace CollectaMundo.ApplicationServices.Startup
                 operationOverlayController.Show(headline);
                 operationOverlayController.SetStep(above);
                 operationOverlayController.SetDetail(below);
+
                 operationOverlayController.ShowProgress(false);
                 operationOverlayController.ShowLogo(false);
                 operationOverlayController.ShowSetupFailure(true);
                 operationOverlayController.SetProgress(0);
             }
+
         }
     }
 }
