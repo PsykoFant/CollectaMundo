@@ -1,5 +1,4 @@
 ﻿using System.Data.SQLite;
-using System.Diagnostics;
 
 namespace CollectaMundo.Infrastructure.ModifyCollection
 {
@@ -13,69 +12,68 @@ namespace CollectaMundo.Infrastructure.ModifyCollection
                 return ["English"];
             }
 
+            const string sql = """
+                                SELECT language
+                                FROM cardForeignData
+                                WHERE uuid = @uuid
+
+                                UNION
+
+                                SELECT language
+                                FROM printingCards
+                                WHERE uuid = @uuid;
+                                """;
+
             var languages = new List<string>();
-            string query = @"
-                SELECT language FROM cardForeignData WHERE uuid = @uuid
-                UNION
-                SELECT language FROM cards WHERE uuid = @uuid
-                UNION
-                SELECT language FROM tokens WHERE uuid = @uuid";
-            try
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@uuid", uuid);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
             {
-                using var command = new SQLiteCommand(query, conn);
-                command.Parameters.AddWithValue("@uuid", uuid);
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                string? language = reader["language"]?.ToString();
+
+                if (!string.IsNullOrEmpty(language))
                 {
-                    string? language = reader["language"] as string;
-                    if (!string.IsNullOrEmpty(language))
-                    {
-                        languages.Add(language);
-                    }
+                    languages.Add(language);
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in FetchLanguagesForCardAsync: {ex.Message}");
-                throw;
             }
 
             return languages;
         }
         public async Task<List<string>> FetchFinishesForCardAsync(string uuid, SQLiteConnection conn)
         {
-
+            const string sql = """
+                            SELECT finishes
+                            FROM printingCards
+                            WHERE uuid = @uuid;
+                            """;
 
             var finishes = new List<string>();
-            string query = @"
-                SELECT finishes FROM cards WHERE uuid = @uuid 
-                UNION 
-                SELECT finishes FROM tokens WHERE uuid = @uuid";
-            try
-            {
-                using var command = new SQLiteCommand(query, conn);
-                command.Parameters.AddWithValue("@uuid", uuid);
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    var finish = reader["finishes"]?.ToString();
-                    if (!string.IsNullOrEmpty(finish))
-                    {
-                        finishes.AddRange(finish.Split(',').Select(f => f.Trim()));
-                    }
-                }
-                // Remove unwanted finish types and resolve conflicts
-                finishes = [.. finishes.Distinct().Where(f => !f.Equals("signed", StringComparison.OrdinalIgnoreCase))];
 
-                if (finishes.Contains("foil", StringComparer.OrdinalIgnoreCase) && finishes.Contains("etched", StringComparer.OrdinalIgnoreCase))
+            using var cmd = new SQLiteCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@uuid", uuid);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var finish = reader["finishes"]?.ToString();
+
+                if (!string.IsNullOrEmpty(finish))
                 {
-                    finishes = [.. finishes.Where(f => !f.Equals("foil", StringComparison.OrdinalIgnoreCase))];
+                    finishes.AddRange(finish.Split(',').Select(f => f.Trim()));
                 }
             }
-            catch (Exception ex)
+
+            // Remove unwanted finish types and resolve conflicts.
+            finishes = [.. finishes.Distinct().Where(f => !f.Equals("signed", StringComparison.OrdinalIgnoreCase))];
+
+            if (finishes.Contains("foil", StringComparer.OrdinalIgnoreCase) && finishes.Contains("etched", StringComparer.OrdinalIgnoreCase))
             {
-                Debug.WriteLine($"Error in FetchFinishesForCardAsync: {ex.Message}");
-                throw;
+                finishes = [.. finishes.Where(f => !f.Equals("foil", StringComparison.OrdinalIgnoreCase))];
             }
 
             return finishes;

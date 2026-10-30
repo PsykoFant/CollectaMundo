@@ -104,7 +104,6 @@ namespace CollectaMundo.Infrastructure.KeyedDataProvider
                 );
             }
 
-            // 2) CreateCollectionChangeSetFromEdits validated column identifiers and alias them
             string prefix = normalized; // columns are like "cardmarketNormal", "cardmarketFoil", "cardmarketEtched"
             string sql = $@"
             SELECT uuid,

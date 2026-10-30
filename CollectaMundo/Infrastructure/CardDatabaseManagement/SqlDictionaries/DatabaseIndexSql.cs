@@ -2,87 +2,16 @@
 {
     public static class DatabaseIndexSql
     {
-        // Central source of truth for all indices
+        // Additional indexes managed by CollectaMundo. 
+        // Primary-key, unique-constraint and upstream MTGJSON indexes are defined or created elsewhere.
         public static IReadOnlyDictionary<string, string> Statements { get; } = new Dictionary<string, string>
-            {
-                    { "ux_cardIdentifiers_uuid", "CREATE UNIQUE INDEX IF NOT EXISTS ux_cardIdentifiers_uuid ON cardIdentifiers(uuid);" },
-                    { "ux_tokenIdentifiers_uuid", "CREATE UNIQUE INDEX IF NOT EXISTS ux_tokenIdentifiers_uuid ON tokenIdentifiers(uuid);" },
-                    { "idx_myCollection_locationId", "CREATE INDEX IF NOT EXISTS idx_myCollection_locationId ON myCollection(locationId);"},
-                    { "idx_cardIdentifiers_mcmId", "CREATE INDEX IF NOT EXISTS idx_cardIdentifiers_mcmId ON cardIdentifiers(mcmId);" },
-                    { "idx_tokenIdentifiers_mcmId", "CREATE INDEX IF NOT EXISTS idx_tokenIdentifiers_mcmId ON tokenIdentifiers(mcmId);" },
-                    { "idx_cardIdentifiers_scryfallId", "CREATE INDEX IF NOT EXISTS idx_cardIdentifiers_scryfallId ON cardIdentifiers(scryfallId);" },
-                    { "idx_tokenIdentifiers_scryfallId", " " },
-
-                //{ "idx_uniquemanasymbols_uniquemanasymbol",
-                //    "CREATE INDEX IF NOT EXISTS idx_uniquemanasymbols_uniquemanasymbol ON uniqueManaSymbols(uniqueManaSymbol);" },
-
-                //{ "idx_uniquemanaCostimages_uniquemanaCost",
-                //    "CREATE INDEX IF NOT EXISTS idx_uniquemanaCostimages_uniquemanaCost ON uniqueManaCostImages(uniqueManaCost);" },
-
-                //{ "idx_keyruneimages_setcode",
-                //    "CREATE INDEX IF NOT EXISTS idx_keyruneimages_setcode ON keyruneImages(setCode);" },
-
-                //{ "idx_cardprices_uuid",
-                //    "CREATE INDEX IF NOT EXISTS idx_cardprices_uuid ON cardPrices(uuid);" },
-
-                //{ "idx_cardidentifiers_uuid",
-                //    "CREATE INDEX IF NOT EXISTS idx_cardidentifiers_uuid ON cardIdentifiers(uuid);" },
-
-                //{ "idx_cardforeigndata_uuid",
-                //    "CREATE INDEX IF NOT EXISTS idx_cardforeigndata_uuid ON cardForeignData(uuid);" },
-
-                //{ "idx_cards_uuid",
-                //    "CREATE INDEX IF NOT EXISTS idx_cards_uuid ON cards(uuid);" },
-
-                //{ "idx_cards_setcode_name",
-                //    "CREATE INDEX IF NOT EXISTS idx_cards_setcode_name ON cards(setCode, name);" },
-
-                //{ "idx_tokens_setcode_name",
-                //    "CREATE INDEX IF NOT EXISTS idx_tokens_setcode_name ON tokens(setCode, name);" },
-
-                //{ "idx_cards_keywords",
-                //    "CREATE INDEX IF NOT EXISTS idx_cards_keywords ON cards(keywords);" },
-
-                //{ "idx_sets_tokenSetcode",
-                //    "CREATE INDEX IF NOT EXISTS idx_sets_tokenSetcode ON sets(tokenSetCode);" },
-
-                //{ "idx_tokenidentifiers_uuid",
-                //    "CREATE INDEX IF NOT EXISTS idx_tokenidentifiers_uuid ON tokenIdentifiers(uuid);" },
-
-                //{ "idx_tokens_uuid",
-                //    "CREATE INDEX IF NOT EXISTS idx_tokens_uuid ON tokens(uuid);" },
-
-                //{ "idx_tokens_name",
-                //    "CREATE INDEX IF NOT EXISTS idx_tokens_name ON tokens(name);" },
-
-                //{ "idx_tokens_facename",
-                //    "CREATE INDEX IF NOT EXISTS idx_tokens_facename ON tokens(faceName);" },
-
-                //{ "idx_cards_side_uuid",
-                //    "CREATE INDEX IF NOT EXISTS idx_cards_side_uuid ON cards(side, uuid);" },
-
-                //{ "idx_tokens_side_uuid",
-                //    "CREATE INDEX IF NOT EXISTS idx_tokens_side_uuid ON tokens(side, uuid);" },
-
-                //{ "idx_sets_code_tokensetcode",
-                //    "CREATE INDEX IF NOT EXISTS idx_sets_code_tokensetcode ON sets(code, tokenSetCode);" },
-
-                //{ "idx_cards_setcode_name_type",
-                //    "CREATE INDEX IF NOT EXISTS idx_cards_setcode_name_type ON cards(setCode, name, type);" },
-
-                //{ "idx_tokens_setcode_name_type",
-                //    "CREATE INDEX IF NOT EXISTS idx_tokens_setcode_name_type ON tokens(setCode, name, type);" },
-
-                //{ "idx_myCollection_uuid",
-                //    "CREATE INDEX IF NOT EXISTS idx_myCollection_uuid ON myCollection (uuid);" },
-
-                // Identity index (business critical)
-                { "ux_myCollection_identity",
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ux_myCollection_identity ON myCollection (" +
-                    "uuid, language, finish, condition, " +
-                    "COALESCE(locationId, -1), " +
-                    "COALESCE(comment, '')" +
-                    ");" }
-            };
+        {
+            { "idx_myCollection_locationId", "CREATE INDEX IF NOT EXISTS idx_myCollection_locationId ON myCollection(locationId);"},
+            { "idx_cardIdentifiers_mcmId", "CREATE INDEX IF NOT EXISTS idx_cardIdentifiers_mcmId ON cardIdentifiers(mcmId);" },
+            { "idx_tokenIdentifiers_mcmId", "CREATE INDEX IF NOT EXISTS idx_tokenIdentifiers_mcmId ON tokenIdentifiers(mcmId);" },
+            { "idx_cardIdentifiers_scryfallId", "CREATE INDEX IF NOT EXISTS idx_cardIdentifiers_scryfallId ON cardIdentifiers(scryfallId);" },
+            { "idx_tokenIdentifiers_scryfallId", "CREATE INDEX IF NOT EXISTS idx_tokenIdentifiers_scryfallId ON tokenIdentifiers(scryfallId);" },
+            { "ux_myCollection_identity", "CREATE UNIQUE INDEX IF NOT EXISTS ux_myCollection_identity ON myCollection (uuid, language, finish, condition, COALESCE(locationId, -1), COALESCE(comment, ''));" }
+        };
     }
 }
