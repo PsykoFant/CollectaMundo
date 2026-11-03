@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO;
-using System.Windows;
 
 namespace CollectaMundo.ApplicationServices.Shared
 {
@@ -10,8 +9,9 @@ namespace CollectaMundo.ApplicationServices.Shared
         private readonly AppSettingsDto _currentSettings;
 
         private readonly string _settingsFilePath;
-        private static readonly string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        private static readonly string sqlitePath = Path.Combine(appDataPath, "CollectaMundo", "CardDatabase");
+        private static readonly string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        private static readonly string appRootPath = Path.Combine(localAppDataPath, "CollectaMundo");
+        private static readonly string sqlitePath = Path.Combine(appRootPath, "CardDatabase");
 
         // non-nullable, with defaults
         public DatabaseSettings DatabaseSettings { get; private set; } = new();
@@ -24,10 +24,10 @@ namespace CollectaMundo.ApplicationServices.Shared
         public string UserDownloadsPath => Path.Combine(_userProfile, "Downloads");
         public string BackupFolderPath => _currentSettings.BackupFolderPath;
 
-        public string CardImageCachePath => Path.Combine(appDataPath, "CollectaMundo", "CardImageCache");
+        public string CardImageCachePath => Path.Combine(appRootPath, "CardImageCache");
         public AppSettings(string? filePath = null)
         {
-            _settingsFilePath = filePath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+            _settingsFilePath = filePath ?? Path.Combine(appRootPath, "appsettings.json");
             _currentSettings = LoadOrCreateAppSettings();
             DatabaseSettings = _currentSettings.DatabaseSettings;
             ConnectionStrings = _currentSettings.ConnectionStrings;
@@ -42,33 +42,48 @@ namespace CollectaMundo.ApplicationServices.Shared
 
             var json = File.ReadAllText(_settingsFilePath);
             var settings = JsonConvert.DeserializeObject<AppSettingsDto>(json) ?? new AppSettingsDto();
-            settings.ConnectionStrings.SQLiteConnection = $"Data Source={settings.DatabaseSettings.SQLitePath}AllPrintings.sqlite;Version=3;";
+            settings.ConnectionStrings.SQLiteConnection = BuildSQLiteConnectionString(settings.DatabaseSettings.SQLitePath);
+
             return settings;
         }
         private static void CreateDefaultAppSettings(string settingsFilePath)
         {
-            try
+            if (string.IsNullOrWhiteSpace(settingsFilePath))
             {
-                if (string.IsNullOrWhiteSpace(settingsFilePath))
-                    throw new ArgumentException("Settings file path is required.", nameof(settingsFilePath));
+                throw new ArgumentException("Settings file path is required.", nameof(settingsFilePath));
+            }
 
-                Directory.CreateDirectory(sqlitePath);
+            var settingsDirectory = Path.GetDirectoryName(Path.GetFullPath(settingsFilePath)) ?? throw new InvalidOperationException("Could not determine the settings directory.");
 
-                var defaultSettings = new AppSettingsDto
+            Directory.CreateDirectory(settingsDirectory);
+            Directory.CreateDirectory(sqlitePath);
+
+            var sqlitePathWithSeparator = Path.EndsInDirectorySeparator(sqlitePath)
+                ? sqlitePath
+                : sqlitePath + Path.DirectorySeparatorChar;
+
+            var defaultSettings = new AppSettingsDto
+            {
+                DatabaseSettings = new DatabaseSettings
                 {
-                    DatabaseSettings = new DatabaseSettings { SQLitePath = $"{sqlitePath}\\" },
-                    ConnectionStrings = new ConnectionStrings { SQLiteConnection = $"Data Source={sqlitePath}\\AllPrintings.sqlite;Version=3;" },
-                    PriceInfo = new PriceInfo(),
-                    BackupFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "CollectaMundoBackup")
-                };
+                    SQLitePath = sqlitePathWithSeparator
+                },
+                ConnectionStrings = new ConnectionStrings
+                {
+                    SQLiteConnection = BuildSQLiteConnectionString(sqlitePath)
+                },
+                PriceInfo = new PriceInfo(),
+                BackupFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "CollectaMundoBackup")
+            };
 
-                File.WriteAllText(settingsFilePath, JsonConvert.SerializeObject(defaultSettings, Formatting.Indented));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error creating appsettings.json: {ex.Message}");
-                MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            File.WriteAllText(
+                settingsFilePath,
+                JsonConvert.SerializeObject(defaultSettings, Formatting.Indented));
+        }
+        private static string BuildSQLiteConnectionString(string databaseDirectory)
+        {
+            var databasePath = Path.Combine(databaseDirectory, "AllPrintings.sqlite");
+            return $"Data Source={databasePath};Version=3;";
         }
         public void PersistPriceInfo(string? updatedDate, string? retailer)
         {

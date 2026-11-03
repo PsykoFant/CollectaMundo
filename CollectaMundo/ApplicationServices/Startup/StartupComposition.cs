@@ -62,8 +62,25 @@ namespace CollectaMundo.ApplicationServices.Startup
             try
             {
                 // Infrastructure
-                var settings = new AppSettings();
                 var operationOverlayController = new OperationOverlayController(operationOverlayViewModel);
+                operationOverlayController.Show(string.Empty);
+                operationOverlayController.SetDetail("Loading application settings…");
+                await UIHelper.ForceRenderAsync();
+
+                AppSettings settings;
+                try
+                {
+                    settings = new AppSettings();
+                }
+                catch (Exception ex)
+                {
+                    var result = new OperationResult(OperationResultCode.Error, $"Could not create or load appsettings.json: {ex.Message}");
+
+                    ShowStartupFailure(operationOverlayController, result, headlineOverride: "Application settings could not be loaded!");
+
+                    await UIHelper.ForceRenderAsync();
+                    throw;
+                }
 
                 // Delegate for retailer access from view models                
                 string getRetailer() => settings.PriceInfo.Retailer;
