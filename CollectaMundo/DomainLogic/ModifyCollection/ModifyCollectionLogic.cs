@@ -32,6 +32,8 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
                 draft.CardId = existingCollectionCard.CardId;
                 draft.CardsOwned = existingCollectionCard.CardsOwned;
                 draft.CardsForTrade = existingCollectionCard.CardsForTrade;
+                draft.SellPrice = existingCollectionCard.SellPrice;
+                draft.SellPriceCurrency = existingCollectionCard.SellPriceCurrency;
                 draft.Language = existingCollectionCard.Language;
                 draft.SelectedFinish = existingCollectionCard.SelectedFinish;
                 draft.SelectedCondition = existingCollectionCard.SelectedCondition;

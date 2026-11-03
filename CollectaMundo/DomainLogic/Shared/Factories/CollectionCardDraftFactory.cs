@@ -18,6 +18,8 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 SelectedCondition = source.SelectedCondition,
                 Language = source.Language,
                 SelectedFinish = source.SelectedFinish,
+                SellPrice = source.SellPrice,
+                SellPriceCurrency = source.SellPriceCurrency,
                 SelectedLocationId = source.SelectedLocationId,
                 Comment = source.Comment,
 
@@ -74,6 +76,8 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 SelectedFinish = row.Identity.Finish,
                 SelectedLocationId = row.Identity.LocationId,
                 Comment = row.Identity.Comment,
+                SellPrice = row.SellPrice,
+                SellPriceCurrency = row.SellPriceCurrency,
                 CardsOwned = row.CardsOwned,
                 CardsForTrade = row.CardsForTrade
             };
@@ -124,6 +128,8 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 SelectedCondition = source.SelectedCondition,
                 Language = source.Language,
                 SelectedFinish = source.SelectedFinish,
+                SellPrice = source.SellPrice,
+                SellPriceCurrency = source.SellPriceCurrency,
                 SelectedLocationId = source.SelectedLocationId,
                 Comment = source.Comment
             };
