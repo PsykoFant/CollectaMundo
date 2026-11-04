@@ -5,14 +5,16 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
 {
     public class CollectionMutationsRepo : ICollectionMutationsRepo
     {
-        public async Task<int> AddCardAndReturnIdAsync(string uuid, string condition, string language, string finish, int? locationId, string? comment, int cardsOwned, int cardsForTrade, SQLiteConnection conn, SQLiteTransaction tx)
+        public async Task<int> AddCardAndReturnIdAsync(string uuid, string condition, string language, string finish, int? locationId, string? comment, decimal? sellPrice, string? sellPriceCurrency, int cardsOwned, int cardsForTrade, SQLiteConnection conn, SQLiteTransaction tx)
         {
             const string insertSql = """
-            INSERT INTO myCollection
-                (uuid, cardsOwned, cardsForTrade, condition, language, finish, locationId, comment)
-            VALUES
-                (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish, @locationId, @comment);
-            """;
+                                    INSERT INTO myCollection
+                                        (uuid, cardsOwned, cardsForTrade, condition, language, finish,
+                                         locationId, comment, sellPrice, sellPriceCurrency)
+                                    VALUES
+                                        (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish,
+                                         @locationId, @comment, @sellPrice, @sellPriceCurrency);
+                                    """;
 
             try
             {
@@ -25,6 +27,8 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
                 insertCmd.Parameters.AddWithValue("@finish", finish);
                 insertCmd.Parameters.AddWithValue("@locationId", SqliteDbHelpers.ToDbNullableInt(locationId));
                 insertCmd.Parameters.AddWithValue("@comment", SqliteDbHelpers.ToDbNullableString(comment));
+                insertCmd.Parameters.AddWithValue("@sellPrice", (object?)sellPrice ?? DBNull.Value);
+                insertCmd.Parameters.AddWithValue("@sellPriceCurrency", SqliteDbHelpers.ToDbNullableString(sellPriceCurrency));
 
                 await insertCmd.ExecuteNonQueryAsync();
 
@@ -35,11 +39,7 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
             }
             catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
-                throw new InvalidOperationException(
-                    "Duplicate CollectionIdentity detected. " +
-                    $"Uuid={uuid}, Language={language}, Finish={finish}, Condition={condition}, " +
-                    $"LocationId={(locationId?.ToString() ?? "null")}, Comment={(SqliteDbHelpers.NormalizeNullableString(comment) ?? "null")}.",
-                    ex);
+                throw new InvalidOperationException($"Duplicate CollectionIdentity detected. Uuid={uuid}, Language={language}, Finish={finish}, Condition={condition}, LocationId={(locationId?.ToString() ?? "null")}, Comment={(SqliteDbHelpers.NormalizeNullableString(comment) ?? "null")}.", ex);
             }
         }
         public async Task DeleteCardByIdAsync(int cardId, SQLiteConnection conn, SQLiteTransaction tx)
@@ -54,19 +54,21 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
 
             await cmd.ExecuteNonQueryAsync();
         }
-        public async Task UpdateCardFieldsByIdAsync(int id, int owned, int trade, string condition, string language, string finish, int? locationId, string? comment, SQLiteConnection conn, SQLiteTransaction tx)
+        public async Task UpdateCardFieldsByIdAsync(int id, int owned, int trade, string condition, string language, string finish, int? locationId, string? comment, decimal? sellPrice, string? sellPriceCurrency, SQLiteConnection conn, SQLiteTransaction tx)
         {
             const string sql = """
-            UPDATE myCollection
-               SET cardsOwned    = @owned,
-                   cardsForTrade = @trade,
-                   condition     = @cond,
-                   language      = @lang,
-                   finish        = @fin,
-                   locationId    = @locationId,
-                   comment       = @comment
-             WHERE id = @id;
-            """;
+                                UPDATE myCollection
+                                   SET cardsOwned         = @owned,
+                                       cardsForTrade      = @trade,
+                                       condition          = @cond,
+                                       language           = @lang,
+                                       finish             = @fin,
+                                       locationId         = @locationId,
+                                       comment            = @comment,
+                                       sellPrice          = @sellPrice,
+                                       sellPriceCurrency  = @sellPriceCurrency
+                                 WHERE id = @id;
+                                """;
 
             using var cmd = new SQLiteCommand(sql, conn, tx);
             cmd.Parameters.AddWithValue("@owned", owned);
@@ -76,6 +78,8 @@ namespace CollectaMundo.Infrastructure.CollectionMutations
             cmd.Parameters.AddWithValue("@fin", finish);
             cmd.Parameters.AddWithValue("@locationId", SqliteDbHelpers.ToDbNullableInt(locationId));
             cmd.Parameters.AddWithValue("@comment", SqliteDbHelpers.ToDbNullableString(comment));
+            cmd.Parameters.AddWithValue("@sellPrice", (object?)sellPrice ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@sellPriceCurrency", SqliteDbHelpers.ToDbNullableString(sellPriceCurrency));
             cmd.Parameters.AddWithValue("@id", id);
 
             await cmd.ExecuteNonQueryAsync();

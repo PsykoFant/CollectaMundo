@@ -89,6 +89,8 @@ namespace CollectaMundo.ViewModels.ModifyCollection
 
                 card.CardsOwned = current.CardsOwned;
                 card.CardsForTrade = current.CardsForTrade;
+                card.SellPrice = current.SellPrice;
+                card.SellPriceCurrency = current.SellPriceCurrency;
                 card.SelectedCondition = current.SelectedCondition;
                 card.Language = current.Language;
                 card.SelectedFinish = current.SelectedFinish;
@@ -313,7 +315,8 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         [RelayCommand]
         private async Task SubmitNewCardsAsync()
         {
-            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Added the following cards to your collection:");
+            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) =>
+            _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Added the following cards to your collection:");
         }
 
         [RelayCommand]
@@ -424,7 +427,6 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         {
             var cardList = cards.ToList();
             var snapshot = _cardCollectionHost.CreateCollectionIdentitySnapshot();
-
             var changeSet = await submit(cardList, snapshot);
 
             if (clearAfter)

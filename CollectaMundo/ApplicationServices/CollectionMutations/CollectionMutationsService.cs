@@ -24,10 +24,10 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
         }
         private static CollectionChangeSet<CollectionCardDbRow> BuildExecutedChangeSet(CollectionMutationPlan plan)
         {
+
             var rows = plan.UpsertsByIdentity.Values.Select(row =>
                 {
-                    var matchingInsert = plan.Inserts.FirstOrDefault(i =>
-                        i.Identity == row.Identity);
+                    var matchingInsert = plan.Inserts.FirstOrDefault(i => i.Identity == row.Identity);
 
                     if (matchingInsert?.AssignedCardId is int assignedId)
                     {
@@ -36,7 +36,9 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
                             CardId = assignedId,
                             Identity = row.Identity,
                             CardsOwned = row.CardsOwned,
-                            CardsForTrade = row.CardsForTrade
+                            CardsForTrade = row.CardsForTrade,
+                            SellPrice = row.SellPrice,
+                            SellPriceCurrency = row.SellPriceCurrency
                         };
                     }
 
@@ -68,6 +70,8 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
                     update.Identity.Finish,
                     update.Identity.LocationId,
                     update.Identity.Comment,
+                    update.SellPrice,
+                    update.SellPriceCurrency,
                     connection,
                     transaction);
             }
@@ -81,6 +85,8 @@ namespace CollectaMundo.ApplicationServices.CollectionMutations
                     insert.Identity.Finish,
                     insert.Identity.LocationId,
                     insert.Identity.Comment,
+                    insert.Draft.SellPrice,
+                    insert.Draft.SellPriceCurrency,
                     insert.CardsOwned,
                     insert.CardsForTrade,
                     connection,

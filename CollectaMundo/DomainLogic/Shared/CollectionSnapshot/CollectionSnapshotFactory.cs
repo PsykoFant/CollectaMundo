@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared.Factories;
-using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLists.Models;
 
 namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
@@ -35,6 +34,8 @@ namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
                 {
                     CardId = card.CardId,
                     Identity = identity,
+                    SellPrice = card.SellPrice,
+                    SellPriceCurrency = card.SellPriceCurrency,
                     CardsOwned = card.CardsOwned,
                     CardsForTrade = card.CardsForTrade
                 };
@@ -73,9 +74,9 @@ namespace CollectaMundo.DomainLogic.Shared.CollectionSnapshot
                     continue;
                 }
 
-                allocatedByOracleId[oracleId] = allocatedByOracleId.GetValueOrDefault(oracleId)+ card.CardsOwned;
+                allocatedByOracleId[oracleId] = allocatedByOracleId.GetValueOrDefault(oracleId) + card.CardsOwned;
 
-                var key = new OracleLocationIdentity(oracleId,locationId);
+                var key = new OracleLocationIdentity(oracleId, locationId);
 
                 allocatedByOracleAndLocation[key] = allocatedByOracleAndLocation.GetValueOrDefault(key) + card.CardsOwned;
             }

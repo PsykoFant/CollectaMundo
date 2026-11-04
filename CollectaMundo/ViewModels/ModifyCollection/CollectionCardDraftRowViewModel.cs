@@ -114,6 +114,16 @@ namespace CollectaMundo.ViewModels.ModifyCollection
             get => CardToAddOrEdit.Comment;
             set => SetModelValue(CardToAddOrEdit.Comment, value, v => CardToAddOrEdit.Comment = v);
         }
+        public decimal? SellPrice
+        {
+            get => CardToAddOrEdit.SellPrice;
+            set => SetModelValue(CardToAddOrEdit.SellPrice, value, v => CardToAddOrEdit.SellPrice = v);
+        }
+        public string? SellPriceCurrency
+        {
+            get => CardToAddOrEdit.SellPriceCurrency;
+            set => SetModelValue(CardToAddOrEdit.SellPriceCurrency, value, v => CardToAddOrEdit.SellPriceCurrency = v);
+        }
         public int CardsOwned
         {
             get => CardToAddOrEdit.CardsOwned;
