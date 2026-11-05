@@ -20,6 +20,8 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         private readonly IModifyCollectionService _service;
         private readonly ICardCollectionHost _cardCollectionHost;
         private IReadOnlyList<CardLocation> _availableLocations = [];
+        private readonly Func<string> _getSellPriceDisplayCurrency;
+        private readonly Func<decimal?> _getUsdToEurRate;
         private readonly bool _removeCardWhenZero;
 
         public event EventHandler<CollectionChangeSet<CollectionCardDbRow>>? CollectionChanged;
@@ -31,11 +33,13 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         public IReadOnlyList<LocationMenuItemViewModel> LocationMenuItems { get; private set; } = [];
 
         // Constructor
-        public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost cardCollectionHost, bool removeCardWhenZero)
+        public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost cardCollectionHost, bool removeCardWhenZero, Func<string> getSellPriceDisplayCurrency, Func<decimal?> getUsdToEurRate)
         {
             _cardCollectionHost = cardCollectionHost;
             _service = service;
             _removeCardWhenZero = removeCardWhenZero;
+            _getSellPriceDisplayCurrency = getSellPriceDisplayCurrency;
+            _getUsdToEurRate = getUsdToEurRate;
 
             CardsToAddOrEdit.CollectionChanged += (_, _) =>
             {
@@ -154,7 +158,9 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                     continue;
                 }
 
-                CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(editable, _availableLocations, RefreshColumnsCommand, CountCommittedCommand));
+                var displayPrice = GetSellPriceDisplay(editable, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
+
+                CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(editable, _availableLocations, RefreshColumnsCommand, CountCommittedCommand, initialDisplaySellPrice: displayPrice.Price, displayCurrency: displayPrice.Currency));
             }
 
             ClearSelectionTrigger++;
@@ -305,8 +311,9 @@ namespace CollectaMundo.ViewModels.ModifyCollection
             row.CardsOwned--;
 
             var splitDraft = CollectionCardDraftFactory.FromSplit(row.CardToAddOrEdit);
+            var displayPrice = GetSellPriceDisplay(splitDraft, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
 
-            CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(splitDraft, _availableLocations, RefreshColumnsCommand, CountCommittedCommand));
+            CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(splitDraft, _availableLocations, RefreshColumnsCommand, CountCommittedCommand, initialDisplaySellPrice: displayPrice.Price, displayCurrency: displayPrice.Currency));
 
             RefreshColumnsTrigger++;
         }
@@ -522,6 +529,50 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 new LocationMenuItemViewModel{ Header = "Decks", Children = decks},
                 new LocationMenuItemViewModel{ Header = "Storage", Children = storage}
             ];
+        }
+        private static (decimal? Price, string Currency) GetSellPriceDisplay(CollectionCardDraft draft, string displayCurrency, decimal? usdToEurRate)
+        {
+            ArgumentNullException.ThrowIfNull(draft);
+
+            var targetCurrency = displayCurrency.ToUpperInvariant();
+
+            if (targetCurrency is not ("USD" or "EUR"))
+            {
+                throw new ArgumentException($"Unsupported display currency '{displayCurrency}'.", nameof(displayCurrency));
+            }
+
+            if (draft.SellPrice is not decimal sellPrice)
+            {
+                return (null, targetCurrency);
+            }
+
+            if (string.IsNullOrWhiteSpace(draft.SellPriceCurrency))
+            {
+                throw new InvalidOperationException("A draft with a sell price must also have a sell price currency.");
+            }
+
+            var sourceCurrency = draft.SellPriceCurrency.ToUpperInvariant();
+
+            if (sourceCurrency == targetCurrency)
+            {
+                return (sellPrice, targetCurrency);
+            }
+
+            if (usdToEurRate is null || usdToEurRate <= 0m)
+            {
+                throw new ArgumentOutOfRangeException(nameof(usdToEurRate), "The USD-to-EUR rate must be greater than zero.");
+            }
+
+            var rate = usdToEurRate.Value;
+
+            var convertedPrice = (sourceCurrency, targetCurrency) switch
+            {
+                ("USD", "EUR") => sellPrice * rate,
+                ("EUR", "USD") => sellPrice / rate,
+                _ => throw new InvalidOperationException($"Cannot convert sell price from '{sourceCurrency}' to '{targetCurrency}'.")
+            };
+
+            return (decimal.Round(convertedPrice, 2, MidpointRounding.AwayFromZero), targetCurrency);
         }
     }
 }

@@ -99,6 +99,8 @@ namespace CollectaMundo.ViewModels
         public CardListViewModel<CollectionCard> MyCollectionVM { get; }
         public CardListViewModel<OracleCard> OracleCardsVM { get; }
         public CardListViewModel<ManaSymbolViewModel> ColorIconsViewModel { get; }
+
+
         public ModifyCollectionViewModel AddCardsVM { get; }
         public ModifyCollectionViewModel EditCardsVM { get; }
         public DeckManagementViewModel DeckManagementVM { get; }
@@ -186,8 +188,9 @@ namespace CollectaMundo.ViewModels
             ColorIconsViewModel = new CardListViewModel<ManaSymbolViewModel> { Cards = manaSymbols, FilteredCards = manaSymbols };
 
             // Modify collection viewmodels
-            AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true);
-            EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false);
+            AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true, GetSellPriceDisplayCurrency, GetUsdToEurRate);
+
+            EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false, GetSellPriceDisplayCurrency, GetUsdToEurRate);
 
             // filtering viewmodel
             FilterPanelVM = new FilterPanelViewModel(_filteringService);
@@ -230,6 +233,11 @@ namespace CollectaMundo.ViewModels
             // event wiring
             SubscribeChildVmEvents();
         }
+        string GetSellPriceDisplayCurrency() => string.Equals(_settings.PriceInfo.Retailer, "cardmarket", StringComparison.OrdinalIgnoreCase)
+            ? "EUR"
+            : "USD";
+
+        decimal? GetUsdToEurRate() => _settings.PriceInfo.UsdToEurRate;
         public static async Task<MainWindowViewModel> CreateAsync(
             IModifyCollectionService editService,
             ICardImageService cardImageService,

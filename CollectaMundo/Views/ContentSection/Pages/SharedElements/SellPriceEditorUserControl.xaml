@@ -1,0 +1,40 @@
+﻿<UserControl x:Class="CollectaMundo.Views.ContentSection.Pages.SharedElements.SellPriceEditorUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:bindingViewModels="clr-namespace:CollectaMundo.ViewModels.ModifyCollection.BindinViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=bindingViewModels:SellPriceBindingViewModel}">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBox Grid.Column="0"
+                 MinWidth="70"
+                 Text="{Binding InputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsValid}" Value="False">
+                            <Setter Property="BorderBrush" Value="Firebrick" />
+                            <Setter Property="ToolTip" Value="Enter a valid sell price." />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBox.Style>
+
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="LostFocus">
+                    <i:InvokeCommandAction Command="{Binding CommitCommand}" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </TextBox>
+
+        <TextBlock Grid.Column="1" Margin="4,0,0,0" VerticalAlignment="Center" Text="{Binding Currency}"/>
+    </Grid>
+</UserControl>

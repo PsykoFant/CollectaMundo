@@ -159,5 +159,6 @@ namespace CollectaMundo.ApplicationServices.Shared
         // Default to today in format YYYY-MM-DD
         public string PricesUpdatedDate { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-dd");
         public string Retailer { get; set; } = "cardmarket";
+        public decimal? UsdToEurRate { get; set; }
     }
 }
