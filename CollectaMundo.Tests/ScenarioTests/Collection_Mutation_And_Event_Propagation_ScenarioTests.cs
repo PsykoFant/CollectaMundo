@@ -3,7 +3,6 @@ using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels.ModifyCollection;
-using System.Diagnostics;
 using System.Windows.Input;
 
 namespace CollectaMundo.Tests.ScenarioTests
@@ -243,13 +242,9 @@ namespace CollectaMundo.Tests.ScenarioTests
             var pending = _ctx.MainVM.AddCardsVM.CardsToAddOrEdit.Single(c => c.CardToAddOrEdit.Uuid == uuidSokrates);
             pending.SelectedCondition = "Played";
             pending.CardsForTrade = 1;
-            pending.SellPrice = 12.34m;
-            pending.SellPriceCurrency = "USD";
+            pending.SellPriceEditor.InputText = "12,34";
 
-            Debug.WriteLine($"Pending Sokrates: {pending.CardToAddOrEdit.Name}, Condition={pending.SelectedCondition}, Trade={pending.CardsForTrade}, Price={pending.SellPrice} {pending.SellPriceCurrency}");
-
-            Assert.Equal((decimal?)12.34m, pending.SellPrice);
-            Assert.Equal("USD", pending.SellPriceCurrency);
+            var expectedSellPriceCurrency = pending.SellPriceEditor.Currency;
 
             // Act: submit
             _ctx.MainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
@@ -258,8 +253,6 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(24, _ctx.MainVM.MyCollectionVM.Cards.Count);
 
             var sokratesInCollection = ScenarioTestHelpers.FindCard(_ctx.MainVM.MyCollectionVM.Cards, uuidSokrates);
-
-            Debug.WriteLine($"Sokrates in collection sellprice: {sokratesInCollection.SellPrice}, Currency={sokratesInCollection.SellPriceCurrency}");
 
             // Assert: price was persisted
             var persistedPrice = await ScenarioTestHelpers.ExecuteQueryAsync<(decimal? SellPrice, string? SellPriceCurrency)>(
@@ -287,13 +280,13 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             var storedPrice = Assert.Single(persistedPrice);
             Assert.Equal((decimal?)12.34m, storedPrice.SellPrice);
-            Assert.Equal("USD", storedPrice.SellPriceCurrency);
+            Assert.Equal(expectedSellPriceCurrency, storedPrice.SellPriceCurrency);
 
             // Assert: collection view model reflects the saved values
             Assert.Equal("Played", sokratesInCollection.SelectedCondition);
             Assert.Equal(1, sokratesInCollection.CardsForTrade);
             Assert.Equal((decimal?)12.34m, sokratesInCollection.SellPrice);
-            Assert.Equal("USD", sokratesInCollection.SellPriceCurrency);
+            Assert.Equal(expectedSellPriceCurrency, sokratesInCollection.SellPriceCurrency);
 
             // Assert: staging cleared
             Assert.Empty(_ctx.MainVM.AddCardsVM.CardsToAddOrEdit);
@@ -615,23 +608,16 @@ namespace CollectaMundo.Tests.ScenarioTests
             #region ===== Section L: edit otter location to none and merge with existing no-location otter =====
 
             // Arrange: find Otter 1 with Box 1 and the existing no-location/no-comment otter
-            var otterBox1 = _ctx.MainVM.MyCollectionVM.Cards.Single(c =>
-                c.Uuid == uuidOtter &&
-                c.SelectedLocationId == box1.Id &&
-                string.IsNullOrWhiteSpace(c.Comment));
-
-            var otterNoLocationBefore = _ctx.MainVM.MyCollectionVM.Cards.Single(c =>
-                c.Uuid == uuidOtter &&
-                c.SelectedLocationId is null &&
-                string.IsNullOrWhiteSpace(c.Comment));
-
+            var otterBox1 = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId == box1.Id && string.IsNullOrWhiteSpace(c.Comment));
+            var otterNoLocationBefore = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment));
             var otterBox1Id = otterBox1.CardId;
             var otterNoLocationId = otterNoLocationBefore.CardId;
 
             var expectedMergedOwned = otterBox1.CardsOwned + otterNoLocationBefore.CardsOwned;
             var expectedMergedTrade = otterBox1.CardsForTrade + otterNoLocationBefore.CardsForTrade;
             var expectedSellPrice = otterNoLocationBefore.SellPrice;
-            var expectedSellPriceCurrency = otterNoLocationBefore.SellPriceCurrency;
+
+            expectedSellPriceCurrency = otterNoLocationBefore.SellPriceCurrency;
 
             // Confirm the rows have different prices so the merge assertion checks which price survives.
             Assert.Equal((decimal?)8.50m, otterBox1.SellPrice);
@@ -642,8 +628,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Act: stage Otter 1 for edit
             _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.EditSelectedCardsCommand.Execute(new object[] { otterBox1 });
 
-            var pendingOtterEdit = _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.CardsToAddOrEdit.Single(
-                r => r.CardToAddOrEdit.CardId == otterBox1Id);
+            var pendingOtterEdit = _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.CardsToAddOrEdit.Single(r => r.CardToAddOrEdit.CardId == otterBox1Id);
 
             // Act: clear location in edit row
             pendingOtterEdit.SelectedLocationId = null;
@@ -700,22 +685,11 @@ namespace CollectaMundo.Tests.ScenarioTests
             ottersInCollection = [.. _ctx.MainVM.MyCollectionVM.Cards.Where(c => c.Uuid == uuidOtter)];
             Assert.Equal(4, ottersInCollection.Count);
 
-            Assert.Contains(ottersInCollection, c =>
-                c.SelectedLocationId == box2.Id &&
-                string.IsNullOrWhiteSpace(c.Comment));
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box2.Id && string.IsNullOrWhiteSpace(c.Comment));
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box2.Id && c.Comment == "smudgemark");
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId == deckAwesome.Id && string.IsNullOrWhiteSpace(c.Comment));
+            Assert.Contains(ottersInCollection, c => c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment) && c.CardsOwned == 2);
 
-            Assert.Contains(ottersInCollection, c =>
-                c.SelectedLocationId == box2.Id &&
-                c.Comment == "smudgemark");
-
-            Assert.Contains(ottersInCollection, c =>
-                c.SelectedLocationId == deckAwesome.Id &&
-                string.IsNullOrWhiteSpace(c.Comment));
-
-            Assert.Contains(ottersInCollection, c =>
-                c.SelectedLocationId is null &&
-                string.IsNullOrWhiteSpace(c.Comment) &&
-                c.CardsOwned == 2);
             #endregion
 
             #region ===== Section M: edit two Box 2 otters into same new Box 1 identity =====

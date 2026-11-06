@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
@@ -100,13 +101,30 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 card.SelectedFinish = current.SelectedFinish;
                 card.SelectedLocationId = current.SelectedLocationId;
                 card.Comment = current.Comment;
+
+                // Refresh the displayed value while preserving any uncommitted edit.
+                var (Price, Currency) = GetSellPriceDisplay(card, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
+                row.SellPriceEditor.RefreshDisplay(Price, Currency);
             }
 
             RefreshColumnsTrigger++;
             OnPropertyChanged(nameof(IsCollectionEditVisible));
             OnPropertyChanged(nameof(ShowCounts));
         }
+        public void RefreshSellPriceEditors()
+        {
+            var displayCurrency = _getSellPriceDisplayCurrency();
+            var usdToEurRate = _getUsdToEurRate();
 
+            foreach (var row in CardsToAddOrEdit)
+            {
+                var (Price, Currency) = GetSellPriceDisplay(row.CardToAddOrEdit, displayCurrency, usdToEurRate);
+
+                row.SellPriceEditor.RefreshDisplay(Price, Currency);
+            }
+        }
+
+        // Properties for binding to the listview
         [ObservableProperty]
         private string statusMessage = string.Empty;
 
@@ -571,21 +589,14 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 return (sellPrice, targetCurrency);
             }
 
-            if (usdToEurRate is null || usdToEurRate <= 0m)
+            if (usdToEurRate is not decimal rate)
             {
-                throw new ArgumentOutOfRangeException(nameof(usdToEurRate), "The USD-to-EUR rate must be greater than zero.");
+                throw new InvalidOperationException("An exchange rate is required to display this sell price in another currency.");
             }
 
-            var rate = usdToEurRate.Value;
+            var convertedPrice = CurrencyConversionLogic.Convert(sellPrice, sourceCurrency, targetCurrency, rate);
 
-            var convertedPrice = (sourceCurrency, targetCurrency) switch
-            {
-                ("USD", "EUR") => sellPrice * rate,
-                ("EUR", "USD") => sellPrice / rate,
-                _ => throw new InvalidOperationException($"Cannot convert sell price from '{sourceCurrency}' to '{targetCurrency}'.")
-            };
-
-            return (decimal.Round(convertedPrice, 2, MidpointRounding.AwayFromZero), targetCurrency);
+            return (convertedPrice, targetCurrency);
         }
         private bool CommitSellPriceEditors()
         {

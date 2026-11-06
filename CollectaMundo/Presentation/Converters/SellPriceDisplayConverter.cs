@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using CollectaMundo.DomainLogic.Shared;
+using System.Globalization;
 using System.Windows.Data;
 
 namespace CollectaMundo.Presentation.Converters
@@ -32,16 +33,16 @@ namespace CollectaMundo.Presentation.Converters
                 return Format(price, sourceCurrency, culture);
             }
 
-            var convertedPrice = (sourceCurrency, targetCurrency) switch
+            try
             {
-                ("USD", "EUR") => price * rate,
-                ("EUR", "USD") => price / rate,
-                _ => (decimal?)null
-            };
+                var convertedPrice = CurrencyConversionLogic.Convert(price, sourceCurrency, targetCurrency, rate);
 
-            return convertedPrice is decimal converted
-                ? Format(decimal.Round(converted, 2, MidpointRounding.AwayFromZero), targetCurrency, culture)
-                : Format(price, sourceCurrency, culture);
+                return Format(convertedPrice, targetCurrency, culture);
+            }
+            catch (ArgumentException)
+            {
+                return Format(price, sourceCurrency, culture);
+            }
         }
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {

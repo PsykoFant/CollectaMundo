@@ -8,10 +8,12 @@ namespace CollectaMundo.ViewModels.ModifyCollection.BindinViewModels
 {
     public sealed class SellPriceBindingViewModel : ObservableObject
     {
-        private readonly string _displayCurrency;
+        private string _displayCurrency;
         private readonly Action<decimal?, string?> _setPrice;
         private string _inputText;
         private bool _isDirty;
+
+        // Constructor takes an initial display price, the currency to display, and a callback to set the price
         public SellPriceBindingViewModel(decimal? initialDisplayPrice, string displayCurrency, Action<decimal?, string?> setPrice)
         {
             _displayCurrency = displayCurrency;
@@ -61,6 +63,29 @@ namespace CollectaMundo.ViewModels.ModifyCollection.BindinViewModels
             OnPropertyChanged(nameof(IsDirty));
 
             return true;
+        }
+        public void RefreshDisplay(decimal? displayPrice, string displayCurrency)
+        {
+            if (_isDirty)
+            {
+                return;
+            }
+
+            var formattedPrice = displayPrice?.ToString("0.##", CultureInfo.InvariantCulture) ?? string.Empty;
+
+            if (_inputText != formattedPrice)
+            {
+                _inputText = formattedPrice;
+                OnPropertyChanged(nameof(InputText));
+            }
+
+            if (_displayCurrency != displayCurrency)
+            {
+                _displayCurrency = displayCurrency;
+                OnPropertyChanged(nameof(Currency));
+            }
+
+            OnPropertyChanged(nameof(IsValid));
         }
     }
 }

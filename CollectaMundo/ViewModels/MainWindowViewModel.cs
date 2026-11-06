@@ -712,12 +712,13 @@ namespace CollectaMundo.ViewModels
 
             Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}");
             PricesVM.RefreshLatestPriceDate();
+            AddCardsVM.RefreshSellPriceEditors();
+            EditCardsVM.RefreshSellPriceEditors();
         }
         public ICollectionIdentitySnapshot CreateCollectionIdentitySnapshot()
         {
             return CollectionSnapshotFactory.CreateIdentitySnapshot(MyCollectionVM.Cards);
         }
-
         public ICollectionQuantitySnapshot CreateCollectionQuantitySnapshot()
         {
             var deckLocationIds = _cardLocationLookupStore.GetAll().Where(x => x.Type == CardLocationType.Deck).Select(x => x.Id).ToHashSet();
