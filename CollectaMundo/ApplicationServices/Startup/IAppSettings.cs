@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices.Shared
+﻿namespace CollectaMundo.ApplicationServices.Startup
 {
     public interface IAppSettings
     {
@@ -11,6 +11,7 @@
         string CardImageCachePath { get; }
         PriceInfo PriceInfo { get; }
         void PersistPriceInfo(string? updatedDate, string? retailer);
+        void PersistExchangeRate(decimal usdToEurRate, DateTimeOffset retrievedAtUtc);
         void PersistBackupFolderPath(string newBackupFolderPath);
     }
 

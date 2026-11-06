@@ -133,6 +133,20 @@ namespace CollectaMundo.ApplicationServices.Startup
                     }
                 }
 
+                // Refresh the saved USD-to-EUR rate when the endpoint is available.
+                try
+                {
+                    var usdToEurRate = await remoteLookups.FetchUsdToEurRateAsync();
+
+                    settings.PersistExchangeRate(usdToEurRate, DateTimeOffset.UtcNow);
+
+                    Debug.WriteLine($"Updated USD-to-EUR rate: {usdToEurRate}");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Could not refresh the USD-to-EUR rate. Continuing with saved rate {settings.PriceInfo.UsdToEurRate}. Error: {ex.Message}");
+                }
+
                 // Main app services (feature layer)
                 operationOverlayController.Reset();
                 operationOverlayController.SetDetail("Loading ALL the cards…");

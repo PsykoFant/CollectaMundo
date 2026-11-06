@@ -7,6 +7,7 @@
              xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
+             xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=pagesVm:PagesMyCollectionViewModel, IsDesignTimeCreatable=False}"
              d:Style="{StaticResource {x:Type UserControl}}"
@@ -130,6 +131,22 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding CardsForTrade}" TextWrapping="Wrap" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Sell price" Width="Auto" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource SellPriceDisplayConverter}">
+                                        <Binding Path="SellPrice" />
+                                        <Binding Path="SellPriceCurrency" />
+                                        <Binding Path="DataContext.PricesVM.SellPriceDisplayCurrency" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                        <Binding Path="DataContext.PricesVM.UsdToEurRate" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

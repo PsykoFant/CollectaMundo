@@ -320,16 +320,29 @@ namespace CollectaMundo.ViewModels.ModifyCollection
 
         // Submit cards from listview
         [RelayCommand]
-        private async Task SubmitNewCardsAsync()
+        private Task SubmitNewCardsAsync()
         {
-            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) =>
-            _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Added the following cards to your collection:");
+            return SubmitStagedCardsAsync("Added the following cards to your collection:");
         }
 
         [RelayCommand]
-        private async Task SubmitCardEditsAsync()
+        private Task SubmitCardEditsAsync()
         {
-            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Updated the following cards with these values:");
+            return SubmitStagedCardsAsync("Updated the following cards with these values:");
+        }
+        private async Task SubmitStagedCardsAsync(string summaryTitle)
+        {
+            // Commit price edits before submitting the staged rows.
+            if (!CommitSellPriceEditors())
+            {
+                return;
+            }
+
+            await SubmitBatchAsync(
+                CardsToAddOrEdit.Select(row => row.CardToAddOrEdit),
+                (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot),
+                clearAfter: true,
+                summaryTitle: summaryTitle);
         }
 
         [RelayCommand]
@@ -573,6 +586,20 @@ namespace CollectaMundo.ViewModels.ModifyCollection
             };
 
             return (decimal.Round(convertedPrice, 2, MidpointRounding.AwayFromZero), targetCurrency);
+        }
+        private bool CommitSellPriceEditors()
+        {
+            var allValid = true;
+
+            foreach (var row in CardsToAddOrEdit)
+            {
+                if (!row.SellPriceEditor.TryCommit())
+                {
+                    allValid = false;
+                }
+            }
+
+            return allValid;
         }
     }
 }

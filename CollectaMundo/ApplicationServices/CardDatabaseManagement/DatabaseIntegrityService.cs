@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement.Models;
-using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
+using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using System.Data.SQLite;
 using System.Diagnostics;
