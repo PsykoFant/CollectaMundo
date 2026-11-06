@@ -40,7 +40,7 @@
                   SelectedItem="{Binding SelectedCard, Mode=TwoWay}"
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ModifyCollectionViewModel.ClearSelectionTrigger, Mode=TwoWay}">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
+                <DataGridTemplateColumn Header="Name" MinWidth="150" SortMemberPath="Name">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
                             <sharedElements:FilterHeaderUserControl DataContext="{Binding DataContext.NameFilter, ElementName=MyCollectionDataGrid}" />
@@ -52,7 +52,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Set Name" Width="*" SortMemberPath="SetName">
+                <DataGridTemplateColumn Header="Set Name" MinWidth="150"  SortMemberPath="SetName">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
                             <sharedElements:FilterHeaderUserControl DataContext="{Binding DataContext.SetNameFilter, ElementName=MyCollectionDataGrid}" />
@@ -135,6 +135,11 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Sell price" Width="Auto" IsReadOnly="True">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DataContext.PricesVM.SellPriceHeader, ElementName=MyCollectionDataGrid}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock>

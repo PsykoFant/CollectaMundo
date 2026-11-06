@@ -17,40 +17,46 @@ namespace CollectaMundo.Presentation.Converters
 
             if (string.IsNullOrWhiteSpace(targetCurrency))
             {
-                return Format(price, sourceCurrency, culture);
+                return string.Empty;
             }
 
             sourceCurrency = sourceCurrency.ToUpperInvariant();
             targetCurrency = targetCurrency.ToUpperInvariant();
 
+            if (sourceCurrency is not ("USD" or "EUR") ||
+                targetCurrency is not ("USD" or "EUR"))
+            {
+                return string.Empty;
+            }
+
             if (sourceCurrency == targetCurrency)
             {
-                return Format(price, targetCurrency, culture);
+                return Format(price, culture);
             }
 
             if (values[3] is not decimal rate || rate <= 0m)
             {
-                return Format(price, sourceCurrency, culture);
+                return string.Empty;
             }
 
             try
             {
                 var convertedPrice = CurrencyConversionLogic.Convert(price, sourceCurrency, targetCurrency, rate);
 
-                return Format(convertedPrice, targetCurrency, culture);
+                return Format(convertedPrice, culture);
             }
             catch (ArgumentException)
             {
-                return Format(price, sourceCurrency, culture);
+                return string.Empty;
             }
+        }
+        private static string Format(decimal price, CultureInfo culture)
+        {
+            return price.ToString("N2", culture);
         }
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             throw new NotSupportedException();
-        }
-        private static string Format(decimal price, string currency, CultureInfo culture)
-        {
-            return $"{price.ToString("N2", culture)} {currency}";
         }
     }
 }

@@ -41,6 +41,9 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private string retailerPriceHeader = "Retailer Price";
 
+        [ObservableProperty]
+        private string sellPriceHeader = "Sell price";
+
         public void RefreshLatestPriceDate()
         {
             OnPropertyChanged(nameof(LatestPriceUpdateDate));
@@ -91,6 +94,7 @@ namespace CollectaMundo.ViewModels
             FoilPriceHeader = $"Foil Price ({currency})";
             EtchedPriceHeader = $"Etched Price ({currency})";
             RetailerPriceHeader = $"Retailer Price ({currency})";
+            SellPriceHeader = $"Sell price ({currency})";
 
             OnPropertyChanged(nameof(SellPriceDisplayCurrency));
             OnPropertyChanged(nameof(UsdToEurRate));

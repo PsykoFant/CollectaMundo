@@ -564,7 +564,7 @@
                                 </i:EventTrigger>
                             </i:Interaction.Triggers>
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
+                                <DataGridTemplateColumn Header="Name" MinWidth="150" SortMemberPath="Name">
                                     <DataGridTemplateColumn.HeaderTemplate>
                                         <DataTemplate>
                                             <sharedElements:FilterHeaderUserControl DataContext="{Binding DataContext.NameFilter, ElementName=AvailableCardsDataGrid}" />
