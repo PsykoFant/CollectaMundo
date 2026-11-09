@@ -149,6 +149,7 @@
                                         <Binding Path="SellPriceCurrency" />
                                         <Binding Path="DataContext.PricesVM.SellPriceDisplayCurrency" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
                                         <Binding Path="DataContext.PricesVM.UsdToEurRate" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                        <Binding Path="CardInCollectionPrice" />
                                     </MultiBinding>
                                 </TextBlock.Text>
                             </TextBlock>

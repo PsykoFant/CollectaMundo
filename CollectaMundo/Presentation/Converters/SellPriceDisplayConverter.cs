@@ -8,7 +8,7 @@ namespace CollectaMundo.Presentation.Converters
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values.Length < 4 || values[0] is not decimal price || values[1] is not string sourceCurrency || string.IsNullOrWhiteSpace(sourceCurrency))
+            if (values.Length < 5 || values[0] is not decimal sellPrice || values[1] is not string sourceCurrency || string.IsNullOrWhiteSpace(sourceCurrency))
             {
                 return string.Empty;
             }
@@ -29,26 +29,46 @@ namespace CollectaMundo.Presentation.Converters
                 return string.Empty;
             }
 
+            decimal displayedSellPrice;
+
             if (sourceCurrency == targetCurrency)
             {
-                return Format(price, culture);
+                displayedSellPrice = sellPrice;
+            }
+            else
+            {
+                if (values[3] is not decimal rate || rate <= 0m)
+                {
+                    return string.Empty;
+                }
+
+                try
+                {
+                    displayedSellPrice = CurrencyConversionLogic.Convert(sellPrice, sourceCurrency, targetCurrency, rate);
+                }
+                catch (ArgumentException)
+                {
+                    return string.Empty;
+                }
             }
 
-            if (values[3] is not decimal rate || rate <= 0m)
+            var sellPriceText = Format(displayedSellPrice, culture);
+
+            if (values[4] is not decimal retailerPrice || retailerPrice <= 0m)
             {
-                return string.Empty;
+                return sellPriceText;
             }
 
-            try
-            {
-                var convertedPrice = CurrencyConversionLogic.Convert(price, sourceCurrency, targetCurrency, rate);
+            var difference = displayedSellPrice - retailerPrice;
 
-                return Format(convertedPrice, culture);
-            }
-            catch (ArgumentException)
+            if (difference == 0m)
             {
-                return string.Empty;
+                return sellPriceText;
             }
+
+            var sign = difference > 0m ? "+" : "-";
+
+            return $"{sellPriceText} ({sign}{Format(Math.Abs(difference), culture)})";
         }
         private static string Format(decimal price, CultureInfo culture)
         {
