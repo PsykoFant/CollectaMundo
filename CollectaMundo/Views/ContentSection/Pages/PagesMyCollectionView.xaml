@@ -221,6 +221,16 @@
                                 </MultiBinding>
                             </MenuItem.CommandParameter>
                         </MenuItem>
+                        <MenuItem Header="Match retail price (-10%)" Style="{StaticResource BelerenBold}"
+                                  Command="{Binding DataContext.ModifyCollectionViewModel.MatchRetailPriceMinusTenPercentForSelectedCardsCommand,
+                            RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.CommandParameter>
+                                <MultiBinding Converter="{StaticResource MatchRetailPriceCommandParameterConverter}">
+                                    <Binding Path="PlacementTarget.SelectedItems" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                    <Binding Path="PlacementTarget.DataContext.PricesVM.SellPriceDisplayCurrency" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                </MultiBinding>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
                     </MenuItem>
                 </ContextMenu>
             </DataGrid.ContextMenu>

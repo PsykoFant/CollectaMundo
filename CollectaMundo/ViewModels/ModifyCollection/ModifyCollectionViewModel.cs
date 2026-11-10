@@ -462,26 +462,36 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         }
 
         [RelayCommand]
-        private async Task MatchRetailPriceForSelectedCardsAsync(MatchRetailPriceForSelectedCardsParameter? parameter)
+        private Task MatchRetailPriceForSelectedCardsAsync(MatchRetailPriceForSelectedCardsParameter? parameter)
+        {
+            return SubmitRetailPriceMatchAsync(parameter, discountRate: 0m, summaryTitle: "Matched sell price to retailer price for the following cards:");
+        }
+
+        [RelayCommand]
+        private Task MatchRetailPriceMinusTenPercentForSelectedCardsAsync(MatchRetailPriceForSelectedCardsParameter? parameter)
+        {
+            return SubmitRetailPriceMatchAsync(parameter, discountRate: 0.10m, summaryTitle: "Matched sell price to retailer price minus 10% for the following cards:");
+        }
+        private async Task SubmitRetailPriceMatchAsync(MatchRetailPriceForSelectedCardsParameter? parameter, decimal discountRate, string summaryTitle)
         {
             if (parameter is null)
             {
                 return;
             }
 
-            var edits = parameter.SelectedItems.OfType<CollectionCard>().
-                Select(card => (Card: card, RetailPrice: card.CardInCollectionPrice))
-                .Where(item => item.RetailPrice is > 0m)
-                .Select(item => CollectionCardDraftFactory.FromCollectionCardWithSellPrice(item.Card, item.RetailPrice!.Value, parameter.Currency)).ToList();
+            var edits = parameter.SelectedItems
+                .OfType<CollectionCard>()
+                .Select(card => CollectionCardDraftFactory.FromCollectionCardWithRetailPriceDiscount(card, discountRate, parameter.Currency))
+                .OfType<CollectionCardDraft>()
+                .ToList();
 
             if (edits.Count == 0)
             {
                 return;
             }
 
-            await SubmitBatchAsync(edits, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Matched sell price to retailer price for the following cards:");
+            await SubmitBatchAsync(edits, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle);
         }
-
         // Shared helpers 
         private async Task SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, Func<IEnumerable<CollectionCardDraft>, ICollectionIdentitySnapshot, Task<CollectionChangeSet<CollectionCardDbRow>>> submit, bool clearAfter, string summaryTitle)
         {
@@ -534,7 +544,8 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                         $"Finish: {identity.Finish}, " +
                         $"Location: {locationDisplayName}, " +
                         $"Owned: {row.CardsOwned}, " +
-                        $"Trade: {row.CardsForTrade})");
+                        $"Trade: {row.CardsForTrade}), " +
+                        $"Sell Price: {row.SellPrice} {row.SellPriceCurrency}");
                 }
             }
 

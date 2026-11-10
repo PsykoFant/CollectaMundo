@@ -2,7 +2,6 @@
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.CardLists.Models;
-using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.Shared.Factories
 {
@@ -69,6 +68,33 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
         public static CollectionCardDraft FromCollectionCardWithSellPrice(CollectionCard source, decimal sellPrice, string currency)
         {
             ArgumentNullException.ThrowIfNull(source);
+
+            var normalizedCurrency = NormalizeSellPriceCurrency(currency);
+
+            return CreateDraftWithSellPrice(source, sellPrice, normalizedCurrency);
+        }
+        public static CollectionCardDraft? FromCollectionCardWithRetailPriceDiscount(CollectionCard source, decimal discountRate, string currency)
+        {
+            ArgumentNullException.ThrowIfNull(source);
+
+            if (discountRate is < 0m or > 1m)
+            {
+                throw new ArgumentOutOfRangeException(nameof(discountRate));
+            }
+
+            var normalizedCurrency = NormalizeSellPriceCurrency(currency);
+
+            if (source.CardInCollectionPrice is not decimal retailPrice || retailPrice <= 0m)
+            {
+                return null;
+            }
+
+            var discountedPrice = decimal.Round(retailPrice * (1m - discountRate), 2, MidpointRounding.AwayFromZero);
+
+            return CreateDraftWithSellPrice(source, discountedPrice, normalizedCurrency);
+        }
+        private static string NormalizeSellPriceCurrency(string currency)
+        {
             ArgumentException.ThrowIfNullOrWhiteSpace(currency);
 
             var normalizedCurrency = currency.ToUpperInvariant();
@@ -78,13 +104,13 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 throw new ArgumentException($"Unsupported currency '{currency}'.", nameof(currency));
             }
 
+            return normalizedCurrency;
+        }
+        private static CollectionCardDraft CreateDraftWithSellPrice(CollectionCard source, decimal sellPrice, string normalizedCurrency)
+        {
             var draft = FromCollectionCard(source);
             draft.SellPrice = sellPrice;
             draft.SellPriceCurrency = normalizedCurrency;
-
-            Debug.WriteLine($"Created CollectionCardDraft with SellPrice: {draft.SellPrice} and Currency: {draft.SellPriceCurrency}");
-            Debug.WriteLine($"Created CollectionCardDraft from source: {source.Name} and Location: {source.SelectedLocationName}");
-            Debug.WriteLine($"Created CollectionCardDraft with Location: {draft.SelectedLocationName}");
 
             return draft;
         }
