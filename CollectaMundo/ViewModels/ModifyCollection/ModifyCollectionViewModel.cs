@@ -8,6 +8,7 @@ using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLists.Models;
+using CollectaMundo.ViewModels.ModifyCollection.ParameterModels;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -176,9 +177,9 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                     continue;
                 }
 
-                var displayPrice = GetSellPriceDisplay(editable, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
+                var (Price, Currency) = GetSellPriceDisplay(editable, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
 
-                CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(editable, _availableLocations, RefreshColumnsCommand, CountCommittedCommand, initialDisplaySellPrice: displayPrice.Price, displayCurrency: displayPrice.Currency));
+                CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(editable, _availableLocations, RefreshColumnsCommand, CountCommittedCommand, initialDisplaySellPrice: Price, displayCurrency: Currency));
             }
 
             ClearSelectionTrigger++;
@@ -329,9 +330,9 @@ namespace CollectaMundo.ViewModels.ModifyCollection
             row.CardsOwned--;
 
             var splitDraft = CollectionCardDraftFactory.FromSplit(row.CardToAddOrEdit);
-            var displayPrice = GetSellPriceDisplay(splitDraft, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
+            var (Price, Currency) = GetSellPriceDisplay(splitDraft, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
 
-            CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(splitDraft, _availableLocations, RefreshColumnsCommand, CountCommittedCommand, initialDisplaySellPrice: displayPrice.Price, displayCurrency: displayPrice.Currency));
+            CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(splitDraft, _availableLocations, RefreshColumnsCommand, CountCommittedCommand, initialDisplaySellPrice: Price, displayCurrency: Currency));
 
             RefreshColumnsTrigger++;
         }
@@ -460,6 +461,27 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                     : "Updated location for the following cards:");
         }
 
+        [RelayCommand]
+        private async Task MatchRetailPriceForSelectedCardsAsync(MatchRetailPriceForSelectedCardsParameter? parameter)
+        {
+            if (parameter is null)
+            {
+                return;
+            }
+
+            var edits = parameter.SelectedItems.OfType<CollectionCard>().
+                Select(card => (Card: card, RetailPrice: card.CardInCollectionPrice))
+                .Where(item => item.RetailPrice is > 0m)
+                .Select(item => CollectionCardDraftFactory.FromCollectionCardWithSellPrice(item.Card, item.RetailPrice!.Value, parameter.Currency)).ToList();
+
+            if (edits.Count == 0)
+            {
+                return;
+            }
+
+            await SubmitBatchAsync(edits, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Matched sell price to retailer price for the following cards:");
+        }
+
         // Shared helpers 
         private async Task SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, Func<IEnumerable<CollectionCardDraft>, ICollectionIdentitySnapshot, Task<CollectionChangeSet<CollectionCardDbRow>>> submit, bool clearAfter, string summaryTitle)
         {
@@ -523,8 +545,7 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                     sb.AppendLine();
                 }
 
-                sb.AppendLine("Deleted the following cards from your collection:")
-                  .AppendLine();
+                sb.AppendLine("Deleted the following cards from your collection:").AppendLine();
 
                 foreach (var c in submittedCards.Where(c => c.CardId.HasValue && changeSet.RemovedIds.Contains(c.CardId.Value)))
                 {

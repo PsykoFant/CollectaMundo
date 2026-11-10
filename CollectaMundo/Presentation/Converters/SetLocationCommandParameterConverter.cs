@@ -1,11 +1,6 @@
-﻿using CollectaMundo.ViewModels.ModifyCollection;
-using System;
+﻿using CollectaMundo.ViewModels.ModifyCollection.ParameterModels;
 using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 
 namespace CollectaMundo.Presentation.Converters

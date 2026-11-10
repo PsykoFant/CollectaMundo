@@ -63,6 +63,7 @@ namespace CollectaMundo.DomainLogic.ModifyCollection
 
             return draft;
         }
+
         // Helper methods for PrepareCardForList
         private static void ApplyNewDefaults(CollectionCardDraft draft, PrintingCard printing)
         {

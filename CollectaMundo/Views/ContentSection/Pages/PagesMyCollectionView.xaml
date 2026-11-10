@@ -194,7 +194,7 @@
                     <MenuItem Header="DELETE card(s) from collection" Style="{StaticResource BelerenBold}"
                                           Command="{Binding ModifyCollectionViewModel.DeleteSelectedCardsCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    <MenuItem Header="Set location" Style="{StaticResource BelerenBold}" ItemsSource="{Binding ModifyCollectionViewModel.LocationMenuItems}">
+                    <MenuItem Header="Set location..." Style="{StaticResource BelerenBold}" ItemsSource="{Binding ModifyCollectionViewModel.LocationMenuItems}">
                         <MenuItem.ItemContainerStyle>
                             <Style TargetType="MenuItem">
                                 <Setter Property="Header" Value="{Binding Header}" />
@@ -210,6 +210,17 @@
                                 </Setter>
                             </Style>
                         </MenuItem.ItemContainerStyle>
+                    </MenuItem>
+                    <MenuItem Header="With selected, update sell price..." Style="{StaticResource BelerenBold}">
+                        <MenuItem Header="Match retail price" Style="{StaticResource BelerenBold}" 
+                                  Command="{Binding DataContext.ModifyCollectionViewModel.MatchRetailPriceForSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.CommandParameter>
+                                <MultiBinding Converter="{StaticResource MatchRetailPriceCommandParameterConverter}">
+                                    <Binding Path="PlacementTarget.SelectedItems" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                    <Binding Path="PlacementTarget.DataContext.PricesVM.SellPriceDisplayCurrency" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                </MultiBinding>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
                     </MenuItem>
                 </ContextMenu>
             </DataGrid.ContextMenu>

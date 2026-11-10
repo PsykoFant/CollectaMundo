@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.Infrastructure.CardLists.Models;
+using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.Shared.Factories
 {
@@ -14,6 +15,8 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
             {
                 CardId = source.CardId,
                 Uuid = source.Uuid,
+                Name = source.Name,
+                SetName = source.SetName,
 
                 SelectedCondition = source.SelectedCondition,
                 Language = source.Language,
@@ -21,6 +24,7 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 SellPrice = source.SellPrice,
                 SellPriceCurrency = source.SellPriceCurrency,
                 SelectedLocationId = source.SelectedLocationId,
+                CardLocationProvider = source.CardLocationProvider,
                 Comment = source.Comment,
 
                 CardsOwned = source.CardsOwned,
@@ -62,7 +66,28 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
 
             return draft;
         }
+        public static CollectionCardDraft FromCollectionCardWithSellPrice(CollectionCard source, decimal sellPrice, string currency)
+        {
+            ArgumentNullException.ThrowIfNull(source);
+            ArgumentException.ThrowIfNullOrWhiteSpace(currency);
 
+            var normalizedCurrency = currency.ToUpperInvariant();
+
+            if (normalizedCurrency is not ("USD" or "EUR"))
+            {
+                throw new ArgumentException($"Unsupported currency '{currency}'.", nameof(currency));
+            }
+
+            var draft = FromCollectionCard(source);
+            draft.SellPrice = sellPrice;
+            draft.SellPriceCurrency = normalizedCurrency;
+
+            Debug.WriteLine($"Created CollectionCardDraft with SellPrice: {draft.SellPrice} and Currency: {draft.SellPriceCurrency}");
+            Debug.WriteLine($"Created CollectionCardDraft from source: {source.Name} and Location: {source.SelectedLocationName}");
+            Debug.WriteLine($"Created CollectionCardDraft with Location: {draft.SelectedLocationName}");
+
+            return draft;
+        }
 
         // From CollectionCardDbRow to CollectionCardDraft - full
         public static CollectionCardDraft FromDbRow(CollectionCardDbRow row)

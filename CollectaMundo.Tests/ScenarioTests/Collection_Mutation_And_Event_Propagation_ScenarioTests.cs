@@ -2,7 +2,7 @@
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.Tests.TestUtils;
-using CollectaMundo.ViewModels.ModifyCollection;
+using CollectaMundo.ViewModels.ModifyCollection.ParameterModels;
 using System.Windows.Input;
 
 namespace CollectaMundo.Tests.ScenarioTests
