@@ -1503,8 +1503,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             angel1.Comment.Should().Be("water damage");
             angel1.CardsOwned.Should().Be(1);
             angel1.CardsForTrade.Should().Be(0);
-            angel1.SellPrice.Should().BeNull();
-            angel1.SellPriceCurrency.Should().BeNull();
+            angel1.SellPrice.Should().Be(15.1m);
+            angel1.SellPriceCurrency.Should().Be("USD");
 
             // Angel collection identity 2 - should be imported with newly created location, comment and other fields using defaults
             var angel2 = myCollectionInMemory.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationDisplayName == "Storage: Binder 2");

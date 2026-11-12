@@ -1,5 +1,5 @@
 UUID,Sted,Comment,Debug,Sell price,Sell price currency
-aff7557c-2e85-5bda-8231-d8f1e46b43c8,Binder 1,"water damage","Angel of Glory's Rise. Existing location (storage)",,eur
+aff7557c-2e85-5bda-8231-d8f1e46b43c8,Binder 1,"water damage","Angel of Glory's Rise. Existing location (storage)",15.1,usd
 aff7557c-2e85-5bda-8231-d8f1e46b43c8,Binder 2,"pen mark","Angel of Glory's Rise. New location",1,gbp
 154a09f3-65e3-5821-bc02-bd972b3be676,Aggro Fish,,"Snapping Sailback. Existing locaton (deck)",2.09,kr
 154a09f3-65e3-5821-bc02-bd972b3be676,Binder 3,,"Snapping Sailback. Existing locaton (deck). Not added to existing identity because of location.","2,50",EUR
