@@ -18,7 +18,7 @@
         <FlowDocumentScrollViewer Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Center">
             <FlowDocument>
                 <Paragraph>
-                    If you are here, it means that The Import Wizard was not able to map all cards in import file uniquely to a card in the card database.
+                    If you are, it means that The Import Wizard was not able to map all cards in import file uniquely to a card in the card database.
                 </Paragraph>
                 <Paragraph>
                     Fret not, bold mage! Now we will try to map the cards in the import file using the card name + set name and/or set code, assuming they exist in the import file.
