@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.Tests.TestUtils;
-using CollectaMundo.ViewModels.ModifyCollection;
+using CollectaMundo.ViewModels.ModifyCollection.ParameterModels;
 
 namespace CollectaMundo.Tests.ScenarioTests
 {

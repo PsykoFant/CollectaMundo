@@ -14,11 +14,16 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
             {
                 CardId = source.CardId,
                 Uuid = source.Uuid,
+                Name = source.Name,
+                SetName = source.SetName,
 
                 SelectedCondition = source.SelectedCondition,
                 Language = source.Language,
                 SelectedFinish = source.SelectedFinish,
+                SellPrice = source.SellPrice,
+                SellPriceCurrency = source.SellPriceCurrency,
                 SelectedLocationId = source.SelectedLocationId,
+                CardLocationProvider = source.CardLocationProvider,
                 Comment = source.Comment,
 
                 CardsOwned = source.CardsOwned,
@@ -60,7 +65,55 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
 
             return draft;
         }
+        public static CollectionCardDraft FromCollectionCardWithSellPrice(CollectionCard source, decimal sellPrice, string currency)
+        {
+            ArgumentNullException.ThrowIfNull(source);
 
+            var normalizedCurrency = NormalizeSellPriceCurrency(currency);
+
+            return CreateDraftWithSellPrice(source, sellPrice, normalizedCurrency);
+        }
+        public static CollectionCardDraft? FromCollectionCardWithRetailPriceDiscount(CollectionCard source, decimal discountRate, string currency)
+        {
+            ArgumentNullException.ThrowIfNull(source);
+
+            if (discountRate is < 0m or > 1m)
+            {
+                throw new ArgumentOutOfRangeException(nameof(discountRate));
+            }
+
+            var normalizedCurrency = NormalizeSellPriceCurrency(currency);
+
+            if (source.CardInCollectionPrice is not decimal retailPrice || retailPrice <= 0m)
+            {
+                return null;
+            }
+
+            var discountedPrice = decimal.Round(retailPrice * (1m - discountRate), 2, MidpointRounding.AwayFromZero);
+
+            return CreateDraftWithSellPrice(source, discountedPrice, normalizedCurrency);
+        }
+        private static string NormalizeSellPriceCurrency(string currency)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(currency);
+
+            var normalizedCurrency = currency.ToUpperInvariant();
+
+            if (normalizedCurrency is not ("USD" or "EUR"))
+            {
+                throw new ArgumentException($"Unsupported currency '{currency}'.", nameof(currency));
+            }
+
+            return normalizedCurrency;
+        }
+        private static CollectionCardDraft CreateDraftWithSellPrice(CollectionCard source, decimal sellPrice, string normalizedCurrency)
+        {
+            var draft = FromCollectionCard(source);
+            draft.SellPrice = sellPrice;
+            draft.SellPriceCurrency = normalizedCurrency;
+
+            return draft;
+        }
 
         // From CollectionCardDbRow to CollectionCardDraft - full
         public static CollectionCardDraft FromDbRow(CollectionCardDbRow row)
@@ -74,6 +127,8 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 SelectedFinish = row.Identity.Finish,
                 SelectedLocationId = row.Identity.LocationId,
                 Comment = row.Identity.Comment,
+                SellPrice = row.SellPrice,
+                SellPriceCurrency = row.SellPriceCurrency,
                 CardsOwned = row.CardsOwned,
                 CardsForTrade = row.CardsForTrade
             };
@@ -124,6 +179,8 @@ namespace CollectaMundo.DomainLogic.Shared.Factories
                 SelectedCondition = source.SelectedCondition,
                 Language = source.Language,
                 SelectedFinish = source.SelectedFinish,
+                SellPrice = source.SellPrice,
+                SellPriceCurrency = source.SellPriceCurrency,
                 SelectedLocationId = source.SelectedLocationId,
                 Comment = source.Comment
             };

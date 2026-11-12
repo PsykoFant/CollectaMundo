@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.DomainLogic.CardPrices;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -22,8 +22,11 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private RetailerOption? selectedRetailer;
 
-        // Last price update date
+        // Last price and conversion rate update date
         public string LatestPriceUpdateDate => $"Card prices updated: {_appSettings.PriceInfo.PricesUpdatedDate}";
+        public string SellPriceDisplayCurrency => GetCurrencyCodeForRetailer(_appSettings.PriceInfo.Retailer);
+
+        public decimal UsdToEurRate => _appSettings.PriceInfo.UsdToEurRate;
 
         // Price column headers (dynamic based on retailer)
         [ObservableProperty]
@@ -37,6 +40,9 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private string retailerPriceHeader = "Retailer Price";
+
+        [ObservableProperty]
+        private string sellPriceHeader = "Sell price";
 
         public void RefreshLatestPriceDate()
         {
@@ -63,7 +69,8 @@ namespace CollectaMundo.ViewModels
         }
 
         // simple currency mapping
-        private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "\u20AC" : "\u0024";
+        private static string GetCurrencyCodeForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "EUR" : "USD";
+        private static string GetCurrencySymbol(string currencyCode) => currencyCode == "EUR" ? "\u20AC" : "\u0024";
 
         // Command and command actions
         [RelayCommand]
@@ -81,11 +88,16 @@ namespace CollectaMundo.ViewModels
         private void UpdatePriceHeaders()
         {
             var key = SelectedRetailer?.Key ?? "cardmarket";
-            var currency = GetCurrencyForRetailer(key);
+            var currency = GetCurrencySymbol(GetCurrencyCodeForRetailer(key));
+
             PriceHeader = $"Price ({currency})";
             FoilPriceHeader = $"Foil Price ({currency})";
             EtchedPriceHeader = $"Etched Price ({currency})";
             RetailerPriceHeader = $"Retailer Price ({currency})";
+            SellPriceHeader = $"Sell price ({currency})";
+
+            OnPropertyChanged(nameof(SellPriceDisplayCurrency));
+            OnPropertyChanged(nameof(UsdToEurRate));
         }
     }
 }

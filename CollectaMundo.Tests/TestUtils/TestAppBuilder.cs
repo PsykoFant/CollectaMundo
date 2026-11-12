@@ -17,6 +17,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
+using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLegalities;
 using CollectaMundo.DomainLogic.CardLocations;
@@ -55,10 +56,7 @@ namespace CollectaMundo.Tests.TestUtils;
 
 public static class TestAppBuilder
 {
-    public static async Task<(
-    MainWindowViewModel VM,
-    OperationOverlayViewModel OperationOverlayVM,
-    FilteringService FilteringService)>
+    public static async Task<(MainWindowViewModel VM, OperationOverlayViewModel OperationOverlayVM, FilteringService FilteringService)>
     BuildAsync(
         InMemoryDatabaseFixture fixture,
         IDbConnectionFactory dbFactory,

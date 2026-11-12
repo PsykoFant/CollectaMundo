@@ -2,11 +2,13 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.CollectionMutations.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLists.Models;
+using CollectaMundo.ViewModels.ModifyCollection.ParameterModels;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,6 +22,8 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         private readonly IModifyCollectionService _service;
         private readonly ICardCollectionHost _cardCollectionHost;
         private IReadOnlyList<CardLocation> _availableLocations = [];
+        private readonly Func<string> _getSellPriceDisplayCurrency;
+        private readonly Func<decimal?> _getUsdToEurRate;
         private readonly bool _removeCardWhenZero;
 
         public event EventHandler<CollectionChangeSet<CollectionCardDbRow>>? CollectionChanged;
@@ -31,11 +35,13 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         public IReadOnlyList<LocationMenuItemViewModel> LocationMenuItems { get; private set; } = [];
 
         // Constructor
-        public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost cardCollectionHost, bool removeCardWhenZero)
+        public ModifyCollectionViewModel(IModifyCollectionService service, ICardCollectionHost cardCollectionHost, bool removeCardWhenZero, Func<string> getSellPriceDisplayCurrency, Func<decimal?> getUsdToEurRate)
         {
             _cardCollectionHost = cardCollectionHost;
             _service = service;
             _removeCardWhenZero = removeCardWhenZero;
+            _getSellPriceDisplayCurrency = getSellPriceDisplayCurrency;
+            _getUsdToEurRate = getUsdToEurRate;
 
             CardsToAddOrEdit.CollectionChanged += (_, _) =>
             {
@@ -89,18 +95,37 @@ namespace CollectaMundo.ViewModels.ModifyCollection
 
                 card.CardsOwned = current.CardsOwned;
                 card.CardsForTrade = current.CardsForTrade;
+                card.SellPrice = current.SellPrice;
+                card.SellPriceCurrency = current.SellPriceCurrency;
                 card.SelectedCondition = current.SelectedCondition;
                 card.Language = current.Language;
                 card.SelectedFinish = current.SelectedFinish;
                 card.SelectedLocationId = current.SelectedLocationId;
                 card.Comment = current.Comment;
+
+                // Refresh the displayed value while preserving any uncommitted edit.
+                var (Price, Currency) = GetSellPriceDisplay(card, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
+                row.SellPriceEditor.RefreshDisplay(Price, Currency);
             }
 
             RefreshColumnsTrigger++;
             OnPropertyChanged(nameof(IsCollectionEditVisible));
             OnPropertyChanged(nameof(ShowCounts));
         }
+        public void RefreshSellPriceEditors()
+        {
+            var displayCurrency = _getSellPriceDisplayCurrency();
+            var usdToEurRate = _getUsdToEurRate();
 
+            foreach (var row in CardsToAddOrEdit)
+            {
+                var (Price, Currency) = GetSellPriceDisplay(row.CardToAddOrEdit, displayCurrency, usdToEurRate);
+
+                row.SellPriceEditor.RefreshDisplay(Price, Currency);
+            }
+        }
+
+        // Properties for binding to the listview
         [ObservableProperty]
         private string statusMessage = string.Empty;
 
@@ -152,7 +177,9 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                     continue;
                 }
 
-                CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(editable, _availableLocations, RefreshColumnsCommand, CountCommittedCommand));
+                var (Price, Currency) = GetSellPriceDisplay(editable, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
+
+                CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(editable, _availableLocations, RefreshColumnsCommand, CountCommittedCommand, initialDisplaySellPrice: Price, displayCurrency: Currency));
             }
 
             ClearSelectionTrigger++;
@@ -303,23 +330,38 @@ namespace CollectaMundo.ViewModels.ModifyCollection
             row.CardsOwned--;
 
             var splitDraft = CollectionCardDraftFactory.FromSplit(row.CardToAddOrEdit);
+            var (Price, Currency) = GetSellPriceDisplay(splitDraft, _getSellPriceDisplayCurrency(), _getUsdToEurRate());
 
-            CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(splitDraft, _availableLocations, RefreshColumnsCommand, CountCommittedCommand));
+            CardsToAddOrEdit.Add(new CollectionCardDraftRowViewModel(splitDraft, _availableLocations, RefreshColumnsCommand, CountCommittedCommand, initialDisplaySellPrice: Price, displayCurrency: Currency));
 
             RefreshColumnsTrigger++;
         }
 
         // Submit cards from listview
         [RelayCommand]
-        private async Task SubmitNewCardsAsync()
+        private Task SubmitNewCardsAsync()
         {
-            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Added the following cards to your collection:");
+            return SubmitStagedCardsAsync("Added the following cards to your collection:");
         }
 
         [RelayCommand]
-        private async Task SubmitCardEditsAsync()
+        private Task SubmitCardEditsAsync()
         {
-            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Updated the following cards with these values:");
+            return SubmitStagedCardsAsync("Updated the following cards with these values:");
+        }
+        private async Task SubmitStagedCardsAsync(string summaryTitle)
+        {
+            // Commit price edits before submitting the staged rows.
+            if (!CommitSellPriceEditors())
+            {
+                return;
+            }
+
+            await SubmitBatchAsync(
+                CardsToAddOrEdit.Select(row => row.CardToAddOrEdit),
+                (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot),
+                clearAfter: true,
+                summaryTitle: summaryTitle);
         }
 
         [RelayCommand]
@@ -419,12 +461,42 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                     : "Updated location for the following cards:");
         }
 
+        [RelayCommand]
+        private Task MatchRetailPriceForSelectedCardsAsync(MatchRetailPriceForSelectedCardsParameter? parameter)
+        {
+            return SubmitRetailPriceMatchAsync(parameter, discountRate: 0m, summaryTitle: "Matched sell price to retailer price for the following cards:");
+        }
+
+        [RelayCommand]
+        private Task MatchRetailPriceMinusTenPercentForSelectedCardsAsync(MatchRetailPriceForSelectedCardsParameter? parameter)
+        {
+            return SubmitRetailPriceMatchAsync(parameter, discountRate: 0.10m, summaryTitle: "Matched sell price to retailer price minus 10% for the following cards:");
+        }
+        private async Task SubmitRetailPriceMatchAsync(MatchRetailPriceForSelectedCardsParameter? parameter, decimal discountRate, string summaryTitle)
+        {
+            if (parameter is null)
+            {
+                return;
+            }
+
+            var edits = parameter.SelectedItems
+                .OfType<CollectionCard>()
+                .Select(card => CollectionCardDraftFactory.FromCollectionCardWithRetailPriceDiscount(card, discountRate, parameter.Currency))
+                .OfType<CollectionCardDraft>()
+                .ToList();
+
+            if (edits.Count == 0)
+            {
+                return;
+            }
+
+            await SubmitBatchAsync(edits, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle);
+        }
         // Shared helpers 
         private async Task SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, Func<IEnumerable<CollectionCardDraft>, ICollectionIdentitySnapshot, Task<CollectionChangeSet<CollectionCardDbRow>>> submit, bool clearAfter, string summaryTitle)
         {
             var cardList = cards.ToList();
             var snapshot = _cardCollectionHost.CreateCollectionIdentitySnapshot();
-
             var changeSet = await submit(cardList, snapshot);
 
             if (clearAfter)
@@ -472,7 +544,8 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                         $"Finish: {identity.Finish}, " +
                         $"Location: {locationDisplayName}, " +
                         $"Owned: {row.CardsOwned}, " +
-                        $"Trade: {row.CardsForTrade})");
+                        $"Trade: {row.CardsForTrade}), " +
+                        $"Sell Price: {row.SellPrice} {row.SellPriceCurrency}");
                 }
             }
 
@@ -483,8 +556,7 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                     sb.AppendLine();
                 }
 
-                sb.AppendLine("Deleted the following cards from your collection:")
-                  .AppendLine();
+                sb.AppendLine("Deleted the following cards from your collection:").AppendLine();
 
                 foreach (var c in submittedCards.Where(c => c.CardId.HasValue && changeSet.RemovedIds.Contains(c.CardId.Value)))
                 {
@@ -520,6 +592,57 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 new LocationMenuItemViewModel{ Header = "Decks", Children = decks},
                 new LocationMenuItemViewModel{ Header = "Storage", Children = storage}
             ];
+        }
+        private static (decimal? Price, string Currency) GetSellPriceDisplay(CollectionCardDraft draft, string displayCurrency, decimal? usdToEurRate)
+        {
+            ArgumentNullException.ThrowIfNull(draft);
+
+            var targetCurrency = displayCurrency.ToUpperInvariant();
+
+            if (targetCurrency is not ("USD" or "EUR"))
+            {
+                throw new ArgumentException($"Unsupported display currency '{displayCurrency}'.", nameof(displayCurrency));
+            }
+
+            if (draft.SellPrice is not decimal sellPrice)
+            {
+                return (null, targetCurrency);
+            }
+
+            if (string.IsNullOrWhiteSpace(draft.SellPriceCurrency))
+            {
+                throw new InvalidOperationException("A draft with a sell price must also have a sell price currency.");
+            }
+
+            var sourceCurrency = draft.SellPriceCurrency.ToUpperInvariant();
+
+            if (sourceCurrency == targetCurrency)
+            {
+                return (sellPrice, targetCurrency);
+            }
+
+            if (usdToEurRate is not decimal rate)
+            {
+                throw new InvalidOperationException("An exchange rate is required to display this sell price in another currency.");
+            }
+
+            var convertedPrice = CurrencyConversionLogic.Convert(sellPrice, sourceCurrency, targetCurrency, rate);
+
+            return (convertedPrice, targetCurrency);
+        }
+        private bool CommitSellPriceEditors()
+        {
+            var allValid = true;
+
+            foreach (var row in CardsToAddOrEdit)
+            {
+                if (!row.SellPriceEditor.TryCommit())
+                {
+                    allValid = false;
+                }
+            }
+
+            return allValid;
         }
     }
 }

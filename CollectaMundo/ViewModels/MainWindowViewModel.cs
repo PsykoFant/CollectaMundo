@@ -15,6 +15,7 @@ using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
+using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardLocations.Models;
@@ -99,6 +100,8 @@ namespace CollectaMundo.ViewModels
         public CardListViewModel<CollectionCard> MyCollectionVM { get; }
         public CardListViewModel<OracleCard> OracleCardsVM { get; }
         public CardListViewModel<ManaSymbolViewModel> ColorIconsViewModel { get; }
+
+
         public ModifyCollectionViewModel AddCardsVM { get; }
         public ModifyCollectionViewModel EditCardsVM { get; }
         public DeckManagementViewModel DeckManagementVM { get; }
@@ -186,8 +189,9 @@ namespace CollectaMundo.ViewModels
             ColorIconsViewModel = new CardListViewModel<ManaSymbolViewModel> { Cards = manaSymbols, FilteredCards = manaSymbols };
 
             // Modify collection viewmodels
-            AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true);
-            EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false);
+            AddCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: true, GetSellPriceDisplayCurrency, GetUsdToEurRate);
+
+            EditCardsVM = new ModifyCollectionViewModel(_modifyService, this, removeCardWhenZero: false, GetSellPriceDisplayCurrency, GetUsdToEurRate);
 
             // filtering viewmodel
             FilterPanelVM = new FilterPanelViewModel(_filteringService);
@@ -230,6 +234,11 @@ namespace CollectaMundo.ViewModels
             // event wiring
             SubscribeChildVmEvents();
         }
+        string GetSellPriceDisplayCurrency() => string.Equals(_settings.PriceInfo.Retailer, "cardmarket", StringComparison.OrdinalIgnoreCase)
+            ? "EUR"
+            : "USD";
+
+        decimal? GetUsdToEurRate() => _settings.PriceInfo.UsdToEurRate;
         public static async Task<MainWindowViewModel> CreateAsync(
             IModifyCollectionService editService,
             ICardImageService cardImageService,
@@ -527,9 +536,11 @@ namespace CollectaMundo.ViewModels
             {
                 if (cardById.TryGetValue(row.CardId, out var existingCard))
                 {
-                    // Import mutation rows contain only collection identity/quantity data. The existing CollectionCard already has the hydrated PrintingCard, so for existing rows we only need to apply quantity deltas.
+                    // Keep the existing hydrated card and apply the imported quantity deltas and persisted sell-price values.
                     existingCard.CardsOwned += row.CardsOwned;
                     existingCard.CardsForTrade += row.CardsForTrade;
+                    existingCard.SellPrice = row.SellPrice;
+                    existingCard.SellPriceCurrency = row.SellPriceCurrency;
                     existingCard.RecomputeCollectionPrice();
 
                     addedOrUpdated.Add(existingCard);
@@ -703,12 +714,13 @@ namespace CollectaMundo.ViewModels
 
             Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}");
             PricesVM.RefreshLatestPriceDate();
+            AddCardsVM.RefreshSellPriceEditors();
+            EditCardsVM.RefreshSellPriceEditors();
         }
         public ICollectionIdentitySnapshot CreateCollectionIdentitySnapshot()
         {
             return CollectionSnapshotFactory.CreateIdentitySnapshot(MyCollectionVM.Cards);
         }
-
         public ICollectionQuantitySnapshot CreateCollectionQuantitySnapshot()
         {
             var deckLocationIds = _cardLocationLookupStore.GetAll().Where(x => x.Type == CardLocationType.Deck).Select(x => x.Id).ToHashSet();

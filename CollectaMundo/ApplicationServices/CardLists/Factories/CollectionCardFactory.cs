@@ -20,7 +20,9 @@ namespace CollectaMundo.ApplicationServices.CardLists.Factories
                 Language = identity.Language,
                 SelectedFinish = identity.Finish,
                 SelectedLocationId = identity.LocationId,
-                Comment = identity.Comment
+                Comment = identity.Comment,
+                SellPrice = row.SellPrice,
+                SellPriceCurrency = row.SellPriceCurrency
             };
         }
     }

@@ -12,6 +12,8 @@
         CardsForTrade,
         Location,
         Comment,
+        SellPrice,
+        SellPriceCurrency,
         None
     }
 }

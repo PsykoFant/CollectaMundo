@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.DomainLogic.Shared.Factories;
+using CollectaMundo.Presentation.Parsing;
 using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -438,6 +439,8 @@ namespace CollectaMundo.DomainLogic.Import
             var languageHeader = GetMappedHeader(fieldMappings, ImportField.Language);
             var locationHeader = GetMappedHeader(fieldMappings, ImportField.Location);
             var commentHeader = GetMappedHeader(fieldMappings, ImportField.Comment);
+            var sellPriceHeader = GetMappedHeader(fieldMappings, ImportField.SellPrice);
+            var sellPriceCurrencyHeader = GetMappedHeader(fieldMappings, ImportField.SellPriceCurrency);
 
             var resolved = new List<ResolvedImportItem>(items.Count);
 
@@ -456,21 +459,16 @@ namespace CollectaMundo.DomainLogic.Import
 
                 // Quantities
                 var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader, defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsOwned), warnings, "CardsOwned");
-
                 var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader, defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsForTrade), warnings, "CardsForTrade");
 
                 // Additional fields mapped values (defaulting happens here, but will be validated strictly later)
                 var condition = ResolveMappedValue(item, conditionHeader, conditionMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition);
-
                 var finish = ResolveMappedValue(item, finishHeader, finishMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish);
-
                 var language = ResolveMappedValue(item, languageHeader, languageMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
-
                 var locationDisplayName = ResolveMappedValue(item, locationHeader, locationMappings);
-
                 var locationId = ResolveLocationId(locationDisplayName, availableLocations, warnings);
-
                 var comment = ResolveRawValue(item, commentHeader) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Comment);
+                var (sellPrice, sellPriceCurrency) = ResolveSellPricePair(ResolveRawValue(item, sellPriceHeader), ResolveRawValue(item, sellPriceCurrencyHeader), warnings);
 
                 var resolvedItem = new ResolvedImportItem
                 {
@@ -483,7 +481,9 @@ namespace CollectaMundo.DomainLogic.Import
                     Finish = finish,
                     Language = language,
                     LocationId = locationId,
-                    Comment = comment
+                    Comment = comment,
+                    SellPrice = sellPrice,
+                    SellPriceCurrency = sellPriceCurrency
                 };
 
                 resolvedItem.AddWarnings(warnings);
@@ -579,6 +579,43 @@ namespace CollectaMundo.DomainLogic.Import
 
             warnings.Add($"Location '{name}' matched multiple locations.");
             return null;
+        }
+        private static (decimal? SellPrice, string? Currency) ResolveSellPricePair(string? rawPrice, string? rawCurrency, List<string> warnings)
+        {
+            const string fallbackCurrency = "EUR";
+
+            var priceIsBlank = string.IsNullOrWhiteSpace(rawPrice);
+            var currencyIsBlank = string.IsNullOrWhiteSpace(rawCurrency);
+
+            if (priceIsBlank && currencyIsBlank)
+            {
+                return (null, null);
+            }
+
+            if (priceIsBlank)
+            {
+                warnings.Add("Sell price is blank; neither sell price nor currency was imported.");
+                return (null, null);
+            }
+
+            if (!SellPriceInputParser.TryParse(rawPrice, out var sellPrice))
+            {
+                warnings.Add($"Sell price '{rawPrice}' is invalid; neither sell price nor currency was imported.");
+                return (null, null);
+            }
+
+            var currency = currencyIsBlank ? null : rawCurrency!.Trim().ToUpperInvariant();
+
+            if (currency is "USD" or "EUR")
+            {
+                return (sellPrice, currency);
+            }
+
+            warnings.Add(currencyIsBlank
+                ? $"Sell price currency is blank; fallback currency '{fallbackCurrency}' was used."
+                : $"Sell price currency '{rawCurrency}' is unsupported; fallback currency '{fallbackCurrency}' was used.");
+
+            return (sellPrice, fallbackCurrency);
         }
         private static string? ResolveRawValue(TempCardItem item, string? csvHeader)
         {
@@ -980,7 +1017,9 @@ namespace CollectaMundo.DomainLogic.Import
                     locationId: r.LocationId,
                     comment: r.Comment ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Comment)),
                 r.CardsOwned,
-                r.CardsForTrade
+                r.CardsForTrade,
+                r.SellPrice,
+                r.SellPriceCurrency
             })
             .GroupBy(x => x.Identity)
             .Select(g =>
@@ -993,6 +1032,8 @@ namespace CollectaMundo.DomainLogic.Import
                     tradeTotal = ownedTotal;
                 }
 
+                var firstPricedItem = g.FirstOrDefault(x => x.SellPrice.HasValue);
+
                 return new CollectionUpsertItem(
                     Uuid: g.Key.Uuid,
                     Language: g.Key.Language,
@@ -1001,10 +1042,11 @@ namespace CollectaMundo.DomainLogic.Import
                     LocationId: g.Key.LocationId,
                     Comment: g.Key.Comment,
                     CardsOwned: ownedTotal,
-                    CardsForTrade: tradeTotal
-                );
-            })
-            ];
+                    CardsForTrade: tradeTotal,
+                    SellPrice: firstPricedItem?.SellPrice,
+                    SellPriceCurrency: firstPricedItem?.SellPriceCurrency
+                    );
+            })];
         }
 
         #endregion

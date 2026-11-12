@@ -53,10 +53,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 
         public int CardId { get; init; }
 
-        // ---------------------------------------------------------
-        // Collection state
-        // ---------------------------------------------------------
-
         [ObservableProperty]
         private string? selectedCondition;
 
@@ -67,16 +63,31 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         private string? language;
 
         [ObservableProperty]
+        private int? selectedLocationId;
+
+        [ObservableProperty]
+        private string? comment;
+
+
+        // ---------------------------------------------------------
+        // Collection quantities
+        // ---------------------------------------------------------
+
+        [ObservableProperty]
         private int cardsOwned;
 
         [ObservableProperty]
         private int cardsForTrade;
 
+
+        // ---------------------------------------------------------
+        // Selling price
+        // ---------------------------------------------------------
         [ObservableProperty]
-        private int? selectedLocationId;
+        private decimal? sellPrice;
 
         [ObservableProperty]
-        private string? comment;
+        private string? sellPriceCurrency;
 
 
         // ---------------------------------------------------------

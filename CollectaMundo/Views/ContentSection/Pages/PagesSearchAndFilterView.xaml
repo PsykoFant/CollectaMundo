@@ -38,7 +38,7 @@
                   SelectedItem="{Binding SelectedCard, Mode=TwoWay}"                  
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ModifyCollectionViewModel.ClearSelectionTrigger, Mode=TwoWay}">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">                    
+                <DataGridTemplateColumn Header="Name" MinWidth="150" SortMemberPath="Name">                    
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
                             <sharedElements:FilterHeaderUserControl DataContext="{Binding DataContext.NameFilter, ElementName=AllCardsDataGrid}" />
@@ -50,7 +50,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Set Name" Width="*" SortMemberPath="SetName">
+                <DataGridTemplateColumn Header="Set Name" MinWidth="150" SortMemberPath="SetName">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
                             <sharedElements:FilterHeaderUserControl DataContext="{Binding DataContext.SetNameFilter, ElementName=AllCardsDataGrid}" />

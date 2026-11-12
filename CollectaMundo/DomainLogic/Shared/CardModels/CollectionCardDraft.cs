@@ -19,6 +19,12 @@ namespace CollectaMundo.DomainLogic.CollectionMutations.Models
         private int cardsForTrade;
 
         [ObservableProperty]
+        private decimal? sellPrice;
+
+        [ObservableProperty]
+        private string? sellPriceCurrency;
+
+        [ObservableProperty]
         private string? selectedCondition;
         public IReadOnlyList<string> Conditions { get; init; } = ConditionOptions.Values;
 
@@ -33,23 +39,19 @@ namespace CollectaMundo.DomainLogic.CollectionMutations.Models
         [ObservableProperty]
         private int? selectedLocationId;
         public IKeyedDataProvider<int, CardLocation>? CardLocationProvider { get; set; }
-        public string? SelectedLocationName =>
-            SelectedLocationId is int id
+        public string? SelectedLocationName => SelectedLocationId is int id
                 ? CardLocationProvider?.Get(id)?.Name
                 : null;
-        public string? SelectedLocationDisplayName =>
-            SelectedLocationId is int id
+        public string? SelectedLocationDisplayName => SelectedLocationId is int id
                 ? CardLocationProvider?.Get(id)?.DisplayName
                 : null;
-        public CardLocationType? SelectedLocationType =>
-            SelectedLocationId is int id
+        public CardLocationType? SelectedLocationType => SelectedLocationId is int id
                 ? CardLocationProvider?.Get(id)?.Type
                 : null;
         partial void OnSelectedLocationIdChanged(int? value)
         {
             RefreshLocationsFromProvider();
         }
-
         public void RefreshLocationsFromProvider()
         {
             OnPropertyChanged(nameof(SelectedLocationName));

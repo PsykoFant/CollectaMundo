@@ -13,5 +13,7 @@
     <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
     <converters:AddCardsToDeckCommandParameterConverter x:Key="AddCardsToDeckCommandParameterConverter"/>
     <converters:SetLocationCommandParameterConverter x:Key="SetLocationCommandParameterConverter" />
+    <converters:MatchRetailPriceCommandParameterConverter x:Key="MatchRetailPriceCommandParameterConverter" />
     <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <converters:SellPriceDisplayConverter x:Key="SellPriceDisplayConverter" />
 </ResourceDictionary>

@@ -10,6 +10,7 @@ using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using FluentAssertions;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
 
 namespace CollectaMundo.Tests.ScenarioTests
@@ -180,12 +181,15 @@ namespace CollectaMundo.Tests.ScenarioTests
                 because: "step 5 should be active and progress label updated");
             step5.PrimaryActionButtonText.Should().Contain("Proceed");
 
-            step5.AdditionalMappings.Should().HaveCount(7);
+            step5.AdditionalMappings.Should().HaveCount(9);
             var addtionalMappings = step5.AdditionalMappings;
 
             // Check CsvFieldsMappings object is correctly initialized with expected fields to map
             addtionalMappings[0].FieldToMap.Should().Be(ImportField.Condition);
-            addtionalMappings[6].FieldToMap.Should().Be(ImportField.CardsForTrade);
+            addtionalMappings[5].FieldToMap.Should().Be(ImportField.SellPrice);
+            addtionalMappings[6].FieldToMap.Should().Be(ImportField.SellPriceCurrency);
+            addtionalMappings[7].FieldToMap.Should().Be(ImportField.CardsOwned);
+            addtionalMappings[8].FieldToMap.Should().Be(ImportField.CardsForTrade);
             addtionalMappings[0].CsvHeaders.Should().HaveCount(18);
 
             // Assert CSV headers pre-selected
@@ -194,8 +198,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             addtionalMappings[2].SelectedCsvHeader.Should().Be("Language"); // Language
             addtionalMappings[3].SelectedCsvHeader.Should().Be(null); // Location
             addtionalMappings[4].SelectedCsvHeader.Should().Be("Note"); // Comment
-            addtionalMappings[5].SelectedCsvHeader.Should().Be("Quantity"); // CardsOwned
-            addtionalMappings[6].SelectedCsvHeader.Should().Be("For sale"); // CardsForTrade
+            addtionalMappings[7].SelectedCsvHeader.Should().Be("Quantity"); // CardsOwned
+            addtionalMappings[8].SelectedCsvHeader.Should().Be("For sale"); // CardsForTrade
 
             // Simulate clearing a mapping (should update the underlying ImportCardItem's AdditionalFieldsMapping for that field to null, but not affect the other fields)
             addtionalMappings[4].SelectedCsvHeader = null; // Clear Comment mapping
@@ -326,8 +330,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.FieldMappings[0].CsvHeader.Should().Be("Mapped to field: Condition");
             summary.FieldMappings[1].CsvHeader.Should().Be("Mapped to field: Printing");
             summary.FieldMappings[2].CsvHeader.Should().Be("Mapped to field: Language");
-            summary.FieldMappings[5].CsvHeader.Should().Be("Mapped to field: Quantity");
-            summary.FieldMappings[6].CsvHeader.Should().Be("Mapped to field: For sale");
+            summary.FieldMappings[7].CsvHeader.Should().Be("Mapped to field: Quantity");
+            summary.FieldMappings[8].CsvHeader.Should().Be("Mapped to field: For sale");
 
             //// Spot check value mappings 
             summary.ValueMappings[0].Field.Should().Be(ImportField.Condition);
@@ -712,12 +716,12 @@ namespace CollectaMundo.Tests.ScenarioTests
                 because: "step 5 should be active and progress label updated");
             step5.PrimaryActionButtonText.Should().Contain("Proceed");
 
-            step5.AdditionalMappings.Should().HaveCount(7);
+            step5.AdditionalMappings.Should().HaveCount(9);
             var addtionalMappings = step5.AdditionalMappings;
 
             // Check CsvFieldsMappings object is correctly initialized with expected fields to map
             addtionalMappings[0].FieldToMap.Should().Be(ImportField.Condition);
-            addtionalMappings[6].FieldToMap.Should().Be(ImportField.CardsForTrade);
+            addtionalMappings[8].FieldToMap.Should().Be(ImportField.CardsForTrade);
             addtionalMappings[0].CsvHeaders.Should().HaveCount(11);
 
             // Assert CSV headers pre-selected
@@ -730,7 +734,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             addtionalMappings[6].SelectedCsvHeader.Should().Be(null);
 
             // Select a value for cards for trade
-            addtionalMappings[6].SelectedCsvHeader = "TilSalg";
+            addtionalMappings[8].SelectedCsvHeader = "TilSalg";
 
             // Clear CardFinish mapping so we use defaults for everything except cards for trade
             addtionalMappings[1].SelectedCsvHeader = null;
@@ -765,8 +769,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.FieldMappings[2].CsvHeader.Should().Be("No value chosen for field Language - using default value: \"English\" for all imports");
             summary.FieldMappings[3].CsvHeader.Should().Be("No value chosen for field Location - using default value: \"blank\" for all imports"); ;
             summary.FieldMappings[4].CsvHeader.Should().Be("No value chosen for field Comment - using default value: \"blank\" for all imports"); ;
-            summary.FieldMappings[5].CsvHeader.Should().Be("No value chosen for field CardsOwned - using default value: \"1\" for all imports"); ;
-            summary.FieldMappings[6].CsvHeader.Should().Be("Mapped to field: TilSalg");
+            summary.FieldMappings[7].CsvHeader.Should().Be("No value chosen for field CardsOwned - using default value: \"1\" for all imports"); ;
+            summary.FieldMappings[8].CsvHeader.Should().Be("Mapped to field: TilSalg");
 
             // Check value mappings 
             summary.ValueMappings[0].Field.Should().Be(ImportField.None);
@@ -1039,12 +1043,15 @@ namespace CollectaMundo.Tests.ScenarioTests
                 because: "step 5 should be active and progress label updated");
             step5.PrimaryActionButtonText.Should().Contain("Proceed");
 
-            step5.AdditionalMappings.Should().HaveCount(7);
+            step5.AdditionalMappings.Should().HaveCount(9);
             var additionalMappings = step5.AdditionalMappings;
 
             // Check CsvFieldsMappings object is correctly initialized with expected fields to map
             additionalMappings[0].FieldToMap.Should().Be(ImportField.Condition);
-            additionalMappings[6].FieldToMap.Should().Be(ImportField.CardsForTrade);
+            additionalMappings[5].FieldToMap.Should().Be(ImportField.SellPrice);
+            additionalMappings[6].FieldToMap.Should().Be(ImportField.SellPriceCurrency);
+            additionalMappings[7].FieldToMap.Should().Be(ImportField.CardsOwned);
+            additionalMappings[8].FieldToMap.Should().Be(ImportField.CardsForTrade);
             additionalMappings[0].CsvHeaders.Should().HaveCount(3);
 
             // Assert CSV headers pre-selected
@@ -1114,8 +1121,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.FieldMappings[2].CsvHeader.Should().Be("No value chosen for field Language - using default value: \"English\" for all imports");
             summary.FieldMappings[3].CsvHeader.Should().Be("Mapped to field: Location");
             summary.FieldMappings[4].CsvHeader.Should().Be("No value chosen for field Comment - using default value: \"blank\" for all imports");
-            summary.FieldMappings[5].CsvHeader.Should().Be("No value chosen for field CardsOwned - using default value: \"1\" for all imports");
-            summary.FieldMappings[6].CsvHeader.Should().Be("No value chosen for field CardsForTrade - using default value: \"0\" for all imports");
+            summary.FieldMappings[7].CsvHeader.Should().Be("No value chosen for field CardsOwned - using default value: \"1\" for all imports");
+            summary.FieldMappings[8].CsvHeader.Should().Be("No value chosen for field CardsForTrade - using default value: \"0\" for all imports");
 
             // Check value mappings 
             summary.ValueMappings[0].Field.Should().Be(ImportField.Location);
@@ -1334,7 +1341,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             step2.IdMappings.Should().HaveCount(1);
             var mapping = step2.IdMappings[0];
 
-            mapping.CsvHeaders.Should().HaveCount(4);
+            mapping.CsvHeaders.Should().HaveCount(6);
 
             // Map to UUID Id
             mapping.SelectedCsvHeader = "UUID";
@@ -1364,13 +1371,21 @@ namespace CollectaMundo.Tests.ScenarioTests
                 because: "step 5 should be active and progress label updated");
             step5.PrimaryActionButtonText.Should().Contain("Proceed");
 
-            step5.AdditionalMappings.Should().HaveCount(7);
+            // Check CsvFieldsMappings object is correctly initialized with expected fields to map
+            step5.AdditionalMappings.Should().HaveCount(9);
             var additionalMappings = step5.AdditionalMappings;
 
-            // Check CsvFieldsMappings object is correctly initialized with expected fields to map
+            foreach (var m in additionalMappings)
+            {
+                Debug.WriteLine($"Field: {m.FieldToMap}, CsvHeaders: {string.Join(", ", m.CsvHeaders)}");
+            }
+
             additionalMappings[0].FieldToMap.Should().Be(ImportField.Condition);
-            additionalMappings[6].FieldToMap.Should().Be(ImportField.CardsForTrade);
-            additionalMappings[0].CsvHeaders.Should().HaveCount(4);
+            additionalMappings[5].FieldToMap.Should().Be(ImportField.SellPrice);
+            additionalMappings[6].FieldToMap.Should().Be(ImportField.SellPriceCurrency);
+            additionalMappings[7].FieldToMap.Should().Be(ImportField.CardsOwned);
+            additionalMappings[8].FieldToMap.Should().Be(ImportField.CardsForTrade);
+            additionalMappings[0].CsvHeaders.Should().HaveCount(6);
 
             // Assert CSV headers pre-selected
             additionalMappings[0].SelectedCsvHeader.Should().Be(null);
@@ -1378,8 +1393,11 @@ namespace CollectaMundo.Tests.ScenarioTests
             additionalMappings[2].SelectedCsvHeader.Should().Be(null);
             additionalMappings[3].SelectedCsvHeader.Should().Be(null);
             additionalMappings[4].SelectedCsvHeader.Should().Be("Comment");
-            additionalMappings[5].SelectedCsvHeader.Should().Be(null);
-            additionalMappings[6].SelectedCsvHeader.Should().Be(null);
+            additionalMappings[5].SelectedCsvHeader = "Sell price";
+            additionalMappings[6].SelectedCsvHeader = "Sell price currency";
+
+            additionalMappings[7].SelectedCsvHeader.Should().BeNull();
+            additionalMappings[8].SelectedCsvHeader.Should().BeNull();
 
             // Map Location to "Sted" column
             additionalMappings[3].SelectedCsvHeader = "Sted";
@@ -1445,8 +1463,10 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.FieldMappings[2].CsvHeader.Should().Be("No value chosen for field Language - using default value: \"English\" for all imports");
             summary.FieldMappings[3].CsvHeader.Should().Be("Mapped to field: Sted");
             summary.FieldMappings[4].CsvHeader.Should().Be("Mapped to field: Comment");
-            summary.FieldMappings[5].CsvHeader.Should().Be("No value chosen for field CardsOwned - using default value: \"1\" for all imports");
-            summary.FieldMappings[6].CsvHeader.Should().Be("No value chosen for field CardsForTrade - using default value: \"0\" for all imports");
+            summary.FieldMappings[5].CsvHeader.Should().Be("Mapped to field: Sell price");
+            summary.FieldMappings[6].CsvHeader.Should().Be("Mapped to field: Sell price currency");
+            summary.FieldMappings[7].CsvHeader.Should().Be("No value chosen for field CardsOwned - using default value: \"1\" for all imports");
+            summary.FieldMappings[8].CsvHeader.Should().Be("No value chosen for field CardsForTrade - using default value: \"0\" for all imports");
 
             // Check value mappings 
             summary.ValueMappings[0].Field.Should().Be(ImportField.Location);
@@ -1483,6 +1503,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             angel1.Comment.Should().Be("water damage");
             angel1.CardsOwned.Should().Be(1);
             angel1.CardsForTrade.Should().Be(0);
+            angel1.SellPrice.Should().Be(15.1m);
+            angel1.SellPriceCurrency.Should().Be("USD");
 
             // Angel collection identity 2 - should be imported with newly created location, comment and other fields using defaults
             var angel2 = myCollectionInMemory.Single(c => c.Uuid == angelOfGlorysRiseUuid && c.SelectedLocationDisplayName == "Storage: Binder 2");
@@ -1492,6 +1514,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             angel2.Comment.Should().Be("pen mark");
             angel2.CardsOwned.Should().Be(1);
             angel2.CardsForTrade.Should().Be(0);
+            angel2.SellPrice.Should().Be(1);
+            angel2.SellPriceCurrency.Should().Be("EUR");
 
             // Sailback collection identity 3 - should be imported with location mapped to "aggro fish", blank comment and other fields using defaults
             var sailback3 = myCollectionInMemory.Single(c => c.Uuid == snappingSailbackUuid && c.SelectedLocationDisplayName == "Deck: Aggro Fish");
@@ -1501,6 +1525,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             sailback3.Comment.Should().Be(null);
             sailback3.CardsOwned.Should().Be(1);
             sailback3.CardsForTrade.Should().Be(0);
+            sailback3.SellPrice.Should().Be(2.09m);
+            sailback3.SellPriceCurrency.Should().Be("EUR");
 
             // Sailback collection identity 4 - should be imported with location mapped to "Binder 3", blank comment and other fields using defaults
             var sailback4 = myCollectionInMemory.Single(c => c.Uuid == snappingSailbackUuid && c.SelectedLocationDisplayName == "Storage: Binder 3");
@@ -1510,6 +1536,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             sailback4.Comment.Should().Be(null);
             sailback4.CardsOwned.Should().Be(1);
             sailback4.CardsForTrade.Should().Be(0);
+            sailback4.SellPrice.Should().Be(2.50m);
+            sailback4.SellPriceCurrency.Should().Be("EUR");
 
             // Sailback collection identity 5 - should be imported with blank, a comment other fields using defaults
             var sailback5 = myCollectionInMemory.Single(c => c.Uuid == snappingSailbackUuid && c.SelectedLocationDisplayName == null && c.Comment == "my brother's, at least that's what he claims");
@@ -1532,7 +1560,9 @@ namespace CollectaMundo.Tests.ScenarioTests
                        locationId,
                        comment,
                        cardsOwned,
-                       cardsForTrade
+                       cardsForTrade,
+                       sellPrice,
+                       sellPriceCurrency
                 FROM myCollection;
             ";
 
@@ -1557,7 +1587,13 @@ namespace CollectaMundo.Tests.ScenarioTests
                     CardId = reader.GetInt32(0),
                     Identity = identity,
                     CardsOwned = reader.GetInt32(7),
-                    CardsForTrade = reader.GetInt32(8)
+                    CardsForTrade = reader.GetInt32(8),
+                    SellPrice = reader.IsDBNull(9)
+                        ? null
+                        : Convert.ToDecimal(reader.GetValue(9), System.Globalization.CultureInfo.InvariantCulture),
+                    SellPriceCurrency = reader.IsDBNull(10)
+                        ? null
+                        : reader.GetString(10)
                 });
             }
 
@@ -1596,6 +1632,8 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             angel1Db.CardsOwned.Should().Be(angel1.CardsOwned);
             angel1Db.CardsForTrade.Should().Be(angel1.CardsForTrade);
+            angel1Db.SellPrice.Should().Be(angel1.SellPrice);
+            angel1Db.SellPriceCurrency.Should().Be(angel1.SellPriceCurrency);
 
             // Angel 2
             expectedIdentity = CollectionIdentityFactory.Create(
@@ -1610,6 +1648,8 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             angel2Db.CardsOwned.Should().Be(angel2.CardsOwned);
             angel2Db.CardsForTrade.Should().Be(angel2.CardsForTrade);
+            angel2Db.SellPrice.Should().Be(angel2.SellPrice);
+            angel2Db.SellPriceCurrency.Should().Be(angel2.SellPriceCurrency);
 
             // Sailback 3
             expectedIdentity = CollectionIdentityFactory.Create(
@@ -1624,6 +1664,8 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             sailBack3Db.CardsOwned.Should().Be(sailback3.CardsOwned);
             sailBack3Db.CardsForTrade.Should().Be(sailback3.CardsForTrade);
+            sailBack3Db.SellPrice.Should().Be(sailback3.SellPrice);
+            sailBack3Db.SellPriceCurrency.Should().Be(sailback3.SellPriceCurrency);
 
             // Sailback 4
             expectedIdentity = CollectionIdentityFactory.Create(
@@ -1638,6 +1680,8 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             sailBack4Db.CardsOwned.Should().Be(sailback4.CardsOwned);
             sailBack4Db.CardsForTrade.Should().Be(sailback4.CardsForTrade);
+            sailBack4Db.SellPrice.Should().Be(sailback4.SellPrice);
+            sailBack4Db.SellPriceCurrency.Should().Be(sailback4.SellPriceCurrency);
 
             // Sailback 5
             expectedIdentity = CollectionIdentityFactory.Create(

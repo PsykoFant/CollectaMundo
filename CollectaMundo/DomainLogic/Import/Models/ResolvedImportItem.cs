@@ -41,6 +41,8 @@
             init => _locationId = value;
         }
         public string? Comment { get; set; }
+        public decimal? SellPrice { get; init; }
+        public string? SellPriceCurrency { get; init; }
 
         // Warnings generated while resolving this item
         private readonly List<string> _warnings = [];

@@ -10,5 +10,6 @@ namespace CollectaMundo.Infrastructure.RemoteLookups
         Task<string?> FetchSvgContentAsync(string svgUrl);
         Task<int> FetchSetsCountAsync(CancellationToken ct = default);
         Task<bool> IsValidUrlAsync(string url);
+        Task<decimal> FetchUsdToEurRateAsync(CancellationToken cancelToken = default);
     }
 }

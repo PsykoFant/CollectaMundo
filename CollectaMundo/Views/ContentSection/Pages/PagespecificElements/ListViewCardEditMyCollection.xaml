@@ -115,6 +115,13 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+                    <GridViewColumn Header="Sell price">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <sharedElements:SellPriceEditorUserControl DataContext="{Binding SellPriceEditor}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn Header="Split">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

@@ -1,11 +1,17 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Net.Http;
+using System.Xml.Linq;
 
 namespace CollectaMundo.Infrastructure.RemoteLookups
 {
     public class RemoteLookups : IRemoteLookups
     {
+        // Hardcoded URL for the European Central Bank's daily exchange rates in XML format
+        private const string EcbDailyRatesUrl = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
+
         public async Task<bool> IsInternetAvailableAsync(CancellationToken cancelToken = default)
         {
             try
@@ -77,7 +83,30 @@ namespace CollectaMundo.Infrastructure.RemoteLookups
                 return false;
             }
         }
+        public async Task<decimal> FetchUsdToEurRateAsync(CancellationToken cancelToken = default)
+        {
+            using var client = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(5)
+            };
 
+            using var response = await client.GetAsync(EcbDailyRatesUrl, cancelToken);
+            response.EnsureSuccessStatusCode();
+
+            var xml = await response.Content.ReadAsStringAsync(cancelToken);
+            var document = XDocument.Parse(xml);
+
+            var usdPerEurText = document.Descendants().FirstOrDefault(element => element.Name.LocalName == "Cube" && (string?)element.Attribute("currency") == "USD")
+                ?.Attribute("rate")
+                ?.Value;
+
+            if (!decimal.TryParse(usdPerEurText, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var usdPerEurRate) || usdPerEurRate <= 0m)
+            {
+                throw new InvalidDataException("The ECB response did not contain a valid USD rate.");
+            }
+
+            return 1m / usdPerEurRate;
+        }
 
     }
 }

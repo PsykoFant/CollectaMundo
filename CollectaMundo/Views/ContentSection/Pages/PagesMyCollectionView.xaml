@@ -7,6 +7,7 @@
              xmlns:sharedElements="clr-namespace:CollectaMundo.Views.ContentSection.Pages.SharedElements"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
+             xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=pagesVm:PagesMyCollectionViewModel, IsDesignTimeCreatable=False}"
              d:Style="{StaticResource {x:Type UserControl}}"
@@ -39,7 +40,7 @@
                   SelectedItem="{Binding SelectedCard, Mode=TwoWay}"
                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding ModifyCollectionViewModel.ClearSelectionTrigger, Mode=TwoWay}">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
+                <DataGridTemplateColumn Header="Name" MinWidth="150" SortMemberPath="Name">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
                             <sharedElements:FilterHeaderUserControl DataContext="{Binding DataContext.NameFilter, ElementName=MyCollectionDataGrid}" />
@@ -51,7 +52,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Set Name" Width="*" SortMemberPath="SetName">
+                <DataGridTemplateColumn Header="Set Name" MinWidth="150"  SortMemberPath="SetName">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
                             <sharedElements:FilterHeaderUserControl DataContext="{Binding DataContext.SetNameFilter, ElementName=MyCollectionDataGrid}" />
@@ -77,63 +78,85 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Type">
+                <DataGridTemplateColumn Header="Card Types" Width="Auto" SortMemberPath="Type">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Type}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Finish" Width="*" SortMemberPath="SelectedFinish">
+                <DataGridTemplateColumn Header="Finish" Width="Auto" SortMemberPath="SelectedFinish">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding SelectedFinish}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Language" Width="*" SortMemberPath="Language">
+                <DataGridTemplateColumn Header="Language" Width="Auto" SortMemberPath="Language">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Language}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Condition" Width="*" SortMemberPath="SelectedCondition">
+                <DataGridTemplateColumn Header="Condition" Width="Auto" SortMemberPath="SelectedCondition">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding SelectedCondition}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Location" Width="*" SortMemberPath="SelectedLocationDisplayName">
+                <DataGridTemplateColumn Header="Location" Width="Auto" SortMemberPath="SelectedLocationDisplayName">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding SelectedLocationDisplayName}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Comment" Width="*" SortMemberPath="Comment">
+                <DataGridTemplateColumn Header="Comment" Width="Auto" SortMemberPath="Comment">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Comment}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Count" Width="*" SortMemberPath="CardsOwned">
+                <DataGridTemplateColumn Header="Count" Width="Auto" SortMemberPath="CardsOwned">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding CardsOwned}" TextWrapping="Wrap"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Trade" Width="*" SortMemberPath="CardsForTrade">
+                <DataGridTemplateColumn Header="Trade" Width="Auto" SortMemberPath="CardsForTrade">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding CardsForTrade}" TextWrapping="Wrap" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="CardInCollectionPrice">
+                <DataGridTemplateColumn Header="Sell price" Width="Auto" IsReadOnly="True">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DataContext.PricesVM.SellPriceHeader, ElementName=MyCollectionDataGrid}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock>
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource SellPriceDisplayConverter}">
+                                        <Binding Path="SellPrice" />
+                                        <Binding Path="SellPriceCurrency" />
+                                        <Binding Path="DataContext.PricesVM.SellPriceDisplayCurrency" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                        <Binding Path="DataContext.PricesVM.UsdToEurRate" RelativeSource="{RelativeSource AncestorType=DataGrid}" />
+                                        <Binding Path="CardInCollectionPrice" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Price" Width="Auto" SortMemberPath="CardInCollectionPrice">
                     <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DataContext.PricesVM.RetailerPriceHeader, ElementName=MyCollectionDataGrid}"/>
@@ -171,7 +194,7 @@
                     <MenuItem Header="DELETE card(s) from collection" Style="{StaticResource BelerenBold}"
                                           Command="{Binding ModifyCollectionViewModel.DeleteSelectedCardsCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    <MenuItem Header="Set location" Style="{StaticResource BelerenBold}" ItemsSource="{Binding ModifyCollectionViewModel.LocationMenuItems}">
+                    <MenuItem Header="Set location..." Style="{StaticResource BelerenBold}" ItemsSource="{Binding ModifyCollectionViewModel.LocationMenuItems}">
                         <MenuItem.ItemContainerStyle>
                             <Style TargetType="MenuItem">
                                 <Setter Property="Header" Value="{Binding Header}" />
@@ -187,6 +210,27 @@
                                 </Setter>
                             </Style>
                         </MenuItem.ItemContainerStyle>
+                    </MenuItem>
+                    <MenuItem Header="With selected, update sell price..." Style="{StaticResource BelerenBold}">
+                        <MenuItem Header="Match retail price" Style="{StaticResource BelerenBold}" 
+                                  Command="{Binding DataContext.ModifyCollectionViewModel.MatchRetailPriceForSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.CommandParameter>
+                                <MultiBinding Converter="{StaticResource MatchRetailPriceCommandParameterConverter}">
+                                    <Binding Path="PlacementTarget.SelectedItems" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                    <Binding Path="PlacementTarget.DataContext.PricesVM.SellPriceDisplayCurrency" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                </MultiBinding>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
+                        <MenuItem Header="Match retail price (-10%)" Style="{StaticResource BelerenBold}"
+                                  Command="{Binding DataContext.ModifyCollectionViewModel.MatchRetailPriceMinusTenPercentForSelectedCardsCommand,
+                            RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.CommandParameter>
+                                <MultiBinding Converter="{StaticResource MatchRetailPriceCommandParameterConverter}">
+                                    <Binding Path="PlacementTarget.SelectedItems" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                    <Binding Path="PlacementTarget.DataContext.PricesVM.SellPriceDisplayCurrency" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                </MultiBinding>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
                     </MenuItem>
                 </ContextMenu>
             </DataGrid.ContextMenu>

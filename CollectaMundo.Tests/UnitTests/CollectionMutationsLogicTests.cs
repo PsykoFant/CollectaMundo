@@ -44,7 +44,6 @@ namespace CollectaMundo.Tests.UnitTests
         {
             // Arrange: snapshot contains nothing (no existing identity)
             var snapshot = new EmptySnapshot();
-
             var logic = new CollectionMutationsLogic();
 
             var newCard = new CollectionCardDraft
@@ -54,7 +53,9 @@ namespace CollectaMundo.Tests.UnitTests
                 SelectedFinish = "nonfoil",
                 Language = "German",
                 CardsOwned = 2,
-                CardsForTrade = 1
+                CardsForTrade = 1,
+                SellPrice = 12.34m,
+                SellPriceCurrency = "USD"
             };
 
             // Act
@@ -71,6 +72,8 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal("nonfoil", insert.Identity.Finish);
             Assert.Equal(2, insert.CardsOwned);
             Assert.Equal(1, insert.CardsForTrade);
+            Assert.Equal((decimal?)12.34m, insert.Draft.SellPrice);
+            Assert.Equal("USD", insert.Draft.SellPriceCurrency);
 
             // Assert: ChangeSet represents the in-memory upsert (CardId is still null at plan time)
             Assert.Empty(plan.ChangeSet.RemovedIds);
@@ -83,6 +86,8 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal("German", survivor.Identity.Language);
             Assert.Equal(2, survivor.CardsOwned);
             Assert.Equal(1, survivor.CardsForTrade);
+            Assert.Equal((decimal?)12.34m, survivor.SellPrice);
+            Assert.Equal("USD", survivor.SellPriceCurrency);
         }
 
         [Fact]
@@ -100,12 +105,14 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new TestSnapshot(
                 rows:
                 [
-            new CollectionCardDbRow
+                    new CollectionCardDbRow
             {
                 CardId = 123,
                 Identity = existingIdentity,
                 CardsOwned = 6,
-                CardsForTrade = 4
+                CardsForTrade = 4,
+                SellPrice = 8.50m,
+                SellPriceCurrency = "EUR"
             }
                 ]);
 
@@ -118,13 +125,13 @@ namespace CollectaMundo.Tests.UnitTests
                 SelectedFinish = "nonfoil",
                 Language = "German",
                 CardsOwned = 2,
-                CardsForTrade = 1
+                CardsForTrade = 1,
+                SellPrice = 12.34m,
+                SellPriceCurrency = "USD"
             };
 
             // Act
-            var plan = logic.PlanIdentityRewriteBatch(
-                [newCard],
-                snapshot);
+            var plan = logic.PlanIdentityRewriteBatch([newCard], snapshot);
 
             // Assert: no deletes, no inserts
             Assert.Empty(plan.DeleteIds);
@@ -139,7 +146,11 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(8, update.CardsOwned);    // 6 + 2
             Assert.Equal(5, update.CardsForTrade); // 4 + 1
 
-            // ChangeSet reflects survivor
+            // The existing row's sell price is retained
+            Assert.Equal((decimal?)8.50m, update.SellPrice);
+            Assert.Equal("EUR", update.SellPriceCurrency);
+
+            // ChangeSet reflects the survivor
             Assert.Empty(plan.ChangeSet.RemovedIds);
 
             var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
@@ -151,6 +162,8 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal("German", survivor.Identity.Language);
             Assert.Equal(8, survivor.CardsOwned);
             Assert.Equal(5, survivor.CardsForTrade);
+            Assert.Equal((decimal?)8.50m, survivor.SellPrice);
+            Assert.Equal("EUR", survivor.SellPriceCurrency);
         }
 
         [Fact]
@@ -220,13 +233,16 @@ namespace CollectaMundo.Tests.UnitTests
                 null);
 
             var snapshot = new TestSnapshot(rows:
-                [new CollectionCardDbRow
-                {
-                    CardId = 123,
-                    Identity = identity,
-                    CardsOwned = 2,
-                    CardsForTrade = 0
-                }
+                [
+                    new CollectionCardDbRow
+            {
+                CardId = 123,
+                Identity = identity,
+                CardsOwned = 2,
+                CardsForTrade = 0,
+                SellPrice = 8.50m,
+                SellPriceCurrency = "EUR"
+            }
                 ]);
 
             var logic = new CollectionMutationsLogic();
@@ -239,7 +255,9 @@ namespace CollectaMundo.Tests.UnitTests
                 SelectedFinish = "nonfoil",
                 Language = "German",
                 CardsOwned = 3,      // absolute values
-                CardsForTrade = 1
+                CardsForTrade = 1,
+                SellPrice = 12.34m,
+                SellPriceCurrency = "USD"
             };
 
             // Act
@@ -256,6 +274,8 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(identity, update.Identity);
             Assert.Equal(3, update.CardsOwned);
             Assert.Equal(1, update.CardsForTrade);
+            Assert.Equal((decimal?)12.34m, update.SellPrice);
+            Assert.Equal("USD", update.SellPriceCurrency);
 
             // ChangeSet: one upsert, no removals
             Assert.Empty(plan.ChangeSet.RemovedIds);
@@ -269,6 +289,8 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal("German", survivor.Identity.Language);
             Assert.Equal(3, survivor.CardsOwned);
             Assert.Equal(1, survivor.CardsForTrade);
+            Assert.Equal((decimal?)12.34m, survivor.SellPrice);
+            Assert.Equal("USD", survivor.SellPriceCurrency);
         }
 
         [Fact]
@@ -286,13 +308,15 @@ namespace CollectaMundo.Tests.UnitTests
             var snapshot = new TestSnapshot(
                 rows:
                 [
-            // Survivor row
-            new CollectionCardDbRow
+                    // Survivor row
+                    new CollectionCardDbRow
             {
                 CardId = 456,
                 Identity = survivorIdentity,
                 CardsOwned = 6,
-                CardsForTrade = 4
+                CardsForTrade = 4,
+                SellPrice = 8.50m,
+                SellPriceCurrency = "EUR"
             },
 
             // Current row being edited
@@ -301,13 +325,15 @@ namespace CollectaMundo.Tests.UnitTests
                 CardId = 123,
                 Identity = new CollectionIdentity(
                     "foo-uuid",
-                    "Excellent",   // original condition
+                    "Excellent",
                     "German",
                     "nonfoil",
                     null,
                     null),
                 CardsOwned = 3,
-                CardsForTrade = 1
+                CardsForTrade = 1,
+                SellPrice = 12.34m,
+                SellPriceCurrency = "USD"
             }
                 ]);
 
@@ -324,7 +350,9 @@ namespace CollectaMundo.Tests.UnitTests
                 Language = "German",
 
                 CardsOwned = 3,
-                CardsForTrade = 1
+                CardsForTrade = 1,
+                SellPrice = 15.00m,
+                SellPriceCurrency = "USD"
             };
 
             // Act
@@ -344,6 +372,12 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(9, update.CardsOwned);     // 6 + 3
             Assert.Equal(5, update.CardsForTrade);  // 4 + 1
 
+            // The survivor's sell price is retained
+            Assert.Equal((decimal?)8.50m, update.SellPrice);
+            Assert.Equal("EUR", update.SellPriceCurrency);
+            Assert.Equal((decimal?)8.50m, editedCard.SellPrice);
+            Assert.Equal("EUR", editedCard.SellPriceCurrency);
+
             // No inserts
             Assert.Empty(plan.Inserts);
 
@@ -356,6 +390,8 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal("nonfoil", survivor.Identity.Finish);
             Assert.Equal(9, survivor.CardsOwned);
             Assert.Equal(5, survivor.CardsForTrade);
+            Assert.Equal((decimal?)8.50m, survivor.SellPrice);
+            Assert.Equal("EUR", survivor.SellPriceCurrency);
         }
 
         [Fact]
@@ -442,7 +478,6 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public void PlanIdentityRewriteBatch_EditTwoCards_ToSameTargetIdentity_MergesIntoSingleSurvivor()
         {
-            // Arrange
             var targetIdentity = new CollectionIdentity(
                 "foo-uuid",
                 "Near Mint",
@@ -452,32 +487,37 @@ namespace CollectaMundo.Tests.UnitTests
                 null);
 
             var snapshot = new TestSnapshot(rows:
-                [new CollectionCardDbRow
-                {
-                    CardId = 101,
-                    Identity = new CollectionIdentity(
-                        "foo-uuid",
-                        "Excellent",
-                        "German",
-                        "nonfoil",
-                        null,
-                        null),
-                    CardsOwned = 2,
-                    CardsForTrade = 1
-                },
-                new CollectionCardDbRow
-                {
-                    CardId = 202,
-                    Identity = new CollectionIdentity(
-                        "foo-uuid",
-                        "Good",
-                        "German",
-                        "nonfoil",
-                        null,
-                        null),
-                    CardsOwned = 3,
-                    CardsForTrade = 1
-                }
+                [
+                    new CollectionCardDbRow
+            {
+                CardId = 101,
+                Identity = new CollectionIdentity(
+                    "foo-uuid",
+                    "Excellent",
+                    "German",
+                    "nonfoil",
+                    null,
+                    null),
+                CardsOwned = 2,
+                CardsForTrade = 1,
+                SellPrice = 8.50m,
+                SellPriceCurrency = "EUR"
+            },
+            new CollectionCardDbRow
+            {
+                CardId = 202,
+                Identity = new CollectionIdentity(
+                    "foo-uuid",
+                    "Good",
+                    "German",
+                    "nonfoil",
+                    null,
+                    null),
+                CardsOwned = 3,
+                CardsForTrade = 1,
+                SellPrice = 15.00m,
+                SellPriceCurrency = "USD"
+            }
                 ]);
 
             var logic = new CollectionMutationsLogic();
@@ -490,7 +530,9 @@ namespace CollectaMundo.Tests.UnitTests
                 SelectedFinish = "nonfoil",
                 Language = "German",
                 CardsOwned = 2,
-                CardsForTrade = 1
+                CardsForTrade = 1,
+                SellPrice = 8.50m,
+                SellPriceCurrency = "EUR"
             };
 
             var editedB = new CollectionCardDraft
@@ -501,33 +543,38 @@ namespace CollectaMundo.Tests.UnitTests
                 SelectedFinish = "nonfoil",
                 Language = "German",
                 CardsOwned = 3,
-                CardsForTrade = 1
+                CardsForTrade = 1,
+                SellPrice = 15.00m,
+                SellPriceCurrency = "USD"
             };
 
-            // Act
             var plan = logic.PlanIdentityRewriteBatch([editedA, editedB], snapshot);
 
-            // Assert: one row survives, the other is deleted
+            // The second row is absorbed into the first row.
             var deletedId = Assert.Single(plan.DeleteIds);
             Assert.Equal(202, deletedId);
 
             var update = Assert.Single(plan.Updates);
             Assert.Equal(101, update.CardId);
             Assert.Equal(targetIdentity, update.Identity);
-            Assert.Equal(5, update.CardsOwned);      // 2 + 3
-            Assert.Equal(2, update.CardsForTrade);   // 1 + 1
+            Assert.Equal(5, update.CardsOwned);
+            Assert.Equal(2, update.CardsForTrade);
+            Assert.Equal((decimal?)8.50m, update.SellPrice);
+            Assert.Equal("EUR", update.SellPriceCurrency);
 
             Assert.Empty(plan.Inserts);
 
             var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
-
             Assert.Equal(101, survivor.CardId);
-            Assert.Equal("foo-uuid", survivor.Identity.Uuid);
-            Assert.Equal("Near Mint", survivor.Identity.Condition);
-            Assert.Equal("German", survivor.Identity.Language);
-            Assert.Equal("nonfoil", survivor.Identity.Finish);
+            Assert.Equal(targetIdentity, survivor.Identity);
             Assert.Equal(5, survivor.CardsOwned);
             Assert.Equal(2, survivor.CardsForTrade);
+            Assert.Equal((decimal?)8.50m, survivor.SellPrice);
+            Assert.Equal("EUR", survivor.SellPriceCurrency);
+
+            Assert.Equal(101, editedB.CardId);
+            Assert.Equal((decimal?)8.50m, editedB.SellPrice);
+            Assert.Equal("EUR", editedB.SellPriceCurrency);
         }
 
         [Fact]
@@ -543,7 +590,9 @@ namespace CollectaMundo.Tests.UnitTests
                 SelectedFinish = "nonfoil",
                 Language = "English",
                 CardsOwned = 1,
-                CardsForTrade = 0
+                CardsForTrade = 0,
+                SellPrice = 8.50m,
+                SellPriceCurrency = "EUR"
             };
 
             var cardB = new CollectionCardDraft
@@ -553,7 +602,9 @@ namespace CollectaMundo.Tests.UnitTests
                 SelectedFinish = "nonfoil",
                 Language = "English",
                 CardsOwned = 2,
-                CardsForTrade = 1
+                CardsForTrade = 1,
+                SellPrice = 15.00m,
+                SellPriceCurrency = "USD"
             };
 
             var plan = logic.PlanIdentityRewriteBatch([cardA, cardB], snapshot);
@@ -572,10 +623,17 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(3, insert.CardsOwned);
             Assert.Equal(1, insert.CardsForTrade);
 
+            // The first draft's price is retained when matching new rows are combined.
+            Assert.Equal((decimal?)8.50m, insert.Draft.SellPrice);
+            Assert.Equal("EUR", insert.Draft.SellPriceCurrency);
+
             var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
             Assert.Equal(3, survivor.CardsOwned);
             Assert.Equal(1, survivor.CardsForTrade);
+            Assert.Equal((decimal?)8.50m, survivor.SellPrice);
+            Assert.Equal("EUR", survivor.SellPriceCurrency);
         }
+
         [Fact]
         public void PlanIdentityRewriteBatch_NewRowsSameCardDifferentComment_CreatesSeparateInserts()
         {
@@ -615,6 +673,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             Assert.Equal(2, plan.UpsertsByIdentity.Values.Count);
         }
+
         [Fact]
         public void PlanIdentityRewriteBatch_NewRowsSameCardDifferentLocation_CreatesSeparateInserts()
         {
@@ -654,6 +713,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             Assert.Equal(2, plan.UpsertsByIdentity.Values.Count);
         }
+
         [Fact]
         public void PlanIdentityRewriteBatch_ExistingRowLocationClearedToNull_WhenNullIdentityExists_Merges()
         {
@@ -723,6 +783,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(5, survivor.CardsOwned);
             Assert.Equal(2, survivor.CardsForTrade);
         }
+
         [Fact]
         public void PlanIdentityRewriteBatch_MixedExistingAndNewRows_CanUpdateAndInsertInSameBatch()
         {
@@ -787,6 +848,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Empty(plan.ChangeSet.RemovedIds);
             Assert.Equal(2, plan.UpsertsByIdentity.Values.Count);
         }
+
         [Fact]
         public void PlanIdentityRewriteBatch_NewRowThenExistingRowEditedToSameIdentity_MergesIntoExistingRow()
         {
@@ -814,7 +876,9 @@ namespace CollectaMundo.Tests.UnitTests
                 CardId = 100,
                 Identity = originalIdentity,
                 CardsOwned = 2,
-                CardsForTrade = 0
+                CardsForTrade = 0,
+                SellPrice = 8.50m,
+                SellPriceCurrency = "EUR"
             }
                 ]);
 
@@ -827,7 +891,9 @@ namespace CollectaMundo.Tests.UnitTests
                 SelectedFinish = "nonfoil",
                 Language = "English",
                 CardsOwned = 1,
-                CardsForTrade = 0
+                CardsForTrade = 0,
+                SellPrice = 15.00m,
+                SellPriceCurrency = "USD"
             };
 
             var editedExisting = new CollectionCardDraft
@@ -838,7 +904,9 @@ namespace CollectaMundo.Tests.UnitTests
                 SelectedFinish = "nonfoil",
                 Language = "English",
                 CardsOwned = 2,
-                CardsForTrade = 0
+                CardsForTrade = 0,
+                SellPrice = 8.50m,
+                SellPriceCurrency = "EUR"
             };
 
             var plan = logic.PlanIdentityRewriteBatch([newRow, editedExisting], snapshot);
@@ -851,10 +919,84 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(targetIdentity, update.Identity);
             Assert.Equal(3, update.CardsOwned);
             Assert.Equal(0, update.CardsForTrade);
+            Assert.Equal((decimal?)8.50m, update.SellPrice);
+            Assert.Equal("EUR", update.SellPriceCurrency);
 
             var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
             Assert.Equal(100, survivor.CardId);
             Assert.Equal(3, survivor.CardsOwned);
+            Assert.Equal((decimal?)8.50m, survivor.SellPrice);
+            Assert.Equal("EUR", survivor.SellPriceCurrency);
         }
+
+        [Fact]
+        public void PlanIdentityRewriteBatch_EditCard_IdentityChangeWithoutMerge_UpdatesSellPrice()
+        {
+            var originalIdentity = new CollectionIdentity(
+                "foo-uuid",
+                "Excellent",
+                "German",
+                "nonfoil",
+                null,
+                null);
+
+            var targetIdentity = new CollectionIdentity(
+                "foo-uuid",
+                "Near Mint",
+                "German",
+                "nonfoil",
+                null,
+                null);
+
+            var snapshot = new TestSnapshot(
+                rows:
+                [
+                    new CollectionCardDbRow
+            {
+                CardId = 123,
+                Identity = originalIdentity,
+                CardsOwned = 2,
+                CardsForTrade = 0,
+                SellPrice = 8.50m,
+                SellPriceCurrency = "EUR"
+            }
+                ]);
+
+            var logic = new CollectionMutationsLogic();
+
+            var card = new CollectionCardDraft
+            {
+                CardId = 123,
+                Uuid = "foo-uuid",
+                SelectedCondition = "Near Mint",
+                SelectedFinish = "nonfoil",
+                Language = "German",
+                CardsOwned = 3,
+                CardsForTrade = 1,
+                SellPrice = 12.34m,
+                SellPriceCurrency = "USD"
+            };
+
+            var plan = logic.PlanIdentityRewriteBatch([card], snapshot);
+
+            Assert.Empty(plan.DeleteIds);
+            Assert.Empty(plan.Inserts);
+
+            var update = Assert.Single(plan.Updates);
+            Assert.Equal(123, update.CardId);
+            Assert.Equal(targetIdentity, update.Identity);
+            Assert.Equal(3, update.CardsOwned);
+            Assert.Equal(1, update.CardsForTrade);
+            Assert.Equal((decimal?)12.34m, update.SellPrice);
+            Assert.Equal("USD", update.SellPriceCurrency);
+
+            var survivor = Assert.Single(plan.UpsertsByIdentity.Values);
+            Assert.Equal(123, survivor.CardId);
+            Assert.Equal(targetIdentity, survivor.Identity);
+            Assert.Equal((decimal?)12.34m, survivor.SellPrice);
+            Assert.Equal("USD", survivor.SellPriceCurrency);
+        }
+
+
     }
 }

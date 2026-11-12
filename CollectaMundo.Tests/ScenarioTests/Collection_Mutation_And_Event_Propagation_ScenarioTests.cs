@@ -2,7 +2,7 @@
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.Tests.TestUtils;
-using CollectaMundo.ViewModels.ModifyCollection;
+using CollectaMundo.ViewModels.ModifyCollection.ParameterModels;
 using System.Windows.Input;
 
 namespace CollectaMundo.Tests.ScenarioTests
@@ -11,6 +11,8 @@ namespace CollectaMundo.Tests.ScenarioTests
     {
         private readonly InMemoryDatabaseFixture _fx = fx;
         private ScenarioTestContext _ctx = null!;
+        private static readonly string[] sourceArray = new[] { "Sokrates, Athenian Teacher" };
+
         public async ValueTask InitializeAsync()
         {
             _ctx = await ScenarioTestContext.CreateAsync(_fx);
@@ -221,7 +223,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             nameFilter.SelectedSingleOption = "sokrates";
 
             // Assert
-            expectedNames = [.. new[] { "Sokrates, Athenian Teacher" }.OrderBy(n => n)];
+            expectedNames = [.. sourceArray.OrderBy(n => n)];
             actualNames = [.. _ctx.MainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n)];
             Assert.Equal(expectedNames, actualNames);
             Assert.Empty(_ctx.MainVM.MyCollectionVM.FilteredCards);
@@ -229,6 +231,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Arrange
             const string uuidSokrates = "3c389f9c-e459-5b16-87b5-d51644f05b25";
             var sokrates = ScenarioTestHelpers.FindCard(_ctx.MainVM.AllCardsVM.FilteredCards, uuidSokrates);
+
             // Act: stage Sokrates
             _ctx.MainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { sokrates });
 
@@ -239,6 +242,9 @@ namespace CollectaMundo.Tests.ScenarioTests
             var pending = _ctx.MainVM.AddCardsVM.CardsToAddOrEdit.Single(c => c.CardToAddOrEdit.Uuid == uuidSokrates);
             pending.SelectedCondition = "Played";
             pending.CardsForTrade = 1;
+            pending.SellPriceEditor.InputText = "12,34";
+
+            var expectedSellPriceCurrency = pending.SellPriceEditor.Currency;
 
             // Act: submit
             _ctx.MainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
@@ -247,13 +253,45 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal(24, _ctx.MainVM.MyCollectionVM.Cards.Count);
 
             var sokratesInCollection = ScenarioTestHelpers.FindCard(_ctx.MainVM.MyCollectionVM.Cards, uuidSokrates);
+
+            // Assert: price was persisted
+            var persistedPrice = await ScenarioTestHelpers.ExecuteQueryAsync<(decimal? SellPrice, string? SellPriceCurrency)>(
+                _ctx.DbFactory,
+                """
+                SELECT sellPrice, sellPriceCurrency
+                FROM myCollection
+                WHERE id = @id;
+                """,
+                reader =>
+                {
+                    var priceOrdinal = reader.GetOrdinal("sellPrice");
+                    var currencyOrdinal = reader.GetOrdinal("sellPriceCurrency");
+
+                    return (
+                        SellPrice: reader.IsDBNull(priceOrdinal)
+                            ? null
+                            : Convert.ToDecimal(reader.GetValue(priceOrdinal), System.Globalization.CultureInfo.InvariantCulture),
+                        SellPriceCurrency: reader.IsDBNull(currencyOrdinal)
+                            ? null
+                            : reader.GetString(currencyOrdinal)
+                    );
+                },
+                cmd => cmd.Parameters.AddWithValue("@id", sokratesInCollection.CardId));
+
+            var storedPrice = Assert.Single(persistedPrice);
+            Assert.Equal((decimal?)12.34m, storedPrice.SellPrice);
+            Assert.Equal(expectedSellPriceCurrency, storedPrice.SellPriceCurrency);
+
+            // Assert: collection view model reflects the saved values
             Assert.Equal("Played", sokratesInCollection.SelectedCondition);
             Assert.Equal(1, sokratesInCollection.CardsForTrade);
+            Assert.Equal((decimal?)12.34m, sokratesInCollection.SellPrice);
+            Assert.Equal(expectedSellPriceCurrency, sokratesInCollection.SellPriceCurrency);
 
             // Assert: staging cleared
             Assert.Empty(_ctx.MainVM.AddCardsVM.CardsToAddOrEdit);
 
-            //// Assert: filter facets include new values
+            // Assert: filter facets include new values
             var conditionFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedCondition"];
             Assert.Contains("Played", conditionFilter.AvailableOptions);
 
@@ -487,6 +525,8 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Otter 1: Box 1
             pendingOtters[0].SelectedLocationId = box1.Id;
+            pendingOtters[0].SellPrice = 8.50m;
+            pendingOtters[0].SellPriceCurrency = "EUR";
 
             // Otter 2: Box 2
             pendingOtters[1].SelectedLocationId = box2.Id;
@@ -501,6 +541,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Otter 5: no location, no comment
             pendingOtters[4].SelectedLocationId = null;
             pendingOtters[4].Comment = null;
+            pendingOtters[4].SellPrice = 12.34m;
+            pendingOtters[4].SellPriceCurrency = "USD";
 
             // Act: submit otters
             _ctx.MainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
@@ -567,13 +609,21 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Arrange: find Otter 1 with Box 1 and the existing no-location/no-comment otter
             var otterBox1 = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId == box1.Id && string.IsNullOrWhiteSpace(c.Comment));
-
             var otterNoLocationBefore = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidOtter && c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment));
-
             var otterBox1Id = otterBox1.CardId;
             var otterNoLocationId = otterNoLocationBefore.CardId;
+
             var expectedMergedOwned = otterBox1.CardsOwned + otterNoLocationBefore.CardsOwned;
             var expectedMergedTrade = otterBox1.CardsForTrade + otterNoLocationBefore.CardsForTrade;
+            var expectedSellPrice = otterNoLocationBefore.SellPrice;
+
+            expectedSellPriceCurrency = otterNoLocationBefore.SellPriceCurrency;
+
+            // Confirm the rows have different prices so the merge assertion checks which price survives.
+            Assert.Equal((decimal?)8.50m, otterBox1.SellPrice);
+            Assert.Equal("EUR", otterBox1.SellPriceCurrency);
+            Assert.Equal((decimal?)12.34m, expectedSellPrice);
+            Assert.Equal("USD", expectedSellPriceCurrency);
 
             // Act: stage Otter 1 for edit
             _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.EditSelectedCardsCommand.Execute(new object[] { otterBox1 });
@@ -592,7 +642,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Assert: Box 1 otter row was removed
             Assert.DoesNotContain(_ctx.MainVM.MyCollectionVM.Cards, c => c.CardId == otterBox1Id);
 
-            // Assert: no-location otter survivor remains and has merged quantities
+            // Assert: no-location otter survivor retains its price and has merged quantities
             var otterNoLocationAfter = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.CardId == otterNoLocationId);
 
             Assert.Equal(uuidOtter, otterNoLocationAfter.Uuid);
@@ -600,15 +650,46 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.True(string.IsNullOrWhiteSpace(otterNoLocationAfter.Comment));
             Assert.Equal(expectedMergedOwned, otterNoLocationAfter.CardsOwned);
             Assert.Equal(expectedMergedTrade, otterNoLocationAfter.CardsForTrade);
+            Assert.Equal(expectedSellPrice, otterNoLocationAfter.SellPrice);
+            Assert.Equal(expectedSellPriceCurrency, otterNoLocationAfter.SellPriceCurrency);
+
+            // Assert: database retains the survivor's price
+            var persistedSellPrice = await ScenarioTestHelpers.ExecuteQueryAsync<(decimal? SellPrice, string? SellPriceCurrency)>(
+                _ctx.DbFactory,
+                """
+                SELECT sellPrice, sellPriceCurrency
+                FROM myCollection
+                WHERE id = @id;
+                """,
+                reader =>
+                {
+                    var priceOrdinal = reader.GetOrdinal("sellPrice");
+                    var currencyOrdinal = reader.GetOrdinal("sellPriceCurrency");
+
+                    return (
+                        SellPrice: reader.IsDBNull(priceOrdinal)
+                            ? null
+                            : Convert.ToDecimal(reader.GetValue(priceOrdinal), System.Globalization.CultureInfo.InvariantCulture),
+                        SellPriceCurrency: reader.IsDBNull(currencyOrdinal)
+                            ? null
+                            : reader.GetString(currencyOrdinal)
+                    );
+                },
+                cmd => cmd.Parameters.AddWithValue("@id", otterNoLocationId));
+
+            var persistedSurvivorPrice = Assert.Single(persistedSellPrice);
+            Assert.Equal(expectedSellPrice, persistedSurvivorPrice.SellPrice);
+            Assert.Equal(expectedSellPriceCurrency, persistedSurvivorPrice.SellPriceCurrency);
 
             // Refresh otters list
             ottersInCollection = [.. _ctx.MainVM.MyCollectionVM.Cards.Where(c => c.Uuid == uuidOtter)];
-            Assert.Equal(4, ottersInCollection.Count); // One has been merged away, so now 4 distinct otter rows instead of 5
+            Assert.Equal(4, ottersInCollection.Count);
 
             Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box2.Id && string.IsNullOrWhiteSpace(c.Comment));
             Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box2.Id && c.Comment == "smudgemark");
             Assert.Contains(ottersInCollection, c => c.SelectedLocationId == deckAwesome.Id && string.IsNullOrWhiteSpace(c.Comment));
             Assert.Contains(ottersInCollection, c => c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment) && c.CardsOwned == 2);
+
             #endregion
 
             #region ===== Section M: edit two Box 2 otters into same new Box 1 identity =====

@@ -22,7 +22,8 @@ namespace CollectaMundo.ViewModels.ModifyCollection
         // Bindable properties for the numeric inputs
         public NumericBindingViewModel Owned { get; }
         public NumericBindingViewModel Trade { get; }
-        public CollectionCardDraftRowViewModel(CollectionCardDraft cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand, ICommand countCommittedCommand)
+        public SellPriceBindingViewModel SellPriceEditor { get; }
+        public CollectionCardDraftRowViewModel(CollectionCardDraft cardToAdd, IReadOnlyList<CardLocation> availableLocations, ICommand refreshColumnsCommand, ICommand countCommittedCommand, decimal? initialDisplaySellPrice, string displayCurrency)
         {
             CardToAddOrEdit = cardToAdd;
 
@@ -71,6 +72,12 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 min: 0,
                 maxGetter: () => CardsOwned,
                 delayMs: 0);
+
+            SellPriceEditor = new SellPriceBindingViewModel(initialDisplayPrice: initialDisplaySellPrice, displayCurrency: displayCurrency, setPrice: (price, currency) =>
+            {
+                cardToAdd.SellPrice = price;
+                cardToAdd.SellPriceCurrency = currency;
+            });
         }
         public string? Name => CardToAddOrEdit.Name;
         public string? SetName => CardToAddOrEdit.SetName;
@@ -114,6 +121,16 @@ namespace CollectaMundo.ViewModels.ModifyCollection
             get => CardToAddOrEdit.Comment;
             set => SetModelValue(CardToAddOrEdit.Comment, value, v => CardToAddOrEdit.Comment = v);
         }
+        public decimal? SellPrice
+        {
+            get => CardToAddOrEdit.SellPrice;
+            set => SetModelValue(CardToAddOrEdit.SellPrice, value, v => CardToAddOrEdit.SellPrice = v);
+        }
+        public string? SellPriceCurrency
+        {
+            get => CardToAddOrEdit.SellPriceCurrency;
+            set => SetModelValue(CardToAddOrEdit.SellPriceCurrency, value, v => CardToAddOrEdit.SellPriceCurrency = v);
+        }
         public int CardsOwned
         {
             get => CardToAddOrEdit.CardsOwned;
@@ -146,7 +163,6 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 Trade.NotifyValueChanged();
             }
         }
-
         public void UpdateAvailableLocations(IReadOnlyList<CardLocation> availableLocations)
         {
             LocationCombo.ReplaceItems(availableLocations);

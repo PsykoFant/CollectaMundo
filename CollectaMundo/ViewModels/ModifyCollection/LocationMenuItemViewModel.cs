@@ -1,9 +1,4 @@
 ﻿using CollectaMundo.DomainLogic.CardLocations.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CollectaMundo.ViewModels.ModifyCollection
 {
@@ -22,5 +17,4 @@ namespace CollectaMundo.ViewModels.ModifyCollection
             };
         }
     }
-    public sealed record SetLocationForSelectedCardsParameter(System.Collections.IEnumerable SelectedItems, int? LocationId);
 }

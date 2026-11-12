@@ -174,7 +174,9 @@ namespace CollectaMundo.Infrastructure.CardLists
                            language,
                            finish,
                            locationId,
-                           comment
+                           comment,
+                           sellPrice,
+                           sellPriceCurrency
                        FROM myCollection;
                        """;
 
@@ -190,7 +192,7 @@ namespace CollectaMundo.Infrastructure.CardLists
 
             return list;
         }
-        private readonly record struct CollectionCardOrdinals(int Id, int Uuid, int CardsOwned, int CardsForTrade, int Condition, int Language, int Finish, int LocationId, int Comment)
+        private readonly record struct CollectionCardOrdinals(int Id, int Uuid, int CardsOwned, int CardsForTrade, int Condition, int Language, int Finish, int LocationId, int Comment, int SellPrice, int SellPriceCurrency)
         {
             public static CollectionCardOrdinals FromReader(DbDataReader reader)
             {
@@ -203,7 +205,9 @@ namespace CollectaMundo.Infrastructure.CardLists
                     reader.GetOrdinal("language"),
                     reader.GetOrdinal("finish"),
                     reader.GetOrdinal("locationId"),
-                    reader.GetOrdinal("comment"));
+                    reader.GetOrdinal("comment"),
+                    reader.GetOrdinal("sellPrice"),
+                    reader.GetOrdinal("sellPriceCurrency"));
             }
         }
         private static CollectionCardDbRow CollectionCardDbRowFromReader(DbDataReader reader, CollectionCardOrdinals ordinals)
@@ -214,11 +218,15 @@ namespace CollectaMundo.Infrastructure.CardLists
             var finish = GetRequiredFieldValue<string>(reader, ordinals.Finish, "finish");
             var locationId = DbDataReaderValueReader.GetFieldValue<int?>(reader, ordinals.LocationId);
             var comment = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.Comment);
+            var sellPrice = DbDataReaderValueReader.GetFieldValue<decimal?>(reader, ordinals.SellPrice);
+            var sellPriceCurrency = DbDataReaderValueReader.GetFieldValue<string>(reader, ordinals.SellPriceCurrency);
 
             return new CollectionCardDbRow
             {
                 CardId = GetRequiredFieldValue<int>(reader, ordinals.Id, "id"),
                 Identity = CollectionIdentityFactory.Create(uuid, condition, language, finish, locationId, comment),
+                SellPrice = sellPrice,
+                SellPriceCurrency = sellPriceCurrency,
                 CardsOwned = GetRequiredFieldValue<int>(reader, ordinals.CardsOwned, "cardsOwned"),
                 CardsForTrade = GetRequiredFieldValue<int>(reader, ordinals.CardsForTrade, "cardsForTrade")
             };

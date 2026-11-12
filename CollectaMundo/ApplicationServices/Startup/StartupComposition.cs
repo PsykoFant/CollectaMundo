@@ -62,8 +62,25 @@ namespace CollectaMundo.ApplicationServices.Startup
             try
             {
                 // Infrastructure
-                var settings = new AppSettings();
                 var operationOverlayController = new OperationOverlayController(operationOverlayViewModel);
+                operationOverlayController.Show(string.Empty);
+                operationOverlayController.SetDetail("Loading application settings…");
+                await UIHelper.ForceRenderAsync();
+
+                AppSettings settings;
+                try
+                {
+                    settings = new AppSettings();
+                }
+                catch (Exception ex)
+                {
+                    var result = new OperationResult(OperationResultCode.Error, $"Could not create or load appsettings.json: {ex.Message}");
+
+                    ShowStartupFailure(operationOverlayController, result, headlineOverride: "Application settings could not be loaded!");
+
+                    await UIHelper.ForceRenderAsync();
+                    throw;
+                }
 
                 // Delegate for retailer access from view models                
                 string getRetailer() => settings.PriceInfo.Retailer;
@@ -114,6 +131,20 @@ namespace CollectaMundo.ApplicationServices.Startup
                         ShowStartupFailure(operationOverlayController, prepResult);
                         throw new InvalidOperationException("Database preparation did not complete successfully.");
                     }
+                }
+
+                // Refresh the saved USD-to-EUR rate when the endpoint is available.
+                try
+                {
+                    var usdToEurRate = await remoteLookups.FetchUsdToEurRateAsync();
+
+                    settings.PersistExchangeRate(usdToEurRate, DateTimeOffset.UtcNow);
+
+                    Debug.WriteLine($"Updated USD-to-EUR rate: {usdToEurRate}");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Could not refresh the USD-to-EUR rate. Continuing with saved rate {settings.PriceInfo.UsdToEurRate}. Error: {ex.Message}");
                 }
 
                 // Main app services (feature layer)

@@ -3,6 +3,7 @@ using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLists.Models;
+using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.CollectionMutations
 {
@@ -51,6 +52,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             plan.Updates.Clear();
             plan.Updates.AddRange(updatesByCardId.Values);
 
+            Debug.WriteLine($"[CollectionMutationsLogic] Planned {plan.Inserts.Count} inserts, {plan.Updates.Count} updates, and {plan.DeleteIds.Count} deletes.");
 
             return plan;
         }
@@ -65,28 +67,23 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                     CardId = row.CardId,
                     Identity = row.Identity,
                     CardsOwned = row.CardsOwned,
-                    CardsForTrade = row.CardsForTrade
+                    CardsForTrade = row.CardsForTrade,
+                    SellPrice = row.SellPrice,
+                    SellPriceCurrency = row.SellPriceCurrency
                 };
 
                 workingById[working.CardId] = working;
                 workingByIdentity[working.Identity] = working;
             }
         }
-        private static void PlanAdd(
-            CollectionCardDraft card,
-            CollectionIdentity identity,
-            Dictionary<int, UpdateMutation> updatesByCardId,
-            CollectionMutationPlan plan,
-            Dictionary<CollectionIdentity, CollectionCardDbRow> upsertsByIdentity,
-            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity,
-            Dictionary<CollectionIdentity, InsertMutation> insertsByIdentity)
+        private static void PlanAdd(CollectionCardDraft card, CollectionIdentity identity, Dictionary<int, UpdateMutation> updatesByCardId, CollectionMutationPlan plan, Dictionary<CollectionIdentity, CollectionCardDbRow> upsertsByIdentity, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity, Dictionary<CollectionIdentity, InsertMutation> insertsByIdentity)
         {
+            // Duplicate staged rows with the same identity combine quantities and retain the first row's price.
             if (insertsByIdentity.TryGetValue(identity, out var existingInsert))
             {
                 var mergedOwned = existingInsert.CardsOwned + card.CardsOwned;
                 var mergedTrade = existingInsert.CardsForTrade + card.CardsForTrade;
-
-                var replacement = new InsertMutation(identity, mergedOwned, mergedTrade, card);
+                var replacement = new InsertMutation(identity, mergedOwned, mergedTrade, existingInsert.Draft);
 
                 var index = plan.Inserts.IndexOf(existingInsert);
                 if (index < 0)
@@ -97,44 +94,38 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 plan.Inserts[index] = replacement;
                 insertsByIdentity[identity] = replacement;
 
-                upsertsByIdentity[identity] = ToRow(0, identity, mergedOwned, mergedTrade);
+                upsertsByIdentity[identity] = ToRow(0, identity, mergedOwned, mergedTrade, existingInsert.Draft.SellPrice, existingInsert.Draft.SellPriceCurrency);
+
                 return;
             }
 
+            // Adding to an existing collection row changes its quantity while preserving its saved price.
             if (workingByIdentity.TryGetValue(identity, out var existing))
             {
                 var mergedOwned = existing.CardsOwned + card.CardsOwned;
                 var mergedTrade = existing.CardsForTrade + card.CardsForTrade;
 
-                SetUpdate(updatesByCardId, existing.CardId, identity, mergedOwned, mergedTrade);
+                SetUpdate(updatesByCardId, existing.CardId, identity, mergedOwned, mergedTrade, existing.SellPrice, existing.SellPriceCurrency);
 
                 existing.CardsOwned = mergedOwned;
                 existing.CardsForTrade = mergedTrade;
 
-                upsertsByIdentity[identity] = ToRow(existing.CardId, identity, mergedOwned, mergedTrade);
+                upsertsByIdentity[identity] = ToRow(existing.CardId, identity, mergedOwned, mergedTrade, existing.SellPrice, existing.SellPriceCurrency);
+
                 return;
             }
 
+            // A new collection identity starts with the values from its draft.
             var insert = new InsertMutation(identity, card.CardsOwned, card.CardsForTrade, card);
 
             plan.Inserts.Add(insert);
             insertsByIdentity[identity] = insert;
 
-            upsertsByIdentity[identity] = ToRow(0, identity, card.CardsOwned, card.CardsForTrade);
+            upsertsByIdentity[identity] = ToRow(0, identity, card.CardsOwned, card.CardsForTrade, card.SellPrice, card.SellPriceCurrency);
         }
-        private static void PlanEdit(
-            CollectionCardDraft card,
-            CollectionIdentity targetIdentity,
-            Dictionary<int, UpdateMutation> updatesByCardId,
-            CollectionMutationPlan plan,
-            HashSet<int> removedIds,
-            Dictionary<CollectionIdentity, CollectionCardDbRow> upsertsByIdentity,
-            Dictionary<int, WorkingRow> workingById,
-            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity,
-            Dictionary<CollectionIdentity, InsertMutation> insertsByIdentity)
+        private static void PlanEdit(CollectionCardDraft card, CollectionIdentity targetIdentity, Dictionary<int, UpdateMutation> updatesByCardId, CollectionMutationPlan plan, HashSet<int> removedIds, Dictionary<CollectionIdentity, CollectionCardDbRow> upsertsByIdentity, Dictionary<int, WorkingRow> workingById, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity, Dictionary<CollectionIdentity, InsertMutation> insertsByIdentity)
         {
-            var currentId = card.CardId
-                ?? throw new InvalidOperationException("Edit requires CardId.");
+            var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId.");
 
             if (!workingById.TryGetValue(currentId, out var currentRow))
             {
@@ -144,15 +135,17 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             var currentIdentity = currentRow.Identity;
 
             // Branch 1:
-            // Identity did not change. Only quantity fields may have changed.
+            // Identity did not change. Only quantity and sellprice fields may have changed.
             if (targetIdentity.Equals(currentIdentity))
             {
-                SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
+                SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade, card.SellPrice, card.SellPriceCurrency);
 
                 currentRow.CardsOwned = card.CardsOwned;
                 currentRow.CardsForTrade = card.CardsForTrade;
+                currentRow.SellPrice = card.SellPrice;
+                currentRow.SellPriceCurrency = card.SellPriceCurrency;
 
-                upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
+                upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade, card.SellPrice, card.SellPriceCurrency);
 
                 return;
             }
@@ -172,13 +165,15 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
                 insertsByIdentity.Remove(targetIdentity);
 
-                SetUpdate(updatesByCardId, currentId, targetIdentity, mergedOwned, mergedTrade);
+                SetUpdate(updatesByCardId, currentId, targetIdentity, mergedOwned, mergedTrade, card.SellPrice, card.SellPriceCurrency);
 
                 workingByIdentity.Remove(currentIdentity);
 
                 currentRow.Identity = targetIdentity;
                 currentRow.CardsOwned = mergedOwned;
                 currentRow.CardsForTrade = mergedTrade;
+                currentRow.SellPrice = card.SellPrice;
+                currentRow.SellPriceCurrency = card.SellPriceCurrency;
 
                 workingByIdentity[targetIdentity] = currentRow;
 
@@ -186,7 +181,7 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 card.CardsForTrade = mergedTrade;
 
                 upsertsByIdentity.Remove(currentIdentity);
-                upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, mergedOwned, mergedTrade);
+                upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, mergedOwned, mergedTrade, card.SellPrice, card.SellPriceCurrency);
 
                 return;
             }
@@ -201,17 +196,19 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 // Defensive case: target identity maps back to the same row.
                 if (survivor.CardId == currentId)
                 {
-                    SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
+                    SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade, card.SellPrice, card.SellPriceCurrency);
 
                     currentRow.Identity = targetIdentity;
                     currentRow.CardsOwned = card.CardsOwned;
                     currentRow.CardsForTrade = card.CardsForTrade;
+                    currentRow.SellPrice = card.SellPrice;
+                    currentRow.SellPriceCurrency = card.SellPriceCurrency;
 
                     workingByIdentity.Remove(currentIdentity);
                     workingByIdentity[targetIdentity] = currentRow;
 
                     upsertsByIdentity.Remove(currentIdentity);
-                    upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
+                    upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade, card.SellPrice, card.SellPriceCurrency);
 
                     return;
                 }
@@ -224,11 +221,9 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
                 plan.DeleteIds.Add(currentId);
                 removedIds.Add(currentId);
-
-                // The current row disappears, so any prior update for it is no longer valid.
                 updatesByCardId.Remove(currentId);
 
-                SetUpdate(updatesByCardId, survivor.CardId, targetIdentity, mergedOwned, mergedTrade);
+                SetUpdate(updatesByCardId, survivor.CardId, targetIdentity, mergedOwned, mergedTrade, survivor.SellPrice, survivor.SellPriceCurrency);
 
                 workingById.Remove(currentId);
                 workingByIdentity.Remove(currentIdentity);
@@ -240,8 +235,10 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
                 card.CardId = survivor.CardId;
                 card.CardsOwned = mergedOwned;
                 card.CardsForTrade = mergedTrade;
+                card.SellPrice = survivor.SellPrice;
+                card.SellPriceCurrency = survivor.SellPriceCurrency;
 
-                upsertsByIdentity[targetIdentity] = ToRow(survivor.CardId, targetIdentity, mergedOwned, mergedTrade);
+                upsertsByIdentity[targetIdentity] = ToRow(survivor.CardId, targetIdentity, mergedOwned, mergedTrade, survivor.SellPrice, survivor.SellPriceCurrency);
 
                 return;
             }
@@ -249,26 +246,22 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             // Branch 4:
             // Identity changed, but no collision exists.
             // Update this row in place from current identity to target identity.
-            SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
+            SetUpdate(updatesByCardId, currentId, targetIdentity, card.CardsOwned, card.CardsForTrade, card.SellPrice, card.SellPriceCurrency);
 
             workingByIdentity.Remove(currentIdentity);
 
             currentRow.Identity = targetIdentity;
             currentRow.CardsOwned = card.CardsOwned;
             currentRow.CardsForTrade = card.CardsForTrade;
+            currentRow.SellPrice = card.SellPrice;
+            currentRow.SellPriceCurrency = card.SellPriceCurrency;
 
             workingByIdentity[targetIdentity] = currentRow;
 
             upsertsByIdentity.Remove(currentIdentity);
-            upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade);
+            upsertsByIdentity[targetIdentity] = ToRow(currentId, targetIdentity, card.CardsOwned, card.CardsForTrade, card.SellPrice, card.SellPriceCurrency);
         }
-        private static void PlanEditDelete(
-            CollectionCardDraft card,
-            CollectionMutationPlan plan,
-            HashSet<int> removedIds,
-            Dictionary<CollectionIdentity, CollectionCardDbRow> upsertsByIdentity,
-            Dictionary<int, WorkingRow> workingById,
-            Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
+        private static void PlanEditDelete(CollectionCardDraft card, CollectionMutationPlan plan, HashSet<int> removedIds, Dictionary<CollectionIdentity, CollectionCardDbRow> upsertsByIdentity, Dictionary<int, WorkingRow> workingById, Dictionary<CollectionIdentity, WorkingRow> workingByIdentity)
         {
             var currentId = card.CardId ?? throw new InvalidOperationException("Edit delete requires CardId.");
 
@@ -286,18 +279,20 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             workingByIdentity.Remove(currentIdentity);
             upsertsByIdentity.Remove(currentIdentity);
         }
-        private static void SetUpdate(Dictionary<int, UpdateMutation> updatesByCardId, int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade)
+        private static void SetUpdate(Dictionary<int, UpdateMutation> updatesByCardId, int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade, decimal? sellPrice, string? sellPriceCurrency)
         {
-            updatesByCardId[cardId] = new UpdateMutation(cardId, identity, cardsOwned, cardsForTrade);
+            updatesByCardId[cardId] = new UpdateMutation(cardId, identity, cardsOwned, cardsForTrade, sellPrice, sellPriceCurrency);
         }
-        private static CollectionCardDbRow ToRow(int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade)
+        private static CollectionCardDbRow ToRow(int cardId, CollectionIdentity identity, int cardsOwned, int cardsForTrade, decimal? sellPrice, string? sellPriceCurrency)
         {
             return new CollectionCardDbRow
             {
                 CardId = cardId,
                 Identity = identity,
                 CardsOwned = cardsOwned,
-                CardsForTrade = cardsForTrade
+                CardsForTrade = cardsForTrade,
+                SellPrice = sellPrice,
+                SellPriceCurrency = sellPriceCurrency
             };
         }
 
@@ -308,6 +303,8 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
             public CollectionIdentity Identity { get; set; } = default!;
             public int CardsOwned { get; set; }
             public int CardsForTrade { get; set; }
+            public decimal? SellPrice { get; set; }
+            public string? SellPriceCurrency { get; set; }
         }
     }
 }
