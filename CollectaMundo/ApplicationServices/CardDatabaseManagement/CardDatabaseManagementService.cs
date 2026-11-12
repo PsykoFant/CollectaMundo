@@ -53,7 +53,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         private readonly string _pricesPath = Path.Combine(settings.UserDownloadsPath, "prices.json");
         private readonly string _tempDbPath = Path.Combine(settings.UserDownloadsPath, "AllPrintings.sqlite");
 
-        public string BackupFolderPath => _settings.BackupFolderPath;
+
 
 
         #region USE CASE: FIRST-TIME DATABASE PREPARATION
@@ -784,57 +784,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             if (inserted == 0)
             {
                 throw new InvalidOperationException("Printing-card projection produced no rows.");
-            }
-        }
-
-        #endregion
-
-        #region USE CASE: COLLECTION EXPORT
-        public async Task<OperationResult> ExportCollectionAsync(CancellationToken ct = default)
-        {
-            try
-            {
-                ct.ThrowIfCancellationRequested();
-
-                var filePath = await _uowRunner.ExecuteReadOnlyAsync(conn => _dbMgmtRepo.ExportCollectionAsync(conn, _settings.BackupFolderPath, ct));
-
-                ct.ThrowIfCancellationRequested();
-
-                if (filePath == null)
-                {
-                    return new OperationResult(OperationResultCode.Empty, string.Empty);
-                }
-
-                return new OperationResult(OperationResultCode.Success, filePath);
-            }
-            catch (OperationCanceledException)
-            {
-                return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled backup");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error creating CSV backup: {ex.Message}");
-
-                return new OperationResult(OperationResultCode.Error, $"Error creating CSV backup: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region USE CASE: CHANGE BACKUP FOLDER PATH
-        public OperationResult ChangeBackupFolderPath(string newBackupPath)
-        {
-            try
-            {
-                _settings.PersistBackupFolderPath(newBackupPath);
-
-                return new OperationResult(OperationResultCode.Success, "Folder path changed.");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error changing backup folder path: {ex.Message}");
-
-                return new OperationResult(OperationResultCode.Error, $"Error changing backup folder path: {ex.Message}");
             }
         }
 

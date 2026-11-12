@@ -1,17 +1,12 @@
-﻿using CollectaMundo.ApplicationServices.Shared.Files;
-using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
-using System.Data.Common;
+﻿using CollectaMundo.Infrastructure.CardDatabaseManagement.SqlDictionaries;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 {
-    public class CardDatabaseManagementRepo(ICsvFileWriter csvFileWriter) : ICardDatabaseManagementRepo
+    public class CardDatabaseManagementRepo() : ICardDatabaseManagementRepo
     {
-        private readonly ICsvFileWriter _csvFileWriter = csvFileWriter;
-
         // Create
         public async Task CreateTablesAsync(SQLiteConnection conn, SQLiteTransaction tx)
         {
@@ -76,7 +71,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
             }
             Debug.WriteLine("Database optimization completed.");
         }
-
 
         // Update
         public async Task<int> GetNumberOfSetsAsync(SQLiteConnection conn, CancellationToken ct = default)
@@ -356,46 +350,6 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
             return $"\"{identifier.Replace("\"", "\"\"")}\"";
         }
-
-        // Export
-        public async Task<string?> ExportCollectionAsync(SQLiteConnection conn, string backupFolderPath, CancellationToken ct = default)
-        {
-            Directory.CreateDirectory(backupFolderPath);
-
-            using var command = new SQLiteCommand("SELECT * FROM myCollection", conn);
-            using var reader = await command.ExecuteReaderAsync(ct);
-
-            if (!reader.HasRows)
-            {
-                return null;
-            }
-
-            var filePath = Path.Combine(backupFolderPath, $"MyCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
-            var headers = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToList();
-
-            await _csvFileWriter.WriteAsync(filePath, headers, ReadRowsAsync(reader, ct), ';', ct);
-
-            return filePath;
-        }
-        private static async IAsyncEnumerable<IReadOnlyList<string?>> ReadRowsAsync(DbDataReader reader, [EnumeratorCancellation] CancellationToken ct)
-        {
-            while (await reader.ReadAsync(ct))
-            {
-                ct.ThrowIfCancellationRequested();
-
-                var row = new string?[reader.FieldCount];
-
-                for (var i = 0; i < reader.FieldCount; i++)
-                {
-                    row[i] = reader.IsDBNull(i)
-                        ? null
-                        : reader.GetValue(i)?.ToString();
-                }
-
-                yield return row;
-            }
-        }
-
 
         // Derived card data tables that are not part of the source tables and need to be recreated after replacing the source tables.
         private static readonly string[] DerivedCardDataTableNames = ["oracleCards", "printingCards", "cardLegalityFormats"];

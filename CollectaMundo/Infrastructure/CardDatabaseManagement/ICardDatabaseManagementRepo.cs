@@ -16,8 +16,5 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
         Task ReplaceSourceTablesAsync(SQLiteConnection conn, SQLiteTransaction tx, IProgress<string> progress);
         Task RecreateDerivedCardDataTablesAsync(SQLiteConnection conn, SQLiteTransaction tx);
 
-        // Export
-        Task<string?> ExportCollectionAsync(SQLiteConnection conn, string backupFolderPath, CancellationToken ct = default);
     }
-
 }
