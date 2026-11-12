@@ -31,6 +31,8 @@ namespace CollectaMundo.DomainLogic.Shared
             ImportField.Language => GetDefaultString(ImportField.Language),
             ImportField.Location => "blank",
             ImportField.Comment => "blank",
+            ImportField.SellPrice => "blank",
+            ImportField.SellPriceCurrency => "blank",
 
             ImportField.CardsOwned => GetDefaultInt(ImportField.CardsOwned).ToString(CultureInfo.InvariantCulture),
             ImportField.CardsForTrade => GetDefaultInt(ImportField.CardsForTrade).ToString(CultureInfo.InvariantCulture),

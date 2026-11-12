@@ -536,9 +536,11 @@ namespace CollectaMundo.ViewModels
             {
                 if (cardById.TryGetValue(row.CardId, out var existingCard))
                 {
-                    // Import mutation rows contain only collection identity/quantity data. The existing CollectionCard already has the hydrated PrintingCard, so for existing rows we only need to apply quantity deltas.
+                    // Keep the existing hydrated card and apply the imported quantity deltas and persisted sell-price values.
                     existingCard.CardsOwned += row.CardsOwned;
                     existingCard.CardsForTrade += row.CardsForTrade;
+                    existingCard.SellPrice = row.SellPrice;
+                    existingCard.SellPriceCurrency = row.SellPriceCurrency;
                     existingCard.RecomputeCollectionPrice();
 
                     addedOrUpdated.Add(existingCard);

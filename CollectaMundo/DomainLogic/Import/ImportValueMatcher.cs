@@ -117,7 +117,7 @@ namespace CollectaMundo.DomainLogic.Import
             [ImportField.Location] = ["location", "place", "storage", "binder", "shelf", "box", "deck"],
             [ImportField.Comment] = ["comment", "notes", "remarks", "note"],
             [ImportField.CardsOwned] = ["quantity", "count", "owned", "qty"],
-            [ImportField.CardsForTrade] = ["trade", "for trade", "sell", "forsale", "For sale", "selling"]
+            [ImportField.CardsForTrade] = ["trade", "for trade", "forsale", "For sale", "selling"]
         };
 
         // Value guesses / aliases for ImportField

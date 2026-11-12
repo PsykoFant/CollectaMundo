@@ -4,7 +4,6 @@ using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
@@ -31,7 +30,18 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                 return;
             }
 
-            foreach (var field in new[] { ImportField.Condition, ImportField.CardFinish, ImportField.Language, ImportField.Location, ImportField.Comment, ImportField.CardsOwned, ImportField.CardsForTrade })
+            foreach (var field in new[]
+            {
+                ImportField.Condition,
+                ImportField.CardFinish,
+                ImportField.Language,
+                ImportField.Location,
+                ImportField.Comment,
+                ImportField.SellPrice,
+                ImportField.SellPriceCurrency,
+                ImportField.CardsOwned,
+                ImportField.CardsForTrade
+            })
             {
                 AdditionalMappings.Add(new CsvFieldMapping
                 {

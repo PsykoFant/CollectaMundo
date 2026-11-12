@@ -643,7 +643,6 @@ namespace CollectaMundo.Tests.UnitTests
             }
         }
 
-
         [Fact]
         public async Task Step3_Repo_NameOnlyLookup_ReturnsUniqueUuidsPerName()
         {
@@ -674,6 +673,62 @@ namespace CollectaMundo.Tests.UnitTests
             {
                 Assert.Equal(uuids.Count, uuids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
             }
+        }
+
+        [Fact]
+        public void CollapseResolvedItemsForCollection_DuplicateIdentity_KeepsFirstNonNullSellPrice()
+        {
+            var logic = new ImportLogic();
+
+            var resolvedItems = new[]
+            {
+        new ResolvedImportItem
+        {
+            TempItemImportKey = "row-1",
+            IsImportable = true,
+            Uuid = "card-uuid",
+            Condition = "Near Mint",
+            Language = "English",
+            Finish = "nonfoil",
+            CardsOwned = 1,
+            CardsForTrade = 0,
+            SellPrice = null,
+            SellPriceCurrency = null
+        },
+        new ResolvedImportItem
+        {
+            TempItemImportKey = "row-2",
+            IsImportable = true,
+            Uuid = "card-uuid",
+            Condition = "Near Mint",
+            Language = "English",
+            Finish = "nonfoil",
+            CardsOwned = 1,
+            CardsForTrade = 0,
+            SellPrice = 2.50m,
+            SellPriceCurrency = "EUR"
+        },
+        new ResolvedImportItem
+        {
+            TempItemImportKey = "row-3",
+            IsImportable = true,
+            Uuid = "card-uuid",
+            Condition = "Near Mint",
+            Language = "English",
+            Finish = "nonfoil",
+            CardsOwned = 1,
+            CardsForTrade = 0,
+            SellPrice = 3.50m,
+            SellPriceCurrency = "USD"
+        }
+    };
+
+            var collapsed = logic.CollapseResolvedItemsForCollection(resolvedItems);
+
+            var item = Assert.Single(collapsed);
+            Assert.Equal(3, item.CardsOwned);
+            Assert.Equal(2.50m, item.SellPrice);
+            Assert.Equal("EUR", item.SellPriceCurrency);
         }
     }
 }

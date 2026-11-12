@@ -55,7 +55,17 @@
                         <Paragraph>
                             Comment: blank (no comments)
                         </Paragraph>
-                    </ListItem>                    
+                    </ListItem>
+                    <ListItem>
+                        <Paragraph>
+                            Sell price: blank (no price)
+                        </Paragraph>
+                    </ListItem>
+                    <ListItem>
+                        <Paragraph>
+                            Sell price currency: blank (no currency)
+                        </Paragraph>
+                    </ListItem>
                 </List>
             </FlowDocument>
         </FlowDocumentScrollViewer>

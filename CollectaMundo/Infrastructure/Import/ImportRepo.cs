@@ -4,6 +4,7 @@ using CollectaMundo.Infrastructure.CardLists.Models;
 using CollectaMundo.Infrastructure.Shared.Database;
 using System.Data;
 using System.Data.SQLite;
+using System.Globalization;
 using System.Text;
 
 namespace CollectaMundo.Infrastructure.Import
@@ -512,15 +513,25 @@ namespace CollectaMundo.Infrastructure.Import
         {
             const string insertSql = """
                                     INSERT INTO myCollection
-                                        (uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade)
+                                        (uuid, language, finish, condition, locationId, comment, cardsOwned, cardsForTrade,
+                                         sellPrice, sellPriceCurrency)
                                     VALUES
-                                        (@uuid, @language, @finish, @condition, @locationId, @comment, @owned, @trade);
+                                        (@uuid, @language, @finish, @condition, @locationId, @comment, @owned, @trade,
+                                         @sellPrice, @sellPriceCurrency);
                                     """;
 
             const string updateSql = """
                                     UPDATE myCollection
                                        SET cardsOwned = cardsOwned + @owned,
-                                           cardsForTrade = cardsForTrade + @trade
+                                           cardsForTrade = cardsForTrade + @trade,
+                                           sellPrice = CASE
+                                               WHEN sellPrice IS NOT NULL THEN sellPrice
+                                               ELSE @sellPrice
+                                           END,
+                                           sellPriceCurrency = CASE
+                                               WHEN sellPrice IS NOT NULL THEN sellPriceCurrency
+                                               ELSE @sellPriceCurrency
+                                           END
                                      WHERE uuid = @uuid
                                        AND language = @language
                                        AND finish = @finish
@@ -530,7 +541,7 @@ namespace CollectaMundo.Infrastructure.Import
                                     """;
 
             const string selectIdSql = """
-                                        SELECT id
+                                        SELECT id, sellPrice, sellPriceCurrency
                                         FROM myCollection
                                         WHERE uuid = @uuid
                                           AND language = @language
@@ -552,11 +563,13 @@ namespace CollectaMundo.Infrastructure.Import
             using var updateCmd = new SQLiteCommand(updateSql, conn, tx);
             AddIdentityParameters(updateCmd);
             AddQuantityParameters(updateCmd);
+            AddSellPriceParameters(updateCmd);
             updateCmd.Prepare();
 
             using var insertCmd = new SQLiteCommand(insertSql, conn, tx);
             AddIdentityParameters(insertCmd);
             AddQuantityParameters(insertCmd);
+            AddSellPriceParameters(insertCmd);
             insertCmd.Prepare();
 
             using var selectIdCmd = new SQLiteCommand(selectIdSql, conn, tx);
@@ -573,6 +586,7 @@ namespace CollectaMundo.Infrastructure.Import
                 // 1. Attempt additive update of existing collection row.
                 BindIdentityParameters(updateCmd, it, normalizedComment);
                 BindQuantityParameters(updateCmd, it);
+                BindSellPriceParameters(updateCmd, it);
 
                 var affectedRows = await updateCmd.ExecuteNonQueryAsync(token);
 
@@ -581,6 +595,7 @@ namespace CollectaMundo.Infrastructure.Import
                 {
                     BindIdentityParameters(insertCmd, it, normalizedComment);
                     BindQuantityParameters(insertCmd, it);
+                    BindSellPriceParameters(insertCmd, it);
 
                     await insertCmd.ExecuteNonQueryAsync(token);
                 }
@@ -588,19 +603,30 @@ namespace CollectaMundo.Infrastructure.Import
                 // 3. Resolve the database ID of the inserted/updated row.
                 BindIdentityParameters(selectIdCmd, it, normalizedComment);
 
-                var idObj = await selectIdCmd.ExecuteScalarAsync(token);
+                using var reader = await selectIdCmd.ExecuteReaderAsync(token);
 
-                if (idObj is null || idObj == DBNull.Value)
+                if (!await reader.ReadAsync(token))
                 {
                     throw new InvalidOperationException(
-                        $"Failed to resolve myCollection row id for identity: " +
+                        $"Failed to resolve myCollection row for identity: " +
                         $"Uuid={it.Uuid}, Language={it.Language}, " +
                         $"Finish={it.Finish}, Condition={it.Condition}, " +
                         $"LocationId={(it.LocationId?.ToString() ?? "null")}, " +
                         $"Comment={(normalizedComment ?? "null")}.");
                 }
 
-                var id = Convert.ToInt32(idObj);
+                var id = Convert.ToInt32(reader["id"]);
+
+                var sellPriceOrdinal = reader.GetOrdinal("sellPrice");
+                var sellPriceCurrencyOrdinal = reader.GetOrdinal("sellPriceCurrency");
+
+                decimal? persistedSellPrice = reader.IsDBNull(sellPriceOrdinal)
+                    ? null
+                    : Convert.ToDecimal(reader.GetValue(sellPriceOrdinal), CultureInfo.InvariantCulture);
+
+                string? persistedSellPriceCurrency = reader.IsDBNull(sellPriceCurrencyOrdinal)
+                    ? null
+                    : reader.GetString(sellPriceCurrencyOrdinal);
 
                 // 4. Return the mutation using the existing result semantics.
                 result.Add(new CollectionCardDbRow
@@ -614,7 +640,9 @@ namespace CollectaMundo.Infrastructure.Import
                         it.LocationId,
                         normalizedComment),
                     CardsOwned = it.CardsOwned,
-                    CardsForTrade = it.CardsForTrade
+                    CardsForTrade = it.CardsForTrade,
+                    SellPrice = persistedSellPrice,
+                    SellPriceCurrency = persistedSellPriceCurrency
                 });
 
                 percent?.Report((int)(((i + 1) / (double)items.Count) * 100));
@@ -649,6 +677,21 @@ namespace CollectaMundo.Infrastructure.Import
         {
             cmd.Parameters["@owned"].Value = item.CardsOwned;
             cmd.Parameters["@trade"].Value = item.CardsForTrade;
+        }
+        private static void AddSellPriceParameters(SQLiteCommand cmd)
+        {
+            cmd.Parameters.Add("@sellPrice", DbType.Decimal);
+            cmd.Parameters.Add("@sellPriceCurrency", DbType.String);
+        }
+        private static void BindSellPriceParameters(SQLiteCommand cmd, CollectionUpsertItem item)
+        {
+            cmd.Parameters["@sellPrice"].Value = item.SellPrice.HasValue
+                ? (object)item.SellPrice.Value
+                : DBNull.Value;
+
+            cmd.Parameters["@sellPriceCurrency"].Value = item.SellPriceCurrency is not null
+                ? item.SellPriceCurrency
+                : DBNull.Value;
         }
     }
 }
