@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ViewModels.Pages;
+﻿using CollectaMundo.ViewModels.Pages.Models;
 
 namespace CollectaMundo.ApplicationServices.Navigation
 {
@@ -8,6 +8,7 @@ namespace CollectaMundo.ApplicationServices.Navigation
         event EventHandler<UtilitiesRoute>? RouteChanged;
 
         void ShowHome();
+        Task ShowCollectionExport();
         Task ShowImport();
         Task ShowCardLocationManagement();
     }

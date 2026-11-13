@@ -27,75 +27,15 @@ namespace CollectaMundo.ViewModels.Utilities
         [ObservableProperty]
         private bool isUpdateDbButtonVisible;
 
-        // Use case: Backup collection
+
+        // Use cases: Export collection
         [RelayCommand]
-        protected virtual async Task BackupCollection()
+        protected virtual async Task OpenCollectionExport()
         {
-            PrepareUIForActionCommands("Export csv-format backup of My Collection");
+            _userPromptService.ResetInteractionState();
+            _operationOverlayController.Hide();
 
-            var result = new OperationResult(OperationResultCode.Error, string.Empty);
-
-            if (_getMyCollectionCount() == 0)
-            {
-                result = new OperationResult(OperationResultCode.Empty, "Your collection is empty - nothing to back up");
-            }
-            else
-            {
-                _operationOverlayController.SetDetail($"Export to: {_cardDbManagementService.BackupFolderPath}");
-
-                // Setup primary
-                _operationOverlayController.ShowPrimaryButton(
-                    "   Change backup location   ",
-                    _ =>
-                    {
-                        string? selectedPath = _fileSystemPicker.PickFolder("Select backup folder location", _cardDbManagementService.BackupFolderPath);
-                        if (!string.IsNullOrWhiteSpace(selectedPath))
-                        {
-                            _cardDbManagementService.ChangeBackupFolderPath(selectedPath);
-                            _operationOverlayController.SetDetail($"Backup location: {selectedPath}");
-                        }
-                    });
-
-                // Await confirmation
-                if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButtonEnum.Secondary, "   Start backup   "))
-                {
-                    Debug.WriteLine("[Backup] User did not confirm. Aborting.");
-                    return;
-                }
-
-                // UI state preparation AFTER user clicked
-                BusyStateRequested?.Invoke(this, true);
-                _operationOverlayController.Reset();
-                _operationOverlayController.SetHeadline("Please wait - backing up up your collection ... ");
-
-                // Prepare cancellation token before starting
-                var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
-
-                // Run backup
-                result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
-
-                // Reset UI state
-                CompleteActionCommandUIFlow();
-            }
-            // Display result
-            switch (result.Code)
-            {
-                case OperationResultCode.Success:
-                    _operationOverlayController.SetHeadline("Backup complete!");
-                    _operationOverlayController.SetDetail($"Backup created successfully at {result.Message}");
-                    _operationOverlayController.SetPrimaryButtonText("   Awesome!   ");
-                    break;
-
-                case OperationResultCode.Empty:
-                    _operationOverlayController.SetDetail(result.Message);
-                    _operationOverlayController.SetPrimaryButtonText("   Oh ... I guess that makes sense...   ");
-                    break;
-
-                default:
-                    _operationOverlayController.SetDetail($"Error: {result.Message}");
-                    _operationOverlayController.SetPrimaryButtonText("   Ok :-/   ");
-                    break;
-            }
+            await _utilitiesNavigator.ShowCollectionExport();
         }
 
         [RelayCommand]
@@ -218,10 +158,10 @@ namespace CollectaMundo.ViewModels.Utilities
             bool includeBackup = _getMyCollectionCount() > 0;
             string backupResultMessage = string.Empty;
 
-            if (includeBackup)
-            {
-                _operationOverlayController.SetDetail($"A csv-backup of your collection will also be created at {_cardDbManagementService.BackupFolderPath}");
-            }
+            //if (includeBackup)
+            //{
+            //    _operationOverlayController.SetDetail($"A csv-backup of your collection will also be created at {_cardDbManagementService.BackupFolderPath}");
+            //}
 
             if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButtonEnum.Primary, "   Start card database update!   "))
             {
@@ -234,26 +174,26 @@ namespace CollectaMundo.ViewModels.Utilities
             BusyStateRequested?.Invoke(this, true);
             var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
 
-            if (includeBackup)
-            {
-                _operationOverlayController.Show("Please wait - backing up up your collection ... ", false);
-                var backupResult = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
+            //if (includeBackup)
+            //{
+            //    _operationOverlayController.Show("Please wait - backing up up your collection ... ", false);
+            //    var backupResult = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
 
-                if (backupResult.Code is OperationResultCode.CancelledByUser or not OperationResultCode.Success)
-                {
-                    _operationOverlayController.SetHeadline(
-                        backupResult.Code == OperationResultCode.CancelledByUser
-                        ? "Backup cancelled - aborting update..."
-                        : "Backup failed - aborting update...");
+            //    if (backupResult.Code is OperationResultCode.CancelledByUser or not OperationResultCode.Success)
+            //    {
+            //        _operationOverlayController.SetHeadline(
+            //            backupResult.Code == OperationResultCode.CancelledByUser
+            //            ? "Backup cancelled - aborting update..."
+            //            : "Backup failed - aborting update...");
 
-                    _operationOverlayController.SetDetail(backupResult.Message);
-                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
-                    _userPromptService.DisposeOperationCancellationToken();
-                    return;
-                }
+            //        _operationOverlayController.SetDetail(backupResult.Message);
+            //        _operationOverlayController.SetPrimaryButtonText("  OK  ");
+            //        _userPromptService.DisposeOperationCancellationToken();
+            //        return;
+            //    }
 
-                backupResultMessage = backupResult.Message;
-            }
+            //    backupResultMessage = backupResult.Message;
+            //}
             if (token.IsCancellationRequested)
             {
                 _operationOverlayController.Reset();

@@ -3,8 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:utilities="clr-namespace:CollectaMundo.ViewModels.Utilities"
              mc:Ignorable="d"
-             d:Style="{StaticResource {x:Type UserControl}}"             
+             d:DataContext="{d:DesignInstance Type=utilities:CollectionExportViewModel}"
+             d:Style="{StaticResource {x:Type UserControl}}"
              d:DesignHeight="450"
              d:DesignWidth="800">
 
@@ -12,40 +14,100 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Label Grid.Row="0" Content="Export Collection" Style="{StaticResource BigHeaderLabelStyle}" />
+        <Label Grid.Row="0"
+           Content="Export Collection"
+           Style="{StaticResource BigHeaderLabelStyle}" />
 
-        <StackPanel Grid.Row="1" Width="480" Margin="0,16,0,0" HorizontalAlignment="Center">
+        <TextBlock Grid.Row="1"
+               Text="{Binding StatusMessage}"
+               TextWrapping="Wrap"
+               Margin="0,0,0,12" />
 
-            <Label Content="Full collection backup" Style="{StaticResource SmallHeaderLabelStyle}" />
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <TextBlock Text="Save a CSV backup of your complete collection, including saved sell prices and currencies." TextWrapping="Wrap" Margin="0,4,0,10" />
+            <GroupBox Grid.Column="0"
+                  Header="Full collection backup"
+                  Margin="0,0,8,0"
+                  Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-            <Button Content="Create full backup" Width="180" Height="15" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Row="0"
+                           Text="Save a CSV backup of your complete collection, including saved sell prices and currencies."
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,12" />
 
-            <Separator Margin="0,20,0,16" />
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-            <Label Content="Trade list" Style="{StaticResource SmallHeaderLabelStyle}" />
+                        <TextBox Grid.Column="0"
+                             Text="{Binding BackupFolderPath}"
+                             IsReadOnly="True"
+                             VerticalContentAlignment="Center"
+                             Margin="0,0,8,0" />
 
-            <TextBlock Text="Export cards marked for trade. Prices will be converted to the selected currency." TextWrapping="Wrap" Margin="0,4,0,10" />
+                        <Button Grid.Column="1"
+                            Content="Change location"
+                            Command="{Binding ChangeBackupFolderCommand}" />
+                    </Grid>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                <Label Content="Price currency" VerticalAlignment="Center" Padding="0,0,12,0" />
+                    <Button Grid.Row="3"
+                        Content="Create full backup"
+                        Command="{Binding ExportFullCollectionBackupCommand}"
+                        HorizontalAlignment="Left" />
+                </Grid>
+            </GroupBox>
 
-                <ComboBox Width="120"
-                          SelectedIndex="-1">
-                    <ComboBoxItem Content="EUR" />
-                    <ComboBoxItem Content="USD" />
-                </ComboBox>
-            </StackPanel>
+            <GroupBox Grid.Column="1"
+                  Header="Trade list"
+                  Margin="8,0,0,0"
+                  Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-            <Button Content="Export trade list" Width="180" Height="15" HorizontalAlignment="Left" />
-            <Button Content="Change backup location"
-        Width="180"
-        Height="28"
-        HorizontalAlignment="Left"
-        Margin="0,8,0,0" />
-        </StackPanel>
+                    <TextBlock Grid.Row="0"
+                           Text="Export cards marked for trade. Prices will be converted to the selected currency."
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,12" />
+
+                    <StackPanel Grid.Row="1"
+                            Orientation="Horizontal">
+                        <Label Content="Price currency"
+                           VerticalAlignment="Center"
+                           Padding="0,0,12,0" />
+
+                        <ComboBox ItemsSource="{Binding CurrencyOptions}"
+                              SelectedItem="{Binding SelectedCurrency, Mode=TwoWay}"
+                              MinWidth="90"
+                              VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <Button Grid.Row="3"
+                        Content="Export trade list"
+                        Command="{Binding ExportTradeListCommand}"
+                        HorizontalAlignment="Left" />
+                </Grid>
+            </GroupBox>
+        </Grid>
     </Grid>
 </UserControl>

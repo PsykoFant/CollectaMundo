@@ -4,7 +4,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
     public interface ICardDatabaseManagementService
     {
-        string BackupFolderPath { get; }
         Task<OperationResult> FirstTimeDbPrepOrchestrator(int defaultDelay = 3000);
         Task<OperationResult> CheckForDbUpdatesAsync(CancellationToken ct = default);
         Task<OperationResult> UpdateDbPrepOrchestrator(int defaultDelay = 3000, CancellationToken ct = default);

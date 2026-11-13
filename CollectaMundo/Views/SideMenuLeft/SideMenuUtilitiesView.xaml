@@ -16,10 +16,10 @@
                     VerticalAlignment="Top"
                     Margin="10,0,0,0">
 
-            <Button Command="{Binding UtilitiesVM.BackupCollectionCommand}"
-                    Content="Create backup of my collection"
+            <Button Command="{Binding UtilitiesVM.OpenCollectionExportCommand}"
+                    Content="Export collection"
                     Width="180"
-                    Height="20"/>
+                    Height="20" />      
 
             <Button Command="{Binding UtilitiesVM.ImportFromCsvCommand}"
                     Content="The Import Wizard"

@@ -4,6 +4,7 @@ using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.Factories;
 using CollectaMundo.ApplicationServices.CardLocations;
+using CollectaMundo.ApplicationServices.CollectionExport;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.DeckExport;
@@ -110,6 +111,7 @@ namespace CollectaMundo.ViewModels
         public CardImageViewModel CardImageVM { get; }
         public UtilitiesViewModel UtilitiesVM { get; }
         public ImportViewModel ImportVM { get; }
+        public CollectionExportViewModel CollectionExportVM { get; }
         public CardLocationViewModel CardLocationVM { get; }
         public PricesViewModel PricesVM { get; }
         #endregion
@@ -153,6 +155,7 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
+            ICollectionExportService collectionExportService,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
             IDeckManagementStore deckManagementStore,
@@ -205,6 +208,7 @@ namespace CollectaMundo.ViewModels
 
             // Utility viewmodels
             UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, _utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
+            CollectionExportVM = new CollectionExportViewModel(collectionExportService, fileSystemPicker);
             ImportVM = new ImportViewModel(_importService, _utilitiesNavigator, _userPromptService);
             CardLocationVM = new CardLocationViewModel(_cardLocationService);
 
@@ -215,7 +219,7 @@ namespace CollectaMundo.ViewModels
             SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, filterVM: FilterPanelVM, deckBuilderService: deckBuilderService, pageTitle: "Search and Filter Cards", cardListPage: ShellPageEnum.SearchAndFilter, primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
             MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, filterVM: FilterPanelVM, pageTitle: "My Collection", cardListPage: ShellPageEnum.MyCollection, primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
             PagesDecksHostVM = new PagesDecksHostViewModel(DeckManagementVM, DeckBuilderVM);
-            PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, ImportVM, CardLocationVM, _utilitiesNavigator);
+            PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, CollectionExportVM, ImportVM, CardLocationVM, _utilitiesNavigator);
 
             // Side menu viewmodels
             SideMenuFilteringVM = new SideMenuFilteringViewModel(FilterPanelVM, ColorIconsViewModel);
@@ -249,6 +253,7 @@ namespace CollectaMundo.ViewModels
             IUserPromptService userPromptService,
             IFileSystemPicker fileSystemPicker,
             ICardListService cardListService,
+            ICollectionExportService collectionExportService,
             ICardLocationService cardLocationService,
             ICardLocationLookupStore cardLocationLookupStore,
             IDeckManagementStore deckManagementStore,
@@ -259,7 +264,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, filteringService, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, filteringService, userPromptService, fileSystemPicker, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

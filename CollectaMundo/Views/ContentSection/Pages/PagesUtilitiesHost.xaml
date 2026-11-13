@@ -8,6 +8,8 @@
              xmlns:cardLocationView="clr-namespace:CollectaMundo.Views.ContentSection.CardLocations"
              xmlns:importHost="clr-namespace:CollectaMundo.Views.ContentSection.Import"     
              xmlns:importVm="clr-namespace:CollectaMundo.ViewModels.Import"
+             xmlns:exportView="clr-namespace:CollectaMundo.Views.ContentSection.Export"     
+             xmlns:collectionExportVm="clr-namespace:CollectaMundo.ViewModels.Utilities"
              xmlns:utilitiesVm="clr-namespace:CollectaMundo.ViewModels.Utilities"
              xmlns:pagesVms="clr-namespace:CollectaMundo.ViewModels.Pages" 
              d:DataContext="{d:DesignInstance Type=pagesVms:PagesUtilitiesHostViewModel}"
@@ -19,6 +21,7 @@
                 <DataTemplate DataType="{x:Type utilitiesVm:UtilitiesViewModel}"><pageViews:PagesUtilitiesHomeView /></DataTemplate>
                 <DataTemplate DataType="{x:Type importVm:ImportViewModel}"><importHost:ImportWorkflowHost /></DataTemplate>
                 <DataTemplate DataType="{x:Type utilitiesVm:CardLocationViewModel}"><cardLocationView:CardLocationView /></DataTemplate>
+                <DataTemplate DataType="{x:Type collectionExportVm:CollectionExportViewModel}"><exportView:CollectionExportView /></DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
 

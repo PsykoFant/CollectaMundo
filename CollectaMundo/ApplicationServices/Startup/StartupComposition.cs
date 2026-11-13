@@ -6,6 +6,7 @@ using CollectaMundo.ApplicationServices.CardLegalities;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.CollectionExport;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.DeckExport;
@@ -35,6 +36,7 @@ using CollectaMundo.Infrastructure.CardLegalities;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
+using CollectaMundo.Infrastructure.CollectionExport;
 using CollectaMundo.Infrastructure.CollectionMutations;
 using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
@@ -96,7 +98,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var progressSinks = CreateProgressSinks(operationOverlayController);
                 var cardLegalityService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());
                 var integrityService = new DatabaseIntegrityService(uowRunner, settings, new DatabaseIntegrityRepo());
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor(), integrityService);
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor(), integrityService);
 
 
                 // Status overlay
@@ -159,6 +161,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
                 var fileSystemPicker = new FileSystemPicker();
+                var csvFileWriter = new CsvFileWriter();
 
                 var cardImageDownloader = new CardImageDownloader(settings);
                 var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
@@ -174,12 +177,13 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var deckBuilderService = new DeckBuilderService(uowRunner, new DeckCardReader(uowRunner, new DeckBuilderRepo()), cardLegalityService, new DeckBuilderLogic(), new DeckBuilderRepo());
                 var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter());
 
+                var collectionExportService = new CollectionExportService(settings, uowRunner, new CollectionExportRepo(), csvFileWriter);
                 var importService = new ImportService(uowRunner, new ImportRepo(), fileSystemPicker, new ImportLogic(), cardLocationService);
 
                 var filteringService = new FilteringService(cardLegalityService);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, filteringService, userPromptService, fileSystemPicker, cardListService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, filteringService, userPromptService, fileSystemPicker, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings));
 
                 operationOverlayController.Hide();
                 return new RootViewModel(mainVM, operationOverlayViewModel);

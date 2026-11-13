@@ -1,23 +1,34 @@
-﻿using CollectaMundo.ViewModels.Pages;
+﻿using CollectaMundo.ViewModels.Pages.Models;
 
 namespace CollectaMundo.ApplicationServices.Navigation
 {
     public sealed class UtilitiesNavigator : IUtilitiesNavigator
     {
         private UtilitiesRoute _currentRoute = UtilitiesRoute.Home;
-
         private TaskCompletionSource? _activeFeatureSessionTcs;
-
         public UtilitiesRoute CurrentRoute => _currentRoute;
-
         public event EventHandler<UtilitiesRoute>? RouteChanged;
-
         public void ShowHome()
         {
             CompletePendingNavigation();
             SetRoute(UtilitiesRoute.Home);
         }
+        public Task ShowCollectionExport()
+        {
+            if (_currentRoute == UtilitiesRoute.CollectionExport)
+            {
+                return _activeFeatureSessionTcs?.Task ?? Task.CompletedTask;
+            }
 
+            CompletePendingNavigation();
+
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _activeFeatureSessionTcs = tcs;
+
+            SetRoute(UtilitiesRoute.CollectionExport);
+
+            return tcs.Task;
+        }
         public Task ShowImport()
         {
             if (_currentRoute == UtilitiesRoute.Import)
