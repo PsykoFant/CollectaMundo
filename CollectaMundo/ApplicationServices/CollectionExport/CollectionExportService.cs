@@ -48,7 +48,7 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
                     "sellPriceCurrency"
                 };
                 var csvRows = rows.Select(ToCsvRow);
-                var filePath = Path.Combine(_settings.BackupFolderPath, $"MyCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
+                var filePath = Path.Combine(_settings.BackupFolderPath, $"CollectaMundoCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
 
                 await _csvFileWriter.WriteAsync(filePath, headers, csvRows, ';', cancellationToken);
 

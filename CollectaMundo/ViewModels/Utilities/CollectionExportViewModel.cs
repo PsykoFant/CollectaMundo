@@ -70,7 +70,7 @@ namespace CollectaMundo.ViewModels.Utilities
             try
             {
                 var result = await export(CancellationToken.None);
-                StatusMessage = result.Message;
+                StatusMessage = $"Collection successfully exported at: {result.Message}";
             }
             catch (Exception ex)
             {
@@ -79,6 +79,25 @@ namespace CollectaMundo.ViewModels.Utilities
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        [RelayCommand]
+        private void OpenBackupFolder()
+        {
+            if (string.IsNullOrWhiteSpace(BackupFolderPath))
+            {
+                StatusMessage = "The backup folder path is not set.";
+                return;
+            }
+
+            try
+            {
+                _fileSystemPicker.OpenFolder(BackupFolderPath);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Could not open the backup folder: {ex.Message}";
             }
         }
     }

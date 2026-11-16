@@ -21,10 +21,7 @@
            Content="Export Collection"
            Style="{StaticResource BigHeaderLabelStyle}" />
 
-        <TextBlock Grid.Row="1"
-               Text="{Binding StatusMessage}"
-               TextWrapping="Wrap"
-               Margin="0,0,0,12" />
+        <Label Grid.Row="1" Content="{Binding StatusMessage}" Style="{StaticResource SmallHeaderLabelStyle}" Margin="0,0,0,12" HorizontalAlignment="Center" />
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
@@ -40,7 +37,6 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
@@ -50,24 +46,20 @@
                            Margin="0,0,0,12" />
 
                     <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                        <TextBlock ToolTip="{Binding BackupFolderPath}" TextWrapping="Wrap" Margin="0,0,8,0">
+                            <Run Text="Collection will be backed up to: " />
+                            <Run Text="{Binding BackupFolderPath}" />
+                        </TextBlock>
 
-                        <TextBox Grid.Column="0"
-                             Text="{Binding BackupFolderPath}"
-                             IsReadOnly="True"
-                             VerticalContentAlignment="Center"
-                             Margin="0,0,8,0" />
+                        <Button Content="  Open folder  "
+                                    Command="{Binding OpenBackupFolderCommand}"
+                                    Margin="0,0,8,0" HorizontalAlignment="Left" />
 
-                        <Button Grid.Column="1"
-                            Content="Change location"
-                            Command="{Binding ChangeBackupFolderCommand}" />
+                            <Button Content="  Change location  " Command="{Binding ChangeBackupFolderCommand}" HorizontalAlignment="Right" />
                     </Grid>
 
-                    <Button Grid.Row="3"
-                        Content="Create full backup"
+                    <Button Grid.Row="2"
+                        Content="  Create full backup  "
                         Command="{Binding ExportFullCollectionBackupCommand}"
                         HorizontalAlignment="Left" />
                 </Grid>
@@ -82,7 +74,6 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0"
@@ -103,7 +94,7 @@
                     </StackPanel>
 
                     <Button Grid.Row="3"
-                        Content="Export trade list"
+                        Content="  Export trade list  "
                         Command="{Binding ExportTradeListCommand}"
                         HorizontalAlignment="Left" />
                 </Grid>

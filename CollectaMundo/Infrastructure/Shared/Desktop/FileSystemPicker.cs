@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using Ookii.Dialogs.Wpf;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 
@@ -53,6 +54,22 @@ namespace CollectaMundo.Infrastructure.Shared.Desktop
             var sanitized = new string([.. fileName.Select(c => invalidChars.Contains(c) ? '-' : c)]);
 
             return sanitized.Trim();
+        }
+        public void OpenFolder(string path)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+            var fullPath = Path.GetFullPath(path);
+            Directory.CreateDirectory(fullPath);
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                UseShellExecute = true
+            };
+            startInfo.ArgumentList.Add(fullPath);
+
+            Process.Start(startInfo);
         }
     }
 }
