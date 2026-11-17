@@ -1,6 +1,11 @@
 TO DO 
 
+test af trade list export
+tradelist export af filtrering
+
 merge deck export service?
+
+
 
 Merge og release
 
