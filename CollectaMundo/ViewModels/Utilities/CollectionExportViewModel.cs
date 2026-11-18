@@ -12,9 +12,13 @@ namespace CollectaMundo.ViewModels.Utilities
         private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
 
         public IReadOnlyList<string> CurrencyOptions { get; } = ["EUR", "USD"];
+        public void ResetStatusMessage()
+        {
+            StatusMessage = string.Empty;
+        }
 
         [ObservableProperty]
-        private string? selectedCurrency;
+        private string? selectedCurrency = "EUR";
 
         [ObservableProperty]
         private string backupFolderPath = collectionExportService.BackupFolderPath;
@@ -28,12 +32,15 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private Task ExportFullCollectionBackup()
         {
+            ResetStatusMessage();
             return RunExportAsync(cancellationToken => _collectionExportService.ExportFullCollectionBackupAsync(cancellationToken));
         }
 
         [RelayCommand]
         private Task ExportTradeList()
         {
+            ResetStatusMessage();
+
             if (string.IsNullOrWhiteSpace(SelectedCurrency))
             {
                 StatusMessage = "Select a currency for the trade-list export.";

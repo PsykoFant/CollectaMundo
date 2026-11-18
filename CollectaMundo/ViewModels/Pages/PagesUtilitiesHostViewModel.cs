@@ -38,6 +38,7 @@ namespace CollectaMundo.ViewModels.Pages
 
                 case UtilitiesRoute.CollectionExport:
                     CurrentUtilitiesContentViewModel = CollectionExportVM;
+                    CollectionExportVM.ResetStatusMessage();
                     break;
 
                 case UtilitiesRoute.Import:
