@@ -5,6 +5,7 @@ namespace CollectaMundo.ApplicationServices.Decks.DeckExport
 {
     public interface IDeckExportService
     {
+        string? PickCompleteDeckCsvFilePath(string deckName);
         Task<DeckExportAvailability> GetAvailabilityAsync(int deckLocationId, IReadOnlyList<OracleCard> oracleCards, ICollectionQuantitySnapshot quantitySnapshot);
         Task ExportCompleteDeckCsvAsync(int deckLocationId, IReadOnlyList<OracleCard> oracleCards, string filePath, CancellationToken cancellationToken = default);
         Task<string> GenerateWantListAsync(int deckLocationId, IReadOnlyList<OracleCard> oracleCards, ICollectionQuantitySnapshot quantitySnapshot);

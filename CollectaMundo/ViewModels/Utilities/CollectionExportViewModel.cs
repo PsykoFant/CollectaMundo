@@ -1,16 +1,13 @@
 ﻿using CollectaMundo.ApplicationServices.CollectionExport;
 using CollectaMundo.ApplicationServices.Shared.Operation;
-using CollectaMundo.Infrastructure.Shared.Desktop;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 namespace CollectaMundo.ViewModels.Utilities
 {
-    public partial class CollectionExportViewModel(ICollectionExportService collectionExportService, IFileSystemPicker fileSystemPicker) : ObservableObject
+    public partial class CollectionExportViewModel(ICollectionExportService collectionExportService) : ObservableObject
     {
         private readonly ICollectionExportService _collectionExportService = collectionExportService;
-        private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
-
         public IReadOnlyList<string> CurrencyOptions { get; } = ["EUR", "USD"];
         public void ResetStatusMessage()
         {
@@ -53,14 +50,7 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private void ChangeBackupFolder()
         {
-            var selectedPath = _fileSystemPicker.PickFolder("Select backup folder location", BackupFolderPath);
-
-            if (string.IsNullOrWhiteSpace(selectedPath))
-            {
-                return;
-            }
-
-            var result = _collectionExportService.ChangeBackupFolderPath(selectedPath);
+            var result = _collectionExportService.ChangeBackupFolderPath();
 
             if (result.Code is OperationResultCode.Success)
             {
@@ -95,20 +85,7 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private void OpenBackupFolder()
         {
-            if (string.IsNullOrWhiteSpace(BackupFolderPath))
-            {
-                StatusMessage = "The backup folder path is not set.";
-                return;
-            }
-
-            try
-            {
-                _fileSystemPicker.OpenFolder(BackupFolderPath);
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Could not open the backup folder: {ex.Message}";
-            }
+            _collectionExportService.OpenBackupFolder();
         }
     }
 }

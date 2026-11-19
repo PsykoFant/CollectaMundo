@@ -1,6 +1,6 @@
-﻿namespace CollectaMundo.Infrastructure.Shared.Desktop
+﻿namespace CollectaMundo.ApplicationServices.Shared.Files
 {
-    public interface IFileSystemPicker
+    public interface IDesktopFileSystem
     {
         string? PickFile(string title, string filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*");
         string? PickFolder(string title, string? initialPath = null);

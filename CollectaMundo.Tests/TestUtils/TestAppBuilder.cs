@@ -14,6 +14,7 @@ using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.KeyedDataProvider;
 using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Files;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
@@ -62,7 +63,7 @@ public static class TestAppBuilder
         IDbConnectionFactory dbFactory,
         List<CollectionChangeSet<CollectionCardDbRow>>? eventSink = null,
         IUserPromptService? promptOverride = null,
-        IFileSystemPicker? filePickerOverride = null)
+        IDesktopFileSystem? filePickerOverride = null)
     {
         await fixture.InitializeAsync();
 
@@ -110,7 +111,7 @@ public static class TestAppBuilder
 
         var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), new CardImageDownloader(settings));
 
-        var picker = filePickerOverride ?? new FileSystemPicker();
+        var picker = filePickerOverride ?? new DesktopFileSystem();
 
         var importService = new ImportService(uowRunner, new ImportRepo(), picker, new ImportLogic(), cardLocationService);
 

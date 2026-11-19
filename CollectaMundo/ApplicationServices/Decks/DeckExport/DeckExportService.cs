@@ -7,11 +7,18 @@ using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 
 namespace CollectaMundo.ApplicationServices.Decks.DeckExport
 {
-    public sealed class DeckExportService(IDeckCardReader deckCardReader, IDeckExportLogic deckExportLogic, ICsvFileWriter csvFileWriter) : IDeckExportService
+    public sealed class DeckExportService(IDeckCardReader deckCardReader, IDeckExportLogic deckExportLogic, ICsvFileWriter csvFileWriter, IDesktopFileSystem desktopFileSystem) : IDeckExportService
     {
         private readonly IDeckCardReader _deckCardReader = deckCardReader;
         private readonly IDeckExportLogic _deckExportLogic = deckExportLogic;
         private readonly ICsvFileWriter _csvFileWriter = csvFileWriter;
+        private readonly IDesktopFileSystem _desktopFileSystem = desktopFileSystem;
+        public string? PickCompleteDeckCsvFilePath(string deckName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(deckName);
+
+            return _desktopFileSystem.PickSaveFile("Export deck as CSV", $"{deckName}.csv", "CSV Files (*.csv)|*.csv", ".csv");
+        }
         public async Task<DeckExportAvailability> GetAvailabilityAsync(int deckLocationId, IReadOnlyList<OracleCard> oracleCards, ICollectionQuantitySnapshot quantitySnapshot)
         {
             var states = await LoadDeckStatesAsync(deckLocationId, oracleCards);

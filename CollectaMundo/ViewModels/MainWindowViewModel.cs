@@ -15,6 +15,7 @@ using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
 using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Files;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.DomainLogic.CardImages.Models;
@@ -75,7 +76,7 @@ namespace CollectaMundo.ViewModels
         private readonly IUserPromptService _userPromptService;
 
         // File system picker
-        private readonly IFileSystemPicker _filesystemPicker;
+        private readonly IDesktopFileSystem _filesystemPicker;
 
         // Utilities navigator
         private readonly UtilitiesNavigator _utilitiesNavigator;
@@ -153,7 +154,7 @@ namespace CollectaMundo.ViewModels
             IOperationOverlayController operationOverlayController,
             IFilteringService filteringService,
             IUserPromptService userPromptService,
-            IFileSystemPicker fileSystemPicker,
+            IDesktopFileSystem fileSystemPicker,
             ICardListService cardListService,
             ICollectionExportService collectionExportService,
             ICardLocationService cardLocationService,
@@ -208,7 +209,7 @@ namespace CollectaMundo.ViewModels
 
             // Utility viewmodels
             UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, _utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count);
-            CollectionExportVM = new CollectionExportViewModel(collectionExportService, fileSystemPicker);
+            CollectionExportVM = new CollectionExportViewModel(collectionExportService);
             ImportVM = new ImportViewModel(_importService, _utilitiesNavigator, _userPromptService);
             CardLocationVM = new CardLocationViewModel(_cardLocationService);
 
@@ -251,7 +252,7 @@ namespace CollectaMundo.ViewModels
             IOperationOverlayController operationOverlayController,
             IFilteringService filteringService,
             IUserPromptService userPromptService,
-            IFileSystemPicker fileSystemPicker,
+            IDesktopFileSystem fileSystemPicker,
             ICardListService cardListService,
             ICollectionExportService collectionExportService,
             ICardLocationService cardLocationService,

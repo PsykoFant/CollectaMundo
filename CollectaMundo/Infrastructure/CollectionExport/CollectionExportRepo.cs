@@ -15,15 +15,16 @@ namespace CollectaMundo.Infrastructure.CollectionExport
                                         card.name AS name,
                                         card.setCode AS setCode,
                                         collection.uuid AS uuid,
-                                        identifiers.scryfallId AS scryfallId                                        
+                                        identifiers.scryfallId AS scryfallId,
                                         collection.condition AS condition,
                                         collection.finish AS finish,
                                         collection.language AS language,
                                         collection.comment AS comment,
+                                        collection.locationId AS locationId,
                                         collection.cardsOwned AS cardsOwned,
                                         collection.cardsForTrade AS cardsForTrade,
                                         collection.sellPrice AS sellPrice,
-                                        collection.sellPriceCurrency AS sellPriceCurrency,                                        
+                                        collection.sellPriceCurrency AS sellPriceCurrency
                                     FROM myCollection collection
                                     INNER JOIN cards card
                                         ON card.uuid = collection.uuid
@@ -37,15 +38,16 @@ namespace CollectaMundo.Infrastructure.CollectionExport
                                         token.name AS name,
                                         token.setCode AS setCode,
                                         collection.uuid AS uuid,
-                                        identifiers.scryfallId AS scryfallId                                        
+                                        identifiers.scryfallId AS scryfallId,                                       
                                         collection.condition AS condition,
                                         collection.finish AS finish,
                                         collection.language AS language,
                                         collection.comment AS comment,
+                                        collection.locationId AS locationId,
                                         collection.cardsOwned AS cardsOwned,
                                         collection.cardsForTrade AS cardsForTrade,
                                         collection.sellPrice AS sellPrice,
-                                        collection.sellPriceCurrency AS sellPriceCurrency,                                        
+                                        collection.sellPriceCurrency AS sellPriceCurrency
                                     FROM myCollection collection
                                     INNER JOIN tokens token
                                         ON token.uuid = collection.uuid
@@ -71,7 +73,6 @@ namespace CollectaMundo.Infrastructure.CollectionExport
                                 FROM collectionItems
                                 LEFT JOIN cardLocations location
                                     ON location.id = collectionItems.locationId
-                                ORDER BY collectionItems.id;
                                 """;
 
             using var command = new SQLiteCommand(sql, connection);

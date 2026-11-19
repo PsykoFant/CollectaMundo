@@ -30,7 +30,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <GroupBox Grid.Column="0" Margin="0,0,8,0" Padding="12" VerticalAlignment="Top">
+            <GroupBox Grid.Column="0" Margin="0,0,8,0" Padding="12" VerticalAlignment="Top" BorderThickness="0">
                 <GroupBox.HeaderTemplate>
                     <DataTemplate>
                         <Label Content="Full collection export" Style="{StaticResource SmallHeaderLabelStyle}" />
@@ -46,7 +46,7 @@
                 </Grid>
             </GroupBox>
 
-            <GroupBox Grid.Column="1" Margin="8,0,0,0" Padding="12" VerticalAlignment="Top">
+            <GroupBox Grid.Column="1" Margin="8,0,0,0" Padding="12" VerticalAlignment="Top" BorderThickness="0">
                 <GroupBox.HeaderTemplate>
                     <DataTemplate>
                         <Label Content="Trade list export" Style="{StaticResource SmallHeaderLabelStyle}" />

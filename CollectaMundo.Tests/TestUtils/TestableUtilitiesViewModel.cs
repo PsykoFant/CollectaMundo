@@ -1,8 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Files;
 using CollectaMundo.ApplicationServices.Shared.Operation;
-using CollectaMundo.Infrastructure.Shared.Desktop;
 using CollectaMundo.ViewModels.Shared;
 using CollectaMundo.ViewModels.Shell;
 using CollectaMundo.ViewModels.Utilities;
@@ -18,7 +18,7 @@ namespace CollectaMundo.Tests.TestUtils
     IUserPromptService userPromptService,
     ICardCollectionHost parentCtx,
     Func<int> getMyCollectionCount,
-    IFileSystemPicker fileSystemPicker)
+    IDesktopFileSystem fileSystemPicker)
     : UtilitiesViewModel(
         dbService,
         operationOverlayController,
@@ -131,7 +131,7 @@ namespace CollectaMundo.Tests.TestUtils
                 userPromptService,
                 parentCtx.Object,
                 _collectionCount ?? (() => 5),
-                new Mock<IFileSystemPicker>().Object);
+                new Mock<IDesktopFileSystem>().Object);
 
             return new UpdateTestContext
             {

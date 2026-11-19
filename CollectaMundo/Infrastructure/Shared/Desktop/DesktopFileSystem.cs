@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using CollectaMundo.ApplicationServices.Shared.Files;
+using Microsoft.Win32;
 using Ookii.Dialogs.Wpf;
 using System.Diagnostics;
 using System.IO;
@@ -6,7 +7,7 @@ using System.Windows;
 
 namespace CollectaMundo.Infrastructure.Shared.Desktop
 {
-    public class FileSystemPicker : IFileSystemPicker
+    public class DesktopFileSystem : IDesktopFileSystem
     {
         public string? PickFile(string title, string filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*")
         {

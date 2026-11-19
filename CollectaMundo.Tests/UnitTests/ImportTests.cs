@@ -32,7 +32,7 @@ namespace CollectaMundo.Tests.UnitTests
             _service = new ImportService(
                 uowRunner,
                 new ImportRepo(),
-                fileSystemPicker: null!, // Not needed for service-level tests
+                desktopFileSystem: null!, // Not needed for service-level tests
                 new ImportLogic(),
                 cardLocationService
             );

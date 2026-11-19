@@ -11,13 +11,16 @@ using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CollectionExport
 {
-    public sealed class CollectionExportService(IAppSettings settings, IUnitOfWorkRunner uowRunner, ICollectionExportRepo repo, ICsvFileWriter csvFileWriter) : ICollectionExportService
+    public sealed class CollectionExportService(IAppSettings settings, IUnitOfWorkRunner uowRunner, ICollectionExportRepo repo, ICsvFileWriter csvFileWriter, IDesktopFileSystem desktopFileSystem) : ICollectionExportService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly ICollectionExportRepo _repo = repo;
         private readonly ICsvFileWriter _csvFileWriter = csvFileWriter;
+        private readonly IDesktopFileSystem _desktopFileSystem = desktopFileSystem;
         public string BackupFolderPath => _settings.BackupFolderPath;
+
+        // Export full collection
         public async Task<OperationResult> ExportFullCollectionBackupAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -90,6 +93,8 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
                 row.SellPriceCurrency
                 ];
         }
+
+        // Export trade list
         public async Task<OperationResult> ExportTradeListAsync(string targetCurrency, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(targetCurrency))
@@ -114,8 +119,6 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
                 {
                     return new OperationResult(OperationResultCode.Empty, "There are no cards marked for trade");
                 }
-
-                Directory.CreateDirectory(_settings.BackupFolderPath);
 
                 var headers = new[]
                 {
@@ -199,11 +202,20 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
             };
         }
         private static string ToCsvBoolean(bool value) => value ? "true" : "false";
-        public OperationResult ChangeBackupFolderPath(string newBackupPath)
+
+        // Change backup folder path
+        public OperationResult ChangeBackupFolderPath()
         {
             try
             {
-                _settings.PersistBackupFolderPath(newBackupPath);
+                var selectedPath = _desktopFileSystem.PickFolder("Select backup folder location", BackupFolderPath);
+
+                if (string.IsNullOrWhiteSpace(selectedPath))
+                {
+                    return new OperationResult(OperationResultCode.CancelledByUser, "No folder selected.");
+                }
+
+                _settings.PersistBackupFolderPath(selectedPath);
 
                 return new OperationResult(OperationResultCode.Success, "Folder path changed.");
             }
@@ -212,6 +224,20 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
                 Debug.WriteLine($"Error changing backup folder path: {ex.Message}");
 
                 return new OperationResult(OperationResultCode.Error, $"Error changing backup folder path: {ex.Message}");
+            }
+        }
+
+        // Open backup folder
+        public void OpenBackupFolder()
+        {
+            try
+            {
+                _desktopFileSystem.OpenFolder(BackupFolderPath);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error opening backup folder: {ex.Message}");
+                throw;
             }
         }
     }

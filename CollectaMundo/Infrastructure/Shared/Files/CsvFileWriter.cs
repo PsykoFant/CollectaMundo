@@ -8,6 +8,7 @@ namespace CollectaMundo.Infrastructure.Shared.Files
     {
         public async Task WriteAsync(string filePath, IReadOnlyList<string> headers, IEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
         {
+            EnsureParentDirectoryExists(filePath);
             await using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
 
             await WriteLineAsync(writer, headers, delimiter, cancellationToken);
@@ -21,6 +22,7 @@ namespace CollectaMundo.Infrastructure.Shared.Files
         }
         public async Task WriteAsync(string filePath, IReadOnlyList<string> headers, IAsyncEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
         {
+            EnsureParentDirectoryExists(filePath);
             await using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
 
             await WriteLineAsync(writer, headers, delimiter, cancellationToken);
@@ -35,6 +37,15 @@ namespace CollectaMundo.Infrastructure.Shared.Files
             var line = string.Join(delimiter, values.Select(value => EscapeField(value, delimiter)));
 
             await writer.WriteLineAsync(line.AsMemory(), cancellationToken);
+        }
+        private static void EnsureParentDirectoryExists(string filePath)
+        {
+            var directoryPath = Path.GetDirectoryName(filePath);
+
+            if (!string.IsNullOrWhiteSpace(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
         }
         private static string EscapeField(string? value, char delimiter)
         {

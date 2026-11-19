@@ -7,6 +7,7 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
         Task<OperationResult> ExportFullCollectionBackupAsync(CancellationToken cancellationToken = default);
         Task<OperationResult> ExportTradeListAsync(string targetCurrency, CancellationToken cancellationToken = default);
         string BackupFolderPath { get; }
-        OperationResult ChangeBackupFolderPath(string newBackupFolderPath);
+        OperationResult ChangeBackupFolderPath();
+        void OpenBackupFolder();
     }
 }

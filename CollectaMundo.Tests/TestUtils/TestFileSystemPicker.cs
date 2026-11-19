@@ -1,8 +1,8 @@
-﻿using CollectaMundo.Infrastructure.Shared.Desktop;
+﻿using CollectaMundo.ApplicationServices.Shared.Files;
 
 namespace CollectaMundo.Tests.TestUtils
 {
-    internal sealed class TestFileSystemPicker(string pathToReturn) : IFileSystemPicker
+    internal sealed class TestFileSystemPicker(string pathToReturn) : IDesktopFileSystem
     {
         private readonly string _pathToReturn = pathToReturn;
 

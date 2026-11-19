@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.Import.Models;
+using CollectaMundo.ApplicationServices.Shared.Files;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
@@ -8,7 +9,6 @@ using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.Shared.Database;
-using CollectaMundo.Infrastructure.Shared.Desktop;
 using CollectaMundo.ViewModels.Models;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -18,16 +18,16 @@ using System.Text;
 
 namespace CollectaMundo.ApplicationServices.Import
 {
-    public class ImportService(IUnitOfWorkRunner uowRunner, IImportRepo importRepo, IFileSystemPicker fileSystemPicker, IImportLogic importLogic, ICardLocationService cardLocationService) : IImportService
+    public class ImportService(IUnitOfWorkRunner uowRunner, IImportRepo importRepo, IDesktopFileSystem desktopFileSystem, IImportLogic importLogic, ICardLocationService cardLocationService) : IImportService
     {
         private readonly IUnitOfWorkRunner _uowRunner = uowRunner;
         private readonly IImportRepo _importRepo = importRepo;
-        private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
+        private readonly IDesktopFileSystem _desktopFileSystem = desktopFileSystem;
         private readonly IImportLogic _importLogic = importLogic;
         private readonly ICardLocationService _cardLocationService = cardLocationService;
         public string? PromptForCsvFile()
         {
-            var file = _fileSystemPicker.PickFile("Select your CSV file to import");
+            var file = _desktopFileSystem.PickFile("Select your CSV file to import");
             return file;
         }
 
@@ -387,7 +387,7 @@ namespace CollectaMundo.ApplicationServices.Import
             var defaultFileName = $"unimportable-items-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
 
             // Ask user where and under what name to save
-            var filePath = _fileSystemPicker.PickSaveFile(title: "Save unimportable items", defaultFileName: defaultFileName, filter: "CSV Files (*.csv)|*.csv", defaultExtension: "csv");
+            var filePath = _desktopFileSystem.PickSaveFile(title: "Save unimportable items", defaultFileName: defaultFileName, filter: "CSV Files (*.csv)|*.csv", defaultExtension: "csv");
 
             if (string.IsNullOrWhiteSpace(filePath))
             {
