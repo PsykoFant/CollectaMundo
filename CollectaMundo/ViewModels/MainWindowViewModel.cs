@@ -207,7 +207,7 @@ namespace CollectaMundo.ViewModels
             DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, OracleCardsVM, FilterPanelVM, cardCollectionHost);
 
             // Utility viewmodels
-            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, _utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count, _filesystemPicker);
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, _utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count);
             CollectionExportVM = new CollectionExportViewModel(collectionExportService, fileSystemPicker);
             ImportVM = new ImportViewModel(_importService, _utilitiesNavigator, _userPromptService);
             CardLocationVM = new CardLocationViewModel(_cardLocationService);

@@ -1,6 +1,15 @@
 TO DO 
 
-test af trade list export
+eksport med location
+directory og filepicker i en
+Import af collection med location type
+
+manual test
+automatiske test
+
+
+
+
 tradelist export af filtrering
 
 merge deck export service?

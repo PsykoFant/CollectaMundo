@@ -2,7 +2,6 @@
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
-using CollectaMundo.Infrastructure.Shared.Desktop;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -11,7 +10,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Utilities
 {
-    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
+    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider) : ObservableObject
     {
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
         private readonly IOperationOverlayController _operationOverlayController = operationOverlayController;
@@ -19,8 +18,6 @@ namespace CollectaMundo.ViewModels.Utilities
         private readonly IUserPromptService _userPromptService = userPromptService;
         private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
         private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
-        private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
-
         public event EventHandler<bool>? BusyStateRequested;
 
         // Visibility property

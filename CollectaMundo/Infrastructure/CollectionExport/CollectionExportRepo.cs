@@ -7,6 +7,131 @@ namespace CollectaMundo.Infrastructure.CollectionExport
 {
     public class CollectionExportRepo() : ICollectionExportRepo
     {
+        public async Task<IReadOnlyList<CollectionBackupRow>> GetFullCollectionRowsAsync(SQLiteConnection connection, CancellationToken cancellationToken = default)
+        {
+            const string sql = """
+                                WITH collectionItems AS (
+                                    SELECT
+                                        card.name AS name,
+                                        card.setCode AS setCode,
+                                        collection.uuid AS uuid,
+                                        identifiers.scryfallId AS scryfallId                                        
+                                        collection.condition AS condition,
+                                        collection.finish AS finish,
+                                        collection.language AS language,
+                                        collection.comment AS comment,
+                                        collection.cardsOwned AS cardsOwned,
+                                        collection.cardsForTrade AS cardsForTrade,
+                                        collection.sellPrice AS sellPrice,
+                                        collection.sellPriceCurrency AS sellPriceCurrency,                                        
+                                    FROM myCollection collection
+                                    INNER JOIN cards card
+                                        ON card.uuid = collection.uuid
+                                       AND (card.side IS NULL OR card.side = 'a')
+                                    LEFT JOIN cardIdentifiers identifiers
+                                        ON identifiers.uuid = collection.uuid
+
+                                    UNION ALL
+
+                                    SELECT
+                                        token.name AS name,
+                                        token.setCode AS setCode,
+                                        collection.uuid AS uuid,
+                                        identifiers.scryfallId AS scryfallId                                        
+                                        collection.condition AS condition,
+                                        collection.finish AS finish,
+                                        collection.language AS language,
+                                        collection.comment AS comment,
+                                        collection.cardsOwned AS cardsOwned,
+                                        collection.cardsForTrade AS cardsForTrade,
+                                        collection.sellPrice AS sellPrice,
+                                        collection.sellPriceCurrency AS sellPriceCurrency,                                        
+                                    FROM myCollection collection
+                                    INNER JOIN tokens token
+                                        ON token.uuid = collection.uuid
+                                       AND (token.side IS NULL OR token.side = 'a')
+                                    LEFT JOIN tokenIdentifiers identifiers
+                                        ON identifiers.uuid = collection.uuid
+                                )
+                                SELECT
+                                    collectionItems.name,
+                                    collectionItems.setCode,
+                                    collectionItems.uuid,
+                                    collectionItems.condition,
+                                    collectionItems.finish,
+                                    collectionItems.language,
+                                    location.name AS locationName,
+                                    location.type AS locationType,
+                                    collectionItems.comment,
+                                    collectionItems.cardsOwned,
+                                    collectionItems.cardsForTrade,
+                                    collectionItems.sellPrice,
+                                    collectionItems.sellPriceCurrency,
+                                    collectionItems.scryfallId
+                                FROM collectionItems
+                                LEFT JOIN cardLocations location
+                                    ON location.id = collectionItems.locationId
+                                ORDER BY collectionItems.id;
+                                """;
+
+            using var command = new SQLiteCommand(sql, connection);
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+            var rows = new List<CollectionBackupRow>();
+
+            var nameOrdinal = reader.GetOrdinal("name");
+            var setCodeOrdinal = reader.GetOrdinal("setCode");
+            var uuidOrdinal = reader.GetOrdinal("uuid");
+            var scryfallIdOrdinal = reader.GetOrdinal("scryfallId");
+            var conditionOrdinal = reader.GetOrdinal("condition");
+            var finishOrdinal = reader.GetOrdinal("finish");
+            var languageOrdinal = reader.GetOrdinal("language");
+            var locationOrdinal = reader.GetOrdinal("locationName");
+            var locationTypeOrdinal = reader.GetOrdinal("locationType");
+            var commentOrdinal = reader.GetOrdinal("comment");
+            var cardsOwnedOrdinal = reader.GetOrdinal("cardsOwned");
+            var cardsForTradeOrdinal = reader.GetOrdinal("cardsForTrade");
+            var sellPriceOrdinal = reader.GetOrdinal("sellPrice");
+            var sellPriceCurrencyOrdinal = reader.GetOrdinal("sellPriceCurrency");
+
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                rows.Add(new CollectionBackupRow
+                {
+
+                    Name = reader.GetString(nameOrdinal),
+                    SetCode = reader.GetString(setCodeOrdinal),
+                    Uuid = reader.GetString(uuidOrdinal),
+                    ScryfallId = reader.IsDBNull(scryfallIdOrdinal)
+                        ? null
+                        : reader.GetString(scryfallIdOrdinal),
+                    Condition = reader.GetString(conditionOrdinal),
+                    Finish = reader.GetString(finishOrdinal),
+                    Language = reader.GetString(languageOrdinal),
+                    LocationName = reader.IsDBNull(locationOrdinal)
+                        ? null
+                        : reader.GetString(locationOrdinal),
+                    LocationType = reader.IsDBNull(locationTypeOrdinal)
+                        ? null
+                        : reader.GetString(locationTypeOrdinal),
+                    Comment = reader.IsDBNull(commentOrdinal)
+                        ? null
+                        : reader.GetString(commentOrdinal),
+                    CardsOwned = reader.GetInt32(cardsOwnedOrdinal),
+                    CardsForTrade = reader.GetInt32(cardsForTradeOrdinal),
+                    SellPrice = reader.IsDBNull(sellPriceOrdinal)
+                        ? null
+                        : Convert.ToDecimal(
+                            reader.GetValue(sellPriceOrdinal),
+                            CultureInfo.InvariantCulture),
+                    SellPriceCurrency = reader.IsDBNull(sellPriceCurrencyOrdinal)
+                        ? null
+                        : reader.GetString(sellPriceCurrencyOrdinal)
+                });
+            }
+
+            return rows;
+        }
         public async Task<IReadOnlyList<CollectionTradeExportItem>> GetTradeListItemsAsync(SQLiteConnection connection, CancellationToken cancellationToken = default)
         {
             const string sql = """
@@ -118,70 +243,6 @@ namespace CollectaMundo.Infrastructure.CollectionExport
         private static string? GetNullableString(DbDataReader reader, int ordinal)
         {
             return reader.IsDBNull(ordinal) ? null : Convert.ToString(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
-        }
-        public async Task<IReadOnlyList<CollectionBackupRow>> GetFullCollectionRowsAsync(SQLiteConnection connection, CancellationToken cancellationToken = default)
-        {
-            const string sql = """
-                            SELECT id,
-                                   uuid,
-                                   condition,
-                                   finish,
-                                   language,
-                                   locationId,
-                                   comment,
-                                   cardsOwned,
-                                   cardsForTrade,
-                                   sellPrice,
-                                   sellPriceCurrency
-                            FROM myCollection;
-                            """;
-
-            using var command = new SQLiteCommand(sql, connection);
-            using var reader = await command.ExecuteReaderAsync(cancellationToken);
-
-            var rows = new List<CollectionBackupRow>();
-
-            var idOrdinal = reader.GetOrdinal("id");
-            var uuidOrdinal = reader.GetOrdinal("uuid");
-            var conditionOrdinal = reader.GetOrdinal("condition");
-            var finishOrdinal = reader.GetOrdinal("finish");
-            var languageOrdinal = reader.GetOrdinal("language");
-            var locationIdOrdinal = reader.GetOrdinal("locationId");
-            var commentOrdinal = reader.GetOrdinal("comment");
-            var cardsOwnedOrdinal = reader.GetOrdinal("cardsOwned");
-            var cardsForTradeOrdinal = reader.GetOrdinal("cardsForTrade");
-            var sellPriceOrdinal = reader.GetOrdinal("sellPrice");
-            var sellPriceCurrencyOrdinal = reader.GetOrdinal("sellPriceCurrency");
-
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                rows.Add(new CollectionBackupRow
-                {
-                    Id = reader.GetInt32(idOrdinal),
-                    Uuid = reader.GetString(uuidOrdinal),
-                    Condition = reader.GetString(conditionOrdinal),
-                    Finish = reader.GetString(finishOrdinal),
-                    Language = reader.GetString(languageOrdinal),
-                    LocationId = reader.IsDBNull(locationIdOrdinal)
-                        ? null
-                        : reader.GetInt32(locationIdOrdinal),
-                    Comment = reader.IsDBNull(commentOrdinal)
-                        ? null
-                        : reader.GetString(commentOrdinal),
-                    CardsOwned = reader.GetInt32(cardsOwnedOrdinal),
-                    CardsForTrade = reader.GetInt32(cardsForTradeOrdinal),
-                    SellPrice = reader.IsDBNull(sellPriceOrdinal)
-                        ? null
-                        : Convert.ToDecimal(
-                            reader.GetValue(sellPriceOrdinal),
-                            CultureInfo.InvariantCulture),
-                    SellPriceCurrency = reader.IsDBNull(sellPriceCurrencyOrdinal)
-                        ? null
-                        : reader.GetString(sellPriceCurrencyOrdinal)
-                });
-            }
-
-            return rows;
         }
     }
 }

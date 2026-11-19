@@ -77,7 +77,10 @@ namespace CollectaMundo.ViewModels.Utilities
             try
             {
                 var result = await export(CancellationToken.None);
-                StatusMessage = $"Collection successfully exported at: {result.Message}";
+
+                StatusMessage = result.Code == OperationResultCode.Success
+                    ? $"Collection successfully exported at: {result.Message}"
+                    : result.Message;
             }
             catch (Exception ex)
             {

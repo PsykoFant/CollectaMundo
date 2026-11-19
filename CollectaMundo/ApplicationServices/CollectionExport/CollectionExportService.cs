@@ -35,12 +35,15 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
 
                 var headers = new[]
                 {
-                    "id",
+                    "name",
+                    "setCode",
                     "uuid",
+                    "scryfallId",
                     "condition",
                     "finish",
                     "language",
-                    "locationId",
+                    "location",
+                    "locationType",
                     "comment",
                     "cardsOwned",
                     "cardsForTrade",
@@ -71,12 +74,15 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
 
             return
             [
-                row.Id.ToString(culture),
+                row.Name,
+                row.SetCode,
                 row.Uuid,
+                row.ScryfallId,
                 row.Condition,
                 row.Finish,
                 row.Language,
-                row.LocationId?.ToString(culture),
+                row.LocationName,
+                row.LocationType,
                 row.Comment,
                 row.CardsOwned.ToString(culture),
                 row.CardsForTrade.ToString(culture),
@@ -193,7 +199,6 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
             };
         }
         private static string ToCsvBoolean(bool value) => value ? "true" : "false";
-
         public OperationResult ChangeBackupFolderPath(string newBackupPath)
         {
             try
