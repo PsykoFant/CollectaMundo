@@ -136,67 +136,71 @@ namespace CollectaMundo.Infrastructure.CollectionExport
         public async Task<IReadOnlyList<CollectionTradeExportItem>> GetTradeListItemsAsync(SQLiteConnection connection, CancellationToken cancellationToken = default)
         {
             const string sql = """
-                    WITH tradeItems AS (
-                        SELECT
-                            collection.uuid AS uuid,
-                            collection.cardsForTrade AS cardsForTrade,
-                            card.name AS name,
-                            cardSet.name AS setName,
-                            collection.condition AS condition,
-                            collection.language AS language,
-                            collection.finish AS finish,
-                            collection.sellPrice AS sellPrice,
-                            collection.sellPriceCurrency AS sellPriceCurrency,
-                            collection.comment AS comment
-                        FROM myCollection collection
-                        INNER JOIN cards card
-                            ON card.uuid = collection.uuid
-                           AND (card.side IS NULL OR card.side = 'a')
-                        INNER JOIN sets cardSet
-                            ON cardSet.code = card.setCode
-                        WHERE collection.cardsForTrade > 0
+                                WITH tradeItems AS (
+                                    SELECT
+                                        collection.uuid AS uuid,
+                                        NULL AS tokenScryfallId,
+                                        collection.cardsForTrade AS cardsForTrade,
+                                        card.name AS name,
+                                        cardSet.name AS setName,
+                                        collection.condition AS condition,
+                                        collection.language AS language,
+                                        collection.finish AS finish,
+                                        collection.sellPrice AS sellPrice,
+                                        collection.sellPriceCurrency AS sellPriceCurrency,
+                                        collection.comment AS comment
+                                    FROM myCollection collection
+                                    INNER JOIN cards card
+                                        ON card.uuid = collection.uuid
+                                       AND (card.side IS NULL OR card.side = 'a')
+                                    INNER JOIN sets cardSet
+                                        ON cardSet.code = card.setCode
+                                    WHERE collection.cardsForTrade > 0
 
-                        UNION ALL
+                                    UNION ALL
 
-                        SELECT
-                            collection.uuid AS uuid,
-                            collection.cardsForTrade AS cardsForTrade,
-                            token.name AS name,
-                            tokenSet.name AS setName,
-                            collection.condition AS condition,
-                            collection.language AS language,
-                            collection.finish AS finish,
-                            collection.sellPrice AS sellPrice,
-                            collection.sellPriceCurrency AS sellPriceCurrency,
-                            collection.comment AS comment
-                        FROM myCollection collection
-                        INNER JOIN tokens token
-                            ON token.uuid = collection.uuid
-                           AND (token.side IS NULL OR token.side = 'a')
-                        INNER JOIN sets tokenSet
-                            ON tokenSet.tokenSetCode = token.setCode
-                        WHERE collection.cardsForTrade > 0
-                    )
-                    SELECT
-                        tradeItems.uuid AS uuid,
-                        identifiers.mcmId AS mcmId,
-                        identifiers.scryfallId AS scryfallId,
-                        identifiers.tcgplayerProductId AS tcgplayerProductId,
-                        tradeItems.cardsForTrade AS cardsForTrade,
-                        tradeItems.name AS name,
-                        tradeItems.setName AS setName,
-                        tradeItems.condition AS condition,
-                        tradeItems.language AS language,
-                        tradeItems.finish AS finish,
-                        tradeItems.sellPrice AS sellPrice,
-                        tradeItems.sellPriceCurrency AS sellPriceCurrency,
-                        tradeItems.comment AS comment
-                    FROM tradeItems
-                    LEFT JOIN cardIdentifiers identifiers
-                        ON identifiers.uuid = tradeItems.uuid
-                    ORDER BY tradeItems.name COLLATE NOCASE,
-                             tradeItems.setName COLLATE NOCASE;
-                    """;
+                                    SELECT
+                                        collection.uuid AS uuid,
+                                        tokenIds.scryfallId AS tokenScryfallId,
+                                        collection.cardsForTrade AS cardsForTrade,
+                                        token.name AS name,
+                                        tokenSet.name AS setName,
+                                        collection.condition AS condition,
+                                        collection.language AS language,
+                                        collection.finish AS finish,
+                                        collection.sellPrice AS sellPrice,
+                                        collection.sellPriceCurrency AS sellPriceCurrency,
+                                        collection.comment AS comment
+                                    FROM myCollection collection
+                                    INNER JOIN tokens token
+                                        ON token.uuid = collection.uuid
+                                       AND (token.side IS NULL OR token.side = 'a')
+                                    INNER JOIN sets tokenSet
+                                        ON tokenSet.tokenSetCode = token.setCode
+                                    LEFT JOIN tokenIdentifiers tokenIds
+                                        ON tokenIds.uuid = token.uuid
+                                    WHERE collection.cardsForTrade > 0
+                                )
+                                SELECT
+                                    tradeItems.uuid AS uuid,
+                                    identifiers.mcmId AS mcmId,
+                                    COALESCE(tradeItems.tokenScryfallId, identifiers.scryfallId) AS scryfallId,
+                                    identifiers.tcgplayerProductId AS tcgplayerProductId,
+                                    tradeItems.cardsForTrade AS cardsForTrade,
+                                    tradeItems.name AS name,
+                                    tradeItems.setName AS setName,
+                                    tradeItems.condition AS condition,
+                                    tradeItems.language AS language,
+                                    tradeItems.finish AS finish,
+                                    tradeItems.sellPrice AS sellPrice,
+                                    tradeItems.sellPriceCurrency AS sellPriceCurrency,
+                                    tradeItems.comment AS comment
+                                FROM tradeItems
+                                LEFT JOIN cardIdentifiers identifiers
+                                    ON identifiers.uuid = tradeItems.uuid
+                                ORDER BY tradeItems.name COLLATE NOCASE,
+                                         tradeItems.setName COLLATE NOCASE;
+                                """;
 
             using var command = new SQLiteCommand(sql, connection);
             using var reader = await command.ExecuteReaderAsync(cancellationToken);
