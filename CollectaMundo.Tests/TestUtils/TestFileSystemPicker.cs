@@ -12,15 +12,17 @@ namespace CollectaMundo.Tests.TestUtils
         {
             return _pathToReturn;
         }
-
         public string? PickFolder(string title, string? initialPath = null)
         {
             throw new NotSupportedException("PickFolder is not used in import tests.");
         }
-
         public string? PickSaveFile(string title, string defaultFileName, string filter, string defaultExtension)
         {
             throw new NotSupportedException("PickSaveFile is not used in import tests.");
+        }
+        public void OpenFolder(string path)
+        {
+            throw new NotSupportedException("OpenFolder is not used in import tests.");
         }
     }
 }

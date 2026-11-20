@@ -53,9 +53,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         private readonly string _pricesPath = Path.Combine(settings.UserDownloadsPath, "prices.json");
         private readonly string _tempDbPath = Path.Combine(settings.UserDownloadsPath, "AllPrintings.sqlite");
 
-
-
-
         #region USE CASE: FIRST-TIME DATABASE PREPARATION
 
         public Task<OperationResult> FirstTimeDbPrepOrchestrator(int defaultDelay = 3000)

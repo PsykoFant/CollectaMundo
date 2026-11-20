@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardDatabaseManagement.CardDatabaseUpdateWorkflow;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Operation;
@@ -10,14 +11,15 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Utilities
 {
-    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, IOperationOverlayController operationOverlayController, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost, Func<int> collectionCountProvider) : ObservableObject
+    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, ICardDatabaseUpdateWorkflowService cardDatabaseUpdateWorkflowService, IOperationOverlayController operationOverlayController, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService, ICardCollectionHost cardCollectionHost) : ObservableObject
     {
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
+        private readonly ICardDatabaseUpdateWorkflowService _cardDatabaseUpdateWorkflowService = cardDatabaseUpdateWorkflowService;
         private readonly IOperationOverlayController _operationOverlayController = operationOverlayController;
         private readonly IUtilitiesNavigator _utilitiesNavigator = utilitiesNavigator;
         private readonly IUserPromptService _userPromptService = userPromptService;
         private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
-        private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
+
         public event EventHandler<bool>? BusyStateRequested;
 
         // Visibility property
@@ -152,13 +154,6 @@ namespace CollectaMundo.ViewModels.Utilities
         protected virtual async Task UpdateDB()
         {
             PrepareUIForActionCommands("Ready to update card database?");
-            bool includeBackup = _getMyCollectionCount() > 0;
-            string backupResultMessage = string.Empty;
-
-            //if (includeBackup)
-            //{
-            //    _operationOverlayController.SetDetail($"A csv-backup of your collection will also be created at {_cardDbManagementService.BackupFolderPath}");
-            //}
 
             if (!await _operationOverlayController.WaitForUserConfirmationAsync(PromptButtonEnum.Primary, "   Start card database update!   "))
             {
@@ -166,79 +161,61 @@ namespace CollectaMundo.ViewModels.Utilities
                 return;
             }
 
-            // UI state preparation AFTER user clicked
             _operationOverlayController.Reset();
             BusyStateRequested?.Invoke(this, true);
-            var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
 
-            //if (includeBackup)
-            //{
-            //    _operationOverlayController.Show("Please wait - backing up up your collection ... ", false);
-            //    var backupResult = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
-
-            //    if (backupResult.Code is OperationResultCode.CancelledByUser or not OperationResultCode.Success)
-            //    {
-            //        _operationOverlayController.SetHeadline(
-            //            backupResult.Code == OperationResultCode.CancelledByUser
-            //            ? "Backup cancelled - aborting update..."
-            //            : "Backup failed - aborting update...");
-
-            //        _operationOverlayController.SetDetail(backupResult.Message);
-            //        _operationOverlayController.SetPrimaryButtonText("  OK  ");
-            //        _userPromptService.DisposeOperationCancellationToken();
-            //        return;
-            //    }
-
-            //    backupResultMessage = backupResult.Message;
-            //}
-            if (token.IsCancellationRequested)
+            try
             {
+                _operationOverlayController.Show("Backing up collection...", true);
+                var token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary);
+                var workflowResult = await _cardDatabaseUpdateWorkflowService.UpdateWithCollectionBackupAsync(cancellationToken: token);
+
                 _operationOverlayController.Reset();
-                _operationOverlayController.SetHeadline("Update canceled during backup stage");
-                _userPromptService.DisposeOperationCancellationToken();
-                return;
+
+                if (workflowResult.UpdateResult is null)
+                {
+                    _operationOverlayController.SetHeadline(workflowResult.BackupResult.Code == OperationResultCode.CancelledByUser ? "Backup cancelled - update aborted." : "Backup failed - update aborted.");
+                    _operationOverlayController.SetDetail(workflowResult.BackupResult.Message);
+                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
+                    return;
+                }
+
+                var backupDetail = workflowResult.BackupResult.Code switch
+                {
+                    OperationResultCode.Success => $"Your collection was backed up at {workflowResult.BackupResult.Message}",
+                    OperationResultCode.Empty => "Your collection is empty; no backup was needed.",
+                    _ => string.Empty
+                };
+
+                switch (workflowResult.UpdateResult.Code)
+                {
+                    case OperationResultCode.Success:
+                        _operationOverlayController.SetStep("Reloading card lists…");
+                        await _cardCollectionHost.ReloadAllCardListsAndFiltersAsync();
+                        _operationOverlayController.SetStep(string.Empty);
+                        _operationOverlayController.SetHeadline("Database updated successfully!");
+                        _operationOverlayController.SetDetail(backupDetail);
+                        IsUpdateDbButtonVisible = false;
+                        _operationOverlayController.SetPrimaryButtonText("   I love an updated database!   ");
+                        break;
+
+                    case OperationResultCode.CancelledByUser:
+                        _operationOverlayController.SetHeadline("Update canceled");
+                        _operationOverlayController.SetDetail(string.IsNullOrWhiteSpace(backupDetail) ? "Download aborted. No files were imported." : $"Download aborted. No files were imported. {backupDetail}");
+                        _operationOverlayController.SetPrimaryButtonText("  OK  ");
+                        break;
+
+                    default:
+                        _operationOverlayController.SetHeadline("Card database update failed!");
+                        _operationOverlayController.SetDetail(string.IsNullOrWhiteSpace(backupDetail) ? workflowResult.UpdateResult.Message : $"{workflowResult.UpdateResult.Message}{Environment.NewLine}{backupDetail}");
+                        _operationOverlayController.SetPrimaryButtonText("  OK  ");
+                        break;
+                }
             }
-
-            _operationOverlayController.Show("Updating database, please wait...", true);
-            token = _operationOverlayController.PrepareCancelButton(PromptButtonEnum.Primary); // draw new token after backup
-
-            // Run the update
-            var result = await _cardDbManagementService.UpdateDbPrepOrchestrator(ct: token);
-
-            // Clear UI
-            _operationOverlayController.Reset();
-
-            // Show result
-            switch (result.Code)
+            finally
             {
-                case OperationResultCode.Success:
-
-                    // Reload collection
-                    _operationOverlayController.SetStep("Reloading card lists…");
-                    await _cardCollectionHost.ReloadAllCardListsAndFiltersAsync();
-                    _operationOverlayController.SetStep(string.Empty);
-
-                    // Show success message                    
-                    _operationOverlayController.SetHeadline("Database updated successfully!");
-                    if (includeBackup) { _operationOverlayController.SetDetail($"Your collection was backed up at {backupResultMessage}"); }
-                    IsUpdateDbButtonVisible = false;
-                    _operationOverlayController.SetPrimaryButtonText("   I love an updated database!   ");
-                    break;
-
-                case OperationResultCode.CancelledByUser:
-                    _operationOverlayController.SetHeadline("Update canceled");
-                    _operationOverlayController.SetDetail("Download aborted. No files were imported.");
-                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
-                    break;
-
-                default:
-                    _operationOverlayController.SetHeadline("Card database update failed!");
-                    _operationOverlayController.SetDetail(result.Message);
-                    _operationOverlayController.SetPrimaryButtonText("  OK  ");
-                    break;
+                BusyStateRequested?.Invoke(this, false);
             }
-
-            BusyStateRequested?.Invoke(this, false);
         }
 
         // Use case: Manage card locations

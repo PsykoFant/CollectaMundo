@@ -1,5 +1,6 @@
 ﻿#region usings & namespace
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardDatabaseManagement.CardDatabaseUpdateWorkflow;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.Factories;
@@ -145,6 +146,7 @@ namespace CollectaMundo.ViewModels
             IModifyCollectionService modifyService,
             ICardImageService cardImageService,
             ICardDatabaseManagementService cardDbManagementService,
+            ICardDatabaseUpdateWorkflowService cardDatabaseUpdateWorkflowService,
             IImportService importService,
             IOperationOverlayController operationOverlayController,
             IFilteringService filteringService,
@@ -201,7 +203,7 @@ namespace CollectaMundo.ViewModels
             DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, OracleCardsVM, FilterPanelVM, cardCollectionHost);
 
             // Utility viewmodels
-            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, _operationOverlayController, _utilitiesNavigator, _userPromptService, cardCollectionHost, () => MyCollectionVM.Cards.Count);
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, cardDatabaseUpdateWorkflowService, _operationOverlayController, _utilitiesNavigator, _userPromptService, cardCollectionHost);
             CollectionExportVM = new CollectionExportViewModel(collectionExportService);
             ImportVM = new ImportViewModel(_importService, _utilitiesNavigator, _userPromptService);
             CardLocationVM = new CardLocationViewModel(_cardLocationService);
@@ -241,6 +243,7 @@ namespace CollectaMundo.ViewModels
             IModifyCollectionService editService,
             ICardImageService cardImageService,
             ICardDatabaseManagementService prepService,
+            ICardDatabaseUpdateWorkflowService cardDatabaseUpdateWorkflowService,
             IImportService importService,
             IOperationOverlayController operationOverlayController,
             IFilteringService filteringService,
@@ -257,7 +260,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, filteringService, userPromptService, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, cardDatabaseUpdateWorkflowService, importService, operationOverlayController, filteringService, userPromptService, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

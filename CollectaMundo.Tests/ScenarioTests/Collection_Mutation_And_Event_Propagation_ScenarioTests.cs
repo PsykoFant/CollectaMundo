@@ -15,7 +15,7 @@ namespace CollectaMundo.Tests.ScenarioTests
 
         public async ValueTask InitializeAsync()
         {
-            _ctx = await ScenarioTestContext.CreateAsync(_fx);
+            _ctx = await ScenarioTestContext.CreateAsync(_fx, new ImmediateFacetUpdateScheduler());
         }
         public async ValueTask DisposeAsync()
         {
@@ -233,7 +233,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             var sokrates = ScenarioTestHelpers.FindCard(_ctx.MainVM.AllCardsVM.FilteredCards, uuidSokrates);
 
             // Act: stage Sokrates
-            _ctx.MainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { sokrates });
+            await _ctx.MainVM.AddCardsVM.AddSelectedCardsCommand.ExecuteAsync(new object[] { sokrates });
 
             // Assert: staged
             Assert.Single(_ctx.MainVM.AddCardsVM.CardsToAddOrEdit, c => c.CardToAddOrEdit.Uuid == uuidSokrates);
@@ -247,7 +247,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             var expectedSellPriceCurrency = pending.SellPriceEditor.Currency;
 
             // Act: submit
-            _ctx.MainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
+            await _ctx.MainVM.AddCardsVM.SubmitNewCardsCommand.ExecuteAsync(null);
 
             // Assert: now in MyCollection with edits
             Assert.Equal(24, _ctx.MainVM.MyCollectionVM.Cards.Count);

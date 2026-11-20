@@ -111,15 +111,14 @@ namespace CollectaMundo.Tests.UnitTests
 
             Assert.Equal("3.50", result);
         }
-
         private static string ConvertSellPrice(decimal sellPrice, decimal? retailerPrice)
         {
             var converter = new SellPriceDisplayConverter();
 
             return Assert.IsType<string>(converter.Convert(
-                [sellPrice, "USD", "USD", 0.8909m, retailerPrice],
+                [sellPrice, "USD", "USD", 0.8909m, retailerPrice ?? 0m],
                 typeof(string),
-                null,
+                string.Empty,
                 CultureInfo.InvariantCulture));
         }
     }

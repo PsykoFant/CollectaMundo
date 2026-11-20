@@ -1,5 +1,6 @@
 ﻿#region using directives
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardDatabaseManagement.CardDatabaseUpdateWorkflow;
 using CollectaMundo.ApplicationServices.CardDatabaseManagement.Models;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLegalities;
@@ -178,12 +179,14 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter(), desktopFileSystem, new ClipboardWriter());
 
                 var collectionExportService = new CollectionExportService(settings, uowRunner, new CollectionExportRepo(), csvFileWriter, desktopFileSystem);
+                var cardDatabaseUpdateWorkflowService = new CardDatabaseUpdateWorkflowService(collectionExportService, cardDbManagementService);
+
                 var importService = new ImportService(uowRunner, new ImportRepo(), desktopFileSystem, new ImportLogic(), cardLocationService);
 
                 var filteringService = new FilteringService(cardLegalityService);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, filteringService, userPromptService, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, cardDatabaseUpdateWorkflowService, importService, operationOverlayController, filteringService, userPromptService, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings));
 
                 operationOverlayController.Hide();
                 return new RootViewModel(mainVM, operationOverlayViewModel);

@@ -11,9 +11,8 @@ namespace CollectaMundo.Tests.ScenarioTests
 
         public async ValueTask InitializeAsync()
         {
-            _ctx = await ScenarioTestContext.CreateAsync(_fx);
+            _ctx = await ScenarioTestContext.CreateAsync(_fx, new ImmediateFacetUpdateScheduler());
         }
-
         public async ValueTask DisposeAsync()
         {
             await _ctx.DisposeAsync();
@@ -93,22 +92,28 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Equal("commander", Format);
             Assert.Equal("Blue-white control deck", Description);
 
-            // Assign deck to collection card through right - click command
+            // Assign deck to collection card through the right-click command
             var cardToUpdate = _ctx.MainVM.MyCollectionVM.Cards.First(c => c.SelectedLocationId is null);
             var setLocationParam = new SetLocationForSelectedCardsParameter(new object[] { cardToUpdate }, createdLocation.Id);
 
-            _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SetLocationForSelectedCardsCommand.Execute(setLocationParam);
+            await _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SetLocationForSelectedCardsCommand.ExecuteAsync(setLocationParam);
 
             var updatedCard = _ctx.MainVM.MyCollectionVM.Cards.Single(c => c.CardId == cardToUpdate.CardId);
+            Assert.Equal(createdLocation.Id, updatedCard.SelectedLocationId);
+            Assert.Equal("Deck: Control Shell", updatedCard.SelectedLocationDisplayName);
 
             Assert.Equal(createdLocation.Id, updatedCard.SelectedLocationId);
 
             // Filter on deck location
-            _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null); // clear other filters to isolate location filter behavior
+            await _ctx.MainVM.MyCollectionPageVM.ModifyCollectionViewModel!.SetLocationForSelectedCardsCommand.ExecuteAsync(setLocationParam);
 
             var locationFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
+            var deckOption = locationFilter.FilterOptions.Single(option => option.OptionName == "Deck: Control Shell");
+
+            await StatusTestDriver.WaitUntilAsync(() => locationFilter.FilterOptions.Any(o => o.OptionName == "Deck: Control Shell"), "The deck location filter option was not refreshed.");
 
             locationFilter.FilterOptions.Single(o => o.OptionName == "Deck: Control Shell").IsSelected = true;
+
             ScenarioTestHelpers.ApplyAllFilters(_ctx.MainVM, _ctx.FilteringService);
 
             var filteredCard = _ctx.MainVM.MyCollectionVM.FilteredCards.Single();

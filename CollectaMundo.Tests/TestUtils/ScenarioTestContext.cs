@@ -10,14 +10,14 @@ namespace CollectaMundo.Tests.TestUtils
         public IDbConnectionFactory DbFactory { get; private set; } = null!;
         public FilteringService FilteringService { get; private set; } = null!;
 
-        public static async Task<ScenarioTestContext> CreateAsync(InMemoryDatabaseFixture fx)
+        public static async Task<ScenarioTestContext> CreateAsync(InMemoryDatabaseFixture fx, IFacetUpdateScheduler? facetScheduler = null)
         {
             var context = new ScenarioTestContext
             {
                 DbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(fx.DbName)
             };
 
-            var (mainVM, _, filteringService) = await TestAppBuilder.BuildAsync(fx, context.DbFactory);
+            var (mainVM, _, filteringService) = await TestAppBuilder.BuildAsync(fx, context.DbFactory, facetScheduler: facetScheduler);
 
             context.MainVM = mainVM;
             context.FilteringService = filteringService;

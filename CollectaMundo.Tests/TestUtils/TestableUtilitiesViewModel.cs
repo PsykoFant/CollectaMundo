@@ -1,7 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardDatabaseManagement.CardDatabaseUpdateWorkflow;
+using CollectaMundo.ApplicationServices.CollectionExport;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.ApplicationServices.Shared.Files;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ViewModels.Shared;
 using CollectaMundo.ViewModels.Shell;
@@ -11,22 +12,8 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Tests.TestUtils
 {
-    public class TestableUtilitiesViewModel(
-    ICardDatabaseManagementService dbService,
-    IOperationOverlayController operationOverlayController,
-    IUtilitiesNavigator utilitiesNavigator,
-    IUserPromptService userPromptService,
-    ICardCollectionHost parentCtx,
-    Func<int> getMyCollectionCount,
-    IDesktopFileSystem fileSystemPicker)
-    : UtilitiesViewModel(
-        dbService,
-        operationOverlayController,
-        utilitiesNavigator,
-        userPromptService,
-        parentCtx,
-        getMyCollectionCount,
-        fileSystemPicker)
+    public class TestableUtilitiesViewModel(ICardDatabaseManagementService dbService, ICardDatabaseUpdateWorkflowService updateWorkflowService, IOperationOverlayController operationOverlayController, IUtilitiesNavigator utilitiesNavigator, IUserPromptService userPromptService, ICardCollectionHost parentCtx) :
+        UtilitiesViewModel(dbService, updateWorkflowService, operationOverlayController, utilitiesNavigator, userPromptService, parentCtx)
     {
         public Task InternalUpdateTask => _internalUpdateTask!;
         private Task? _internalUpdateTask;
@@ -34,12 +21,6 @@ namespace CollectaMundo.Tests.TestUtils
         protected override Task UpdateDB()
         {
             _internalUpdateTask = base.UpdateDB();
-            return _internalUpdateTask;
-        }
-
-        protected override Task BackupCollection()
-        {
-            _internalUpdateTask = base.BackupCollection();
             return _internalUpdateTask;
         }
     }
@@ -50,14 +31,13 @@ namespace CollectaMundo.Tests.TestUtils
         public OperationOverlayController OperationOverlayController { get; set; } = null!;
         public IUserPromptService UserPromptService { get; set; } = null!;
         public Mock<ICardDatabaseManagementService> DbServiceMock { get; set; } = null!;
+        public Mock<ICollectionExportService> CollectionExportServiceMock { get; set; } = null!;
         public Mock<ICardCollectionHost> CardCollectionHostMock { get; set; } = null!;
     }
     public class UpdateTestContextBuilder
     {
         private OperationResult? _backupResult;
         private OperationResult? _updateResult;
-        private bool _skipBackupWithError;
-        private Func<int>? _collectionCount;
         private Func<CancellationToken, Task<OperationResult>>? _customUpdateOrchestrator;
 
         public UpdateTestContextBuilder WithBackupResult(OperationResult result)
@@ -72,66 +52,46 @@ namespace CollectaMundo.Tests.TestUtils
             return this;
         }
 
-        public UpdateTestContextBuilder WithCollectionCount(int count)
-        {
-            _collectionCount = () => count;
-            return this;
-        }
-
         public UpdateTestContextBuilder WithCustomUpdateOrchestrator(Func<CancellationToken, Task<OperationResult>> orchestrator)
         {
             _customUpdateOrchestrator = orchestrator;
             return this;
         }
-
-        public UpdateTestContextBuilder WithSkippedBackup()
+        public UpdateTestContextBuilder WithEmptyCollection()
         {
-            _skipBackupWithError = true;
+            _backupResult = new OperationResult(
+                OperationResultCode.Empty,
+                "Collection is empty.");
+
             return this;
         }
 
         public UpdateTestContext Build()
         {
             var dbService = new Mock<ICardDatabaseManagementService>();
-            dbService.SetupGet(s => s.BackupFolderPath).Returns("mock-backup-folder");
+            var collectionExportService = new Mock<ICollectionExportService>();
 
-            if (_skipBackupWithError)
+            collectionExportService
+                .Setup(s => s.ExportFullCollectionBackupAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_backupResult ?? new OperationResult(OperationResultCode.Success, "mock-backup.csv"));
+
+            if (_customUpdateOrchestrator is not null)
             {
-                dbService.Setup(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()))
-                    .Throws(new InvalidOperationException("Backup should not be called"));
+                dbService.Setup(s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>())).Returns((int _, CancellationToken ct) => _customUpdateOrchestrator(ct));
             }
-            else if (_backupResult != null)
+            else
             {
-                dbService.Setup(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(_backupResult);
+                dbService.Setup(s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(_updateResult ?? new OperationResult(OperationResultCode.Success));
             }
 
-            if (_customUpdateOrchestrator != null)
-            {
-                dbService.Setup(s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                    .Returns((int _, CancellationToken ct) => _customUpdateOrchestrator(ct));
-            }
-            else if (_updateResult != null)
-            {
-                dbService.Setup(s => s.UpdateDbPrepOrchestrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(_updateResult);
-            }
+            var updateWorkflowService = new CardDatabaseUpdateWorkflowService(collectionExportService.Object, dbService.Object);
 
             var utilitiesNavigator = new Mock<IUtilitiesNavigator>();
             var parentCtx = new Mock<ICardCollectionHost>();
             var userPromptService = new UserPromptService();
-
             var overlayVm = new OperationOverlayViewModel(userPromptService);
             var overlayController = new OperationOverlayController(overlayVm);
-
-            var utilitiesVM = new TestableUtilitiesViewModel(
-                dbService.Object,
-                overlayController,
-                utilitiesNavigator.Object,
-                userPromptService,
-                parentCtx.Object,
-                _collectionCount ?? (() => 5),
-                new Mock<IDesktopFileSystem>().Object);
+            var utilitiesVM = new TestableUtilitiesViewModel(dbService.Object, updateWorkflowService, overlayController, utilitiesNavigator.Object, userPromptService, parentCtx.Object);
 
             return new UpdateTestContext
             {
@@ -140,12 +100,12 @@ namespace CollectaMundo.Tests.TestUtils
                 OperationOverlayController = overlayController,
                 UserPromptService = userPromptService,
                 DbServiceMock = dbService,
-                CardCollectionHostMock = parentCtx,
+                CollectionExportServiceMock = collectionExportService,
+                CardCollectionHostMock = parentCtx
             };
         }
         public static UpdateTestContextBuilder Builder => new();
     }
-
     public static class StatusTestDriver
     {
         public static Task WaitUntilPrimaryButtonTextAsync(OperationOverlayViewModel overlayVm, string expectedText, TimeSpan? timeout = null)

@@ -1,9 +1,11 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardDatabaseManagement.CardDatabaseUpdateWorkflow;
 using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLegalities;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLocations;
 using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.CollectionExport;
 using CollectaMundo.ApplicationServices.CollectionMutations;
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.DeckExport;
@@ -38,6 +40,7 @@ using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardLists.Models;
 using CollectaMundo.Infrastructure.CardLocations;
 using CollectaMundo.Infrastructure.CardPrices;
+using CollectaMundo.Infrastructure.CollectionExport;
 using CollectaMundo.Infrastructure.CollectionMutations;
 using CollectaMundo.Infrastructure.Decks;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
@@ -63,7 +66,8 @@ public static class TestAppBuilder
         IDbConnectionFactory dbFactory,
         List<CollectionChangeSet<CollectionCardDbRow>>? eventSink = null,
         IUserPromptService? promptOverride = null,
-        IDesktopFileSystem? filePickerOverride = null)
+        IDesktopFileSystem? filePickerOverride = null,
+        IFacetUpdateScheduler? facetScheduler = null)
     {
         await fixture.InitializeAsync();
 
@@ -90,7 +94,7 @@ public static class TestAppBuilder
         var cardLegalityService = new CardLegalityService(new CardLegalityLogic(), new CardLegalityRepo());
         var integrityService = new DatabaseIntegrityService(uowRunner, settings, new DatabaseIntegrityRepo());
 
-        var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(new CsvFileWriter()), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor(), integrityService);
+        var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, uowRunner, progressSinks, new CardDatabaseManagementRepo(), new CardDataRepo(), cardLegalityService, priceService, missingPngService, remoteLookups, new RemoteFileDownloader(new HttpClient()), new GzipFileDecompressor(), integrityService);
 
         var keyedDataProviderService = new KeyedDataProviderService(uowRunner, new KeyedDataProviderRepo(), getRetailer);
 
@@ -99,15 +103,19 @@ public static class TestAppBuilder
         var collectionMutationsLogic = new CollectionMutationsLogic();
         var collectionMutationsRepo = new CollectionMutationsRepo();
         var collectionMutationsService = new CollectionMutationsService(collectionMutationsLogic, collectionMutationsRepo);
+        var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
+        var desktopFileSystem = new DesktopFileSystem();
+        var csvFileWriter = new CsvFileWriter();
 
         var cardLocationLookupStore = new CardLocationLookupStore();
         var cardLocationRepo = new CardLocationRepo();
         var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
         var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityService);
         var deckBuilderService = new DeckBuilderService(uowRunner, new DeckCardReader(uowRunner, new DeckBuilderRepo()), cardLegalityService, new DeckBuilderLogic(), new DeckBuilderRepo());
-        var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter());
+        var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter(), desktopFileSystem, new ClipboardWriter());
 
-        var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
+        var collectionExportService = new CollectionExportService(settings, uowRunner, new CollectionExportRepo(), csvFileWriter, desktopFileSystem);
+        var cardDatabaseUpdateWorkflowService = new CardDatabaseUpdateWorkflowService(collectionExportService, cardDbManagementService);
 
         var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), new CardImageDownloader(settings));
 
@@ -119,23 +127,7 @@ public static class TestAppBuilder
 
         var scheduler = new ImmediateScheduler();
 
-        var mainVM = await MainWindowViewModel.CreateAsync(
-            modifyService,
-            cardImageService,
-            cardDbManagementService,
-            importService,
-            operationOverlayController,
-            filteringService,
-            userPromptService,
-            picker,
-            cardListService,
-            cardLocationService,
-            cardLocationLookupStore,
-            deckManagementStore,
-            deckBuilderService,
-            deckExportService,
-            settings,
-            scheduler);
+        var mainVM = await MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, cardDatabaseUpdateWorkflowService, importService, operationOverlayController, filteringService, userPromptService, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings, facetScheduler: facetScheduler);
 
         if (eventSink is not null)
         {

@@ -1,23 +1,9 @@
 TO DO 
 
 
-directory og filepicker i en
-
-oprydning i gamle
-
 tradelist export af filtrering
 
-
-merge deck export service?
-
 Import af collection med location type
-
-
-automatiske test
-
-
-
-
 
 
 
