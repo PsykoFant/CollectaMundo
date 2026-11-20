@@ -15,7 +15,6 @@ using CollectaMundo.ApplicationServices.KeyedDataProvider.Providers;
 using CollectaMundo.ApplicationServices.ModifyCollection;
 using CollectaMundo.ApplicationServices.Navigation;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.ApplicationServices.Shared.Files;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.DomainLogic.CardImages.Models;
@@ -26,7 +25,6 @@ using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLists.Models;
-using CollectaMundo.Infrastructure.Shared.Desktop;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Decks;
@@ -74,9 +72,6 @@ namespace CollectaMundo.ViewModels
 
         // User prompt service
         private readonly IUserPromptService _userPromptService;
-
-        // File system picker
-        private readonly IDesktopFileSystem _filesystemPicker;
 
         // Utilities navigator
         private readonly UtilitiesNavigator _utilitiesNavigator;
@@ -154,7 +149,6 @@ namespace CollectaMundo.ViewModels
             IOperationOverlayController operationOverlayController,
             IFilteringService filteringService,
             IUserPromptService userPromptService,
-            IDesktopFileSystem fileSystemPicker,
             ICardListService cardListService,
             ICollectionExportService collectionExportService,
             ICardLocationService cardLocationService,
@@ -178,7 +172,6 @@ namespace CollectaMundo.ViewModels
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
             _userPromptService = userPromptService;
-            _filesystemPicker = fileSystemPicker;
             _utilitiesNavigator = new UtilitiesNavigator();
 
             var cardCollectionHost = this;
@@ -204,7 +197,7 @@ namespace CollectaMundo.ViewModels
             CardImageVM = new CardImageViewModel(cardImageService);
 
             // Deck management viewmodels
-            DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore, deckExportService, cardCollectionHost, () => OracleCardsVM.Cards, _filesystemPicker, new ClipboardWriter());
+            DeckManagementVM = new DeckManagementViewModel(_cardLocationService, _deckManagementStore, deckExportService, cardCollectionHost, () => OracleCardsVM.Cards);
             DeckBuilderVM = new DeckBuilderViewModel(deckBuilderService, OracleCardsVM, FilterPanelVM, cardCollectionHost);
 
             // Utility viewmodels
@@ -252,7 +245,6 @@ namespace CollectaMundo.ViewModels
             IOperationOverlayController operationOverlayController,
             IFilteringService filteringService,
             IUserPromptService userPromptService,
-            IDesktopFileSystem fileSystemPicker,
             ICardListService cardListService,
             ICollectionExportService collectionExportService,
             ICardLocationService cardLocationService,
@@ -265,7 +257,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, filteringService, userPromptService, fileSystemPicker, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, operationOverlayController, filteringService, userPromptService, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

@@ -175,7 +175,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityService);
                 var deckBuilderService = new DeckBuilderService(uowRunner, new DeckCardReader(uowRunner, new DeckBuilderRepo()), cardLegalityService, new DeckBuilderLogic(), new DeckBuilderRepo());
-                var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter());
+                var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter(), desktopFileSystem, new ClipboardWriter());
 
                 var collectionExportService = new CollectionExportService(settings, uowRunner, new CollectionExportRepo(), csvFileWriter, desktopFileSystem);
                 var importService = new ImportService(uowRunner, new ImportRepo(), desktopFileSystem, new ImportLogic(), cardLocationService);
@@ -183,7 +183,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var filteringService = new FilteringService(cardLegalityService);
 
                 // CreateCollectionChangeSetFromEdits view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, filteringService, userPromptService, desktopFileSystem, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(modifyService, cardImageService, cardDbManagementService, importService, operationOverlayController, filteringService, userPromptService, cardListService, collectionExportService, cardLocationService, cardLocationLookupStore, deckManagementStore, deckBuilderService, deckExportService, settings));
 
                 operationOverlayController.Hide();
                 return new RootViewModel(mainVM, operationOverlayViewModel);

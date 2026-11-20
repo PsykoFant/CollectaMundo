@@ -2,8 +2,6 @@
 using CollectaMundo.ApplicationServices.Decks;
 using CollectaMundo.ApplicationServices.Decks.DeckExport;
 using CollectaMundo.ApplicationServices.Decks.Models;
-using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.ApplicationServices.Shared.Files;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.DomainLogic.Shared.CardModels;
 using CollectaMundo.DomainLogic.Shared.Models;
@@ -15,20 +13,16 @@ using CollectaMundo.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.Decks
 {
-    public partial class DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore, IDeckExportService deckExportService, ICardCollectionHost cardCollectionHost, Func<IReadOnlyList<OracleCard>> oracleCardsProvider, IDesktopFileSystem fileSystemPicker, IClipboardWriter clipboardWriter) : LocationManagementViewModel<DeckManagementRowViewModel>
+    public partial class DeckManagementViewModel(ICardLocationService cardLocationService, IDeckManagementStore deckManagementStore, IDeckExportService deckExportService, ICardCollectionHost cardCollectionHost, Func<IReadOnlyList<OracleCard>> oracleCardsProvider) : LocationManagementViewModel<DeckManagementRowViewModel>
     {
         private readonly ICardLocationService _cardLocationService = cardLocationService;
         private readonly IDeckManagementStore _deckManagementStore = deckManagementStore;
         private readonly IDeckExportService _deckExportService = deckExportService;
         private readonly ICardCollectionHost _cardCollectionHost = cardCollectionHost;
         private readonly Func<IReadOnlyList<OracleCard>> _oracleCardsProvider = oracleCardsProvider;
-        private readonly IDesktopFileSystem _fileSystemPicker = fileSystemPicker;
-        private readonly IClipboardWriter _clipboardWriter = clipboardWriter;
-
         private int _exportAvailabilityRequestVersion; // Invalidates stale async availability results when deck selection changes.
 
         // External notifications
@@ -113,10 +107,8 @@ namespace CollectaMundo.ViewModels.Decks
                 }
 
                 CanExportCsv = availability.CanExportCsv;
-
                 CanGenerateWantList = availability.CanGenerateWantList;
 
-                Debug.WriteLine($"Deck export availability refreshed: CanExportCsv={CanExportCsv}, CanGenerateWantList={CanGenerateWantList}");
             }
             catch (Exception ex)
             {
@@ -302,7 +294,7 @@ namespace CollectaMundo.ViewModels.Decks
         [RelayCommand]
         private void CopyWantList()
         {
-            _clipboardWriter.SetText(WantListText);
+            _deckExportService.CopyWantListToClipboard(WantListText);
 
             ShowStatus("Wants list copied to clipboard.");
         }
@@ -316,21 +308,16 @@ namespace CollectaMundo.ViewModels.Decks
             }
 
             var selectedDeck = SelectedItem;
-            var filePath = _deckExportService.PickCompleteDeckCsvFilePath(selectedDeck.Name);
 
-            if (string.IsNullOrWhiteSpace(filePath))
+            await RunBusyOperationAsync(async () =>
             {
-                return;
-            }
+                var filePath = await _deckExportService.ExportCompleteDeckCsvAsync(selectedDeck.LocationId, selectedDeck.Name, _oracleCardsProvider());
 
-            await RunBusyOperationAsync(
-                async () =>
+                if (filePath is not null)
                 {
-                    await _deckExportService.ExportCompleteDeckCsvAsync(selectedDeck.LocationId, _oracleCardsProvider(), filePath);
-
                     ShowStatus($"Deck exported to {filePath}");
-                },
-                "Failed to export deck");
+                }
+            }, "Failed to export deck");
         }
 
         // Helper methods
