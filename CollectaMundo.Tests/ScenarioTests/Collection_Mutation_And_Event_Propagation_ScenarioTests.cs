@@ -278,9 +278,9 @@ namespace CollectaMundo.Tests.ScenarioTests
                 },
                 cmd => cmd.Parameters.AddWithValue("@id", sokratesInCollection.CardId));
 
-            var storedPrice = Assert.Single(persistedPrice);
-            Assert.Equal((decimal?)12.34m, storedPrice.SellPrice);
-            Assert.Equal(expectedSellPriceCurrency, storedPrice.SellPriceCurrency);
+            var (SellPrice, SellPriceCurrency) = Assert.Single(persistedPrice);
+            Assert.Equal((decimal?)12.34m, SellPrice);
+            Assert.Equal(expectedSellPriceCurrency, SellPriceCurrency);
 
             // Assert: collection view model reflects the saved values
             Assert.Equal("Played", sokratesInCollection.SelectedCondition);
