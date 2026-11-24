@@ -18,7 +18,13 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
         private readonly ICollectionExportRepo _repo = repo;
         private readonly ICsvFileWriter _csvFileWriter = csvFileWriter;
         private readonly IDesktopFileSystem _desktopFileSystem = desktopFileSystem;
-        public string BackupFolderPath => _settings.BackupFolderPath;
+        public string TradeListExportCurrency => _settings.TradeListExportCurrency;
+
+        // Persist the selected trade-list export currency in the app settings
+        public void PersistTradeListExportCurrency(string currency)
+        {
+            _settings.PersistTradeListExportCurrency(currency);
+        }
 
         // Export full collection
         public async Task<OperationResult> ExportFullCollectionBackupAsync(CancellationToken cancellationToken = default)
@@ -204,6 +210,7 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
         private static string ToCsvBoolean(bool value) => value ? "true" : "false";
 
         // Change backup folder path
+        public string BackupFolderPath => _settings.BackupFolderPath;
         public OperationResult ChangeBackupFolderPath()
         {
             try

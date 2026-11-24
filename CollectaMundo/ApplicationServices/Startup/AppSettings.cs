@@ -11,6 +11,8 @@ namespace CollectaMundo.ApplicationServices.Startup
         private static readonly string AppRootPath = Path.Combine(LocalAppDataPath, "CollectaMundo");
         private static readonly string SqlitePath = Path.Combine(AppRootPath, "CardDatabase");
         private static readonly string UserProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        private const string DefaultTradeListExportCurrency = "EUR";
+
         private readonly string _settingsFilePath;
         private readonly AppSettingsDto _currentSettings;
 
@@ -23,7 +25,7 @@ namespace CollectaMundo.ApplicationServices.Startup
         public string UserDownloadsPath => Path.Combine(UserProfilePath, "Downloads");
         public string BackupFolderPath => _currentSettings.BackupFolderPath;
         public string CardImageCachePath => Path.Combine(AppRootPath, "CardImageCache");
-
+        public string TradeListExportCurrency => _currentSettings.TradeListExportCurrency;
         // Constructor
         public AppSettings(string? filePath = null)
         {
@@ -44,6 +46,8 @@ namespace CollectaMundo.ApplicationServices.Startup
 
             var json = File.ReadAllText(_settingsFilePath);
             var settings = JsonConvert.DeserializeObject<AppSettingsDto>(json) ?? new AppSettingsDto();
+
+            settings.TradeListExportCurrency = string.Equals(settings.TradeListExportCurrency?.Trim(), "USD", StringComparison.OrdinalIgnoreCase) ? "USD" : DefaultTradeListExportCurrency;
 
             // Older settings files may not contain a rate. Invalid saved rates also fall back to the default.
             if (settings.PriceInfo.UsdToEurRate <= 0m)
@@ -162,6 +166,32 @@ namespace CollectaMundo.ApplicationServices.Startup
                 throw;
             }
         }
+        public void PersistTradeListExportCurrency(string currency)
+        {
+            if (currency is not ("EUR" or "USD"))
+            {
+                throw new ArgumentException("Export currency must be EUR or USD.", nameof(currency));
+            }
+
+            var previousCurrency = _currentSettings.TradeListExportCurrency;
+
+            if (currency == previousCurrency)
+            {
+                return;
+            }
+
+            _currentSettings.TradeListExportCurrency = currency;
+
+            try
+            {
+                SaveSettings();
+            }
+            catch
+            {
+                _currentSettings.TradeListExportCurrency = previousCurrency;
+                throw;
+            }
+        }
         private void SaveSettings()
         {
             // Serialize the complete settings object so updates preserve unrelated settings.
@@ -173,7 +203,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             public DatabaseSettings DatabaseSettings { get; set; } = new();
             public ConnectionStrings ConnectionStrings { get; set; } = new();
             public PriceInfo PriceInfo { get; set; } = new();
-
+            public string TradeListExportCurrency { get; set; } = DefaultTradeListExportCurrency;
             public string BackupFolderPath { get; set; } = Path.Combine(UserProfilePath, "CollectaMundoBackup");
         }
     }

@@ -337,7 +337,6 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             // Export while both Zombie and Leave No Trace are in the collection.
             var exportVm = _ctx.MainVM.CollectionExportVM;
-            exportVm.SelectedCurrency = "EUR";
 
             await exportVm.ExportTradeListCommand.ExecuteAsync(null);
 

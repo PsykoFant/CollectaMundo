@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Decks;
+using CollectaMundo.CardPrices.ViewModels;
 using CollectaMundo.DomainLogic.CardLocations.Models;
 using CollectaMundo.DomainLogic.Decks.Models.Enums;
 using CollectaMundo.DomainLogic.Shared.CardModels;

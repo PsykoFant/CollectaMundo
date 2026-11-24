@@ -8,14 +8,30 @@ namespace CollectaMundo.ViewModels.Utilities
     public partial class CollectionExportViewModel(ICollectionExportService collectionExportService) : ObservableObject
     {
         private readonly ICollectionExportService _collectionExportService = collectionExportService;
-        public IReadOnlyList<string> CurrencyOptions { get; } = ["EUR", "USD"];
         public void ResetStatusMessage()
         {
             StatusMessage = string.Empty;
         }
+        public IReadOnlyList<string> CurrencyOptions { get; } = ["EUR", "USD"];
 
         [ObservableProperty]
-        private string? selectedCurrency = "EUR";
+        private string? selectedCurrency = collectionExportService.TradeListExportCurrency;
+        partial void OnSelectedCurrencyChanged(string? value)
+        {
+            if (value is not ("EUR" or "USD"))
+            {
+                return;
+            }
+
+            try
+            {
+                _collectionExportService.PersistTradeListExportCurrency(value);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Could not save the export currency: {ex.Message}";
+            }
+        }
 
         [ObservableProperty]
         private string backupFolderPath = collectionExportService.BackupFolderPath;

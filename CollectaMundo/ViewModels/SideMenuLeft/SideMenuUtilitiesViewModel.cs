@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ViewModels.Utilities;
+﻿using CollectaMundo.CardPrices.ViewModels;
+using CollectaMundo.ViewModels.Utilities;
 
 namespace CollectaMundo.ViewModels.SideMenuLeft
 {

@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardImages.Models;
+using CollectaMundo.CardPrices.ViewModels;
 using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.ViewModels.CardLists;
 using CollectaMundo.ViewModels.Filtering;
