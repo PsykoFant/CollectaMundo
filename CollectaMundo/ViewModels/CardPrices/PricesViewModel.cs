@@ -5,7 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 
-namespace CollectaMundo.ViewModels
+namespace CollectaMundo.CardPrices.ViewModels
 {
     public partial class PricesViewModel : ObservableObject
     {
