@@ -162,7 +162,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
                 var desktopFileSystem = new DesktopFileSystem();
-                var csvFileWriter = new CsvFileWriter();
+                var csvFileWriter = new CsvFileWriter(FileOutput.OpenWrite);
 
                 var cardImageDownloader = new CardImageDownloader(settings);
                 var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);
@@ -176,7 +176,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityService);
                 var deckBuilderService = new DeckBuilderService(uowRunner, new DeckCardReader(uowRunner, new DeckBuilderRepo()), cardLegalityService, new DeckBuilderLogic(), new DeckBuilderRepo());
-                var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter(), desktopFileSystem, new ClipboardWriter());
+                var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), csvFileWriter, desktopFileSystem, new ClipboardWriter());
 
                 var collectionExportService = new CollectionExportService(settings, uowRunner, new CollectionExportRepo(), csvFileWriter, desktopFileSystem);
                 var cardDatabaseUpdateWorkflowService = new CardDatabaseUpdateWorkflowService(collectionExportService, cardDbManagementService);

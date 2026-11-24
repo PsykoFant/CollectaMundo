@@ -15,245 +15,154 @@ namespace CollectaMundo.Tests.UnitTests
         public async Task WriteAsync_WritesHeaders()
         {
             // Arrange
-            var writer = new CsvFileWriter();
-            var filePath = CreateTempFilePath();
+            using var output = new MemoryStream();
+            var writer = new CsvFileWriter(_ => output);
 
-            try
-            {
-                var headers = new[]
-                {
-                    "Name",
-                    "Quantity",
-                    "Location"
-                };
+            // Act
+            await writer.WriteAsync("collection.csv", ["Name", "Quantity", "Location"], EmptyRows(), ';');
 
-                // Act
-                await writer.WriteAsync(
-                    filePath,
-                    headers,
-                    EmptyRows(),
-                    ';');
-
-                // Assert
-                var lines = await File.ReadAllLinesAsync(filePath);
-
-                Assert.Single(lines);
-                Assert.Equal("Name;Quantity;Location", lines[0]);
-            }
-            finally
-            {
-                DeleteFileIfExists(filePath);
-            }
+            // Assert
+            Assert.Equal($"Name;Quantity;Location{Environment.NewLine}", ReadCsvText(output));
         }
 
         [Fact]
         public async Task WriteAsync_WritesMultipleRows()
         {
-            // Arrange
-            var writer = new CsvFileWriter();
-            var filePath = CreateTempFilePath();
+            using var output = new MemoryStream();
+            var writer = new CsvFileWriter(_ => output);
 
-            try
-            {
-                var headers = new[]
-                {
-                    "Name",
-                    "Quantity"
-                };
+            var rows = CreateRows(
+                ["Lightning Bolt", "4"],
+                ["Counterspell", "2"],
+                ["Sol Ring", "1"]);
 
-                var rows = CreateRows(
-                    ["Lightning Bolt", "4"],
-                    ["Counterspell", "2"],
-                    ["Sol Ring", "1"]);
+            await writer.WriteAsync("collection.csv", ["Name", "Quantity"], rows, ';');
 
-                // Act
-                await writer.WriteAsync(
-                    filePath,
-                    headers,
-                    rows,
-                    ';');
+            var expected = string.Join(Environment.NewLine,
+                "Name;Quantity",
+                "Lightning Bolt;4",
+                "Counterspell;2",
+                "Sol Ring;1",
+                string.Empty);
 
-                // Assert
-                var lines = await File.ReadAllLinesAsync(filePath);
-
-                Assert.Equal(4, lines.Length);
-
-                Assert.Equal("Name;Quantity", lines[0]);
-                Assert.Equal("Lightning Bolt;4", lines[1]);
-                Assert.Equal("Counterspell;2", lines[2]);
-                Assert.Equal("Sol Ring;1", lines[3]);
-            }
-            finally
-            {
-                DeleteFileIfExists(filePath);
-            }
+            Assert.Equal(expected, ReadCsvText(output));
         }
 
         [Fact]
         public async Task WriteAsync_UsesRequestedDelimiter()
         {
             // Arrange
-            var writer = new CsvFileWriter();
-            var filePath = CreateTempFilePath();
+            using var output = new MemoryStream();
+            var writer = new CsvFileWriter(_ => output);
 
-            try
-            {
-                var headers = new[]
-                {
-                    "Name",
-                    "Quantity"
-                };
+            var rows = CreateRows(["Lightning Bolt", "4"]);
 
-                var rows = CreateRows(
-                    ["Lightning Bolt", "4"]);
+            // Act
+            await writer.WriteAsync("collection.csv", ["Name", "Quantity"], rows, ',');
 
-                // Act
-                await writer.WriteAsync(
-                    filePath,
-                    headers,
-                    rows,
-                    ',');
+            // Assert
+            var expected = string.Join(Environment.NewLine, "Name,Quantity", "Lightning Bolt,4", string.Empty);
 
-                // Assert
-                var lines = await File.ReadAllLinesAsync(filePath);
-
-                Assert.Equal("Name,Quantity", lines[0]);
-                Assert.Equal("Lightning Bolt,4", lines[1]);
-            }
-            finally
-            {
-                DeleteFileIfExists(filePath);
-            }
+            Assert.Equal(expected, ReadCsvText(output));
         }
 
         [Fact]
         public async Task WriteAsync_WritesNullAndEmptyValuesAsEmptyFields()
         {
             // Arrange
-            var writer = new CsvFileWriter();
-            var filePath = CreateTempFilePath();
+            using var output = new MemoryStream();
+            var writer = new CsvFileWriter(_ => output);
 
-            try
-            {
-                var headers = new[]
+            var headers = new[]
                 {
                     "Name",
                     "Description",
                     "Location"
                 };
 
-                var rows = CreateRows(
-                    ["Lightning Bolt", null, ""]);
+            var rows = CreateRows(["Lightning Bolt", null, ""]);
 
-                // Act
-                await writer.WriteAsync(
-                    filePath,
-                    headers,
-                    rows,
-                    ';');
+            // Act
+            await writer.WriteAsync("collection.csv", headers, rows, ';');
 
-                // Assert
-                var lines = await File.ReadAllLinesAsync(filePath);
+            // Assert
+            var expected = string.Join(Environment.NewLine,
+                "Name;Description;Location",
+                "Lightning Bolt;;",
+                string.Empty);
 
-                Assert.Equal(2, lines.Length);
-                Assert.Equal("Lightning Bolt;;", lines[1]);
-            }
-            finally
-            {
-                DeleteFileIfExists(filePath);
-            }
+            Assert.Equal(expected, ReadCsvText(output));
+
+            Assert.Equal(expected, ReadCsvText(output));
         }
 
         [Fact]
         public async Task WriteAsync_QuotesValueContainingDelimiter()
         {
             // Arrange
-            var writer = new CsvFileWriter();
-            var filePath = CreateTempFilePath();
+            using var output = new MemoryStream();
+            var writer = new CsvFileWriter(_ => output);
 
-            try
-            {
-                var headers = new[] { "Name", "Description" };
-                var rows = CreateRows(["Lightning Bolt", "Fast; efficient"]);
+            var headers = new[] { "Name", "Description" };
+            var rows = CreateRows(["Lightning Bolt", "Fast; efficient"]);
 
-                // Act
-                await writer.WriteAsync(filePath, headers, rows, ';');
+            // Act
+            await writer.WriteAsync("collection.csv", headers, rows, ';');
 
-                // Assert
-                var lines = await File.ReadAllLinesAsync(filePath);
+            // Assert
+            var expected = string.Join(Environment.NewLine,
+                "Name;Description",
+                "Lightning Bolt;\"Fast; efficient\"",
+                string.Empty);
 
-                Assert.Equal("Lightning Bolt;\"Fast; efficient\"", lines[1]);
-            }
-            finally
-            {
-                DeleteFileIfExists(filePath);
-            }
+            Assert.Equal(expected, ReadCsvText(output));
         }
 
         [Fact]
         public async Task WriteAsync_PreservesUnicodeCharacters()
         {
             // Arrange
-            var writer = new CsvFileWriter();
-            var filePath = CreateTempFilePath();
+            using var output = new MemoryStream();
+            var writer = new CsvFileWriter(_ => output);
 
-            try
-            {
-                var headers = new[]
+            var headers = new[]
                 {
                     "Name",
                     "Description"
                 };
 
-                var rows = CreateRows(
-                    ["Æther Vial", "Dansk tekst: æøå"]);
+            var rows = CreateRows(["Æther Vial", "Dansk tekst: æøå"]);
 
-                // Act
-                await writer.WriteAsync(
-                    filePath,
-                    headers,
-                    rows,
-                    ';');
+            // Act
+            await writer.WriteAsync("collection.csv", headers, rows, ';');
 
-                // Assert
-                var text = await File.ReadAllTextAsync(
-                    filePath,
-                    Encoding.UTF8);
+            // Assert
+            var text = ReadCsvText(output);
 
-                Assert.Contains("Æther Vial", text);
-                Assert.Contains("æøå", text);
-            }
-            finally
-            {
-                DeleteFileIfExists(filePath);
-            }
+            Assert.Contains("Æther Vial", text);
+            Assert.Contains("æøå", text);
         }
 
         [Fact]
         public async Task WriteAsync_ThrowsOperationCanceledException_WhenCancelledBeforeStart()
         {
             // Arrange
-            var writer = new CsvFileWriter();
-            var filePath = CreateTempFilePath();
+            using var output = new MemoryStream();
+            var writer = new CsvFileWriter(_ => output);
 
             using var cts = new CancellationTokenSource();
             cts.Cancel();
 
-            try
-            {
-                // Act / Assert
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                    () => writer.WriteAsync(
-                        filePath,
-                        ["Name"],
-                        CreateRows(["Lightning Bolt"]),
-                        ';',
-                        cts.Token));
-            }
-            finally
-            {
-                DeleteFileIfExists(filePath);
-            }
+
+            // Act / Assert
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => writer.WriteAsync(
+                    "collection.csv",
+                    ["Name"],
+                    CreateRows(["Lightning Bolt"]),
+                    ';',
+                    cts.Token));
+
         }
         [Fact]
         public void GetCompleteDeck_IncludesExportableSectionsAndExcludesMaybeboard()
@@ -469,6 +378,12 @@ namespace CollectaMundo.Tests.UnitTests
                 yield return row;
                 await Task.Yield();
             }
+        }
+        private static string ReadCsvText(MemoryStream output)
+        {
+            using var input = new MemoryStream(output.ToArray());
+            using var reader = new StreamReader(input, Encoding.UTF8);
+            return reader.ReadToEnd();
         }
     }
 }

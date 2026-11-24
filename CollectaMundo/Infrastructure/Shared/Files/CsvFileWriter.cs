@@ -4,12 +4,13 @@ using System.Text;
 
 namespace CollectaMundo.Infrastructure.Shared.Files
 {
-    public sealed class CsvFileWriter : ICsvFileWriter
+    public sealed class CsvFileWriter(Func<string, Stream> openOutput) : ICsvFileWriter
     {
+        private readonly Func<string, Stream> _openOutput = openOutput;
         public async Task WriteAsync(string filePath, IReadOnlyList<string> headers, IEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
         {
             EnsureParentDirectoryExists(filePath);
-            await using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+            await using var writer = new StreamWriter(_openOutput(filePath), Encoding.UTF8);
 
             await WriteLineAsync(writer, headers, delimiter, cancellationToken);
 
@@ -23,7 +24,7 @@ namespace CollectaMundo.Infrastructure.Shared.Files
         public async Task WriteAsync(string filePath, IReadOnlyList<string> headers, IAsyncEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
         {
             EnsureParentDirectoryExists(filePath);
-            await using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+            await using var writer = new StreamWriter(_openOutput(filePath), Encoding.UTF8);
 
             await WriteLineAsync(writer, headers, delimiter, cancellationToken);
 

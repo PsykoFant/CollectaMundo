@@ -358,58 +358,64 @@ namespace CollectaMundo.Tests.TestUtils
 
             command.CommandText = @"
         CREATE TABLE IF NOT EXISTS cardIdentifiers (
-            cardKingdomEtchedId TEXT,
-            cardKingdomFoilId TEXT,
-            cardKingdomId TEXT,
-            cardsphereFoilId TEXT,
-            cardsphereId TEXT,
-            deckboxId TEXT,
-            mcmId TEXT,
-            mcmMetaId TEXT,
-            mtgArenaId TEXT,
-            mtgjsonFoilVersionId TEXT,
-            mtgjsonNonFoilVersionId TEXT,
-            mtgjsonV4Id TEXT,
-            mtgoFoilId TEXT,
-            mtgoId TEXT,
-            multiverseId TEXT,
-            scryfallCardBackId TEXT,
-            scryfallId TEXT,
-            scryfallIllustrationId TEXT,
-            scryfallOracleId TEXT,
-            tcgplayerEtchedProductId TEXT,
-            tcgplayerProductId TEXT,
-            uuid TEXT
+            uuid TEXT, 
+            scryfallId TEXT, 
+            scryfallOracleId TEXT, 
+            scryfallIllustrationId TEXT, 
+            scryfallCardBackId TEXT, 
+            mcmId TEXT, 
+            mcmMetaId TEXT, 
+            mtgArenaId TEXT, 
+            mtgoId TEXT, 
+            mtgoFoilId TEXT, 
+            multiverseId TEXT, 
+            tcgplayerProductId TEXT, 
+            tcgplayerEtchedProductId TEXT, 
+            tcgplayerAlternativeFoilProductId TEXT, 
+            cardKingdomId TEXT, 
+            cardKingdomFoilId TEXT, 
+            cardKingdomEtchedId TEXT, 
+            cardsphereId TEXT, 
+            cardsphereAlternativeFoilId TEXT, 
+            cardsphereEtchedId TEXT, 
+            cardsphereFoilId TEXT, 
+            deckboxId TEXT, 
+            mtgjsonFoilVersionId TEXT, 
+            mtgjsonNonFoilVersionId TEXT, 
+            mtgjsonV4Id TEXT
         );
     ";
             command.ExecuteNonQuery();
 
             command.CommandText = @"
-                                    CREATE TABLE IF NOT EXISTS tokenIdentifiers (
-                                        cardKingdomEtchedId TEXT,
-                                        cardKingdomFoilId TEXT,
-                                        cardKingdomId TEXT,
-                                        cardsphereFoilId TEXT,
-                                        cardsphereId TEXT,
-                                        deckboxId TEXT,
-                                        mcmId TEXT,
-                                        mcmMetaId TEXT,
-                                        mtgArenaId TEXT,
-                                        mtgjsonFoilVersionId TEXT,
-                                        mtgjsonNonFoilVersionId TEXT,
-                                        mtgjsonV4Id TEXT,
-                                        mtgoFoilId TEXT,
-                                        mtgoId TEXT,
-                                        multiverseId TEXT,
-                                        scryfallCardBackId TEXT,
-                                        scryfallId TEXT,
-                                        scryfallIllustrationId TEXT,
-                                        scryfallOracleId TEXT,
-                                        tcgplayerEtchedProductId TEXT,
-                                        tcgplayerProductId TEXT,
-                                        uuid TEXT
-                                    );
-                                ";
+        CREATE TABLE IF NOT EXISTS tokenIdentifiers (
+            uuid TEXT, 
+            scryfallId TEXT, 
+            scryfallOracleId TEXT, 
+            scryfallIllustrationId TEXT, 
+            scryfallCardBackId TEXT, 
+            mcmId TEXT, 
+            mcmMetaId TEXT, 
+            mtgArenaId TEXT, 
+            mtgoId TEXT, 
+            mtgoFoilId TEXT, 
+            multiverseId TEXT, 
+            tcgplayerProductId TEXT, 
+            tcgplayerEtchedProductId TEXT, 
+            tcgplayerAlternativeFoilProductId TEXT, 
+            cardKingdomId TEXT, 
+            cardKingdomFoilId TEXT, 
+            cardKingdomEtchedId TEXT, 
+            cardsphereId TEXT, 
+            cardsphereAlternativeFoilId TEXT, 
+            cardsphereEtchedId TEXT, 
+            cardsphereFoilId TEXT, 
+            deckboxId TEXT, 
+            mtgjsonFoilVersionId TEXT, 
+            mtgjsonNonFoilVersionId TEXT, 
+            mtgjsonV4Id TEXT
+        );
+    ";
             command.ExecuteNonQuery();
 
             command.CommandText = @"

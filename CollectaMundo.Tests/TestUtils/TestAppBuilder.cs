@@ -54,6 +54,7 @@ using CollectaMundo.Infrastructure.Shared.Files;
 using CollectaMundo.Infrastructure.Shared.FileTransfers;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
+using System.IO;
 using System.Net.Http;
 
 namespace CollectaMundo.Tests.TestUtils;
@@ -67,7 +68,8 @@ public static class TestAppBuilder
         List<CollectionChangeSet<CollectionCardDbRow>>? eventSink = null,
         IUserPromptService? promptOverride = null,
         IDesktopFileSystem? filePickerOverride = null,
-        IFacetUpdateScheduler? facetScheduler = null)
+        IFacetUpdateScheduler? facetScheduler = null,
+        CsvFileWriter? csvFileWriterOverride = null)
     {
         await fixture.InitializeAsync();
 
@@ -105,14 +107,14 @@ public static class TestAppBuilder
         var collectionMutationsService = new CollectionMutationsService(collectionMutationsLogic, collectionMutationsRepo);
         var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
         var desktopFileSystem = new DesktopFileSystem();
-        var csvFileWriter = new CsvFileWriter();
+        var csvFileWriter = csvFileWriterOverride ?? new CsvFileWriter(_ => new MemoryStream());
 
         var cardLocationLookupStore = new CardLocationLookupStore();
         var cardLocationRepo = new CardLocationRepo();
         var cardLocationService = new CardLocationService(uowRunner, cardLocationRepo, new CardLocationLogic(), cardLocationLookupStore, collectionMutationsService);
         var deckManagementStore = new DeckManagementStore(cardLocationService, cardLegalityService);
         var deckBuilderService = new DeckBuilderService(uowRunner, new DeckCardReader(uowRunner, new DeckBuilderRepo()), cardLegalityService, new DeckBuilderLogic(), new DeckBuilderRepo());
-        var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), new CsvFileWriter(), desktopFileSystem, new ClipboardWriter());
+        var deckExportService = new DeckExportService(new DeckCardReader(uowRunner, new DeckBuilderRepo()), new DeckExportLogic(), csvFileWriter, desktopFileSystem, new ClipboardWriter());
 
         var collectionExportService = new CollectionExportService(settings, uowRunner, new CollectionExportRepo(), csvFileWriter, desktopFileSystem);
         var cardDatabaseUpdateWorkflowService = new CardDatabaseUpdateWorkflowService(collectionExportService, cardDbManagementService);
