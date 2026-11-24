@@ -7,7 +7,6 @@ using CollectaMundo.Infrastructure.CollectionExport;
 using CollectaMundo.Infrastructure.CollectionExport.Models;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CollectionExport
 {
@@ -18,6 +17,9 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
         private readonly ICollectionExportRepo _repo = repo;
         private readonly ICsvFileWriter _csvFileWriter = csvFileWriter;
         private readonly IDesktopFileSystem _desktopFileSystem = desktopFileSystem;
+
+        private static readonly string[] BackupHeaders = ["name", "setCode", "uuid", "scryfallId", "condition", "finish", "language", "location", "locationType", "comment", "cardsOwned", "cardsForTrade", "sellPrice", "sellPriceCurrency"];
+        private static readonly string[] TradeListHeaders = ["idProduct", "quantity", "name", "set", "condition", "language", "isFoil", "price", "comment", "scryfallId", "tcgplayerProductId", "uuid"];
         public string TradeListExportCurrency => _settings.TradeListExportCurrency;
 
         // Persist the selected trade-list export currency in the app settings
@@ -33,40 +35,10 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var rows = await _uowRunner.ExecuteReadOnlyAsync(connection => _repo.GetFullCollectionRowsAsync(connection, cancellationToken));
+                var rows = await _uowRunner.ExecuteReadOnlyAsync(
+                    connection => _repo.GetFullCollectionRowsAsync(connection, cancellationToken));
 
-                if (rows.Count == 0)
-                {
-                    return new OperationResult(OperationResultCode.Empty, "Your collection is empty - nothing to back up");
-                }
-
-                Directory.CreateDirectory(_settings.BackupFolderPath);
-
-                var headers = new[]
-                {
-                    "name",
-                    "setCode",
-                    "uuid",
-                    "scryfallId",
-                    "condition",
-                    "finish",
-                    "language",
-                    "location",
-                    "locationType",
-                    "comment",
-                    "cardsOwned",
-                    "cardsForTrade",
-                    "sellPrice",
-                    "sellPriceCurrency"
-                };
-                var csvRows = rows.Select(ToCsvRow);
-                var filePath = Path.Combine(_settings.BackupFolderPath, $"CollectaMundoCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
-
-                await _csvFileWriter.WriteAsync(filePath, headers, csvRows, ';', cancellationToken);
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-                return new OperationResult(OperationResultCode.Success, filePath);
+                return await WriteFullCollectionBackupAsync(rows, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -119,37 +91,10 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var items = await _uowRunner.ExecuteReadOnlyAsync(connection => _repo.GetTradeListItemsAsync(connection, cancellationToken));
+                var items = await _uowRunner.ExecuteReadOnlyAsync(
+                    connection => _repo.GetTradeListItemsAsync(connection, cancellationToken));
 
-                if (items.Count == 0)
-                {
-                    return new OperationResult(OperationResultCode.Empty, "There are no cards marked for trade");
-                }
-
-                var headers = new[]
-                {
-                    "idProduct",
-                    "quantity",
-                    "name",
-                    "set",
-                    "condition",
-                    "language",
-                    "isFoil",
-                    "price",
-                    "comment",
-                    "scryfallId",
-                    "tcgplayerProductId",
-                    "uuid"
-                };
-
-                var rows = items.Select(item => ToTradeListCsvRow(item, currency, _settings.PriceInfo.UsdToEurRate));
-                var filePath = Path.Combine(_settings.BackupFolderPath, $"MyCollection_trade_list_{currency}_{DateTime.Now:yyyyMMdd}.csv");
-
-                await _csvFileWriter.WriteAsync(filePath, headers, rows, ',', cancellationToken);
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-                return new OperationResult(OperationResultCode.Success, filePath);
+                return await WriteTradeListAsync(items, currency, cancellationToken);
             }
             catch (OperationCanceledException)
             {
