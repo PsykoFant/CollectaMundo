@@ -357,7 +357,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             // Act: clear the legality filter.
             _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null);
 
-            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM);
+            ScenarioTestHelpers.AssertFiltersCleared(_ctx.MainVM, 65, 22);
 
             // Act: search normally by card name.
             var nameFilter = _ctx.MainVM.FilterPanelVM.Filters["Name"];
