@@ -4,6 +4,7 @@ using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels.ModifyCollection.ParameterModels;
 using CsvHelper;
+using CsvHelper.Configuration;
 using System.Globalization;
 using System.IO;
 using System.Windows.Input;
@@ -343,12 +344,16 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.StartsWith("Collection successfully exported", exportVm.StatusMessage);
 
             var output = Assert.IsType<MemoryStream>(_ctx.LastCsvOutput);
-            var exportedRows = new List<(string? Uuid, string? IdProduct, string? ScryfallId,
-                string? TcgplayerProductId, string? Quantity)>();
+            var exportedRows = new List<(string? Uuid, string? IdProduct, string? ScryfallId, string? TcgplayerProductId, string? Quantity)>();
+
+            var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = ";"
+            };
 
             using (var csvStream = new MemoryStream(output.ToArray()))
             using (var textReader = new StreamReader(csvStream))
-            using (var csv = new CsvReader(textReader, CultureInfo.InvariantCulture))
+            using (var csv = new CsvReader(textReader, csvConfig))
             {
                 Assert.True(csv.Read());
                 csv.ReadHeader();

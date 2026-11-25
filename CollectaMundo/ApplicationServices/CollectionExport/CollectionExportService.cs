@@ -2,11 +2,9 @@
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.UnitOfWork;
 using CollectaMundo.ApplicationServices.Startup;
-using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.CollectionExport;
-using CollectaMundo.Infrastructure.CollectionExport.Models;
 using System.Diagnostics;
-using System.Globalization;
+using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CollectionExport
 {
@@ -17,9 +15,6 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
         private readonly ICollectionExportRepo _repo = repo;
         private readonly ICsvFileWriter _csvFileWriter = csvFileWriter;
         private readonly IDesktopFileSystem _desktopFileSystem = desktopFileSystem;
-
-        private static readonly string[] BackupHeaders = ["name", "setCode", "uuid", "scryfallId", "condition", "finish", "language", "location", "locationType", "comment", "cardsOwned", "cardsForTrade", "sellPrice", "sellPriceCurrency"];
-        private static readonly string[] TradeListHeaders = ["idProduct", "quantity", "name", "set", "condition", "language", "isFoil", "price", "comment", "scryfallId", "tcgplayerProductId", "uuid"];
         public string TradeListExportCurrency => _settings.TradeListExportCurrency;
 
         // Persist the selected trade-list export currency in the app settings
@@ -35,10 +30,17 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var rows = await _uowRunner.ExecuteReadOnlyAsync(
-                    connection => _repo.GetFullCollectionRowsAsync(connection, cancellationToken));
+                var rows = await _uowRunner.ExecuteReadOnlyAsync(connection => _repo.GetFullCollectionRowsAsync(connection, cancellationToken));
 
-                return await WriteFullCollectionBackupAsync(rows, cancellationToken);
+                return await WriteCsvAsync(
+                    rows,
+                    CollectionExportFormatter.ToBackupCsvRow,
+                    CollectionExportFormatter.BackupHeaders,
+                    delimiter: ';',
+                    fileName: $"CollectaMundoCollection_backup_{DateTime.Now:yyyyMMdd}.csv",
+                    emptyMessage: "Your collection is empty - nothing to back up",
+                    cancellationToken: cancellationToken
+                    );
             }
             catch (OperationCanceledException)
             {
@@ -48,28 +50,6 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
             {
                 return new OperationResult(OperationResultCode.Error, $"Error creating CSV backup: {ex.Message}");
             }
-        }
-        private static IReadOnlyList<string?> ToCsvRow(CollectionBackupRow row)
-        {
-            var culture = CultureInfo.InvariantCulture;
-
-            return
-            [
-                row.Name,
-                row.SetCode,
-                row.Uuid,
-                row.ScryfallId,
-                row.Condition,
-                row.Finish,
-                row.Language,
-                row.LocationName,
-                row.LocationType,
-                row.Comment,
-                row.CardsOwned.ToString(culture),
-                row.CardsForTrade.ToString(culture),
-                row.SellPrice?.ToString("0.00", culture),
-                row.SellPriceCurrency
-                ];
         }
 
         // Export trade list
@@ -91,10 +71,17 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var items = await _uowRunner.ExecuteReadOnlyAsync(
-                    connection => _repo.GetTradeListItemsAsync(connection, cancellationToken));
+                var items = await _uowRunner.ExecuteReadOnlyAsync(connection => _repo.GetTradeListItemsAsync(connection, cancellationToken));
+                var usdToEurRate = _settings.PriceInfo.UsdToEurRate;
 
-                return await WriteTradeListAsync(items, currency, cancellationToken);
+                return await WriteCsvAsync(
+                    items,
+                    item => CollectionExportFormatter.ToTradeListCsvRow(item, currency, usdToEurRate),
+                    CollectionExportFormatter.TradeListHeaders,
+                    delimiter: ';',
+                    fileName: $"MyCollection_trade_list_{currency}_{DateTime.Now:yyyyMMdd}.csv",
+                    emptyMessage: "There are no cards marked for trade",
+                    cancellationToken: cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -105,54 +92,23 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
                 return new OperationResult(OperationResultCode.Error, $"Error creating trade-list export: {ex.Message}");
             }
         }
-        private static IReadOnlyList<string?> ToTradeListCsvRow(CollectionTradeExportItem item, string targetCurrency, decimal usdToEurRate)
-        {
-            var culture = CultureInfo.InvariantCulture;
 
-            var price = item.SellPrice is decimal sourcePrice
-                ? CurrencyConversionLogic.Convert(sourcePrice, item.SellPriceCurrency ?? throw new InvalidOperationException($"Card '{item.Uuid}' has a sell price but no currency."), targetCurrency, usdToEurRate)
-                : (decimal?)null;
+        // Common CSV writing logic for both full collection backup and trade list export
+        private async Task<OperationResult> WriteCsvAsync<TItem>(IReadOnlyList<TItem> items, Func<TItem, IReadOnlyList<string?>> toCsvRow, IReadOnlyList<string> headers, char delimiter, string fileName, string emptyMessage, CancellationToken cancellationToken)
+        {
+            if (items.Count == 0)
+            {
+                return new OperationResult(OperationResultCode.Empty, emptyMessage);
+            }
 
-            return
-            [
-                item.McmId,
-                item.CardsForTrade.ToString(culture),
-                item.Name,
-                item.SetName,
-                ToTradeListCondition(item.Condition),
-                item.Language,
-                ToCsvBoolean(IsFoil(item.Finish)),
-                price?.ToString("0.00", culture),
-                item.Comment,
-                item.ScryfallId,
-                item.TcgplayerProductId,
-                item.Uuid
-            ];
+            var filePath = Path.Combine(BackupFolderPath, fileName);
+
+            await _csvFileWriter.WriteAsync(filePath, headers, items.Select(toCsvRow), delimiter, cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return new OperationResult(OperationResultCode.Success, filePath);
         }
-        private static string ToTradeListCondition(string condition)
-        {
-            return condition.Trim().ToLowerInvariant() switch
-            {
-                "mint" => "MT",
-                "near mint" => "NM",
-                "excellent" => "EX",
-                "good" => "GD",
-                "light played" => "LP",
-                "played" => "PL",
-                "poor" => "PO",
-                _ => throw new InvalidOperationException($"Unsupported collection condition '{condition}'.")
-            };
-        }
-        private static bool IsFoil(string finish)
-        {
-            return finish.Trim().ToLowerInvariant() switch
-            {
-                "nonfoil" => false,
-                "foil" or "etched" => true,
-                _ => throw new InvalidOperationException($"Unsupported card finish '{finish}'.")
-            };
-        }
-        private static string ToCsvBoolean(bool value) => value ? "true" : "false";
 
         // Change backup folder path
         public string BackupFolderPath => _settings.BackupFolderPath;
