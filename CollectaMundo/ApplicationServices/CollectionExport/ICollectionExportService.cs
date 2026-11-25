@@ -8,6 +8,7 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
         void PersistTradeListExportCurrency(string currency);
         Task<OperationResult> ExportFullCollectionBackupAsync(CancellationToken cancellationToken = default);
         Task<OperationResult> ExportTradeListAsync(string targetCurrency, CancellationToken cancellationToken = default);
+        Task<OperationResult> ExportFilteredTradeListAsync(IReadOnlySet<int> collectionCardIds, CancellationToken cancellationToken = default);
         string BackupFolderPath { get; }
         OperationResult ChangeBackupFolderPath();
         void OpenBackupFolder();

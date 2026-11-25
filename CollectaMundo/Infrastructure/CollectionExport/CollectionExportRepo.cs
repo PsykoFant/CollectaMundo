@@ -133,11 +133,12 @@ namespace CollectaMundo.Infrastructure.CollectionExport
 
             return rows;
         }
-        public async Task<IReadOnlyList<CollectionTradeExportItem>> GetTradeListItemsAsync(SQLiteConnection connection, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<CollectionTradeExportItem>> GetTradeListItemsAsync(SQLiteConnection connection, CancellationToken cancellationToken = default, IReadOnlySet<int>? collectionCardIds = null)
         {
             const string sql = """
                             WITH tradeItems AS (
                                 SELECT
+                                    collection.id AS collectionCardId,
                                     collection.uuid AS uuid,
                                     cardIds.mcmId AS mcmId,
                                     cardIds.scryfallId AS scryfallId,
@@ -164,6 +165,7 @@ namespace CollectaMundo.Infrastructure.CollectionExport
                                 UNION ALL
 
                                 SELECT
+                                    collection.id AS collectionCardId,
                                     collection.uuid AS uuid,
                                     tokenIds.mcmId AS mcmId,
                                     tokenIds.scryfallId AS scryfallId,
@@ -198,6 +200,7 @@ namespace CollectaMundo.Infrastructure.CollectionExport
 
             var rows = new List<CollectionTradeExportItem>();
 
+            var collectionCardIdOrdinal = reader.GetOrdinal("collectionCardId");
             var uuidOrdinal = reader.GetOrdinal("uuid");
             var mcmIdOrdinal = reader.GetOrdinal("mcmId");
             var scryfallIdOrdinal = reader.GetOrdinal("scryfallId");
@@ -214,6 +217,10 @@ namespace CollectaMundo.Infrastructure.CollectionExport
 
             while (await reader.ReadAsync(cancellationToken))
             {
+                if (collectionCardIds is not null && !collectionCardIds.Contains(reader.GetInt32(collectionCardIdOrdinal)))
+                {
+                    continue;
+                }
                 rows.Add(new CollectionTradeExportItem
                 {
                     Uuid = reader.GetString(uuidOrdinal),

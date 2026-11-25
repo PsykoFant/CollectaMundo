@@ -53,45 +53,46 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
         }
 
         // Export trade list
-        public async Task<OperationResult> ExportTradeListAsync(string targetCurrency, CancellationToken cancellationToken = default)
+        public Task<OperationResult> ExportTradeListAsync(string targetCurrency, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(targetCurrency))
-            {
-                return new OperationResult(OperationResultCode.Error, "Select a currency for the trade-list export.");
-            }
-
-            var currency = targetCurrency.Trim().ToUpperInvariant();
-
-            if (currency is not ("USD" or "EUR"))
-            {
-                return new OperationResult(OperationResultCode.Error, $"Unsupported export currency '{targetCurrency}'.");
-            }
-
-            try
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var items = await _uowRunner.ExecuteReadOnlyAsync(connection => _repo.GetTradeListItemsAsync(connection, cancellationToken));
-                var usdToEurRate = _settings.PriceInfo.UsdToEurRate;
-
-                return await WriteCsvAsync(
-                    items,
-                    item => CollectionExportFormatter.ToTradeListCsvRow(item, currency, usdToEurRate),
-                    CollectionExportFormatter.TradeListHeaders,
-                    delimiter: ';',
-                    fileName: $"MyCollection_trade_list_{currency}_{DateTime.Now:yyyyMMdd}.csv",
-                    emptyMessage: "There are no cards marked for trade",
-                    cancellationToken: cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                return new OperationResult(OperationResultCode.CancelledByUser, "Trade-list export cancelled");
-            }
-            catch (Exception ex)
-            {
-                return new OperationResult(OperationResultCode.Error, $"Error creating trade-list export: {ex.Message}");
-            }
+            return ExportTradeListCoreAsync(targetCurrency, null, cancellationToken);
         }
+        public Task<OperationResult> ExportFilteredTradeListAsync(IReadOnlySet<int> collectionCardIds, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(collectionCardIds);
+
+            return ExportTradeListCoreAsync(TradeListExportCurrency, collectionCardIds, cancellationToken);
+        }
+        private async Task<OperationResult> ExportTradeListCoreAsync(string targetCurrency, IReadOnlySet<int>? collectionCardIds, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var isFiltered = collectionCardIds is not null;
+            var emptyMessage = isFiltered
+                ? "No cards in the current filter are marked for trade."
+                : "There are no cards marked for trade";
+
+            if (collectionCardIds is { Count: 0 })
+            {
+                return new OperationResult(OperationResultCode.Empty, emptyMessage);
+            }
+
+            var items = await _uowRunner.ExecuteReadOnlyAsync(connection => _repo.GetTradeListItemsAsync(connection, cancellationToken, collectionCardIds));
+
+            var usdToEurRate = _settings.PriceInfo.UsdToEurRate;
+            var filePrefix = isFiltered ? "MyCollection_filtered_trade_list" : "MyCollection_trade_list";
+
+            return await WriteCsvAsync(
+                items,
+                item => CollectionExportFormatter.ToTradeListCsvRow(item, targetCurrency, usdToEurRate),
+                CollectionExportFormatter.TradeListHeaders,
+                delimiter: ';',
+                fileName: $"{filePrefix}_{targetCurrency}_{DateTime.Now:yyyyMMdd}.csv",
+                emptyMessage: emptyMessage,
+                cancellationToken: cancellationToken);
+        }
+
+
 
         // Common CSV writing logic for both full collection backup and trade list export
         private async Task<OperationResult> WriteCsvAsync<TItem>(IReadOnlyList<TItem> items, Func<TItem, IReadOnlyList<string?>> toCsvRow, IReadOnlyList<string> headers, char delimiter, string fileName, string emptyMessage, CancellationToken cancellationToken)
