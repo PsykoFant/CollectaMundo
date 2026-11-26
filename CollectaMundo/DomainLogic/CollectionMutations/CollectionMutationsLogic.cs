@@ -3,7 +3,6 @@ using CollectaMundo.DomainLogic.Shared.CollectionSnapshot;
 using CollectaMundo.DomainLogic.Shared.Factories;
 using CollectaMundo.DomainLogic.Shared.Models;
 using CollectaMundo.Infrastructure.CardLists.Models;
-using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.CollectionMutations
 {
@@ -51,8 +50,6 @@ namespace CollectaMundo.DomainLogic.CollectionMutations
 
             plan.Updates.Clear();
             plan.Updates.AddRange(updatesByCardId.Values);
-
-            Debug.WriteLine($"[CollectionMutationsLogic] Planned {plan.Inserts.Count} inserts, {plan.Updates.Count} updates, and {plan.DeleteIds.Count} deletes.");
 
             return plan;
         }

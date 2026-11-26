@@ -23,14 +23,18 @@
         <sharedElements:CardListPageTopPanelUserControl Grid.Row="0" />
 
         <!-- 1 - Actions -->
-        <Button Grid.Row="1"
-                Content="Edit selected cards"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                Width="120" Height="20"
-                Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
-                Command="{Binding ModifyCollectionViewModel.EditSelectedCardsCommand}"
-                CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
+        <DockPanel Grid.Row="1">
+            <Button DockPanel.Dock="Right" Content="Edit selected cards" VerticalAlignment="Top" Width="120" Height="20"
+                    Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
+                    Command="{Binding ModifyCollectionViewModel.EditSelectedCardsCommand}"
+                    CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
+
+            <TextBlock Text="{Binding ExportStatusMessage}"
+                       ToolTip="{Binding ExportStatusMessage}"
+                       Margin="4,0"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" />
+        </DockPanel>
 
         <!-- 2 - Data Grid -->
         <DataGrid Grid.Row="2"
@@ -191,10 +195,10 @@
                     <MenuItem Header="UPDATE selected card(s) - put NONE for TRADE" Style="{StaticResource BelerenBold}"
                                           Command="{Binding ModifyCollectionViewModel.SetNoneForTradeCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    <MenuItem Header="DELETE card(s) from collection" Style="{StaticResource BelerenBold}"
+                    <MenuItem Header="DELETE selected card(s) from collection" Style="{StaticResource BelerenBold}"
                                           Command="{Binding ModifyCollectionViewModel.DeleteSelectedCardsCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
-                    <MenuItem Header="Set location..." Style="{StaticResource BelerenBold}" ItemsSource="{Binding ModifyCollectionViewModel.LocationMenuItems}">
+                    <MenuItem Header="With selection: SET location..." Style="{StaticResource BelerenBold}" ItemsSource="{Binding ModifyCollectionViewModel.LocationMenuItems}">
                         <MenuItem.ItemContainerStyle>
                             <Style TargetType="MenuItem">
                                 <Setter Property="Header" Value="{Binding Header}" />
@@ -211,7 +215,7 @@
                             </Style>
                         </MenuItem.ItemContainerStyle>
                     </MenuItem>
-                    <MenuItem Header="With selected, update sell price..." Style="{StaticResource BelerenBold}">
+                    <MenuItem Header="With selection: UPDATE sell price..." Style="{StaticResource BelerenBold}">
                         <MenuItem Header="Match retail price" Style="{StaticResource BelerenBold}" 
                                   Command="{Binding DataContext.ModifyCollectionViewModel.MatchRetailPriceForSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                             <MenuItem.CommandParameter>
@@ -232,6 +236,8 @@
                             </MenuItem.CommandParameter>
                         </MenuItem>
                     </MenuItem>
+                    <Separator />
+                    <MenuItem Header="EXPORT FILTERED cards as trade list" Style="{StaticResource BelerenBold}" Command="{Binding ExportFilteredTradeListCommand}" />
                 </ContextMenu>
             </DataGrid.ContextMenu>
         </DataGrid>

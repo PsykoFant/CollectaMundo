@@ -214,7 +214,7 @@ namespace CollectaMundo.ViewModels
 
             // Pages viewmodels
             SearchAndFilterPageVM = new PagesSearchAndFilterViewModel(cardsVM: AllCardsVM, filterVM: FilterPanelVM, deckBuilderService: deckBuilderService, pageTitle: "Search and Filter Cards", cardListPage: ShellPageEnum.SearchAndFilter, primarySubmitButtonText: "Submit these cards to my collection", primarySubmitCommand: AddCardsVM.SubmitNewCardsCommand, pricesVM: PricesVM, modifyCollectionVM: AddCardsVM);
-            MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, filterVM: FilterPanelVM, pageTitle: "My Collection", cardListPage: ShellPageEnum.MyCollection, primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
+            MyCollectionPageVM = new PagesMyCollectionViewModel(cardsVM: MyCollectionVM, filterVM: FilterPanelVM, pageTitle: "My Collection", cardListPage: ShellPageEnum.MyCollection, collectionExportService: collectionExportService, primarySubmitButtonText: "Update selected cards", primarySubmitCommand: EditCardsVM.SubmitCardEditsCommand, pricesVM: PricesVM, modifyCollectionVM: EditCardsVM);
             PagesDecksHostVM = new PagesDecksHostViewModel(DeckManagementVM, DeckBuilderVM);
             PagesUtilitiesHostVM = new PagesUtilitiesHostViewModel(UtilitiesVM, CollectionExportVM, ImportVM, CardLocationVM, _utilitiesNavigator);
 

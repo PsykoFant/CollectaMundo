@@ -437,7 +437,7 @@ namespace CollectaMundo.ViewModels.ModifyCollection
                 return;
             }
 
-            await SubmitBatchAsync(CardsToAddOrEdit.Select(r => r.CardToAddOrEdit), (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
+            await SubmitBatchAsync(drafts, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
         }
 
         [RelayCommand]
@@ -492,10 +492,12 @@ namespace CollectaMundo.ViewModels.ModifyCollection
 
             await SubmitBatchAsync(edits, (cards, snapshot) => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle);
         }
+
         // Shared helpers 
         private async Task SubmitBatchAsync(IEnumerable<CollectionCardDraft> cards, Func<IEnumerable<CollectionCardDraft>, ICollectionIdentitySnapshot, Task<CollectionChangeSet<CollectionCardDbRow>>> submit, bool clearAfter, string summaryTitle)
         {
             var cardList = cards.ToList();
+
             var snapshot = _cardCollectionHost.CreateCollectionIdentitySnapshot();
             var changeSet = await submit(cardList, snapshot);
 
