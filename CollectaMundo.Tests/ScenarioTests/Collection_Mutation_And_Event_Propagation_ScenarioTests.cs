@@ -605,17 +605,19 @@ namespace CollectaMundo.Tests.ScenarioTests
 
             Assert.Equal(5, pendingOtters.Count);
 
-            // Otter 1: Box 1
+            // Otter 1: Box 1, eligible for trade but outside the Box 2 filter
             pendingOtters[0].SelectedLocationId = box1.Id;
+            pendingOtters[0].CardsForTrade = 1;
             pendingOtters[0].SellPrice = 8.50m;
             pendingOtters[0].SellPriceCurrency = "EUR";
 
-            // Otter 2: Box 2
+            // Otter 2: Box 2, visible but not for trade
             pendingOtters[1].SelectedLocationId = box2.Id;
 
-            // Otter 3: Box 2 + comment
+            // Otter 3: Box 2, visible and eligible for trade
             pendingOtters[2].SelectedLocationId = box2.Id;
             pendingOtters[2].Comment = "smudgemark";
+            pendingOtters[2].CardsForTrade = 1;
 
             // Otter 4: Deck Awesome!
             pendingOtters[3].SelectedLocationId = deckAwesome.Id;
@@ -627,7 +629,7 @@ namespace CollectaMundo.Tests.ScenarioTests
             pendingOtters[4].SellPriceCurrency = "USD";
 
             // Act: submit otters
-            _ctx.MainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
+            await _ctx.MainVM.AddCardsVM.SubmitNewCardsCommand.ExecuteAsync(null);
 
             // Assert: five distinct otter rows were added
             Assert.Equal(28, _ctx.MainVM.MyCollectionVM.Cards.Count);
@@ -641,6 +643,59 @@ namespace CollectaMundo.Tests.ScenarioTests
             Assert.Contains(ottersInCollection, c => c.SelectedLocationId == box2.Id && c.Comment == "smudgemark");
             Assert.Contains(ottersInCollection, c => c.SelectedLocationId == deckAwesome.Id && string.IsNullOrWhiteSpace(c.Comment));
             Assert.Contains(ottersInCollection, c => c.SelectedLocationId is null && string.IsNullOrWhiteSpace(c.Comment));
+            #endregion
+
+            #region ===== Section L2: export trade-eligible rows from the filtered collection =====
+
+            var collectionPage = _ctx.MainVM.MyCollectionPageVM;
+
+            // Box 2 contains two rows for the same Otter printing.
+            var locationFilter = _ctx.MainVM.FilterPanelVM.Filters["SelectedLocationDisplayName"];
+            var box2Option = locationFilter.FilterOptions.Single(option => option.Value == box2.Id.ToString());
+            box2Option.IsSelected = true;
+
+            var filteredCards = collectionPage.CardsVM.FilteredCards;
+
+            Assert.Equal(2, filteredCards.Count);
+            Assert.All(filteredCards, card =>
+            {
+                Assert.Equal(uuidOtter, card.Uuid);
+                Assert.Equal(box2.Id, card.SelectedLocationId);
+            });
+
+            var zeroTradeOtter = Assert.Single(filteredCards, card => string.IsNullOrEmpty(card.Comment));
+            var tradeEligibleOtter = Assert.Single(filteredCards, card => card.Comment == "smudgemark");
+
+            Assert.Equal(0, zeroTradeOtter.CardsForTrade);
+            Assert.Equal(1, tradeEligibleOtter.CardsForTrade);
+
+            // The highlighted row differs from the row that qualifies for export.
+            collectionPage.SelectedCard = zeroTradeOtter;
+
+            var previousCsvOutput = _ctx.LastCsvOutput;
+
+            await collectionPage.ExportFilteredTradeListCommand.ExecuteAsync(null);
+
+            var filteredCsvOutput = Assert.IsType<MemoryStream>(_ctx.LastCsvOutput);
+            Assert.NotSame(previousCsvOutput, filteredCsvOutput);
+
+            using (var csvStream = new MemoryStream(filteredCsvOutput.ToArray()))
+            using (var textReader = new StreamReader(csvStream))
+            using (var csv = new CsvReader(textReader, csvConfig))
+            {
+                Assert.True(csv.Read());
+                csv.ReadHeader();
+
+                Assert.True(csv.Read(), "Expected the Box 2 Otter marked for trade.");
+                Assert.Equal(uuidOtter, csv.GetField("uuid"));
+                Assert.Equal("smudgemark", csv.GetField("comment"));
+                Assert.Equal("1", csv.GetField("quantity"));
+
+                Assert.False(csv.Read(), "Expected exactly one data row in the filtered trade list.");
+            }
+
+            _ctx.MainVM.FilterPanelVM.ClearFiltersCommand?.Execute(null);
+
             #endregion
 
             #region ===== Section M: Deck Builder reflects physical deck allocation =====

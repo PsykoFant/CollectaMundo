@@ -1,13 +1,6 @@
 TO DO 
 
 
-tradelist export af filtrering
-
 Import af collection med location type
 
-
-
 Merge og release
-
-
-

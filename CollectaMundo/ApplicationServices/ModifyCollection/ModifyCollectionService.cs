@@ -43,13 +43,6 @@ namespace CollectaMundo.ApplicationServices.ModifyCollection
             {
                 var cardList = cards.ToList();
 
-                Debug.WriteLine($"[ModifyCollectionService][SubmitCardBatchAsync] Preparing to submit {cardList.Count} cards.");
-
-                foreach (var card in cardList)
-                {
-                    Debug.WriteLine($"[ModifyCollectionService][SubmitCardBatchAsync] Submitting card: {card.Name ?? card.Uuid}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish}, LocationId: {card.SelectedLocationId}, Owned: {card.CardsOwned}, Trade: {card.CardsForTrade}, Sell Price: {card.SellPrice} {card.SellPriceCurrency}");
-                }
-
                 return await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
                 {
                     var changeSet = await _mutationsService.SubmitBatchAsync(cardList, snapshot, conn, tx);

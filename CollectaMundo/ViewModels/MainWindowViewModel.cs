@@ -86,7 +86,7 @@ namespace CollectaMundo.ViewModels
 
         // Pages
         public PagesSearchAndFilterViewModel SearchAndFilterPageVM { get; }
-        public CardListPageViewModel<CollectionCard> MyCollectionPageVM { get; }
+        public PagesMyCollectionViewModel MyCollectionPageVM { get; }
         public PagesDecksHostViewModel PagesDecksHostVM { get; }
         public PagesUtilitiesHostViewModel PagesUtilitiesHostVM { get; }
 
