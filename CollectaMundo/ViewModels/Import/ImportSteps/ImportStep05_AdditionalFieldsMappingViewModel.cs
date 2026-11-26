@@ -36,6 +36,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                 ImportField.CardFinish,
                 ImportField.Language,
                 ImportField.Location,
+                ImportField.LocationType,
                 ImportField.Comment,
                 ImportField.SellPrice,
                 ImportField.SellPriceCurrency,

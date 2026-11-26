@@ -11,6 +11,7 @@
         CardsOwned,
         CardsForTrade,
         Location,
+        LocationType,
         Comment,
         SellPrice,
         SellPriceCurrency,

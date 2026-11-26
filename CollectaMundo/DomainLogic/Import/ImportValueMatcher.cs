@@ -115,7 +115,9 @@ namespace CollectaMundo.DomainLogic.Import
             [ImportField.CardFinish] = ["finish", "foiling", "card finish", "foil", "printing"],
             [ImportField.Language] = ["lang", "language"],
             [ImportField.Location] = ["location", "place", "storage", "binder", "shelf", "box", "deck"],
+            [ImportField.LocationType] = ["locationtype", "location type", "place type", "storage type", "binder type", "shelf type", "box type", "deck type"],
             [ImportField.Comment] = ["comment", "notes", "remarks", "note"],
+
             [ImportField.CardsOwned] = ["quantity", "count", "owned", "qty"],
             [ImportField.CardsForTrade] = ["trade", "for trade", "forsale", "For sale", "selling"]
         };

@@ -53,6 +53,11 @@
                     </ListItem>
                     <ListItem>
                         <Paragraph>
+                            Location type: "Storage"
+                        </Paragraph>
+                    </ListItem>
+                    <ListItem>
+                        <Paragraph>
                             Comment: blank (no comments)
                         </Paragraph>
                     </ListItem>
