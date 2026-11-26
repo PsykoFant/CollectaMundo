@@ -10,69 +10,35 @@ namespace CollectaMundo.Infrastructure.CollectionExport
         public async Task<IReadOnlyList<CollectionBackupRow>> GetFullCollectionRowsAsync(SQLiteConnection connection, CancellationToken cancellationToken = default)
         {
             const string sql = """
-                                WITH collectionItems AS (
-                                    SELECT
-                                        card.name AS name,
-                                        card.setCode AS setCode,
-                                        collection.uuid AS uuid,
-                                        identifiers.scryfallId AS scryfallId,
-                                        collection.condition AS condition,
-                                        collection.finish AS finish,
-                                        collection.language AS language,
-                                        collection.comment AS comment,
-                                        collection.locationId AS locationId,
-                                        collection.cardsOwned AS cardsOwned,
-                                        collection.cardsForTrade AS cardsForTrade,
-                                        collection.sellPrice AS sellPrice,
-                                        collection.sellPriceCurrency AS sellPriceCurrency
-                                    FROM myCollection collection
-                                    INNER JOIN cards card
-                                        ON card.uuid = collection.uuid
-                                       AND (card.side IS NULL OR card.side = 'a')
-                                    LEFT JOIN cardIdentifiers identifiers
-                                        ON identifiers.uuid = collection.uuid
-
-                                    UNION ALL
-
-                                    SELECT
-                                        token.name AS name,
-                                        token.setCode AS setCode,
-                                        collection.uuid AS uuid,
-                                        identifiers.scryfallId AS scryfallId,                                       
-                                        collection.condition AS condition,
-                                        collection.finish AS finish,
-                                        collection.language AS language,
-                                        collection.comment AS comment,
-                                        collection.locationId AS locationId,
-                                        collection.cardsOwned AS cardsOwned,
-                                        collection.cardsForTrade AS cardsForTrade,
-                                        collection.sellPrice AS sellPrice,
-                                        collection.sellPriceCurrency AS sellPriceCurrency
-                                    FROM myCollection collection
-                                    INNER JOIN tokens token
-                                        ON token.uuid = collection.uuid
-                                       AND (token.side IS NULL OR token.side = 'a')
-                                    LEFT JOIN tokenIdentifiers identifiers
-                                        ON identifiers.uuid = collection.uuid
-                                )
                                 SELECT
-                                    collectionItems.name,
-                                    collectionItems.setCode,
-                                    collectionItems.uuid,
-                                    collectionItems.condition,
-                                    collectionItems.finish,
-                                    collectionItems.language,
+                                    collection.id AS collectionCardId,
+                                    collection.uuid AS uuid,
+                                    COALESCE(card.name, token.name) AS name,
+                                    COALESCE(card.setCode, token.setCode) AS setCode,
+                                    COALESCE(cardIds.scryfallId, tokenIds.scryfallId) AS scryfallId,
+                                    collection.condition AS condition,
+                                    collection.finish AS finish,
+                                    collection.language AS language,
                                     location.name AS locationName,
                                     location.type AS locationType,
-                                    collectionItems.comment,
-                                    collectionItems.cardsOwned,
-                                    collectionItems.cardsForTrade,
-                                    collectionItems.sellPrice,
-                                    collectionItems.sellPriceCurrency,
-                                    collectionItems.scryfallId
-                                FROM collectionItems
+                                    collection.comment AS comment,
+                                    collection.cardsOwned AS cardsOwned,
+                                    collection.cardsForTrade AS cardsForTrade,
+                                    collection.sellPrice AS sellPrice,
+                                    collection.sellPriceCurrency AS sellPriceCurrency
+                                FROM myCollection collection
+                                LEFT JOIN cards card
+                                    ON card.uuid = collection.uuid
+                                   AND (card.side IS NULL OR card.side = 'a')
+                                LEFT JOIN cardIdentifiers cardIds
+                                    ON cardIds.uuid = card.uuid
+                                LEFT JOIN tokens token
+                                    ON token.uuid = collection.uuid
+                                   AND (token.side IS NULL OR token.side = 'a')
+                                LEFT JOIN tokenIdentifiers tokenIds
+                                    ON tokenIds.uuid = token.uuid
                                 LEFT JOIN cardLocations location
-                                    ON location.id = collectionItems.locationId
+                                    ON location.id = collection.locationId;
                                 """;
 
             using var command = new SQLiteCommand(sql, connection);
@@ -80,6 +46,7 @@ namespace CollectaMundo.Infrastructure.CollectionExport
 
             var rows = new List<CollectionBackupRow>();
 
+            var collectionCardIdOrdinal = reader.GetOrdinal("collectionCardId");
             var nameOrdinal = reader.GetOrdinal("name");
             var setCodeOrdinal = reader.GetOrdinal("setCode");
             var uuidOrdinal = reader.GetOrdinal("uuid");
@@ -97,12 +64,19 @@ namespace CollectaMundo.Infrastructure.CollectionExport
 
             while (await reader.ReadAsync(cancellationToken))
             {
+                var uuid = reader.GetString(uuidOrdinal);
+
+                if (reader.IsDBNull(nameOrdinal) || reader.IsDBNull(setCodeOrdinal))
+                {
+                    var collectionCardId = reader.GetInt32(collectionCardIdOrdinal);
+                    throw new InvalidOperationException($"Collection row {collectionCardId} (UUID '{uuid}') could not be backed up because its card or token name or set code is missing from the catalog.");
+                }
+
                 rows.Add(new CollectionBackupRow
                 {
-
                     Name = reader.GetString(nameOrdinal),
                     SetCode = reader.GetString(setCodeOrdinal),
-                    Uuid = reader.GetString(uuidOrdinal),
+                    Uuid = uuid,
                     ScryfallId = reader.IsDBNull(scryfallIdOrdinal)
                         ? null
                         : reader.GetString(scryfallIdOrdinal),
