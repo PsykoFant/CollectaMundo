@@ -162,7 +162,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
                 var desktopFileSystem = new DesktopFileSystem();
-                var csvFileWriter = new CsvFileWriter(FileOutput.OpenWrite);
+                var csvFileWriter = new CsvFileWriter(FileOutput.WriteAtomicallyAsync);
 
                 var cardImageDownloader = new CardImageDownloader(settings);
                 var cardImageService = new CardImageService(uowRunner, remoteLookups, new CardImageLogic(), new CardImageRepo(), cardImageDownloader);

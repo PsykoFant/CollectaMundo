@@ -20,11 +20,11 @@ namespace CollectaMundo.Tests.TestUtils
                 DbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(fx.DbName)
             };
 
-            var csvFileWriter = new CsvFileWriter(_ =>
+            var csvFileWriter = new CsvFileWriter(async (_, writeContent, _) =>
             {
-                var output = new MemoryStream();
+                using var output = new MemoryStream();
+                await writeContent(output);
                 context.LastCsvOutput = output;
-                return output;
             });
 
             var (mainVM, _, filteringService) = await TestAppBuilder.BuildAsync(

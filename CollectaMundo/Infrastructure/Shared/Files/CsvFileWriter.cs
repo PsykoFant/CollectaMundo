@@ -4,34 +4,38 @@ using System.Text;
 
 namespace CollectaMundo.Infrastructure.Shared.Files
 {
-    public sealed class CsvFileWriter(Func<string, Stream> openOutput) : ICsvFileWriter
+    public delegate Task WriteFileOutputAsync(string filePath, Func<Stream, Task> writeContent, CancellationToken cancellationToken);
+    public sealed class CsvFileWriter(WriteFileOutputAsync writeOutput) : ICsvFileWriter
     {
-        private readonly Func<string, Stream> _openOutput = openOutput;
-        public async Task WriteAsync(string filePath, IReadOnlyList<string> headers, IEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
+        private readonly WriteFileOutputAsync _writeOutput = writeOutput;
+        public Task WriteAsync(string filePath, IReadOnlyList<string> headers, IEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
         {
-            EnsureParentDirectoryExists(filePath);
-            await using var writer = new StreamWriter(_openOutput(filePath), Encoding.UTF8);
-
-            await WriteLineAsync(writer, headers, delimiter, cancellationToken);
-
-            foreach (var row in rows)
+            return _writeOutput(filePath, async output =>
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                await using var writer = new StreamWriter(output, Encoding.UTF8, leaveOpen: true);
 
-                await WriteLineAsync(writer, row, delimiter, cancellationToken);
-            }
+                await WriteLineAsync(writer, headers, delimiter, cancellationToken);
+
+                foreach (var row in rows)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await WriteLineAsync(writer, row, delimiter, cancellationToken);
+                }
+            }, cancellationToken);
         }
-        public async Task WriteAsync(string filePath, IReadOnlyList<string> headers, IAsyncEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
+        public Task WriteAsync(string filePath, IReadOnlyList<string> headers, IAsyncEnumerable<IReadOnlyList<string?>> rows, char delimiter, CancellationToken cancellationToken = default)
         {
-            EnsureParentDirectoryExists(filePath);
-            await using var writer = new StreamWriter(_openOutput(filePath), Encoding.UTF8);
-
-            await WriteLineAsync(writer, headers, delimiter, cancellationToken);
-
-            await foreach (var row in rows.WithCancellation(cancellationToken))
+            return _writeOutput(filePath, async output =>
             {
-                await WriteLineAsync(writer, row, delimiter, cancellationToken);
-            }
+                await using var writer = new StreamWriter(output, Encoding.UTF8, leaveOpen: true);
+
+                await WriteLineAsync(writer, headers, delimiter, cancellationToken);
+
+                await foreach (var row in rows.WithCancellation(cancellationToken))
+                {
+                    await WriteLineAsync(writer, row, delimiter, cancellationToken);
+                }
+            }, cancellationToken);
         }
         private static async Task WriteLineAsync(StreamWriter writer, IEnumerable<string?> values, char delimiter, CancellationToken cancellationToken)
         {

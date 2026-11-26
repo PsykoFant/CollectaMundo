@@ -16,7 +16,7 @@ namespace CollectaMundo.Tests.UnitTests
         {
             // Arrange
             using var output = new MemoryStream();
-            var writer = new CsvFileWriter(_ => output);
+            var writer = new CsvFileWriter((_, writeContent, _) => writeContent(output));
 
             // Act
             await writer.WriteAsync("collection.csv", ["Name", "Quantity", "Location"], EmptyRows(), ';');
@@ -29,7 +29,7 @@ namespace CollectaMundo.Tests.UnitTests
         public async Task WriteAsync_WritesMultipleRows()
         {
             using var output = new MemoryStream();
-            var writer = new CsvFileWriter(_ => output);
+            var writer = new CsvFileWriter((_, writeContent, _) => writeContent(output));
 
             var rows = CreateRows(
                 ["Lightning Bolt", "4"],
@@ -53,7 +53,7 @@ namespace CollectaMundo.Tests.UnitTests
         {
             // Arrange
             using var output = new MemoryStream();
-            var writer = new CsvFileWriter(_ => output);
+            var writer = new CsvFileWriter((_, writeContent, _) => writeContent(output));
 
             var rows = CreateRows(["Lightning Bolt", "4"]);
 
@@ -71,7 +71,7 @@ namespace CollectaMundo.Tests.UnitTests
         {
             // Arrange
             using var output = new MemoryStream();
-            var writer = new CsvFileWriter(_ => output);
+            var writer = new CsvFileWriter((_, writeContent, _) => writeContent(output));
 
             var headers = new[]
                 {
@@ -101,7 +101,7 @@ namespace CollectaMundo.Tests.UnitTests
         {
             // Arrange
             using var output = new MemoryStream();
-            var writer = new CsvFileWriter(_ => output);
+            var writer = new CsvFileWriter((_, writeContent, _) => writeContent(output));
 
             var headers = new[] { "Name", "Description" };
             var rows = CreateRows(["Lightning Bolt", "Fast; efficient"]);
@@ -123,7 +123,7 @@ namespace CollectaMundo.Tests.UnitTests
         {
             // Arrange
             using var output = new MemoryStream();
-            var writer = new CsvFileWriter(_ => output);
+            var writer = new CsvFileWriter((_, writeContent, _) => writeContent(output));
 
             var headers = new[]
                 {
@@ -148,7 +148,7 @@ namespace CollectaMundo.Tests.UnitTests
         {
             // Arrange
             using var output = new MemoryStream();
-            var writer = new CsvFileWriter(_ => output);
+            var writer = new CsvFileWriter((_, writeContent, _) => writeContent(output));
 
             using var cts = new CancellationTokenSource();
             cts.Cancel();

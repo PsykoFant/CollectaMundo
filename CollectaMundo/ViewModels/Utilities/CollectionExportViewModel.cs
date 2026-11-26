@@ -101,7 +101,16 @@ namespace CollectaMundo.ViewModels.Utilities
         [RelayCommand]
         private void OpenBackupFolder()
         {
-            _collectionExportService.OpenBackupFolder();
+            ResetStatusMessage();
+
+            try
+            {
+                _collectionExportService.OpenBackupFolder();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Could not open the backup folder: {ex.Message}";
+            }
         }
     }
 }

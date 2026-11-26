@@ -92,8 +92,6 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
                 cancellationToken: cancellationToken);
         }
 
-
-
         // Common CSV writing logic for both full collection backup and trade list export
         private async Task<OperationResult> WriteCsvAsync<TItem>(IReadOnlyList<TItem> items, Func<TItem, IReadOnlyList<string?>> toCsvRow, IReadOnlyList<string> headers, char delimiter, string fileName, string emptyMessage, CancellationToken cancellationToken)
         {
@@ -105,8 +103,6 @@ namespace CollectaMundo.ApplicationServices.CollectionExport
             var filePath = Path.Combine(BackupFolderPath, fileName);
 
             await _csvFileWriter.WriteAsync(filePath, headers, items.Select(toCsvRow), delimiter, cancellationToken);
-
-            cancellationToken.ThrowIfCancellationRequested();
 
             return new OperationResult(OperationResultCode.Success, filePath);
         }

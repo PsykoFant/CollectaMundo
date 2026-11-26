@@ -107,7 +107,11 @@ public static class TestAppBuilder
         var collectionMutationsService = new CollectionMutationsService(collectionMutationsLogic, collectionMutationsRepo);
         var modifyService = new ModifyCollectionService(uowRunner, new ModifyCollectionLogic(), new ModifyCollectionRepo(), collectionMutationsService);
         var desktopFileSystem = new DesktopFileSystem();
-        var csvFileWriter = csvFileWriterOverride ?? new CsvFileWriter(_ => new MemoryStream());
+        var csvFileWriter = csvFileWriterOverride ?? new CsvFileWriter(async (_, writeContent, _) =>
+        {
+            using var output = new MemoryStream();
+            await writeContent(output);
+        });
 
         var cardLocationLookupStore = new CardLocationLookupStore();
         var cardLocationRepo = new CardLocationRepo();
