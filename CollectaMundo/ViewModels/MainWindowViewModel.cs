@@ -136,9 +136,6 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private bool isSideMenuRightVisible = true;
 
-        [ObservableProperty]
-        private bool isTopMenuEnabled = true;
-
         #endregion
 
         #region Constructor and factory method
@@ -468,7 +465,7 @@ namespace CollectaMundo.ViewModels
         }
         private void OnBusyStateRequested(object? sender, bool isBusy)
         {
-            IsTopMenuEnabled = !isBusy;
+            TopMenuVM.IsTopMenuEnabled = !isBusy;
             IsSideMenuLeftVisible = !isBusy;
             IsSideMenuRightVisible = !isBusy;
         }

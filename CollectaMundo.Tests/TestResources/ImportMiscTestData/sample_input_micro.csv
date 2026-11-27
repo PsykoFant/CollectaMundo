@@ -1,3 +1,4 @@
-UUID,Owned,Finish,Sprog,location
-bafac74c-f4f8-5c71-8a6b-0bd02c536c47,1,,Dansk,Kassen,
-bafac74c-f4f8-5c71-8a6b-0bd02c536c47,1,,Jangelsk,
+uuid;condition;finish;language;location;locationType;cardsOwned;cardsForTrade
+42c7424d-7b38-5722-86a1-2a7bf1ae1fef;Near Mint;nonfoil;English;Valid Shelf;Storage;1;0
+42c7424d-7b38-5722-86a1-2a7bf1ae1fef;Near Mint;nonfoil;English;Conflict Box;Deck;1;0
+42c7424d-7b38-5722-86a1-2a7bf1ae1fef;Near Mint;nonfoil;English;Conflict Box;Storage;1;0

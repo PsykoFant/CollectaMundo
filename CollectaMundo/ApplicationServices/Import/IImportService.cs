@@ -1,10 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared.Operation;
 using CollectaMundo.ApplicationServices.Shared.Progress;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Shared.Models;
-using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
 
@@ -31,7 +28,7 @@ namespace CollectaMundo.ApplicationServices.Import
         Task<List<string>> GetAvailableLocationsAsync();
 
         // Step 10
-        Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, bool createMissingLocationsAsStorage, CancellationToken token);
+        Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, bool createMissingLocations, CancellationToken token);
         ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings);
         Task<OperationResult> SaveUnimportableItemsAsync(ImportSummary summary, IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems);
         Task<ImportExecutionResult> FinalImportResolvedItems(IReadOnlyList<ResolvedImportItem> resolvedItems, ProgressSinks progress, CancellationToken token);

@@ -5,7 +5,6 @@ using CollectaMundo.DomainLogic.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
@@ -16,19 +15,17 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         // Constructor
         // --------------------------------------------
+        private readonly Task _initializationTask;
         public ImportStep09_LocationMappingViewModel(ImportViewModel parent)
         {
             _parent = parent;
-            Initialize();
+            _initializationTask = InitializeAsync();
         }
 
         // --------------------------------------------
         // Initialization
         // --------------------------------------------
-        private void Initialize()
-        {
-            _ = InitializeAsync();
-        }
+
         private async Task InitializeAsync()
         {
             var csvHeader = _parent.AdditionalMappings.First(m => m.FieldToMap == ImportField.Location).SelectedCsvHeader!;
@@ -51,7 +48,9 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                 var guessed = ImportValueMatcher.MapImportValue(csvValue!, ImportField.Location, locationOptions);
                 LocationMappings.Add(new CsvValueMapping
                 {
-                    CsvValue = csvValue!, CardSetValues = [.. locationOptions], SelectedCardSetValue = guessed
+                    CsvValue = csvValue!,
+                    CardSetValues = [.. locationOptions],
+                    SelectedCardSetValue = guessed
                 });
             }
         }
@@ -78,6 +77,8 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         public async Task<OperationResult> OnPrimaryAction()
         {
+            await _initializationTask;
+
             _parent.ShouldCreateMissingLocationsDuringImport = false;
 
             IsStepContentVisible = false;
@@ -85,6 +86,8 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         }
         public async Task<OperationResult> OnSecondaryAction()
         {
+            await _initializationTask;
+
             _parent.ShouldCreateMissingLocationsDuringImport = true;
 
             IsStepContentVisible = false;

@@ -24,6 +24,7 @@ namespace CollectaMundo.DomainLogic.Import
         ImportMatchSummaryDto ApplySelectedUuids(ObservableCollection<TempCardItem> importCandidates, List<MultipleUuidsItem> userSelections);
 
         // Step 10
+        IReadOnlyDictionary<string, CardLocationType> ResolveMissingLocationTypes(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyCollection<string> missingLocationNames);
         IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations);
         void ApplyStrictVariantValidation(IReadOnlyList<ResolvedImportItem> resolved, AvailabilityIndex availability);
         ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings);

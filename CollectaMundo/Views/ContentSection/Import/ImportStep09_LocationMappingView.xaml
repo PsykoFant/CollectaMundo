@@ -18,13 +18,15 @@
         <FlowDocumentScrollViewer Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Center">
             <FlowDocument>
                 <Paragraph>
-                    Left column are the locations found in the import file. Please map them to available locations in the database.
+                    Choose an existing destination for any location in the import file. Cards with a blank location name stay unassigned.
                 </Paragraph>
                 <Paragraph>
-                    Click "Proceed" to import any blank locations as blank (no location).
+                    Choose
+                    <Bold>Proceed</Bold> to use the selected destinations. Cards without a selected destination stay unassigned.
                 </Paragraph>
                 <Paragraph>
-                    Click "Create missing locations" to create any missing locations as new locations during the import process. All new locations will be created with the same name as the location found in the import file and be of the type "storage". Location type (e.g. to "Deck") can be changed in Utilities section.
+                    Choose
+                    <Bold>Create missing locations</Bold> to also match unselected locations by name. Existing locations keep their type. New locations use the type from the import file, or Storage if no type was supplied.
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>

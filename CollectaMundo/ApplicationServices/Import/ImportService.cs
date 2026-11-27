@@ -204,30 +204,33 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 10: resolve + strict validate via DB
-        public async Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, bool createMissingLocationsAsStorage, CancellationToken token)
+        public async Task<IReadOnlyList<ResolvedImportItem>> ResolveImportItemsStrictAsync(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, bool createMissingLocations, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
             var availableLocations = await _cardLocationService.GetAllLocationsAsync();
 
-            if (createMissingLocationsAsStorage)
+            if (createMissingLocations)
             {
-                try
+                var existingNames = availableLocations.Select(location => location.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var missingNames = locationMappings
+                    .Where(mapping => string.IsNullOrWhiteSpace(mapping.SelectedCardSetValue))
+                    .Select(mapping => mapping.CsvValue.Trim())
+                    .Where(name => name.Length > 0 && !existingNames.Contains(name))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                if (missingNames.Count > 0)
                 {
-                    await CreateMissingLocationsAsStorageAsync(locationMappings, token);
+                    var typesByName = _importLogic.ResolveMissingLocationTypes(items, additionalMappings, missingNames);
+                    var locationsToCreate = typesByName.Select(location => (Name: location.Key, Type: location.Value)).ToList();
+
+                    await _cardLocationService.CreateMissingLocationsAsync(locationsToCreate, token);
 
                     token.ThrowIfCancellationRequested();
-
                     availableLocations = await _cardLocationService.GetAllLocationsAsync();
+                }
 
-                    AutoMapNewlyCreatedLocations(locationMappings, availableLocations);
-                }
-                catch (Exception ex)
-                {
-                    throw new InvalidOperationException(
-                        "Failed to create missing card locations during import.",
-                        ex);
-                }
+                MapUnselectedLocationsByName(locationMappings, availableLocations);
             }
 
             var resolved = _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings, locationMappings, availableLocations);
@@ -284,23 +287,7 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Helpers for ResolveImportItemsStrictAsync
-        private async Task CreateMissingLocationsAsStorageAsync(IReadOnlyList<CsvValueMapping> locationMappings, CancellationToken token)
-        {
-            var missingLocationNames = locationMappings
-                .Where(m => string.IsNullOrWhiteSpace(m.SelectedCardSetValue))
-                .Select(m => m.CsvValue?.Trim())
-                .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            if (missingLocationNames.Count == 0)
-            {
-                return;
-            }
-
-            await _cardLocationService.CreateMissingLocationsAsStorageAsync(missingLocationNames!, token);
-        }
-        private static void AutoMapNewlyCreatedLocations(IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations)
+        private static void MapUnselectedLocationsByName(IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations)
         {
             foreach (var mapping in locationMappings)
             {

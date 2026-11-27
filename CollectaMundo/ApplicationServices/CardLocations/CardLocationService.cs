@@ -86,30 +86,31 @@ namespace CollectaMundo.ApplicationServices.CardLocations
                 return new MutationResult<DeckManagementRecord>(new OperationResult(OperationResultCode.Error, $"Failed to create deck: {ex.Message}"), null);
             }
         }
-        public async Task<IReadOnlyList<CardLocation>> CreateMissingLocationsAsStorageAsync(IReadOnlyList<string> names, CancellationToken token)
+        public async Task<IReadOnlyList<CardLocation>> CreateMissingLocationsAsync(IReadOnlyList<(string Name, CardLocationType Type)> locations, CancellationToken token)
         {
-            var type = CardLocationType.Storage;
+            var locationsByName = new Dictionary<string, CardLocationType>(StringComparer.OrdinalIgnoreCase);
 
-            var normalizedNames = names.Select(_cardLocationLogic.NormalizeName).Where(name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-
-            if (normalizedNames.Count == 0)
+            foreach (var (name, type) in locations)
             {
-                return [];
-            }
+                var normalizedName = _cardLocationLogic.NormalizeName(name);
+                var validation = _cardLocationLogic.ValidateNameAndType(normalizedName, type);
 
-            var validNames = new List<string>();
-
-            foreach (var name in normalizedNames)
-            {
-                var validation = _cardLocationLogic.ValidateNameAndType(name, type);
-
-                if (validation.Code == OperationResultCode.Success)
+                if (validation.Code != OperationResultCode.Success)
                 {
-                    validNames.Add(name);
+                    throw new InvalidOperationException(validation.Message);
                 }
+
+                if (locationsByName.TryGetValue(normalizedName, out var existingType) &&
+                    existingType != type)
+                {
+                    throw new InvalidOperationException(
+                        $"Location '{normalizedName}' was requested as both '{existingType}' and '{type}'.");
+                }
+
+                locationsByName[normalizedName] = type;
             }
 
-            if (validNames.Count == 0)
+            if (locationsByName.Count == 0)
             {
                 return [];
             }
@@ -117,24 +118,21 @@ namespace CollectaMundo.ApplicationServices.CardLocations
             var createdLocations = await _uowRunner.ExecuteWriteAsync(async (conn, tx) =>
             {
                 var existingLocations = await _cardLocationRepo.GetAllLocationsAsync(conn, tx);
+                var existingNames = existingLocations.Select(location => location.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var recordsToInsert = locationsByName
+                    .Where(location => !existingNames.Contains(location.Key))
+                    .Select(location => (Name: location.Key, Type: MapTypeToDb(location.Value)))
+                    .ToList();
 
-                var existingNames = existingLocations.Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                var namesToCreate = validNames.Where(name => !existingNames.Contains(name)).ToList();
-
-                if (namesToCreate.Count == 0)
+                if (recordsToInsert.Count == 0)
                 {
                     return (
-                        Result: (IReadOnlyList<CardLocation>)[],
-                        Commit: false
+                    Result: (IReadOnlyList<CardLocation>)[],
+                    Commit: false
                     );
                 }
 
-                string dbType = MapTypeToDb(type);
-
-                var recordsToInsert = namesToCreate.Select(name => (Name: name, Type: dbType)).ToList();
-
                 var createdRecords = await _cardLocationRepo.CreateLocationsAsync(conn, tx, recordsToInsert, token);
-
                 var createdLocations = createdRecords.Select(MapToDomain).ToList();
 
                 return (Result: (IReadOnlyList<CardLocation>)createdLocations, Commit: true);

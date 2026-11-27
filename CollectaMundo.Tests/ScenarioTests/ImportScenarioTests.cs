@@ -181,25 +181,30 @@ namespace CollectaMundo.Tests.ScenarioTests
                 because: "step 5 should be active and progress label updated");
             step5.PrimaryActionButtonText.Should().Contain("Proceed");
 
-            step5.AdditionalMappings.Should().HaveCount(9);
+            step5.AdditionalMappings.Should().HaveCount(10);
             var addtionalMappings = step5.AdditionalMappings;
 
             // Check CsvFieldsMappings object is correctly initialized with expected fields to map
-            addtionalMappings[0].FieldToMap.Should().Be(ImportField.Condition);
-            addtionalMappings[5].FieldToMap.Should().Be(ImportField.SellPrice);
-            addtionalMappings[6].FieldToMap.Should().Be(ImportField.SellPriceCurrency);
-            addtionalMappings[7].FieldToMap.Should().Be(ImportField.CardsOwned);
-            addtionalMappings[8].FieldToMap.Should().Be(ImportField.CardsForTrade);
+            addtionalMappings[0].FieldToMap.Should().Be(ImportField.Condition); // Condition
+            addtionalMappings[1].FieldToMap.Should().Be(ImportField.CardFinish); // Finish
+            addtionalMappings[2].FieldToMap.Should().Be(ImportField.Language); // Language
+            addtionalMappings[3].FieldToMap.Should().Be(ImportField.Location); // Location
+            addtionalMappings[4].FieldToMap.Should().Be(ImportField.LocationType); // Location Type
+            addtionalMappings[5].FieldToMap.Should().Be(ImportField.Comment); // Comment
+            addtionalMappings[6].FieldToMap.Should().Be(ImportField.SellPrice); // Sell Price
+            addtionalMappings[7].FieldToMap.Should().Be(ImportField.SellPriceCurrency); // Sell Price Currency
+            addtionalMappings[8].FieldToMap.Should().Be(ImportField.CardsOwned); // Cards Owned
+            addtionalMappings[9].FieldToMap.Should().Be(ImportField.CardsForTrade); // Cards For Trade
             addtionalMappings[0].CsvHeaders.Should().HaveCount(18);
 
             // Assert CSV headers pre-selected
-            addtionalMappings[0].SelectedCsvHeader.Should().Be("Condition"); // Condition
+            addtionalMappings[0].SelectedCsvHeader.Should().Be("Condition");
             addtionalMappings[1].SelectedCsvHeader.Should().Be("Printing"); // Finish
             addtionalMappings[2].SelectedCsvHeader.Should().Be("Language"); // Language
             addtionalMappings[3].SelectedCsvHeader.Should().Be(null); // Location
-            addtionalMappings[4].SelectedCsvHeader.Should().Be("Note"); // Comment
-            addtionalMappings[7].SelectedCsvHeader.Should().Be("Quantity"); // CardsOwned
-            addtionalMappings[8].SelectedCsvHeader.Should().Be("For sale"); // CardsForTrade
+            addtionalMappings[5].SelectedCsvHeader.Should().Be("Note"); // Comment
+            addtionalMappings[8].SelectedCsvHeader.Should().Be("Quantity"); // CardsOwned
+            addtionalMappings[9].SelectedCsvHeader.Should().Be("For sale"); // CardsForTrade
 
             // Simulate clearing a mapping (should update the underlying ImportCardItem's AdditionalFieldsMapping for that field to null, but not affect the other fields)
             addtionalMappings[4].SelectedCsvHeader = null; // Clear Comment mapping
@@ -330,8 +335,8 @@ namespace CollectaMundo.Tests.ScenarioTests
             summary.FieldMappings[0].CsvHeader.Should().Be("Mapped to field: Condition");
             summary.FieldMappings[1].CsvHeader.Should().Be("Mapped to field: Printing");
             summary.FieldMappings[2].CsvHeader.Should().Be("Mapped to field: Language");
-            summary.FieldMappings[7].CsvHeader.Should().Be("Mapped to field: Quantity");
-            summary.FieldMappings[8].CsvHeader.Should().Be("Mapped to field: For sale");
+            summary.FieldMappings[8].CsvHeader.Should().Be("Mapped to field: Quantity");
+            summary.FieldMappings[9].CsvHeader.Should().Be("Mapped to field: For sale");
 
             //// Spot check value mappings 
             summary.ValueMappings[0].Field.Should().Be(ImportField.Condition);

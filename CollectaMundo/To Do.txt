@@ -1,5 +1,6 @@
 TO DO 
 
+Tekst ombrydning på import summary
 
 Import af collection med location type
 

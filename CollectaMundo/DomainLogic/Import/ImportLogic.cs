@@ -428,7 +428,58 @@ namespace CollectaMundo.DomainLogic.Import
         // ----------------------
         // Resolve all mapped values, applying defaults where needed and collecting warnings (e.g. parsing issues, missing mappings)
         // ----------------------
+        public IReadOnlyDictionary<string, CardLocationType> ResolveMissingLocationTypes(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyCollection<string> missingLocationNames)
+        {
+            var typesByName = new Dictionary<string, CardLocationType?>(StringComparer.OrdinalIgnoreCase);
 
+            foreach (var name in missingLocationNames)
+            {
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    typesByName.TryAdd(name.Trim(), null);
+                }
+            }
+
+            var locationHeader = GetMappedHeader(fieldMappings, ImportField.Location);
+            var typeHeader = GetMappedHeader(fieldMappings, ImportField.LocationType);
+
+            if (typesByName.Count > 0 && locationHeader is not null && typeHeader is not null)
+            {
+                foreach (var item in items)
+                {
+                    var name = ResolveRawValue(item, locationHeader)?.Trim();
+
+                    if (string.IsNullOrEmpty(name) ||
+                        !typesByName.TryGetValue(name, out var previousType))
+                    {
+                        continue;
+                    }
+
+                    var rawType = ResolveRawValue(item, typeHeader)?.Trim();
+
+                    if (string.IsNullOrEmpty(rawType))
+                    {
+                        continue;
+                    }
+
+                    var importedType = rawType.ToLowerInvariant() switch
+                    {
+                        "deck" => CardLocationType.Deck,
+                        "storage" => CardLocationType.Storage,
+                        _ => throw new InvalidOperationException($"Cannot create location '{name}'. Imported type '{rawType}' is unsupported. Expected 'Deck' or 'Storage'.")
+                    };
+
+                    if (previousType.HasValue && previousType.Value != importedType)
+                    {
+                        throw new InvalidOperationException($"Cannot create location '{name}'. The import file specifies both 'Deck' and 'Storage' for this location.");
+                    }
+
+                    typesByName[name] = importedType;
+                }
+            }
+
+            return typesByName.ToDictionary(entry => entry.Key, entry => entry.Value ?? CardLocationType.Storage, StringComparer.OrdinalIgnoreCase);
+        }
         public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings, IReadOnlyList<CsvValueMapping> locationMappings, IReadOnlyList<CardLocation> availableLocations)
         {
             var uuidHeader = "collectaMundoUuidImportField";
@@ -496,18 +547,13 @@ namespace CollectaMundo.DomainLogic.Import
         // Helpers
         private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
         {
-            if (string.IsNullOrWhiteSpace(csvHeader))
+            if (string.IsNullOrWhiteSpace(csvHeader) || !item.CsvFields.TryGetValue(csvHeader, out var raw) || string.IsNullOrWhiteSpace(raw))
             {
                 return null;
             }
 
-            if (!item.CsvFields.TryGetValue(csvHeader, out var raw))
-            {
-                return null;
-            }
-
-            var mapping = mappings.FirstOrDefault(m =>
-                string.Equals(m.CsvValue, raw, StringComparison.OrdinalIgnoreCase));
+            var csvValue = raw.Trim();
+            var mapping = mappings.FirstOrDefault(m => string.Equals(m.CsvValue.Trim(), csvValue, StringComparison.OrdinalIgnoreCase));
 
             return mapping?.SelectedCardSetValue;
         }

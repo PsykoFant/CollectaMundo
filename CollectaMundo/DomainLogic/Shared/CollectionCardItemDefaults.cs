@@ -12,6 +12,7 @@ namespace CollectaMundo.DomainLogic.Shared
             ImportField.CardFinish => "nonfoil",
             ImportField.Language => "English",
             ImportField.Location => string.Empty,
+            ImportField.LocationType => "Storage",
             ImportField.Comment => string.Empty,
             _ => throw new NotSupportedException($"No string default defined for {field}")
         };
@@ -30,6 +31,7 @@ namespace CollectaMundo.DomainLogic.Shared
             ImportField.CardFinish => GetDefaultString(ImportField.CardFinish),
             ImportField.Language => GetDefaultString(ImportField.Language),
             ImportField.Location => "blank",
+            ImportField.LocationType => GetDefaultString(ImportField.LocationType),
             ImportField.Comment => "blank",
             ImportField.SellPrice => "blank",
             ImportField.SellPriceCurrency => "blank",
